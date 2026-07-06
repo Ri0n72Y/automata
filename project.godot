@@ -11,7 +11,8 @@ config_version=5
 [application]
 
 config/name="automata"
-config/features=PackedStringArray("4.7", "Mobile")
+run/main_scene="res://scenes/scene_01/scene_01_basic_packing.tscn"
+config/features=PackedStringArray("4.6", "Mobile")
 config/icon="res://icon.svg"
 
 [display]
