@@ -1,0 +1,24 @@
+[gd_scene load_steps=2 format=3 uid="uid://scene01basicpacking"]
+
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_controller.gd" id="1_controller"]
+
+[node name="Scene01BasicPacking" type="Node3D"]
+script = ExtResource("1_controller")
+
+[node name="SceneRoot" type="Node3D" parent="."]
+unique_name_in_owner = true
+
+[node name="GridRoot" type="Node3D" parent="SceneRoot"]
+unique_name_in_owner = true
+
+[node name="RobotRoot" type="Node3D" parent="SceneRoot"]
+unique_name_in_owner = true
+
+[node name="ObjectRoot" type="Node3D" parent="SceneRoot"]
+unique_name_in_owner = true
+
+[node name="CameraRoot" type="Node3D" parent="SceneRoot"]
+unique_name_in_owner = true
+
+[node name="UIRoot" type="CanvasLayer" parent="."]
+unique_name_in_owner = true
