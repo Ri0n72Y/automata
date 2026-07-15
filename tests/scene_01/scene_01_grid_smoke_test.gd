@@ -33,6 +33,11 @@ func _run() -> void:
 
 	if debug_view != null:
 		_expect_equal(
+			debug_view.get_child_count(),
+			1,
+			"The debug view should contain one active label container."
+		)
+		_expect_equal(
 			debug_view.get_debug_label_count(),
 			96,
 			"Default 12 x 8 grid should create 96 debug labels."
@@ -60,6 +65,12 @@ func _run() -> void:
 	if debug_view != null and grid_model != null:
 		debug_view.show_coordinates = false
 		debug_view.draw(grid_model)
+		await process_frame
+		_expect_equal(
+			debug_view.get_child_count(),
+			0,
+			"A disabled debug view should release its label container."
+		)
 		_expect_equal(
 			debug_view.get_debug_label_count(),
 			0,
@@ -68,14 +79,48 @@ func _run() -> void:
 
 		debug_view.show_coordinates = true
 		debug_view.draw(grid_model)
+		await process_frame
+		_expect_equal(
+			debug_view.get_child_count(),
+			1,
+			"An enabled debug view should create one active label container."
+		)
+		_expect_equal(
+			debug_view.get_debug_label_count(),
+			96,
+			"Re-enabled drawing should restore the coordinate labels."
+		)
+
+		debug_view.draw(grid_model)
+		await process_frame
+		_expect_equal(
+			debug_view.get_child_count(),
+			1,
+			"Repeated drawing should release the previous label container."
+		)
 		_expect_equal(
 			debug_view.get_debug_label_count(),
 			96,
 			"Repeated drawing should replace the active debug labels."
 		)
+		var label_container := debug_view.get_child(0)
+		_expect_true(
+			label_container.get_node_or_null("Cell_0_0") != null,
+			"Repeated drawing should preserve readable cell label names."
+		)
 
-		var large_grid := GridModel.new(1000, 1000, 1.0, Vector3.ZERO)
+		var large_grid := GridModel.new()
+		_expect_true(
+			large_grid.configure(1000, 1000, 1.0, Vector3.ZERO),
+			"Large-grid configuration should succeed."
+		)
 		debug_view.draw(large_grid)
+		await process_frame
+		_expect_equal(
+			debug_view.get_child_count(),
+			1,
+			"Large-grid drawing should keep one active label container."
+		)
 		_expect_true(
 			debug_view.get_debug_label_count() <= maxi(debug_view.max_debug_labels, 1),
 			"Large-grid debug sampling should stay within the configured label limit."
