@@ -5,7 +5,7 @@ const GridModelScript := preload("res://scripts/grid/grid_model.gd")
 var failures: int = 0
 
 
-func _initialize() -> void:
+func _init() -> void:
 	_test_default_grid_conversion()
 	_test_grid_bounds()
 	_test_offset_origin_and_cell_size()
