@@ -6,17 +6,27 @@ extends Node3D
 @export var label_pixel_size: float = 0.01
 @export_range(1, 4096, 1) var max_debug_labels: int = 512
 
+var _active_label_container: Node3D
+var _draw_generation: int = 0
+
 
 func draw(model: GridModel) -> void:
 	rebuild(model)
 
 
 func rebuild(model: GridModel) -> void:
-	for child in get_children():
-		child.queue_free()
+	if _active_label_container != null:
+		_active_label_container.queue_free()
+		_active_label_container = null
 
 	if not show_coordinates or model == null:
 		return
+
+	_draw_generation += 1
+	var label_container := Node3D.new()
+	label_container.name = "Labels_%d" % _draw_generation
+	add_child(label_container)
+	_active_label_container = label_container
 
 	var label_limit := maxi(max_debug_labels, 1)
 	var sample_step := _calculate_sample_step(model, label_limit)
@@ -36,11 +46,13 @@ func rebuild(model: GridModel) -> void:
 			label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 			label.no_depth_test = true
 			label.pixel_size = label_pixel_size
-			add_child(label)
+			label_container.add_child(label)
 
 
 func get_debug_label_count() -> int:
-	return get_child_count()
+	if _active_label_container == null:
+		return 0
+	return _active_label_container.get_child_count()
 
 
 func _calculate_sample_step(model: GridModel, label_limit: int) -> int:
