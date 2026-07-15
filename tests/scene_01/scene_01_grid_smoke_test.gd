@@ -18,6 +18,7 @@ func _run() -> void:
 
 	var scene := packed_scene.instantiate()
 	root.add_child(scene)
+	# SceneTree.process_frame is the Godot 4.x signal used to wait for _ready().
 	await process_frame
 
 	var grid_root := scene.get_node_or_null("SceneRoot/GridRoot") as Node3D
@@ -39,27 +40,45 @@ func _run() -> void:
 
 	if grid_root != null and grid_model != null:
 		grid_root.position = Vector3(10.0, 0.0, -4.0)
+		grid_root.rotation.y = PI / 2.0
+		grid_root.scale = Vector3(2.0, 1.0, 3.0)
 		var world_center: Vector3 = scene.call(
 			"grid_cell_to_world",
 			Vector2i(0, 0)
 		)
-		_expect_equal(
+		_expect_vector3_approx(
 			world_center,
-			Vector3(10.5, 0.0, -3.5),
-			"GridRoot transforms should be applied by the controller world wrapper."
+			grid_root.to_global(Vector3(0.5, 0.0, 0.5)),
+			"GridRoot translation, rotation, and scale should be applied by the controller."
 		)
 		_expect_equal(
 			scene.call("world_to_grid_cell", world_center),
 			Vector2i(0, 0),
-			"World and grid conversion should round trip through GridRoot."
+			"World and grid conversion should round trip through a transformed GridRoot."
 		)
 
-	if debug_view != null:
-		var large_grid := GridModel.new(256, 256, 1.0, Vector3.ZERO)
-		debug_view.configure(large_grid)
+	if debug_view != null and grid_model != null:
+		debug_view.show_coordinates = false
+		debug_view.draw(grid_model)
+		_expect_equal(
+			debug_view.get_debug_label_count(),
+			0,
+			"A disabled debug view should not expose coordinate labels."
+		)
+
+		debug_view.show_coordinates = true
+		debug_view.draw(grid_model)
+		_expect_equal(
+			debug_view.get_debug_label_count(),
+			96,
+			"Repeated drawing should replace the active debug labels."
+		)
+
+		var large_grid := GridModel.new(1000, 1000, 1.0, Vector3.ZERO)
+		debug_view.draw(large_grid)
 		_expect_true(
 			debug_view.get_debug_label_count() <= maxi(debug_view.max_debug_labels, 1),
-			"Large-grid debug output should stay within the configured label limit."
+			"Large-grid debug sampling should stay within the configured label limit."
 		)
 
 	scene.queue_free()
@@ -79,6 +98,13 @@ func _finish() -> void:
 
 func _expect_equal(actual: Variant, expected: Variant, message: String) -> void:
 	if actual == expected:
+		return
+	failures += 1
+	push_error("%s Expected %s, got %s." % [message, str(expected), str(actual)])
+
+
+func _expect_vector3_approx(actual: Vector3, expected: Vector3, message: String) -> void:
+	if actual.is_equal_approx(expected):
 		return
 	failures += 1
 	push_error("%s Expected %s, got %s." % [message, str(expected), str(actual)])
