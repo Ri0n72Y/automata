@@ -9,6 +9,7 @@ func _init() -> void:
 	_test_default_grid_conversion()
 	_test_grid_bounds()
 	_test_offset_origin_and_cell_size()
+	_test_repeated_configuration()
 	_test_invalid_configuration_is_rejected()
 
 	if failures == 0:
@@ -24,24 +25,24 @@ func _test_default_grid_conversion() -> void:
 	var grid = GridModelScript.new(12, 8, 1.0, Vector3.ZERO)
 
 	_expect_equal(
-		grid.cell_to_local(Vector2i(0, 0)),
+		grid.cell_to_position(Vector2i(0, 0)),
 		Vector3(0.5, 0.0, 0.5),
-		"Cell (0, 0) should map to its local-space center."
+		"Cell (0, 0) should map to its GridRoot-local center position."
 	)
 	_expect_equal(
-		grid.cell_to_local(Vector2i(3, 5)),
+		grid.cell_to_position(Vector2i(3, 5)),
 		Vector3(3.5, 0.0, 5.5),
-		"Cell (3, 5) should map to its local-space center."
+		"Cell (3, 5) should map to its GridRoot-local center position."
 	)
 	_expect_equal(
-		grid.local_to_cell(Vector3(3.99, 0.0, 5.01)),
+		grid.position_to_cell(Vector3(3.99, 0.0, 5.01)),
 		Vector2i(3, 5),
-		"A non-integer local position should map to its containing cell."
+		"A non-integer GridRoot-local position should map to its containing cell."
 	)
 	_expect_equal(
-		grid.local_to_cell(grid.cell_to_local(Vector2i(11, 7))),
+		grid.position_to_cell(grid.cell_to_position(Vector2i(11, 7))),
 		Vector2i(11, 7),
-		"Cell-to-local and local-to-cell should round trip."
+		"Cell-to-position and position-to-cell should round trip."
 	)
 
 
@@ -55,9 +56,9 @@ func _test_grid_bounds() -> void:
 	_expect_false(grid.is_cell_valid(Vector2i(12, 0)), "X equal to width should be invalid.")
 	_expect_false(grid.is_cell_valid(Vector2i(0, 8)), "Y equal to height should be invalid.")
 	_expect_equal(
-		grid.local_to_cell(Vector3(-0.01, 0.0, 0.5)),
+		grid.position_to_cell(Vector3(-0.01, 0.0, 0.5)),
 		Vector2i(-1, 0),
-		"Negative local coordinates should remain outside the grid."
+		"Negative GridRoot-local coordinates should remain outside the grid."
 	)
 
 
@@ -65,14 +66,31 @@ func _test_offset_origin_and_cell_size() -> void:
 	var grid = GridModelScript.new(2, 2, 2.0, Vector3(10.0, 3.0, -4.0))
 
 	_expect_equal(
-		grid.cell_to_local(Vector2i(1, 1)),
+		grid.cell_to_position(Vector2i(1, 1)),
 		Vector3(13.0, 3.0, -1.0),
-		"Cell centers should respect origin and cell size."
+		"Cell centers should respect origin and non-unit cell size."
 	)
 	_expect_equal(
-		grid.local_to_cell(Vector3(13.9, 3.0, -0.1)),
+		grid.position_to_cell(Vector3(13.9, 3.0, -0.1)),
 		Vector2i(1, 1),
-		"Local conversion should respect origin and cell size."
+		"Position conversion should respect origin and non-unit cell size."
+	)
+
+
+func _test_repeated_configuration() -> void:
+	var grid = GridModelScript.new(2, 3, 1.0, Vector3.ZERO)
+
+	_expect_true(
+		grid.configure(4, 5, 2.0, Vector3(1.0, 0.0, -1.0)),
+		"A valid repeated configuration should succeed."
+	)
+	_expect_equal(grid.width, 4, "Repeated configuration should replace width.")
+	_expect_equal(grid.height, 5, "Repeated configuration should replace height.")
+	_expect_equal(grid.cell_size, 2.0, "Repeated configuration should replace cell size.")
+	_expect_equal(
+		grid.cell_to_position(Vector2i(0, 0)),
+		Vector3(2.0, 0.0, 0.0),
+		"Repeated configuration should replace the local origin."
 	)
 
 
