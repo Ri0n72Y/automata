@@ -33,12 +33,17 @@ func _process(delta: float) -> void:
 
 
 func initialize_grid() -> void:
-	grid_model = GridModel.new(
+	var model := GridModel.new()
+	if not model.configure(
 		grid_width,
 		grid_height,
 		grid_cell_size,
 		grid_local_origin
-	)
+	):
+		push_error("Scene 01 grid configuration is invalid.")
+		return
+
+	grid_model = model
 	grid_debug_view.draw(grid_model)
 
 
