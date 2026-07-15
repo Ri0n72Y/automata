@@ -1,6 +1,7 @@
 extends SceneTree
 
 const SCENE_PATH := "res://scenes/scene_01/scene_01_basic_packing.tscn"
+const READY_PROBE_SCRIPT := preload("res://tests/scene_01/grid_ready_probe.gd")
 
 var failures: int = 0
 
@@ -17,6 +18,16 @@ func _run() -> void:
 		return
 
 	var scene := packed_scene.instantiate()
+	var pre_ready_grid_root := scene.get_node_or_null("SceneRoot/GridRoot") as Node3D
+	var ready_probe := READY_PROBE_SCRIPT.new()
+	ready_probe.controller = scene
+	_expect_true(
+		pre_ready_grid_root != null,
+		"Scene 01 should expose GridRoot before entering the SceneTree."
+	)
+	if pre_ready_grid_root != null:
+		pre_ready_grid_root.add_child(ready_probe)
+
 	root.add_child(scene)
 	# SceneTree.process_frame is the Godot 4.x signal used to wait for _ready().
 	await process_frame
@@ -30,6 +41,14 @@ func _run() -> void:
 	_expect_true(grid_root != null, "Scene 01 should contain GridRoot.")
 	_expect_true(debug_view != null, "Scene 01 should contain GridDebugView.")
 	_expect_true(grid_model != null, "Scene 01 should initialize GridModel.")
+	_expect_true(
+		ready_probe.grid_model_was_ready,
+		"GridModel should be initialized before child nodes enter _ready()."
+	)
+	_expect_true(
+		ready_probe.conversion_succeeded,
+		"Child nodes should be able to use grid coordinate APIs during _ready()."
+	)
 
 	if debug_view != null:
 		_expect_equal(
