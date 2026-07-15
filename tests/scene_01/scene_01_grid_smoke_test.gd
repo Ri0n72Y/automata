@@ -1,6 +1,8 @@
 extends SceneTree
 
 const SCENE_PATH := "res://scenes/scene_01/scene_01_basic_packing.tscn"
+const GRID_MODEL_SCRIPT := preload("res://scripts/grid/grid_model.gd")
+const GRID_DEBUG_VIEW_SCRIPT := preload("res://scripts/grid/grid_debug_view.gd")
 const READY_PROBE_SCRIPT := preload("res://tests/scene_01/grid_ready_probe.gd")
 
 var failures: int = 0
@@ -35,8 +37,8 @@ func _run() -> void:
 	var grid_root := scene.get_node_or_null("SceneRoot/GridRoot") as Node3D
 	var debug_view := scene.get_node_or_null(
 		"SceneRoot/GridRoot/GridDebugView"
-	) as GridDebugView
-	var grid_model := scene.get("grid_model") as GridModel
+	) as GRID_DEBUG_VIEW_SCRIPT
+	var grid_model := scene.get("grid_model") as GRID_MODEL_SCRIPT
 
 	_expect_true(grid_root != null, "Scene 01 should contain GridRoot.")
 	_expect_true(debug_view != null, "Scene 01 should contain GridDebugView.")
@@ -129,7 +131,7 @@ func _run() -> void:
 				"Repeated drawing should preserve readable cell label names."
 			)
 
-		var large_grid := GridModel.new()
+		var large_grid := GRID_MODEL_SCRIPT.new()
 		_expect_true(
 			large_grid.configure(1000, 1000, 1.0, Vector3.ZERO),
 			"Large-grid configuration should succeed."
