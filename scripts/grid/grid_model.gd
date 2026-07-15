@@ -7,15 +7,6 @@ var cell_size: float = 1.0
 var local_origin: Vector3 = Vector3.ZERO
 
 
-func _init(
-	p_width: int = 1,
-	p_height: int = 1,
-	p_cell_size: float = 1.0,
-	p_local_origin: Vector3 = Vector3.ZERO
-) -> void:
-	configure(p_width, p_height, p_cell_size, p_local_origin)
-
-
 func configure(
 	p_width: int,
 	p_height: int,
