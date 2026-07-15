@@ -40,11 +40,7 @@ func rebuild(model: GridModel) -> void:
 
 
 func get_debug_label_count() -> int:
-	var count := 0
-	for child in get_children():
-		if not child.is_queued_for_deletion():
-			count += 1
-	return count
+	return get_child_count()
 
 
 func _calculate_sample_step(model: GridModel, label_limit: int) -> int:
