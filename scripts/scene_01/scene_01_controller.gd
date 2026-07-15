@@ -4,7 +4,7 @@ extends Node3D
 @export_range(1, 256, 1) var grid_width: int = 12
 @export_range(1, 256, 1) var grid_height: int = 8
 @export_range(0.1, 10.0, 0.1) var grid_cell_size: float = 1.0
-@export var grid_world_origin: Vector3 = Vector3.ZERO
+@export var grid_local_origin: Vector3 = Vector3.ZERO
 
 @onready var scene_root: Node3D = %SceneRoot
 @onready var grid_root: Node3D = %GridRoot
@@ -33,21 +33,25 @@ func _process(delta: float) -> void:
 
 
 func initialize_grid() -> void:
-	grid_model = GridModel.new(
+	grid_model = GridModel.new()
+	if not grid_model.configure(
 		grid_width,
 		grid_height,
 		grid_cell_size,
-		grid_world_origin
-	)
+		grid_local_origin
+	):
+		push_error("Scene 01 grid configuration is invalid.")
+		return
 	grid_debug_view.configure(grid_model)
 
 
 func world_to_grid_cell(world_position: Vector3) -> Vector2i:
-	return grid_model.world_to_cell(world_position)
+	var local_position := grid_root.to_local(world_position)
+	return grid_model.local_to_cell(local_position)
 
 
 func grid_cell_to_world(cell: Vector2i) -> Vector3:
-	return grid_model.cell_to_world(cell)
+	return grid_root.to_global(grid_model.cell_to_local(cell))
 
 
 func is_grid_cell_valid(cell: Vector2i) -> bool:
