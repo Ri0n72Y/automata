@@ -1,5 +1,8 @@
 extends Node3D
 
+const GridModelScript := preload("res://scripts/grid/grid_model.gd")
+const GridDebugViewScript := preload("res://scripts/grid/grid_debug_view.gd")
+
 @export_group("Grid")
 @export_range(1, 256, 1) var grid_width: int = 12
 @export_range(1, 256, 1) var grid_height: int = 8
@@ -8,13 +11,13 @@ extends Node3D
 
 @onready var scene_root: Node3D = %SceneRoot
 var grid_root: Node3D
-@onready var grid_debug_view: GridDebugView = %GridDebugView
+@onready var grid_debug_view: GridDebugViewScript = %GridDebugView
 @onready var robot_root: Node3D = %RobotRoot
 @onready var object_root: Node3D = %ObjectRoot
 @onready var camera_root: Node3D = %CameraRoot
 @onready var ui_root: CanvasLayer = %UIRoot
 
-var grid_model: GridModel
+var grid_model: GridModelScript
 var box_count: int = 3
 var target_box_count: int = 8
 var timer: float = 0.0
@@ -41,7 +44,7 @@ func _process(delta: float) -> void:
 
 
 func initialize_grid() -> bool:
-	var model := GridModel.new()
+	var model := GridModelScript.new()
 	if not model.configure(
 		grid_width,
 		grid_height,
