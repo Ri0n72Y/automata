@@ -22,8 +22,13 @@ var automation_rate: float = 0.0
 var is_running: bool = false
 
 
-func _ready() -> void:
+func _enter_tree() -> void:
 	initialize_grid()
+
+
+func _ready() -> void:
+	if grid_model != null:
+		grid_debug_view.draw(grid_model)
 	reset_scene_state()
 
 
@@ -32,7 +37,7 @@ func _process(delta: float) -> void:
 		timer += delta
 
 
-func initialize_grid() -> void:
+func initialize_grid() -> bool:
 	var model := GridModel.new()
 	if not model.configure(
 		grid_width,
@@ -41,10 +46,12 @@ func initialize_grid() -> void:
 		grid_local_origin
 	):
 		push_error("Scene 01 grid configuration is invalid.")
-		return
+		return false
 
 	grid_model = model
-	grid_debug_view.draw(grid_model)
+	if is_node_ready() and grid_debug_view != null:
+		grid_debug_view.draw(grid_model)
+	return true
 
 
 func world_to_grid_cell(world_position: Vector3) -> Vector2i:
