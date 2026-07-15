@@ -1,6 +1,8 @@
 class_name GridDebugView
 extends Node3D
 
+const GridModelScript := preload("res://scripts/grid/grid_model.gd")
+
 @export var show_coordinates: bool = true
 @export var label_height: float = 0.02
 @export var label_pixel_size: float = 0.01
@@ -10,11 +12,11 @@ var _active_label_container: Node3D
 var _draw_generation: int = 0
 
 
-func draw(model: GridModel) -> void:
+func draw(model: GridModelScript) -> void:
 	rebuild(model)
 
 
-func rebuild(model: GridModel) -> void:
+func rebuild(model: GridModelScript) -> void:
 	if _active_label_container != null:
 		_active_label_container.queue_free()
 		_active_label_container = null
@@ -55,7 +57,7 @@ func get_debug_label_count() -> int:
 	return _active_label_container.get_child_count()
 
 
-func _calculate_sample_step(model: GridModel, label_limit: int) -> int:
+func _calculate_sample_step(model: GridModelScript, label_limit: int) -> int:
 	var sample_step := 1
 	while (
 		_ceil_div(model.width, sample_step)
