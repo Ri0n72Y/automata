@@ -39,8 +39,8 @@ func configure(
 	return true
 
 
-## Converts a logical grid cell to its center point in GridRoot-local XZ space.
-func cell_to_local(cell: Vector2i) -> Vector3:
+## Converts a logical grid cell to its center position in GridRoot-local XZ space.
+func cell_to_position(cell: Vector2i) -> Vector3:
 	return local_origin + Vector3(
 		(float(cell.x) + 0.5) * cell_size,
 		0.0,
@@ -48,11 +48,11 @@ func cell_to_local(cell: Vector2i) -> Vector3:
 	)
 
 
-## Converts a GridRoot-local position on the XZ plane to its containing cell.
+## Converts a position in GridRoot-local XZ space to its containing cell.
 ## The returned cell may be outside the configured grid; call is_cell_valid()
 ## when a bounded result is required.
-func local_to_cell(local_position: Vector3) -> Vector2i:
-	var grid_position := local_position - local_origin
+func position_to_cell(position: Vector3) -> Vector2i:
+	var grid_position := position - local_origin
 	return Vector2i(
 		int(floor(grid_position.x / cell_size)),
 		int(floor(grid_position.z / cell_size))
