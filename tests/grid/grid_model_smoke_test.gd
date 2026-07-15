@@ -22,7 +22,11 @@ func _init() -> void:
 
 
 func _test_default_grid_conversion() -> void:
-	var grid = GridModelScript.new(12, 8, 1.0, Vector3.ZERO)
+	var grid = GridModelScript.new()
+	_expect_true(
+		grid.configure(12, 8, 1.0, Vector3.ZERO),
+		"Default grid configuration should succeed."
+	)
 
 	_expect_equal(
 		grid.cell_to_position(Vector2i(0, 0)),
@@ -47,7 +51,11 @@ func _test_default_grid_conversion() -> void:
 
 
 func _test_grid_bounds() -> void:
-	var grid = GridModelScript.new(12, 8, 1.0, Vector3.ZERO)
+	var grid = GridModelScript.new()
+	_expect_true(
+		grid.configure(12, 8, 1.0, Vector3.ZERO),
+		"Bounds test grid configuration should succeed."
+	)
 
 	_expect_true(grid.is_cell_valid(Vector2i(0, 0)), "The first cell should be valid.")
 	_expect_true(grid.is_cell_valid(Vector2i(11, 7)), "The final cell should be valid.")
@@ -63,7 +71,11 @@ func _test_grid_bounds() -> void:
 
 
 func _test_offset_origin_and_cell_size() -> void:
-	var grid = GridModelScript.new(2, 2, 2.0, Vector3(10.0, 3.0, -4.0))
+	var grid = GridModelScript.new()
+	_expect_true(
+		grid.configure(2, 2, 2.0, Vector3(10.0, 3.0, -4.0)),
+		"Offset grid configuration should succeed."
+	)
 
 	_expect_equal(
 		grid.cell_to_position(Vector2i(1, 1)),
@@ -78,8 +90,11 @@ func _test_offset_origin_and_cell_size() -> void:
 
 
 func _test_repeated_configuration() -> void:
-	var grid = GridModelScript.new(2, 3, 1.0, Vector3.ZERO)
-
+	var grid = GridModelScript.new()
+	_expect_true(
+		grid.configure(2, 3, 1.0, Vector3.ZERO),
+		"Initial grid configuration should succeed."
+	)
 	_expect_true(
 		grid.configure(4, 5, 2.0, Vector3(1.0, 0.0, -1.0)),
 		"A valid repeated configuration should succeed."
@@ -95,7 +110,11 @@ func _test_repeated_configuration() -> void:
 
 
 func _test_invalid_configuration_is_rejected() -> void:
-	var grid = GridModelScript.new(2, 3, 1.0, Vector3.ZERO)
+	var grid = GridModelScript.new()
+	_expect_true(
+		grid.configure(2, 3, 1.0, Vector3.ZERO),
+		"Initial valid configuration should succeed."
+	)
 
 	_expect_false(grid.configure(0, 3, 1.0), "Zero width should be rejected.")
 	_expect_false(grid.configure(2, -1, 1.0), "Negative height should be rejected.")
