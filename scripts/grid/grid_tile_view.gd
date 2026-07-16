@@ -107,12 +107,11 @@ func get_ground_body() -> StaticBody3D:
 
 func _create_tile_material(color: Color, use_emission: bool = false) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.albedo_color = color
-	material.metallic = 0.05
-	material.roughness = 0.72
 	if use_emission:
 		material.emission_enabled = true
-		material.emission = color * 0.18
+		material.emission = color
 		material.emission_energy_multiplier = 0.35
 	return material
 
