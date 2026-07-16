@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://scene01basicpacking"]
+[gd_scene load_steps=3 format=3 uid="uid://scene01basicpacking"]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_controller.gd" id="1_controller"]
+[ext_resource type="Script" path="res://scripts/grid/grid_debug_view.gd" id="2_grid_debug"]
 
 [node name="Scene01BasicPacking" type="Node3D"]
 script = ExtResource("1_controller")
@@ -10,6 +11,10 @@ unique_name_in_owner = true
 
 [node name="GridRoot" type="Node3D" parent="SceneRoot"]
 unique_name_in_owner = true
+
+[node name="GridDebugView" type="Node3D" parent="SceneRoot/GridRoot"]
+unique_name_in_owner = true
+script = ExtResource("2_grid_debug")
 
 [node name="RobotRoot" type="Node3D" parent="SceneRoot"]
 unique_name_in_owner = true
