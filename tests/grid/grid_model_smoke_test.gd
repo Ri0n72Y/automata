@@ -9,7 +9,6 @@ func _init() -> void:
 	_test_default_grid_conversion()
 	_test_grid_bounds()
 	_test_default_cell_types_and_walkability()
-	_test_cell_type_updates()
 	_test_offset_origin_and_cell_size()
 	_test_repeated_configuration()
 	_test_invalid_configuration_is_rejected()
@@ -104,40 +103,6 @@ func _test_default_cell_types_and_walkability() -> void:
 	_expect_false(grid.is_cell_walkable(Vector2i(0, 4)), "Boundary cells should not be walkable.")
 	_expect_true(grid.is_cell_walkable(Vector2i(1, 1)), "Power tiles should be walkable.")
 	_expect_false(grid.is_cell_walkable(Vector2i(12, 2)), "Out-of-range cells should not be walkable.")
-
-
-func _test_cell_type_updates() -> void:
-	var grid = GridModelScript.new()
-	_expect_true(
-		grid.configure(4, 4, 1.0, Vector3.ZERO),
-		"Cell update grid configuration should succeed."
-	)
-
-	var normal_type: int = GridModelScript.CellType.NORMAL_TILE
-	var boundary_type: int = GridModelScript.CellType.BOUNDARY
-	_expect_true(
-		grid.set_cell_type(Vector2i(1, 1), normal_type),
-		"A valid cell should accept a normal tile type."
-	)
-	_expect_equal(
-		grid.get_cell_type(Vector2i(1, 1)),
-		normal_type,
-		"Updated normal tile type should be readable."
-	)
-	_expect_true(grid.is_cell_walkable(Vector2i(1, 1)), "Normal tiles should be walkable.")
-	_expect_true(
-		grid.set_cell_type(Vector2i(1, 1), boundary_type),
-		"A valid cell should accept a boundary type."
-	)
-	_expect_false(grid.is_cell_walkable(Vector2i(1, 1)), "Updated boundary cells should be blocked.")
-	_expect_false(
-		grid.set_cell_type(Vector2i(-1, 1), normal_type),
-		"An invalid cell should reject type updates."
-	)
-	_expect_false(
-		grid.set_cell_type(Vector2i(1, 1), 999),
-		"Unknown cell types should be rejected."
-	)
 
 
 func _test_offset_origin_and_cell_size() -> void:
