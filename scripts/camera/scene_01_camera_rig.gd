@@ -23,11 +23,12 @@ func configure_for_grid(
 	var horizontal_component := distance / sqrt(2.0)
 
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	camera.size = diagonal * framing_margin
+	camera.keep_aspect = Camera3D.KEEP_HEIGHT
 	camera.near = 0.1
 	camera.far = maxf(distance * 4.0, 100.0)
 	camera.position = Vector3(horizontal_component, distance, horizontal_component)
 	camera.look_at(world_center, Vector3.UP)
+	camera.size = _calculate_required_size(world_center, world_width, world_height)
 	camera.current = true
 
 
@@ -39,3 +40,36 @@ func get_orthographic_size() -> float:
 	if camera == null:
 		return 0.0
 	return camera.size
+
+
+func _calculate_required_size(
+	world_center: Vector3,
+	world_width: float,
+	world_height: float
+) -> float:
+	var half_width := maxf(world_width, 0.01) * 0.5
+	var half_height := maxf(world_height, 0.01) * 0.5
+	var corners := [
+		world_center + Vector3(-half_width, 0.0, -half_height),
+		world_center + Vector3(half_width, 0.0, -half_height),
+		world_center + Vector3(-half_width, 0.0, half_height),
+		world_center + Vector3(half_width, 0.0, half_height),
+	]
+
+	var half_projected_width: float = 0.0
+	var half_projected_height: float = 0.0
+	for corner in corners:
+		var camera_local_corner := camera.to_local(corner)
+		half_projected_width = maxf(half_projected_width, absf(camera_local_corner.x))
+		half_projected_height = maxf(half_projected_height, absf(camera_local_corner.y))
+
+	var viewport_size := camera.get_viewport().get_visible_rect().size
+	var viewport_aspect := 1.0
+	if viewport_size.y > 0.0:
+		viewport_aspect = maxf(viewport_size.x / viewport_size.y, 0.01)
+
+	var required_height := maxf(
+		half_projected_height * 2.0,
+		half_projected_width * 2.0 / viewport_aspect
+	)
+	return maxf(required_height * framing_margin, 1.0)
