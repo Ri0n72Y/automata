@@ -45,11 +45,12 @@ func _run() -> void:
 
 	if tile_view != null and grid_model != null:
 		_test_tile_view(tile_view, grid_model)
+		await _test_cell_type_visual_sync(scene, tile_view, grid_model)
 
 	var camera: Camera3D
-	if camera_rig != null:
+	if camera_rig != null and grid_root != null and grid_model != null:
 		camera = camera_rig.get_camera()
-		_test_camera(camera_rig, camera)
+		await _test_camera(grid_root, grid_model, camera_rig, camera)
 
 	if selection != null and grid_root != null and grid_model != null:
 		_test_selection(scene, grid_root, selection, camera)
@@ -107,7 +108,60 @@ func _test_tile_view(tile_view: GRID_TILE_VIEW_SCRIPT, grid_model: GRID_MODEL_SC
 			)
 
 
-func _test_camera(camera_rig: CAMERA_RIG_SCRIPT, camera: Camera3D) -> void:
+func _test_cell_type_visual_sync(
+	scene: Node,
+	tile_view: GRID_TILE_VIEW_SCRIPT,
+	grid_model: GRID_MODEL_SCRIPT
+) -> void:
+	var cell := Vector2i(2, 2)
+	var original_tile := tile_view.get_tile_node(cell)
+	var original_color := Color.TRANSPARENT
+	if original_tile != null:
+		var original_material := original_tile.material_override as StandardMaterial3D
+		if original_material != null:
+			original_color = original_material.albedo_color
+
+	_expect_true(
+		bool(scene.call("set_grid_cell_type", cell, GRID_MODEL_SCRIPT.CellType.BOUNDARY)),
+		"Controller should accept valid cell type updates."
+	)
+	await process_frame
+	_expect_equal(
+		grid_model.get_cell_type(cell),
+		GRID_MODEL_SCRIPT.CellType.BOUNDARY,
+		"Controller updates should change the grid model."
+	)
+	_expect_false(grid_model.is_cell_walkable(cell), "Updated boundary cells should be blocked.")
+	_expect_equal(
+		tile_view.get_child_count(),
+		1,
+		"Tile view rebuild should release the previous tile batch."
+	)
+	var updated_tile := tile_view.get_tile_node(cell)
+	_expect_true(updated_tile != null, "Updated cell should still have a tile mesh.")
+	if updated_tile != null:
+		var updated_material := updated_tile.material_override as StandardMaterial3D
+		_expect_true(updated_material != null, "Updated tile should have a material.")
+		if updated_material != null:
+			_expect_true(
+				updated_material.albedo_color != original_color,
+				"Cell type updates should refresh the tile material."
+			)
+
+	_expect_true(
+		bool(scene.call("set_grid_cell_type", cell, GRID_MODEL_SCRIPT.CellType.WHITE_POWER_TILE)),
+		"Controller should restore a power tile."
+	)
+	await process_frame
+	_expect_true(grid_model.is_cell_walkable(cell), "Restored power tiles should be walkable.")
+
+
+func _test_camera(
+	grid_root: Node3D,
+	grid_model: GRID_MODEL_SCRIPT,
+	camera_rig: CAMERA_RIG_SCRIPT,
+	camera: Camera3D
+) -> void:
 	_expect_true(camera != null, "Camera rig should expose SceneCamera.")
 	if camera == null:
 		return
@@ -117,10 +171,69 @@ func _test_camera(camera_rig: CAMERA_RIG_SCRIPT, camera: Camera3D) -> void:
 		"Scene camera should use orthographic projection."
 	)
 	_expect_true(camera.current, "Scene camera should be current.")
-	_expect_true(
-		camera_rig.get_orthographic_size() >= sqrt(12.0 * 12.0 + 8.0 * 8.0),
-		"Orthographic size should cover the default grid diagonal."
+	_assert_grid_corners_visible(grid_root, grid_model, camera, "Default viewport")
+
+	var original_window_size := root.size
+	root.size = Vector2i(480, 900)
+	await process_frame
+	_configure_camera_for_grid(grid_root, grid_model, camera_rig)
+	await process_frame
+	_assert_grid_corners_visible(grid_root, grid_model, camera, "Narrow viewport")
+
+	root.size = original_window_size
+	await process_frame
+	_configure_camera_for_grid(grid_root, grid_model, camera_rig)
+	await process_frame
+
+
+func _configure_camera_for_grid(
+	grid_root: Node3D,
+	grid_model: GRID_MODEL_SCRIPT,
+	camera_rig: CAMERA_RIG_SCRIPT
+) -> void:
+	var local_center := grid_model.local_origin + Vector3(
+		float(grid_model.width) * grid_model.cell_size * 0.5,
+		0.0,
+		float(grid_model.height) * grid_model.cell_size * 0.5
 	)
+	var world_center := grid_root.to_global(local_center)
+	var world_scale := grid_root.global_basis.get_scale().abs()
+	camera_rig.configure_for_grid(
+		world_center,
+		float(grid_model.width) * grid_model.cell_size * world_scale.x,
+		float(grid_model.height) * grid_model.cell_size * world_scale.z
+	)
+
+
+func _assert_grid_corners_visible(
+	grid_root: Node3D,
+	grid_model: GRID_MODEL_SCRIPT,
+	camera: Camera3D,
+	context: String
+) -> void:
+	var viewport_size := camera.get_viewport().get_visible_rect().size
+	var local_min := grid_model.local_origin
+	var local_max := grid_model.local_origin + Vector3(
+		float(grid_model.width) * grid_model.cell_size,
+		0.0,
+		float(grid_model.height) * grid_model.cell_size
+	)
+	var corners := [
+		grid_root.to_global(Vector3(local_min.x, local_min.y, local_min.z)),
+		grid_root.to_global(Vector3(local_max.x, local_min.y, local_min.z)),
+		grid_root.to_global(Vector3(local_min.x, local_min.y, local_max.z)),
+		grid_root.to_global(Vector3(local_max.x, local_min.y, local_max.z)),
+	]
+	for corner in corners:
+		var screen_position := camera.unproject_position(corner)
+		_expect_true(
+			screen_position.x >= 0.0
+			and screen_position.y >= 0.0
+			and screen_position.x <= viewport_size.x
+			and screen_position.y <= viewport_size.y,
+			"%s should keep grid corner %s inside viewport %s; projected to %s."
+			% [context, str(corner), str(viewport_size), str(screen_position)]
+		)
 
 
 func _test_selection(
