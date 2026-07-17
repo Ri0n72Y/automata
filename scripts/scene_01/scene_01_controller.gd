@@ -62,6 +62,9 @@ func initialize_grid() -> bool:
 
 	grid_model = model
 	if is_node_ready():
+		if grid_selection_controller != null:
+			grid_selection_controller.clear_hover()
+			grid_selection_controller.cancel_selection()
 		_configure_grid_dependents()
 	return true
 
@@ -91,6 +94,16 @@ func get_grid_cell_type(cell: Vector2i) -> int:
 	if grid_model == null:
 		return GridModelScript.CellType.BOUNDARY
 	return grid_model.get_cell_type(cell)
+
+
+func set_grid_cell_type(cell: Vector2i, cell_type: int) -> bool:
+	if grid_model == null:
+		return false
+	if not grid_model._set_cell_type(cell, cell_type):
+		return false
+	if is_node_ready() and grid_tile_view != null:
+		grid_tile_view.draw(grid_model)
+	return true
 
 
 func is_grid_cell_walkable(cell: Vector2i) -> bool:
