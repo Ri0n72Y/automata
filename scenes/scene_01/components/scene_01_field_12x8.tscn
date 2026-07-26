@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/grid/grid_tile_view.gd" id="1_grid_tiles"]
 [ext_resource type="PackedScene" path="res://scenes/scene_01/components/grid_row_boundary_static.tscn" id="2_boundary_row"]
@@ -23,6 +23,7 @@ metallic = 0.15
 roughness = 0.72
 
 [sub_resource type="BoxShape3D" id="GroundShape"]
+resource_local_to_scene = true
 size = Vector3(12, 0.08, 8)
 
 [node name="GridTileView" type="Node3D"]
