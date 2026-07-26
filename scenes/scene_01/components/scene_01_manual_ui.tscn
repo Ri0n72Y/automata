@@ -1,0 +1,104 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_manual_controls.gd" id="1_controls"]
+
+[node name="UIRoot" type="CanvasLayer"]
+script = ExtResource("1_controls")
+
+[node name="RootControl" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="RootControl"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 352.0
+offset_bottom = 356.0
+mouse_filter = 1
+
+[node name="Margin" type="MarginContainer" parent="RootControl/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="RootControl/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="RootControl/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Scene 01 · Static Preview"
+theme_override_font_sizes/font_size = 20
+
+[node name="Instructions" type="Label" parent="RootControl/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Q / E: rotate GridRoot\nF: toggle non-uniform scale\nG: toggle offset\nR: reset scene\nHome: restore transform"
+
+[node name="ScopeNote" type="Label" parent="RootControl/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Vehicle click selection belongs to PR #32.\nPR #30 validates static vehicle visuals and data."
+autowrap_mode = 2
+modulate = Color(0.72, 0.8, 0.9, 1)
+
+[node name="RotateRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RotateLeft" type="Button" parent="RootControl/Panel/Margin/VBox/RotateRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Rotate -90°"
+
+[node name="RotateRight" type="Button" parent="RootControl/Panel/Margin/VBox/RotateRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Rotate +90°"
+
+[node name="TransformRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Scale" type="Button" parent="RootControl/Panel/Margin/VBox/TransformRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Toggle Scale"
+
+[node name="Offset" type="Button" parent="RootControl/Panel/Margin/VBox/TransformRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Toggle Offset"
+
+[node name="ResetRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Reset" type="Button" parent="RootControl/Panel/Margin/VBox/ResetRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Reset State"
+
+[node name="Restore" type="Button" parent="RootControl/Panel/Margin/VBox/ResetRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Restore Grid"
+
+[node name="StatusLabel" type="Label" parent="RootControl/Panel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Static preview ready"
+modulate = Color(0.55, 0.88, 0.72, 1)
+
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/RotateRow/RotateLeft" to="." method="_on_rotate_left_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/RotateRow/RotateRight" to="." method="_on_rotate_right_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/TransformRow/Scale" to="." method="_on_scale_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/TransformRow/Offset" to="." method="_on_offset_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/ResetRow/Reset" to="." method="_on_reset_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/ResetRow/Restore" to="." method="_on_restore_pressed"]
