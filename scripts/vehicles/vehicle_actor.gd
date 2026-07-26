@@ -5,6 +5,8 @@ const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definit
 const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 
 @export var vehicle_selection_layer: int = 2
+@export var use_static_scene_visual: bool = false
+@export var vehicle_preset_id: StringName = &""
 
 var definition: VehicleDefinitionScript
 var runtime_state: VehicleRuntimeStateScript
@@ -19,6 +21,8 @@ var _visual_generation: int = 0
 
 
 func _ready() -> void:
+	if use_static_scene_visual and _visual_root == null:
+		_bind_static_visual()
 	sync_from_state()
 
 
@@ -42,8 +46,16 @@ func configure(
 	runtime_state = p_runtime_state
 	controller = p_controller
 	cell_size = maxf(p_cell_size, 0.01)
+	vehicle_preset_id = definition.assembly_id
 	name = "Vehicle_%s" % String(definition.assembly_id)
-	_rebuild_visual()
+
+	if use_static_scene_visual:
+		if not _bind_static_visual():
+			push_error("Static vehicle scene is missing VisualRoot, selection area, or debug label.")
+			return false
+	else:
+		_rebuild_visual()
+
 	sync_from_state()
 	return true
 
@@ -74,9 +86,9 @@ func reset_actor() -> void:
 
 
 func get_vehicle_id() -> StringName:
-	if definition == null:
-		return &""
-	return definition.assembly_id
+	if definition != null:
+		return definition.assembly_id
+	return vehicle_preset_id
 
 
 func get_occupied_cells() -> Array[Vector2i]:
@@ -106,6 +118,29 @@ func get_debug_label_text() -> String:
 	if _debug_label == null or not is_instance_valid(_debug_label):
 		return ""
 	return _debug_label.text
+
+
+func _bind_static_visual() -> bool:
+	_visual_parts.clear()
+	_visual_root = get_node_or_null("VisualRoot") as Node3D
+	if _visual_root == null:
+		return false
+
+	_visual_root.scale = Vector3.ONE * cell_size
+	for child in _visual_root.find_children("*", "Node3D", true, false):
+		if child is MeshInstance3D:
+			_visual_parts[StringName(child.name)] = child
+
+	_selection_area = _visual_root.get_node_or_null("VehicleSelectionArea") as Area3D
+	_debug_label = _visual_root.get_node_or_null("DebugLabel") as Label3D
+	if _selection_area == null or _debug_label == null:
+		return false
+
+	_selection_area.collision_layer = 1 << max(vehicle_selection_layer - 1, 0)
+	_selection_area.collision_mask = 0
+	_selection_area.set_meta("vehicle_id", get_vehicle_id())
+	_update_debug_label()
+	return true
 
 
 func _rebuild_visual() -> void:
@@ -150,6 +185,7 @@ func _rebuild_visual() -> void:
 	_debug_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_debug_label.no_depth_test = true
 	_debug_label.font_size = 28
+	_debug_label.outline_size = 7
 	_visual_root.add_child(_debug_label)
 	_update_debug_label()
 
@@ -184,15 +220,32 @@ func _create_box_part(part_name: StringName, size: Vector3) -> MeshInstance3D:
 	var mesh := BoxMesh.new()
 	mesh.size = size
 	part.mesh = mesh
+	part.material_override = _create_fallback_material(part_name)
 	_visual_root.add_child(part)
 	_visual_parts[part_name] = part
 	return part
+
+
+func _create_fallback_material(part_name: StringName) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.roughness = 0.55
+	match part_name:
+		&"Body":
+			material.albedo_color = Color(0.08, 0.32, 0.55, 1.0)
+		&"ArmColumn":
+			material.albedo_color = Color(0.9, 0.36, 0.06, 1.0)
+		&"ArmBeam":
+			material.albedo_color = Color(0.98, 0.72, 0.08, 1.0)
+		&"Tray":
+			material.albedo_color = Color(0.16, 0.68, 0.74, 1.0)
+		_:
+			material.albedo_color = Color(0.3, 0.36, 0.44, 1.0)
+	return material
 
 
 func _update_debug_label() -> void:
 	if _debug_label == null or not is_instance_valid(_debug_label):
 		return
 	if definition == null or runtime_state == null:
-		_debug_label.text = ""
 		return
 	_debug_label.text = "%s\n%.1f kg" % [definition.display_name, definition.total_weight]
