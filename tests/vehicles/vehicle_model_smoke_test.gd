@@ -23,7 +23,7 @@ func _init() -> void:
 
 
 func _test_arm_vehicle_definition_and_runtime() -> void:
-	var definition := _create_arm_definition()
+	var definition: VehicleDefinition = _create_arm_definition()
 	_expect_true(definition != null, "Arm vehicle definition should configure.")
 	if definition == null:
 		return
@@ -57,7 +57,7 @@ func _test_arm_vehicle_definition_and_runtime() -> void:
 
 
 func _test_transport_vehicle_definition_and_runtime() -> void:
-	var definition := _create_transport_definition()
+	var definition: VehicleDefinition = _create_transport_definition()
 	_expect_true(definition != null, "Transport vehicle definition should configure.")
 	if definition == null:
 		return
@@ -87,7 +87,7 @@ func _test_transport_vehicle_definition_and_runtime() -> void:
 
 
 func _test_runtime_reset_and_command_queue() -> void:
-	var definition := _create_arm_definition()
+	var definition: VehicleDefinition = _create_arm_definition()
 	if definition == null:
 		failures += 1
 		return
@@ -125,8 +125,8 @@ func _test_unconfigured_definition_is_rejected() -> void:
 
 
 func _test_actor_definition_mismatch_is_rejected() -> void:
-	var arm_definition := _create_arm_definition()
-	var transport_definition := _create_transport_definition()
+	var arm_definition: VehicleDefinition = _create_arm_definition()
+	var transport_definition: VehicleDefinition = _create_transport_definition()
 	if arm_definition == null or transport_definition == null:
 		failures += 1
 		return
@@ -146,7 +146,7 @@ func _test_actor_definition_mismatch_is_rejected() -> void:
 	controller_stub.free()
 
 
-func _create_arm_definition():
+func _create_arm_definition() -> VehicleDefinition:
 	var definition := VEHICLE_DEFINITION_SCRIPT.new()
 	if not definition.configure(
 		&"arm_vehicle",
@@ -169,7 +169,7 @@ func _create_arm_definition():
 	return definition
 
 
-func _create_transport_definition():
+func _create_transport_definition() -> VehicleDefinition:
 	var definition := VEHICLE_DEFINITION_SCRIPT.new()
 	if not definition.configure(
 		&"transport_vehicle",
