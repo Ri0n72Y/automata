@@ -4,6 +4,8 @@ extends Node3D
 const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
 const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
+const ArmVehicleScene := preload("res://scenes/scene_01/vehicles/arm_vehicle_placeholder.tscn")
+const TransportVehicleScene := preload("res://scenes/scene_01/vehicles/transport_vehicle_placeholder.tscn")
 
 const ARM_VEHICLE_ID := &"arm_vehicle"
 const TRANSPORT_VEHICLE_ID := &"transport_vehicle"
@@ -27,6 +29,8 @@ func _exit_tree() -> void:
 
 
 func configure(p_controller: Node, p_cell_size: float) -> bool:
+	if _vehicles.is_empty() and _configure_static_scene_children(p_controller, p_cell_size):
+		return true
 	var preparation := prepare_vehicle_batch(p_controller, p_cell_size)
 	if preparation == null:
 		return false
@@ -118,6 +122,13 @@ func reset_vehicles() -> void:
 			vehicle.reset_actor()
 
 
+func sync_vehicles_from_state() -> void:
+	for vehicle_node in _vehicles:
+		var vehicle := vehicle_node as VehicleActorScript
+		if vehicle != null:
+			vehicle.sync_from_state()
+
+
 func get_vehicle_count() -> int:
 	return _vehicles.size()
 
@@ -142,6 +153,65 @@ func is_vehicle_batch_preparation_active(
 	preparation: VehicleBatchPreparation
 ) -> bool:
 	return preparation != null and preparation == _active_preparation
+
+
+func _configure_static_scene_children(p_controller: Node, p_cell_size: float) -> bool:
+	if p_controller == null:
+		return false
+	var arm_actor := get_node_or_null("ArmVehicle") as VehicleActorScript
+	var transport_actor := get_node_or_null("TransportVehicle") as VehicleActorScript
+	if arm_actor == null or transport_actor == null:
+		return false
+
+	var arm_definition := _create_arm_definition()
+	var transport_definition := _create_transport_definition()
+	if arm_definition == null or transport_definition == null:
+		return false
+	if not _is_start_footprint_valid(p_controller, arm_definition, arm_start_cell):
+		return false
+	if not _is_start_footprint_valid(
+		p_controller,
+		transport_definition,
+		transport_start_cell
+	):
+		return false
+
+	if not _configure_existing_actor(
+		arm_actor,
+		p_controller,
+		arm_definition,
+		arm_start_cell,
+		VehicleRuntimeStateScript.Facing.EAST,
+		p_cell_size
+	):
+		return false
+	if not _configure_existing_actor(
+		transport_actor,
+		p_controller,
+		transport_definition,
+		transport_start_cell,
+		VehicleRuntimeStateScript.Facing.WEST,
+		p_cell_size
+	):
+		return false
+
+	_vehicles = [arm_actor, transport_actor]
+	controller = p_controller
+	return true
+
+
+func _configure_existing_actor(
+	actor: VehicleActorScript,
+	p_controller: Node,
+	definition: VehicleDefinitionScript,
+	anchor_cell: Vector2i,
+	facing: int,
+	p_cell_size: float
+) -> bool:
+	var runtime_state := VehicleRuntimeStateScript.new()
+	if not runtime_state.configure(definition, anchor_cell, facing):
+		return false
+	return actor.configure(definition, runtime_state, p_controller, p_cell_size)
 
 
 func _take_prepared_batch(preparation: VehicleBatchPreparation) -> Array[Node3D]:
@@ -208,7 +278,17 @@ func _build_vehicle(
 	if not runtime_state.configure(definition, anchor_cell, facing):
 		return null
 
-	var actor := VehicleActorScript.new()
+	var actor_scene: PackedScene
+	match definition.assembly_id:
+		ARM_VEHICLE_ID:
+			actor_scene = ArmVehicleScene
+		TRANSPORT_VEHICLE_ID:
+			actor_scene = TransportVehicleScene
+		_:
+			return null
+	var actor := actor_scene.instantiate() as VehicleActorScript
+	if actor == null:
+		return null
 	if not actor.configure(definition, runtime_state, p_controller, p_cell_size):
 		actor.free()
 		return null
