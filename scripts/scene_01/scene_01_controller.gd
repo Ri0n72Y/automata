@@ -32,6 +32,10 @@ var timer: float = 0.0
 var automation_rate: float = 0.0
 var is_running: bool = false
 
+var _initial_grid_root_transform: Transform3D = Transform3D.IDENTITY
+var _preview_scale_enabled: bool = false
+var _preview_offset_enabled: bool = false
+
 
 func _enter_tree() -> void:
 	grid_root = get_node_or_null("SceneRoot/GridRoot") as Node3D
@@ -41,6 +45,8 @@ func _enter_tree() -> void:
 
 
 func _ready() -> void:
+	if grid_root != null:
+		_initial_grid_root_transform = grid_root.transform
 	if grid_model != null and not _configure_initial_grid_dependents():
 		push_error("Scene 01 grid dependents failed to initialize.")
 	reset_scene_state()
@@ -192,11 +198,61 @@ func reset_scene_state() -> void:
 	box_count = 3
 	target_box_count = 8
 	automation_rate = 0.0
+	_preview_scale_enabled = false
+	_preview_offset_enabled = false
+	if grid_root != null:
+		grid_root.transform = _initial_grid_root_transform
 	if grid_selection_controller != null:
 		grid_selection_controller.clear_hover()
 		grid_selection_controller.cancel_selection()
 	if scene_vehicle_manager != null:
 		scene_vehicle_manager.reset_vehicles()
+		scene_vehicle_manager.sync_vehicles_from_state()
+
+
+func preview_rotate_grid(direction: int) -> void:
+	if grid_root == null:
+		return
+	var step := clampi(direction, -1, 1)
+	grid_root.rotate_y(float(step) * PI * 0.5)
+	_sync_grid_transform_dependents()
+
+
+func preview_toggle_grid_scale() -> void:
+	if grid_root == null:
+		return
+	_preview_scale_enabled = not _preview_scale_enabled
+	grid_root.scale = Vector3(1.35, 1.0, 0.78) if _preview_scale_enabled else Vector3.ONE
+	_sync_grid_transform_dependents()
+
+
+func preview_toggle_grid_offset() -> void:
+	if grid_root == null:
+		return
+	_preview_offset_enabled = not _preview_offset_enabled
+	grid_root.position = (
+		_initial_grid_root_transform.origin + Vector3(1.5, 0.0, -0.75)
+		if _preview_offset_enabled
+		else _initial_grid_root_transform.origin
+	)
+	_sync_grid_transform_dependents()
+
+
+func preview_restore_grid_transform() -> void:
+	if grid_root == null:
+		return
+	_preview_scale_enabled = false
+	_preview_offset_enabled = false
+	grid_root.transform = _initial_grid_root_transform
+	_sync_grid_transform_dependents()
+
+
+func _sync_grid_transform_dependents() -> void:
+	if grid_selection_controller != null:
+		grid_selection_controller.clear_hover()
+		grid_selection_controller.cancel_selection()
+	if scene_vehicle_manager != null:
+		scene_vehicle_manager.sync_vehicles_from_state()
 
 
 func _configure_initial_grid_dependents() -> bool:
