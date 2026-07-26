@@ -13,7 +13,7 @@ tonemap_mode = 2
 
 [node name="Scene01CameraRig" type="Node3D"]
 script = ExtResource("1_camera_rig")
-auto_frame_grid = false
+auto_frame_grid = true
 
 [node name="SceneCamera" type="Camera3D" parent="."]
 unique_name_in_owner = true
