@@ -2,6 +2,7 @@ class_name VehicleRuntimeState
 extends RefCounted
 
 const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
+const MoveCommandScript := preload("res://scripts/vehicles/move_command.gd")
 
 enum Facing {
 	NORTH,
@@ -20,6 +21,7 @@ enum MotionState {
 var _definition: VehicleDefinitionScript
 var _arm_has_item: bool = false
 var _tray_count: int = 0
+var _active_move_command: MoveCommandScript
 
 var definition: VehicleDefinitionScript:
 	get:
@@ -32,6 +34,10 @@ var arm_has_item: bool:
 var tray_count: int:
 	get:
 		return _tray_count
+
+var active_move_command: MoveCommandScript:
+	get:
+		return _active_move_command
 
 var anchor_cell: Vector2i = Vector2i.ZERO
 var facing: int = Facing.NORTH
@@ -65,9 +71,32 @@ func reset() -> void:
 	anchor_cell = _initial_anchor_cell
 	facing = _initial_facing
 	motion_state = MotionState.WAITING
+	_active_move_command = null
 	command_queue.clear()
 	_arm_has_item = false
 	_tray_count = 0
+
+
+func assign_move_command(command: MoveCommandScript) -> bool:
+	if command == null or command.state != MoveCommandScript.State.MOVING:
+		return false
+	_active_move_command = command
+	motion_state = MotionState.MOVING
+	return true
+
+
+func complete_move_command() -> void:
+	if _active_move_command != null:
+		_active_move_command.state = MoveCommandScript.State.WAITING
+	_active_move_command = null
+	motion_state = MotionState.WAITING
+
+
+func block_move_command() -> void:
+	if _active_move_command != null:
+		_active_move_command.block()
+	_active_move_command = null
+	motion_state = MotionState.BLOCKED
 
 
 func set_arm_has_item(value: bool) -> bool:

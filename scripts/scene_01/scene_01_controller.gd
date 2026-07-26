@@ -5,6 +5,7 @@ const GridDebugViewScript := preload("res://scripts/grid/grid_debug_view.gd")
 const GridTileViewScript := preload("res://scripts/grid/grid_tile_view.gd")
 const SceneCameraRigScript := preload("res://scripts/camera/scene_01_camera_rig.gd")
 const GridSelectionControllerScript := preload("res://scripts/input/grid_selection_controller.gd")
+const VehicleSelectionControllerScript := preload("res://scripts/input/vehicle_selection_controller.gd")
 const Scene01VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 
 @export_group("Grid")
@@ -17,6 +18,7 @@ const Scene01VehicleManagerScript := preload("res://scripts/scene_01/scene_01_ve
 var grid_root: Node3D
 @onready var grid_tile_view: GridTileViewScript = %GridTileView
 @onready var grid_debug_view: GridDebugViewScript = %GridDebugView
+@onready var vehicle_selection_controller: VehicleSelectionControllerScript = %VehicleSelectionController
 @onready var grid_selection_controller: GridSelectionControllerScript = %GridSelectionController
 @onready var robot_root: Node3D = %RobotRoot
 @onready var scene_vehicle_manager: Scene01VehicleManagerScript = %Scene01VehicleManager
@@ -89,6 +91,8 @@ func initialize_grid() -> bool:
 		push_error("Scene 01 grid initialization failed because vehicle commit was rejected.")
 		return false
 
+	if vehicle_selection_controller != null:
+		vehicle_selection_controller.cancel_selection()
 	if grid_selection_controller != null:
 		grid_selection_controller.clear_hover()
 		grid_selection_controller.cancel_selection()
@@ -192,6 +196,8 @@ func reset_scene_state() -> void:
 	box_count = 3
 	target_box_count = 8
 	automation_rate = 0.0
+	if vehicle_selection_controller != null:
+		vehicle_selection_controller.cancel_selection()
 	if grid_selection_controller != null:
 		grid_selection_controller.clear_hover()
 		grid_selection_controller.cancel_selection()
@@ -232,8 +238,10 @@ func _configure_grid_presentation() -> void:
 
 	if scene_camera_rig != null:
 		scene_camera_rig.configure_for_grid(world_center, world_width, world_height)
+	var active_camera: Camera3D
+	if scene_camera_rig != null:
+		active_camera = scene_camera_rig.get_camera()
+	if vehicle_selection_controller != null:
+		vehicle_selection_controller.configure(active_camera, scene_vehicle_manager)
 	if grid_selection_controller != null:
-		var active_camera: Camera3D
-		if scene_camera_rig != null:
-			active_camera = scene_camera_rig.get_camera()
 		grid_selection_controller.configure(self, active_camera, grid_model.cell_size)

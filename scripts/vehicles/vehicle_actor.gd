@@ -1,8 +1,13 @@
 class_name VehicleActor
 extends Node3D
 
+signal move_started(target_anchor: Vector2i)
+signal move_completed(target_anchor: Vector2i)
+signal move_blocked()
+
 const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
 const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
+const MoveCommandScript := preload("res://scripts/vehicles/move_command.gd")
 
 @export var vehicle_selection_layer: int = 2
 
@@ -40,17 +45,14 @@ func configure(
 	name = "Vehicle_%s" % String(definition.assembly_id)
 	_rebuild_visual()
 	sync_from_state()
+	set_physics_process(false)
 	return true
 
 
 func sync_from_state() -> void:
 	if definition == null or runtime_state == null or controller == null:
 		return
-	global_position = controller.call(
-		"grid_footprint_center_to_world",
-		runtime_state.anchor_cell,
-		definition.footprint
-	)
+	global_position = _anchor_to_world(runtime_state.anchor_cell)
 	var grid_basis: Basis = controller.call("get_grid_world_basis")
 	global_basis = grid_basis * Basis(
 		Vector3.UP,
@@ -59,9 +61,74 @@ func sync_from_state() -> void:
 	_update_debug_label()
 
 
+func start_move(command: MoveCommandScript) -> bool:
+	if definition == null or runtime_state == null or controller == null:
+		return false
+	if not definition.can_move():
+		return false
+	if command == null or command.state != MoveCommandScript.State.MOVING:
+		return false
+	if command.path.is_empty() or command.path.front() != runtime_state.anchor_cell:
+		return false
+	if not runtime_state.assign_move_command(command):
+		return false
+
+	set_physics_process(true)
+	move_started.emit(command.target_anchor)
+	return true
+
+
+func _physics_process(delta: float) -> void:
+	advance_move(delta)
+
+
+func advance_move(delta: float) -> void:
+	if runtime_state == null:
+		set_physics_process(false)
+		return
+	var command: MoveCommandScript = runtime_state.active_move_command
+	if command == null or runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING:
+		set_physics_process(false)
+		return
+	if delta <= 0.0:
+		return
+
+	var next_index := command.path_index + 1
+	if next_index >= command.path.size():
+		_finish_move(command.target_anchor)
+		return
+
+	var next_anchor: Vector2i = command.path[next_index]
+	var target_position := _anchor_to_world(next_anchor)
+	var speed := runtime_state.get_effective_speed() * cell_size
+	if speed <= 0.0:
+		_block_move()
+		return
+
+	global_position = global_position.move_toward(target_position, speed * delta)
+	if not global_position.is_equal_approx(target_position):
+		return
+
+	global_position = target_position
+	runtime_state.anchor_cell = next_anchor
+	var finished := command.advance()
+	if finished:
+		_finish_move(command.target_anchor)
+
+
+func cancel_move() -> void:
+	if runtime_state == null or runtime_state.active_move_command == null:
+		return
+	runtime_state.block_move_command()
+	set_physics_process(false)
+	sync_from_state()
+	move_blocked.emit()
+
+
 func reset_actor() -> void:
 	if runtime_state == null:
 		return
+	set_physics_process(false)
 	runtime_state.reset()
 	sync_from_state()
 
@@ -98,6 +165,28 @@ func get_debug_label_text() -> String:
 	if _debug_label == null:
 		return ""
 	return _debug_label.text
+
+
+func _anchor_to_world(anchor: Vector2i) -> Vector3:
+	return controller.call(
+		"grid_footprint_center_to_world",
+		anchor,
+		definition.footprint
+	)
+
+
+func _finish_move(target_anchor: Vector2i) -> void:
+	runtime_state.anchor_cell = target_anchor
+	global_position = _anchor_to_world(target_anchor)
+	runtime_state.complete_move_command()
+	set_physics_process(false)
+	move_completed.emit(target_anchor)
+
+
+func _block_move() -> void:
+	runtime_state.block_move_command()
+	set_physics_process(false)
+	move_blocked.emit()
 
 
 func _rebuild_visual() -> void:
