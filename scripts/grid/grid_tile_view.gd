@@ -56,7 +56,7 @@ func get_tile_node(cell: Vector2i) -> MeshInstance3D:
 
 func get_ground_body() -> StaticBody3D:
 	if use_static_scene_tiles:
-		return get_node_or_null("GroundBody") as StaticBody3D
+		return get_node_or_null("Tiles/GroundBody") as StaticBody3D
 	if _active_tile_container == null:
 		return null
 	return _active_tile_container.get_node_or_null("GroundBody") as StaticBody3D
@@ -64,10 +64,10 @@ func get_ground_body() -> StaticBody3D:
 
 func _bind_static_scene() -> bool:
 	var tiles := get_node_or_null("Tiles") as Node3D
-	var ground_body := get_node_or_null("GroundBody") as StaticBody3D
+	var ground_body := get_node_or_null("Tiles/GroundBody") as StaticBody3D
 	if tiles == null or ground_body == null:
 		return false
-	_active_tile_container = self
+	_active_tile_container = tiles
 	_tile_count = 0
 	for cell_y in range(static_grid_height):
 		for cell_x in range(static_grid_width):
@@ -86,15 +86,24 @@ func _apply_model_to_static_scene(model: GridModelScript) -> bool:
 	if tiles == null:
 		return false
 	tiles.position = model.local_origin
-	tiles.scale = Vector3(model.cell_size, 1.0, model.cell_size)
+	tiles.scale = Vector3.ONE
 
 	_tile_count = 0
 	for cell_y in range(static_grid_height):
+		var row := get_node_or_null("Tiles/Row_%d" % cell_y) as Node3D
+		if row != null:
+			row.position = Vector3(0.0, 0.0, (float(cell_y) + 0.5) * model.cell_size)
 		for cell_x in range(static_grid_width):
 			var cell := Vector2i(cell_x, cell_y)
 			var tile := get_tile_node(cell)
 			if tile == null:
 				continue
+			tile.position = Vector3(
+				(float(cell_x) + 0.5) * model.cell_size,
+				-tile_height * 0.5,
+				0.0
+			)
+			tile.scale = Vector3(model.cell_size, 1.0, model.cell_size)
 			var inside_model := cell_x < model.width and cell_y < model.height
 			tile.visible = inside_model
 			if not inside_model:
@@ -115,7 +124,7 @@ func _apply_model_to_static_scene(model: GridModelScript) -> bool:
 					ground_depth,
 					float(model.height) * model.cell_size
 				)
-				ground_shape.position = model.local_origin + Vector3(
+				ground_shape.position = Vector3(
 					float(model.width) * model.cell_size * 0.5,
 					-ground_depth * 0.5,
 					float(model.height) * model.cell_size * 0.5
@@ -134,7 +143,7 @@ func _static_material_for_cell_type(cell_type: int) -> Material:
 
 
 func _rebuild_dynamic(model: GridModelScript) -> void:
-	if _active_tile_container != null and _active_tile_container != self:
+	if _active_tile_container != null and not use_static_scene_tiles:
 		_active_tile_container.queue_free()
 		_active_tile_container = null
 	_tile_count = 0
