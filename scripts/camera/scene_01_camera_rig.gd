@@ -1,11 +1,17 @@
 class_name Scene01CameraRig
 extends Node3D
 
+@export var auto_frame_grid: bool = true
 @export_range(1.0, 2.0, 0.05) var framing_margin: float = 1.25
 @export_range(0.5, 4.0, 0.1) var distance_multiplier: float = 1.5
 @export_range(1.0, 90.0, 1.0) var minimum_distance: float = 10.0
 
 @onready var camera: Camera3D = %SceneCamera
+
+
+func _ready() -> void:
+	if camera != null:
+		camera.current = true
 
 
 func configure_for_grid(
@@ -15,6 +21,9 @@ func configure_for_grid(
 ) -> void:
 	if camera == null:
 		push_error("Scene 01 camera rig is missing SceneCamera.")
+		return
+	if not auto_frame_grid:
+		camera.current = true
 		return
 
 	global_position = world_center
