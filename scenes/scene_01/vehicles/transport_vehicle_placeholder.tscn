@@ -1,0 +1,127 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_actor.gd" id="1_actor"]
+
+[sub_resource type="StandardMaterial3D" id="ChassisMaterial"]
+albedo_color = Color(0.04, 0.38, 0.26, 1)
+metallic = 0.28
+roughness = 0.5
+
+[sub_resource type="StandardMaterial3D" id="WheelMaterial"]
+albedo_color = Color(0.025, 0.03, 0.04, 1)
+metallic = 0.08
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="TrayMaterial"]
+albedo_color = Color(0.18, 0.7, 0.78, 1)
+metallic = 0.42
+roughness = 0.34
+
+[sub_resource type="StandardMaterial3D" id="RailMaterial"]
+albedo_color = Color(0.75, 0.82, 0.86, 1)
+metallic = 0.6
+roughness = 0.28
+
+[sub_resource type="StandardMaterial3D" id="MarkerMaterial"]
+albedo_color = Color(0.98, 0.74, 0.08, 1)
+emission_enabled = true
+emission = Color(0.48, 0.26, 0.01, 1)
+emission_energy_multiplier = 0.65
+roughness = 0.42
+
+[sub_resource type="BoxMesh" id="ChassisMesh"]
+size = Vector3(1.68, 0.34, 1.62)
+
+[sub_resource type="CylinderMesh" id="WheelMesh"]
+top_radius = 0.23
+bottom_radius = 0.23
+height = 0.24
+radial_segments = 20
+
+[sub_resource type="BoxMesh" id="TrayMesh"]
+size = Vector3(1.48, 0.18, 1.4)
+
+[sub_resource type="BoxMesh" id="RailMesh"]
+size = Vector3(1.54, 0.22, 0.1)
+
+[sub_resource type="BoxMesh" id="MarkerMesh"]
+size = Vector3(0.46, 0.12, 0.22)
+
+[sub_resource type="BoxShape3D" id="SelectionShape"]
+size = Vector3(1.82, 1.15, 1.82)
+
+[node name="TransportVehicle" type="Node3D"]
+script = ExtResource("1_actor")
+use_static_scene_visual = true
+vehicle_preset_id = &"transport_vehicle"
+
+[node name="VisualRoot" type="Node3D" parent="."]
+unique_name_in_owner = true
+
+[node name="Body" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.31, 0)
+mesh = SubResource("ChassisMesh")
+material_override = SubResource("ChassisMaterial")
+
+[node name="WheelFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.72, 0.22, -0.62)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelMesh")
+material_override = SubResource("WheelMaterial")
+
+[node name="WheelFrontRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.72, 0.22, -0.62)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelMesh")
+material_override = SubResource("WheelMaterial")
+
+[node name="WheelRearLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.72, 0.22, 0.62)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelMesh")
+material_override = SubResource("WheelMaterial")
+
+[node name="WheelRearRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.72, 0.22, 0.62)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelMesh")
+material_override = SubResource("WheelMaterial")
+
+[node name="Tray" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.63, 0)
+mesh = SubResource("TrayMesh")
+material_override = SubResource("TrayMaterial")
+
+[node name="TrayRailLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.81, -0.66)
+mesh = SubResource("RailMesh")
+material_override = SubResource("RailMaterial")
+
+[node name="TrayRailRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.81, 0.66)
+mesh = SubResource("RailMesh")
+material_override = SubResource("RailMaterial")
+
+[node name="DirectionMarker" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.57, -0.77)
+mesh = SubResource("MarkerMesh")
+material_override = SubResource("MarkerMaterial")
+
+[node name="VehicleSelectionArea" type="Area3D" parent="VisualRoot"]
+unique_name_in_owner = true
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="VisualRoot/VehicleSelectionArea"]
+position = Vector3(0, 0.58, 0)
+shape = SubResource("SelectionShape")
+
+[node name="DebugLabel" type="Label3D" parent="VisualRoot"]
+unique_name_in_owner = true
+position = Vector3(0, 1.45, 0)
+billboard = 1
+no_depth_test = true
+text = "Transport Vehicle\n16.0 kg"
+font_size = 28
+outline_size = 7
+modulate = Color(0.92, 1, 0.96, 1)
