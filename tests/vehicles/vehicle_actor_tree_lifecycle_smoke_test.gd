@@ -23,7 +23,13 @@ class ControllerStub extends Node3D:
 
 
 func _init() -> void:
-	var definition := _create_definition()
+	call_deferred("_run")
+
+
+func _run() -> void:
+	await process_frame
+
+	var definition: VehicleDefinition = _create_definition()
 	var runtime := VEHICLE_RUNTIME_STATE_SCRIPT.new()
 	var controller := ControllerStub.new()
 	var actor := VEHICLE_ACTOR_SCRIPT.new()
@@ -44,12 +50,15 @@ func _init() -> void:
 
 	root.add_child(controller)
 	controller.add_child(actor)
+	await process_frame
+
 	_expect_true(actor.is_inside_tree(), "Actor should enter the tree after attachment.")
-	_expect_equal(
-		actor.global_position,
-		Vector3(3.0, 0.0, 4.0),
-		"Actor should apply its runtime transform after entering the tree."
-	)
+	if actor.is_inside_tree():
+		_expect_equal(
+			actor.global_position,
+			Vector3(3.0, 0.0, 4.0),
+			"Actor should apply its runtime transform after entering the tree."
+		)
 
 	_finish(actor, controller)
 
