@@ -5,6 +5,7 @@ const GridDebugViewScript := preload("res://scripts/grid/grid_debug_view.gd")
 const GridTileViewScript := preload("res://scripts/grid/grid_tile_view.gd")
 const SceneCameraRigScript := preload("res://scripts/camera/scene_01_camera_rig.gd")
 const GridSelectionControllerScript := preload("res://scripts/input/grid_selection_controller.gd")
+const Scene01VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 
 @export_group("Grid")
 @export_range(1, 256, 1) var grid_width: int = 12
@@ -18,6 +19,7 @@ var grid_root: Node3D
 @onready var grid_debug_view: GridDebugViewScript = %GridDebugView
 @onready var grid_selection_controller: GridSelectionControllerScript = %GridSelectionController
 @onready var robot_root: Node3D = %RobotRoot
+@onready var scene_vehicle_manager: Scene01VehicleManagerScript = %Scene01VehicleManager
 @onready var object_root: Node3D = %ObjectRoot
 @onready var camera_root: Node3D = %CameraRoot
 @onready var scene_camera_rig: SceneCameraRigScript = %Scene01CameraRig
@@ -39,8 +41,8 @@ func _enter_tree() -> void:
 
 
 func _ready() -> void:
-	if grid_model != null:
-		_configure_grid_dependents()
+	if grid_model != null and not _configure_initial_grid_dependents():
+		push_error("Scene 01 grid dependents failed to initialize.")
 	reset_scene_state()
 
 
@@ -60,12 +62,37 @@ func initialize_grid() -> bool:
 		push_error("Scene 01 grid configuration is invalid.")
 		return false
 
+	if not is_node_ready():
+		grid_model = model
+		return true
+
+	var previous_model := grid_model
 	grid_model = model
-	if is_node_ready():
-		if grid_selection_controller != null:
-			grid_selection_controller.clear_hover()
-			grid_selection_controller.cancel_selection()
-		_configure_grid_dependents()
+	var preparation: Scene01VehicleManagerScript.VehicleBatchPreparation
+	if scene_vehicle_manager != null:
+		preparation = scene_vehicle_manager.prepare_vehicle_batch(
+			self,
+			model.cell_size
+		)
+		if preparation == null:
+			grid_model = previous_model
+			push_error(
+				"Scene 01 grid initialization failed because vehicles rejected the candidate grid."
+			)
+			return false
+
+	if scene_vehicle_manager != null and not scene_vehicle_manager.commit_vehicle_batch(
+		self,
+		preparation
+	):
+		grid_model = previous_model
+		push_error("Scene 01 grid initialization failed because vehicle commit was rejected.")
+		return false
+
+	if grid_selection_controller != null:
+		grid_selection_controller.clear_hover()
+		grid_selection_controller.cancel_selection()
+	_configure_grid_presentation()
 	return true
 
 
@@ -82,6 +109,27 @@ func grid_cell_to_world(cell: Vector2i) -> Vector3:
 		push_error("Scene 01 grid is not initialized.")
 		return Vector3.ZERO
 	return grid_root.to_global(grid_model.cell_to_position(cell))
+
+
+func grid_footprint_center_to_world(
+	anchor_cell: Vector2i,
+	footprint: Vector2i
+) -> Vector3:
+	if grid_root == null or grid_model == null:
+		push_error("Scene 01 grid is not initialized.")
+		return Vector3.ZERO
+	var local_center := grid_model.cell_to_position(anchor_cell) + Vector3(
+		float(footprint.x - 1) * grid_model.cell_size * 0.5,
+		0.0,
+		float(footprint.y - 1) * grid_model.cell_size * 0.5
+	)
+	return grid_root.to_global(local_center)
+
+
+func get_grid_world_basis() -> Basis:
+	if grid_root == null:
+		return Basis.IDENTITY
+	return grid_root.global_basis
 
 
 func is_grid_cell_valid(cell: Vector2i) -> bool:
@@ -112,6 +160,20 @@ func is_grid_cell_walkable(cell: Vector2i) -> bool:
 	return grid_model.is_cell_walkable(cell)
 
 
+func is_grid_footprint_walkable(
+	anchor_cell: Vector2i,
+	footprint: Vector2i
+) -> bool:
+	if grid_model == null or footprint.x <= 0 or footprint.y <= 0:
+		return false
+	for offset_y in range(footprint.y):
+		for offset_x in range(footprint.x):
+			var cell := anchor_cell + Vector2i(offset_x, offset_y)
+			if not grid_model.is_cell_walkable(cell):
+				return false
+	return true
+
+
 func run_scene() -> void:
 	is_running = true
 
@@ -133,9 +195,23 @@ func reset_scene_state() -> void:
 	if grid_selection_controller != null:
 		grid_selection_controller.clear_hover()
 		grid_selection_controller.cancel_selection()
+	if scene_vehicle_manager != null:
+		scene_vehicle_manager.reset_vehicles()
 
 
-func _configure_grid_dependents() -> void:
+func _configure_initial_grid_dependents() -> bool:
+	if grid_model == null or grid_root == null:
+		return false
+	if scene_vehicle_manager != null and not scene_vehicle_manager.configure(
+		self,
+		grid_model.cell_size
+	):
+		return false
+	_configure_grid_presentation()
+	return true
+
+
+func _configure_grid_presentation() -> void:
 	if grid_model == null or grid_root == null:
 		return
 
