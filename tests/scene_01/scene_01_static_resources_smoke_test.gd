@@ -49,7 +49,7 @@ func _test_static_field() -> void:
 			if field.get_node_or_null(tile_path) != null:
 				tile_count += 1
 	_expect_equal(tile_count, 96, "Static field should expose all 96 editor-visible tiles.")
-	_expect_node(field, "GroundBody/GroundShape", "Static field should include ground collision.")
+	_expect_node(field, "Tiles/GroundBody/GroundShape", "Static field should include ground collision.")
 	field.free()
 
 
