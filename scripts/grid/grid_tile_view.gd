@@ -10,9 +10,22 @@ const GridModelScript := preload("res://scripts/grid/grid_model.gd")
 @export var boundary_color: Color = Color(0.12, 0.15, 0.2, 1.0)
 @export var ground_collision_layer: int = 1
 
+@export_group("Static Scene")
+@export var use_static_scene_tiles: bool = false
+@export_range(1, 256, 1) var static_grid_width: int = 12
+@export_range(1, 256, 1) var static_grid_height: int = 8
+@export var normal_tile_material: Material
+@export var power_tile_material: Material
+@export var boundary_tile_material: Material
+
 var _active_tile_container: Node3D
 var _draw_generation: int = 0
 var _tile_count: int = 0
+
+
+func _ready() -> void:
+	if use_static_scene_tiles:
+		_bind_static_scene()
 
 
 func draw(model: GridModelScript) -> void:
@@ -20,7 +33,108 @@ func draw(model: GridModelScript) -> void:
 
 
 func rebuild(model: GridModelScript) -> void:
-	if _active_tile_container != null:
+	if use_static_scene_tiles and _apply_model_to_static_scene(model):
+		return
+	_rebuild_dynamic(model)
+
+
+func get_tile_count() -> int:
+	return _tile_count
+
+
+func get_tile_node(cell: Vector2i) -> MeshInstance3D:
+	if use_static_scene_tiles:
+		return get_node_or_null(
+			"Tiles/Row_%d/Tile_%d" % [cell.y, cell.x]
+		) as MeshInstance3D
+	if _active_tile_container == null:
+		return null
+	return _active_tile_container.get_node_or_null(
+		"Tiles/Tile_%d_%d" % [cell.x, cell.y]
+	) as MeshInstance3D
+
+
+func get_ground_body() -> StaticBody3D:
+	if use_static_scene_tiles:
+		return get_node_or_null("GroundBody") as StaticBody3D
+	if _active_tile_container == null:
+		return null
+	return _active_tile_container.get_node_or_null("GroundBody") as StaticBody3D
+
+
+func _bind_static_scene() -> bool:
+	var tiles := get_node_or_null("Tiles") as Node3D
+	var ground_body := get_node_or_null("GroundBody") as StaticBody3D
+	if tiles == null or ground_body == null:
+		return false
+	_active_tile_container = self
+	_tile_count = 0
+	for cell_y in range(static_grid_height):
+		for cell_x in range(static_grid_width):
+			if get_tile_node(Vector2i(cell_x, cell_y)) != null:
+				_tile_count += 1
+	return true
+
+
+func _apply_model_to_static_scene(model: GridModelScript) -> bool:
+	if model == null or not _bind_static_scene():
+		return false
+	if model.width > static_grid_width or model.height > static_grid_height:
+		return false
+
+	var tiles := get_node_or_null("Tiles") as Node3D
+	if tiles == null:
+		return false
+	tiles.position = model.local_origin
+	tiles.scale = Vector3(model.cell_size, 1.0, model.cell_size)
+
+	_tile_count = 0
+	for cell_y in range(static_grid_height):
+		for cell_x in range(static_grid_width):
+			var cell := Vector2i(cell_x, cell_y)
+			var tile := get_tile_node(cell)
+			if tile == null:
+				continue
+			var inside_model := cell_x < model.width and cell_y < model.height
+			tile.visible = inside_model
+			if not inside_model:
+				continue
+			tile.material_override = _static_material_for_cell_type(model.get_cell_type(cell))
+			_tile_count += 1
+
+	var ground_body := get_ground_body()
+	if ground_body != null:
+		ground_body.collision_layer = ground_collision_layer
+		var ground_shape := ground_body.get_node_or_null("GroundShape") as CollisionShape3D
+		if ground_shape != null:
+			var box_shape := ground_shape.shape as BoxShape3D
+			if box_shape != null:
+				var ground_depth := maxf(tile_height, 0.05)
+				box_shape.size = Vector3(
+					float(model.width) * model.cell_size,
+					ground_depth,
+					float(model.height) * model.cell_size
+				)
+				ground_shape.position = model.local_origin + Vector3(
+					float(model.width) * model.cell_size * 0.5,
+					-ground_depth * 0.5,
+					float(model.height) * model.cell_size * 0.5
+				)
+	return true
+
+
+func _static_material_for_cell_type(cell_type: int) -> Material:
+	match cell_type:
+		GridModelScript.CellType.NORMAL_TILE:
+			return normal_tile_material
+		GridModelScript.CellType.WHITE_POWER_TILE:
+			return power_tile_material
+		_:
+			return boundary_tile_material
+
+
+func _rebuild_dynamic(model: GridModelScript) -> void:
+	if _active_tile_container != null and _active_tile_container != self:
 		_active_tile_container.queue_free()
 		_active_tile_container = null
 	_tile_count = 0
@@ -59,7 +173,7 @@ func rebuild(model: GridModelScript) -> void:
 				boundary_material
 			)
 			tile.position = model.cell_to_position(cell) - Vector3.UP * tile_height * 0.5
-			tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 			tiles.add_child(tile)
 			_tile_count += 1
 
@@ -87,31 +201,14 @@ func rebuild(model: GridModelScript) -> void:
 	ground_body.add_child(ground_shape)
 
 
-func get_tile_count() -> int:
-	return _tile_count
-
-
-func get_tile_node(cell: Vector2i) -> MeshInstance3D:
-	if _active_tile_container == null:
-		return null
-	return _active_tile_container.get_node_or_null(
-		"Tiles/Tile_%d_%d" % [cell.x, cell.y]
-	) as MeshInstance3D
-
-
-func get_ground_body() -> StaticBody3D:
-	if _active_tile_container == null:
-		return null
-	return _active_tile_container.get_node_or_null("GroundBody") as StaticBody3D
-
-
 func _create_tile_material(color: Color, use_emission: bool = false) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.albedo_color = color
+	material.metallic = 0.04
+	material.roughness = 0.8
 	if use_emission:
 		material.emission_enabled = true
-		material.emission = color
+		material.emission = color * 0.18
 		material.emission_energy_multiplier = 0.35
 	return material
 
