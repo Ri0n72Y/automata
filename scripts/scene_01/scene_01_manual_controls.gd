@@ -9,21 +9,24 @@ func _ready() -> void:
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
-	if not event is InputEventKey or not event.pressed or event.echo:
+	if not (event is InputEventKey):
 		return
-	match event.keycode:
+	var key_event := event as InputEventKey
+	if not key_event.pressed or key_event.echo:
+		return
+	match key_event.keycode:
 		KEY_R:
-		_on_reset_pressed()
+			_on_reset_pressed()
 		KEY_Q:
-		_call_scene_action("preview_rotate_grid", [-1])
+			_call_scene_action("preview_rotate_grid", [-1])
 		KEY_E:
-		_call_scene_action("preview_rotate_grid", [1])
+			_call_scene_action("preview_rotate_grid", [1])
 		KEY_F:
-		_on_scale_pressed()
+			_on_scale_pressed()
 		KEY_G:
-		_on_offset_pressed()
+			_on_offset_pressed()
 		KEY_HOME:
-		_on_restore_pressed()
+			_on_restore_pressed()
 
 
 func _on_reset_pressed() -> void:
