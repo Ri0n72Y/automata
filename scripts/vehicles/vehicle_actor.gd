@@ -14,6 +14,7 @@ var cell_size: float = 1.0
 var _visual_root: Node3D
 var _selection_area: Area3D
 var _debug_label: Label3D
+var _visual_parts: Dictionary = {}
 var _visual_generation: int = 0
 
 
@@ -94,8 +95,22 @@ func get_selection_area() -> Area3D:
 	return _selection_area
 
 
+func get_visual_part(part_name: StringName) -> Node3D:
+	var part: Variant = _visual_parts.get(part_name)
+	if part is Node3D and is_instance_valid(part):
+		return part
+	return null
+
+
+func get_debug_label_text() -> String:
+	if _debug_label == null or not is_instance_valid(_debug_label):
+		return ""
+	return _debug_label.text
+
+
 func _rebuild_visual() -> void:
 	_visual_generation += 1
+	_visual_parts.clear()
 	if _visual_root != null and is_instance_valid(_visual_root):
 		_visual_root.queue_free()
 
@@ -108,17 +123,19 @@ func _rebuild_visual() -> void:
 		cell_size * 0.45,
 		float(definition.footprint.y) * cell_size * 0.82
 	)
-	var body := MeshInstance3D.new()
-	var body_mesh := BoxMesh.new()
-	body_mesh.size = footprint_size
-	body.mesh = body_mesh
+	var body := _create_box_part(&"Body", footprint_size)
 	body.position.y = footprint_size.y * 0.5
-	_visual_root.add_child(body)
+
+	if definition.vehicle_kind == VehicleDefinitionScript.VehicleKind.ARM:
+		_build_arm_visual(footprint_size)
+	elif definition.vehicle_kind == VehicleDefinitionScript.VehicleKind.TRANSPORT:
+		_build_transport_visual(footprint_size)
 
 	_selection_area = Area3D.new()
 	_selection_area.name = "VehicleSelectionArea"
 	_selection_area.collision_layer = 1 << max(vehicle_selection_layer - 1, 0)
 	_selection_area.collision_mask = 0
+	_selection_area.set_meta("vehicle_id", definition.assembly_id)
 	var collision_shape := CollisionShape3D.new()
 	var box_shape := BoxShape3D.new()
 	box_shape.size = footprint_size
@@ -128,12 +145,48 @@ func _rebuild_visual() -> void:
 	_visual_root.add_child(_selection_area)
 
 	_debug_label = Label3D.new()
-	_debug_label.position = Vector3(0.0, footprint_size.y + cell_size * 0.18, 0.0)
+	_debug_label.name = "DebugLabel"
+	_debug_label.position = Vector3(0.0, footprint_size.y + cell_size * 0.9, 0.0)
 	_debug_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_debug_label.no_depth_test = true
 	_debug_label.font_size = 28
 	_visual_root.add_child(_debug_label)
 	_update_debug_label()
+
+
+func _build_arm_visual(footprint_size: Vector3) -> void:
+	var column_size := Vector3(cell_size * 0.28, cell_size * 0.85, cell_size * 0.28)
+	var column := _create_box_part(&"ArmColumn", column_size)
+	column.position = Vector3(0.0, footprint_size.y + column_size.y * 0.5, 0.0)
+
+	var beam_size := Vector3(cell_size * 0.95, cell_size * 0.18, cell_size * 0.22)
+	var beam := _create_box_part(&"ArmBeam", beam_size)
+	beam.position = Vector3(
+		cell_size * 0.28,
+		footprint_size.y + column_size.y + beam_size.y * 0.5,
+		0.0
+	)
+
+
+func _build_transport_visual(footprint_size: Vector3) -> void:
+	var tray_size := Vector3(
+		footprint_size.x * 0.86,
+		cell_size * 0.14,
+		footprint_size.z * 0.86
+	)
+	var tray := _create_box_part(&"Tray", tray_size)
+	tray.position = Vector3(0.0, footprint_size.y + tray_size.y * 0.5, 0.0)
+
+
+func _create_box_part(part_name: StringName, size: Vector3) -> MeshInstance3D:
+	var part := MeshInstance3D.new()
+	part.name = String(part_name)
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	part.mesh = mesh
+	_visual_root.add_child(part)
+	_visual_parts[part_name] = part
+	return part
 
 
 func _update_debug_label() -> void:
