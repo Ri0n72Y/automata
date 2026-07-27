@@ -30,15 +30,21 @@ var _view_direction: int = ViewDirection.SOUTHEAST
 var _world_center: Vector3 = Vector3.ZERO
 var _world_width: float = 1.0
 var _world_height: float = 1.0
+var _orbit_camera_size: float = 1.0
 var _is_configured: bool = false
 var _rendered_azimuth_degrees: float = 45.0
 var _transition_tween: Tween
+var _transition_generation: int = 0
+var _input_origin_direction: int = ViewDirection.SOUTHEAST
+var _input_target_direction: int = ViewDirection.SOUTHEAST
+var _input_rotation_sign: int = 0
 
 
 func _ready() -> void:
 	_ensure_input_actions()
 	_view_direction = initial_view_direction
 	_rendered_azimuth_degrees = _get_direction_azimuth(_view_direction)
+	_clear_input_transition()
 	if camera != null:
 		camera.current = true
 
@@ -60,11 +66,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		):
 			return
 	_ensure_input_actions()
-	if event.is_action_pressed(ROTATE_COUNTERCLOCKWISE_ACTION):
-		rotate_counterclockwise()
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(ROTATE_CLOCKWISE_ACTION):
+	if event.is_action_pressed(ROTATE_CLOCKWISE_ACTION):
 		rotate_clockwise()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(ROTATE_COUNTERCLOCKWISE_ACTION):
+		rotate_counterclockwise()
 		get_viewport().set_input_as_handled()
 
 
@@ -81,6 +87,7 @@ func configure_for_grid(
 	_world_width = maxf(world_width, 0.01)
 	_world_height = maxf(world_height, 0.01)
 	_kill_transition()
+	_clear_input_transition()
 	if not auto_frame_grid:
 		_is_configured = false
 		camera.current = true
@@ -93,28 +100,23 @@ func configure_for_grid(
 	camera.near = 0.1
 	camera.far = maxf(_calculate_orbit_distance() * 4.0, 100.0)
 	camera.current = true
+	_orbit_camera_size = _calculate_orbit_safe_size()
+	camera.size = _orbit_camera_size
 	_rendered_azimuth_degrees = _get_direction_azimuth(_view_direction)
 	_set_camera_azimuth(_rendered_azimuth_degrees)
 
 
 func set_view_direction(direction: int, animate: bool = true) -> bool:
+	_clear_input_transition()
 	return _set_view_direction(direction, animate, 0)
 
 
 func rotate_clockwise(animate: bool = true) -> void:
-	_set_view_direction(
-		(_view_direction + 1) % ViewDirection.size(),
-		animate,
-		1
-	)
+	_request_rotation(1, animate)
 
 
 func rotate_counterclockwise(animate: bool = true) -> void:
-	_set_view_direction(
-		(_view_direction - 1 + ViewDirection.size()) % ViewDirection.size(),
-		animate,
-		-1
-	)
+	_request_rotation(-1, animate)
 
 
 func get_view_direction() -> int:
@@ -133,6 +135,42 @@ func get_orthographic_size() -> float:
 
 func is_transitioning() -> bool:
 	return _transition_tween != null and _transition_tween.is_valid()
+
+
+func _request_rotation(rotation_sign: int, animate: bool) -> void:
+	var normalized_sign := clampi(rotation_sign, -1, 1)
+	if normalized_sign == 0:
+		return
+	if not animate:
+		_clear_input_transition()
+		_set_view_direction(
+			_wrap_direction(_view_direction + normalized_sign),
+			false,
+			normalized_sign
+		)
+		return
+
+	if _input_rotation_sign == 0 or not is_transitioning():
+		_input_origin_direction = _view_direction
+		_input_rotation_sign = normalized_sign
+		_input_target_direction = _wrap_direction(
+			_input_origin_direction + _input_rotation_sign
+		)
+		_set_view_direction(
+			_input_target_direction,
+			true,
+			_input_rotation_sign
+		)
+		return
+
+	var desired_direction := (
+		_input_target_direction
+		if normalized_sign == _input_rotation_sign
+		else _input_origin_direction
+	)
+	if desired_direction == _view_direction:
+		return
+	_set_view_direction(desired_direction, true, normalized_sign)
 
 
 func _set_view_direction(
@@ -154,6 +192,8 @@ func _set_view_direction(
 	view_direction_changed.emit(_view_direction)
 	if transition_started:
 		view_transition_started.emit(previous_direction, _view_direction)
+	elif not animate:
+		_clear_input_transition()
 	return true
 
 
@@ -163,8 +203,8 @@ func _is_text_input_focused() -> bool:
 
 
 func _ensure_input_actions() -> void:
-	_ensure_key_action(ROTATE_COUNTERCLOCKWISE_ACTION, KEY_Q)
-	_ensure_key_action(ROTATE_CLOCKWISE_ACTION, KEY_E)
+	_ensure_key_action(ROTATE_CLOCKWISE_ACTION, KEY_Q)
+	_ensure_key_action(ROTATE_COUNTERCLOCKWISE_ACTION, KEY_E)
 
 
 func _ensure_key_action(action: StringName, keycode: Key) -> void:
@@ -199,6 +239,8 @@ func _apply_view_direction(animate: bool, preferred_rotation_sign: int) -> bool:
 		return false
 
 	var effective_duration := rotation_duration * angular_distance / QUARTER_TURN_DEGREES
+	_transition_generation += 1
+	var generation := _transition_generation
 	_transition_tween = create_tween()
 	_transition_tween.set_trans(Tween.TRANS_SINE)
 	_transition_tween.set_ease(Tween.EASE_IN_OUT)
@@ -209,7 +251,7 @@ func _apply_view_direction(animate: bool, preferred_rotation_sign: int) -> bool:
 		effective_duration
 	)
 	_transition_tween.finished.connect(
-		_on_transition_finished.bind(_view_direction, canonical_target)
+		_on_transition_finished.bind(_view_direction, canonical_target, generation)
 	)
 	return true
 
@@ -244,17 +286,31 @@ func _calculate_orbit_distance() -> float:
 	return maxf(diagonal * distance_multiplier, minimum_distance)
 
 
+func _calculate_orbit_safe_size() -> float:
+	var half_diagonal := sqrt(
+		_world_width * _world_width + _world_height * _world_height
+	) * 0.5
+	var elevation_radians := deg_to_rad(clampf(elevation_degrees, 10.0, 80.0))
+	var half_projected_height := half_diagonal * sin(elevation_radians)
+	var half_projected_width := half_diagonal
+	var viewport_size := camera.get_viewport().get_visible_rect().size
+	var viewport_aspect := 1.0
+	if viewport_size.y > 0.0:
+		viewport_aspect = maxf(viewport_size.x / viewport_size.y, 0.01)
+	var required_height := maxf(
+		half_projected_height * 2.0,
+		half_projected_width * 2.0 / viewport_aspect
+	)
+	return maxf(required_height * framing_margin, 1.0)
+
+
 func _set_camera_azimuth(azimuth_degrees: float) -> void:
 	if camera == null:
 		return
 	_rendered_azimuth_degrees = azimuth_degrees
 	camera.position = _calculate_camera_position(azimuth_degrees)
 	camera.look_at(_world_center, Vector3.UP)
-	camera.size = _calculate_required_size(
-		_world_center,
-		_world_width,
-		_world_height
-	)
+	camera.size = _orbit_camera_size
 
 
 func _calculate_camera_position(azimuth_degrees: float) -> Vector3:
@@ -272,20 +328,35 @@ func _calculate_camera_position(azimuth_degrees: float) -> Vector3:
 
 func _on_transition_finished(
 	target_direction: int,
-	canonical_target: float
+	canonical_target: float,
+	generation: int
 ) -> void:
+	if generation != _transition_generation:
+		return
 	_transition_tween = null
 	_rendered_azimuth_degrees = canonical_target
 	_set_camera_azimuth(_rendered_azimuth_degrees)
+	_clear_input_transition()
 	view_transition_finished.emit(target_direction)
 
 
 func _kill_transition() -> void:
+	_transition_generation += 1
 	if _transition_tween == null:
 		return
 	if _transition_tween.is_valid():
 		_transition_tween.kill()
 	_transition_tween = null
+
+
+func _clear_input_transition() -> void:
+	_input_origin_direction = _view_direction
+	_input_target_direction = _view_direction
+	_input_rotation_sign = 0
+
+
+func _wrap_direction(direction: int) -> int:
+	return posmod(direction, ViewDirection.size())
 
 
 func _get_direction_azimuth(direction: int) -> float:
@@ -299,36 +370,3 @@ func _get_direction_azimuth(direction: int) -> float:
 		ViewDirection.NORTHEAST:
 			return 315.0
 	return 45.0
-
-
-func _calculate_required_size(
-	world_center: Vector3,
-	world_width: float,
-	world_height: float
-) -> float:
-	var half_width := maxf(world_width, 0.01) * 0.5
-	var half_height := maxf(world_height, 0.01) * 0.5
-	var corners: Array[Vector3] = [
-		world_center + Vector3(-half_width, 0.0, -half_height),
-		world_center + Vector3(half_width, 0.0, -half_height),
-		world_center + Vector3(-half_width, 0.0, half_height),
-		world_center + Vector3(half_width, 0.0, half_height),
-	]
-
-	var half_projected_width: float = 0.0
-	var half_projected_height: float = 0.0
-	for corner in corners:
-		var camera_local_corner: Vector3 = camera.to_local(corner)
-		half_projected_width = maxf(half_projected_width, absf(camera_local_corner.x))
-		half_projected_height = maxf(half_projected_height, absf(camera_local_corner.y))
-
-	var viewport_size := camera.get_viewport().get_visible_rect().size
-	var viewport_aspect := 1.0
-	if viewport_size.y > 0.0:
-		viewport_aspect = maxf(viewport_size.x / viewport_size.y, 0.01)
-
-	var required_height := maxf(
-		half_projected_height * 2.0,
-		half_projected_width * 2.0 / viewport_aspect
-	)
-	return maxf(required_height * framing_margin, 1.0)
