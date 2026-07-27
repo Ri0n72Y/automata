@@ -18,8 +18,8 @@ mouse_filter = 2
 layout_mode = 0
 offset_left = 16.0
 offset_top = 16.0
-offset_right = 392.0
-offset_bottom = 392.0
+offset_right = 420.0
+offset_bottom = 458.0
 mouse_filter = 1
 
 [node name="Margin" type="MarginContainer" parent="RootControl/Panel"]
@@ -35,16 +35,17 @@ theme_override_constants/separation = 8
 
 [node name="Title" type="Label" parent="RootControl/Panel/Margin/VBox"]
 layout_mode = 2
-text = "Scene 01 · Camera & Static Preview"
+text = "Scene 01 · Manual MoveTo"
 theme_override_font_sizes/font_size = 20
 
 [node name="Instructions" type="Label" parent="RootControl/Panel/Margin/VBox"]
 layout_mode = 2
-text = "Q: camera clockwise · E: camera counterclockwise\nShift+Q: GridRoot +90° · Shift+E: GridRoot -90°\nRepeated input during rotation only changes the current target\nF: toggle non-uniform scale\nG: toggle offset\nR: reset scene\nHome: restore transform"
+text = "Click vehicle → click target anchor → Enter: MoveTo\nGreen footprint: reachable · Red footprint: invalid/blocked\nRight click or Esc: clear selection\nQ: camera clockwise · E: camera counterclockwise\nShift+Q: GridRoot +90° · Shift+E: GridRoot -90°\nF: toggle non-uniform scale · G: toggle offset\nR: reset scene · Home: restore transform"
+autowrap_mode = 2
 
 [node name="ScopeNote" type="Label" parent="RootControl/Panel/Margin/VBox"]
 layout_mode = 2
-text = "Vehicle click selection belongs to PR #32.\nPR #31 validates camera rotation and world-space grid mapping."
+text = "Movement uses 2×2 footprint BFS and grid-space speed.\nDynamic replanning and multi-vehicle avoidance remain outside this PR."
 autowrap_mode = 2
 modulate = Color(0.72, 0.8, 0.9, 1)
 
@@ -93,7 +94,7 @@ text = "Restore Grid"
 [node name="StatusLabel" type="Label" parent="RootControl/Panel/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Camera preview ready"
+text = "Manual MoveTo ready"
 modulate = Color(0.55, 0.88, 0.72, 1)
 
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/RotateRow/RotateLeft" to="." method="_on_rotate_left_pressed"]
