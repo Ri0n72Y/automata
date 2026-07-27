@@ -8,8 +8,10 @@ const VEHICLE_RUNTIME_STATE_SCRIPT := preload("res://scripts/vehicles/vehicle_ru
 
 var failures: int = 0
 
+
 func _init() -> void:
 	call_deferred("_run")
+
 
 func _run() -> void:
 	var packed_scene := load(SCENE_PATH) as PackedScene
@@ -30,6 +32,8 @@ func _run() -> void:
 		var transport := manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.TRANSPORT_VEHICLE_ID) as VEHICLE_ACTOR_SCRIPT
 		_expect_true(arm != null, "Scene 01 should spawn the arm vehicle.")
 		_expect_true(transport != null, "Scene 01 should spawn the transport vehicle.")
+		_expect_true(manager.get_node_or_null("ArmVehicle") == arm, "Arm vehicle should preserve its static scene node path after entering the tree.")
+		_expect_true(manager.get_node_or_null("TransportVehicle") == transport, "Transport vehicle should preserve its static scene node path after entering the tree.")
 		if arm != null:
 			_test_arm_vehicle(scene, arm)
 		if transport != null:
@@ -43,9 +47,12 @@ func _run() -> void:
 		_expect_true(bool(scene.call("initialize_grid")), "Reinitializing the grid should rebuild preset vehicles.")
 		await process_frame
 		_expect_equal(manager.get_vehicle_count(), 2, "Grid reinitialization should not duplicate preset vehicles.")
+		_expect_true(manager.get_node_or_null("ArmVehicle") != null, "Rebuilt arm vehicle should retain the stable static node name.")
+		_expect_true(manager.get_node_or_null("TransportVehicle") != null, "Rebuilt transport vehicle should retain the stable static node name.")
 	scene.queue_free()
 	await process_frame
 	_finish()
+
 
 func _test_invalid_batch_commit_is_rejected(scene: Node, manager: VEHICLE_MANAGER_SCRIPT) -> void:
 	var original_arm := manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.ARM_VEHICLE_ID)
@@ -60,6 +67,7 @@ func _test_invalid_batch_commit_is_rejected(scene: Node, manager: VEHICLE_MANAGE
 	_expect_false(manager.commit_vehicle_batch(scene, preparation), "Consumed preparation should not commit.")
 	_expect_false(manager.discard_vehicle_batch(preparation), "Consumed preparation should not discard twice.")
 	_expect_equal(manager.get_vehicle_count(), 2, "Consumed token misuse should preserve current vehicles.")
+
 
 func _test_arm_vehicle(scene: Node, arm: VEHICLE_ACTOR_SCRIPT) -> void:
 	var definition = arm.definition
@@ -79,6 +87,7 @@ func _test_arm_vehicle(scene: Node, arm: VEHICLE_ACTOR_SCRIPT) -> void:
 	_expect_true(arm.get_debug_label_text().contains("18.0 kg"), "Arm debug label should show weight.")
 	_assert_selection_area(arm, VEHICLE_MANAGER_SCRIPT.ARM_VEHICLE_ID, "Arm vehicle")
 
+
 func _test_transport_vehicle(scene: Node, transport: VEHICLE_ACTOR_SCRIPT) -> void:
 	var definition = transport.definition
 	var runtime = transport.runtime_state
@@ -96,6 +105,7 @@ func _test_transport_vehicle(scene: Node, transport: VEHICLE_ACTOR_SCRIPT) -> vo
 	_expect_true(transport.get_debug_label_text().contains("16.0 kg"), "Transport debug label should show weight.")
 	_assert_selection_area(transport, VEHICLE_MANAGER_SCRIPT.TRANSPORT_VEHICLE_ID, "Transport vehicle")
 
+
 func _assert_selection_area(actor: VEHICLE_ACTOR_SCRIPT, expected_id: StringName, context: String) -> void:
 	var selection_area := actor.get_selection_area()
 	_expect_true(selection_area != null, "%s should expose a selection area." % context)
@@ -103,6 +113,7 @@ func _assert_selection_area(actor: VEHICLE_ACTOR_SCRIPT, expected_id: StringName
 		return
 	_expect_equal(selection_area.collision_layer, 2, "%s selection should not use ground layer 1." % context)
 	_expect_equal(selection_area.get_meta("vehicle_id", &""), expected_id, "%s selection area should identify its vehicle." % context)
+
 
 func _assert_actor_grid_state(scene: Node, actor: VEHICLE_ACTOR_SCRIPT, context: String) -> void:
 	var definition = actor.definition
@@ -113,6 +124,7 @@ func _assert_actor_grid_state(scene: Node, actor: VEHICLE_ACTOR_SCRIPT, context:
 	_expect_equal(occupied_cells.size(), 4, "%s should expose four occupied cells." % context)
 	for cell in occupied_cells:
 		_expect_true(bool(scene.call("is_grid_cell_walkable", cell)), "%s occupied cell %s should be walkable." % [context, str(cell)])
+
 
 func _test_reset(scene: Node, arm: VEHICLE_ACTOR_SCRIPT, transport: VEHICLE_ACTOR_SCRIPT) -> void:
 	var arm_initial_cell: Vector2i = arm.runtime_state.anchor_cell
@@ -131,17 +143,61 @@ func _test_reset(scene: Node, arm: VEHICLE_ACTOR_SCRIPT, transport: VEHICLE_ACTO
 	_expect_equal(transport.runtime_state.tray_count, 0, "Reset should clear transport tray count.")
 	_expect_equal(arm.runtime_state.motion_state, VEHICLE_RUNTIME_STATE_SCRIPT.MotionState.WAITING, "Reset should restore Waiting state.")
 
+
 func _test_grid_transform_sync(scene: Node, grid_root: Node3D, arm: VEHICLE_ACTOR_SCRIPT) -> void:
-	grid_root.position = Vector3(5.0, 0.0, -2.0)
-	grid_root.rotation.y = PI / 2.0
-	grid_root.scale = Vector3(1.5, 1.0, 2.0)
-	arm.sync_from_state()
+	var camera_rig := scene.get_node_or_null("SceneRoot/CameraRoot/Scene01CameraRig") as Node3D
+	_expect_true(camera_rig != null, "Scene 01 should expose the camera rig during transform tests.")
+	scene.call("preview_restore_grid_transform")
+	_assert_camera_center(scene, grid_root, camera_rig, "Restored GridRoot")
+
+	scene.call("preview_rotate_grid", 1)
+	_assert_actor_transform(scene, grid_root, arm, "Rotated GridRoot")
+	_assert_camera_center(scene, grid_root, camera_rig, "Rotated GridRoot")
+
+	scene.call("preview_toggle_grid_scale")
+	_assert_actor_transform(scene, grid_root, arm, "Scaled GridRoot")
+	_assert_camera_center(scene, grid_root, camera_rig, "Scaled GridRoot")
+
+	scene.call("preview_toggle_grid_offset")
+	_assert_actor_transform(scene, grid_root, arm, "Offset GridRoot")
+	_assert_camera_center(scene, grid_root, camera_rig, "Offset GridRoot")
+
+	scene.call("preview_restore_grid_transform")
+	_assert_actor_transform(scene, grid_root, arm, "Final restored GridRoot")
+	_assert_camera_center(scene, grid_root, camera_rig, "Final restored GridRoot")
+
+
+func _assert_actor_transform(
+	scene: Node,
+	grid_root: Node3D,
+	arm: VEHICLE_ACTOR_SCRIPT,
+	context: String
+) -> void:
 	var expected_world: Vector3 = scene.call("grid_footprint_center_to_world", arm.runtime_state.anchor_cell, arm.definition.footprint)
-	_expect_vector3_approx(arm.global_position, expected_world, "Vehicle actor should follow transformed GridRoot coordinates.")
+	_expect_vector3_approx(arm.global_position, expected_world, "%s should keep the vehicle centered over its footprint." % context)
 	var expected_basis := grid_root.global_basis * Basis(Vector3.UP, -float(arm.runtime_state.facing) * PI * 0.5)
-	_expect_vector3_approx(arm.global_basis.x, expected_basis.x, "Actor basis X should match grid and facing.")
-	_expect_vector3_approx(arm.global_basis.y, expected_basis.y, "Actor basis Y should match grid and facing.")
-	_expect_vector3_approx(arm.global_basis.z, expected_basis.z, "Actor basis Z should match grid and facing.")
+	_expect_vector3_approx(arm.global_basis.x, expected_basis.x, "%s actor basis X should match grid and facing." % context)
+	_expect_vector3_approx(arm.global_basis.y, expected_basis.y, "%s actor basis Y should match grid and facing." % context)
+	_expect_vector3_approx(arm.global_basis.z, expected_basis.z, "%s actor basis Z should match grid and facing." % context)
+
+
+func _assert_camera_center(
+	scene: Node,
+	grid_root: Node3D,
+	camera_rig: Node3D,
+	context: String
+) -> void:
+	if camera_rig == null:
+		return
+	var model = scene.get("grid_model")
+	var local_center := model.local_origin + Vector3(
+		float(model.width) * model.cell_size * 0.5,
+		0.0,
+		float(model.height) * model.cell_size * 0.5
+	)
+	var expected_center := grid_root.to_global(local_center)
+	_expect_vector3_approx(camera_rig.global_position, expected_center, "%s should reframe the camera on the current grid center." % context)
+
 
 func _test_failed_grid_reinitialization_is_atomic(scene: Node, manager: VEHICLE_MANAGER_SCRIPT) -> void:
 	var previous_model = scene.get("grid_model")
@@ -184,6 +240,7 @@ func _test_failed_grid_reinitialization_is_atomic(scene: Node, manager: VEHICLE_
 	scene.set("grid_width", previous_width)
 	scene.set("grid_height", previous_height)
 
+
 func _finish() -> void:
 	if failures == 0:
 		print("Scene 01 vehicle smoke tests passed.")
@@ -192,11 +249,13 @@ func _finish() -> void:
 	push_error("Scene 01 vehicle smoke tests failed: %d failure(s)." % failures)
 	quit(1)
 
+
 func _expect_equal(actual: Variant, expected: Variant, message: String) -> void:
 	if actual == expected:
 		return
 	failures += 1
 	push_error("%s Expected %s, got %s." % [message, str(expected), str(actual)])
+
 
 func _expect_vector3_approx(actual: Vector3, expected: Vector3, message: String) -> void:
 	if actual.is_equal_approx(expected):
@@ -204,11 +263,13 @@ func _expect_vector3_approx(actual: Vector3, expected: Vector3, message: String)
 	failures += 1
 	push_error("%s Expected %s, got %s." % [message, str(expected), str(actual)])
 
+
 func _expect_true(value: bool, message: String) -> void:
 	if value:
 		return
 	failures += 1
 	push_error(message)
+
 
 func _expect_false(value: bool, message: String) -> void:
 	if not value:
