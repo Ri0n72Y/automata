@@ -132,10 +132,10 @@ func _test_incomplete_static_manager_rejected() -> void:
 	var arm: Node = ARM_SCENE.instantiate()
 	manager.add_child(arm)
 	var controller := Node.new()
-	_expect_false(
-		manager.configure(controller, 1.0),
-		"A manager with only one static preset should reject configuration."
-	)
+	var configured := bool(_call_with_expected_errors_suppressed(
+		Callable(manager, "configure").bind(controller, 1.0)
+	))
+	_expect_false(configured, "A manager with only one static preset should reject configuration.")
 	_expect_equal(manager.get_child_count(), 1, "Rejected static configuration should not add dynamic vehicles.")
 	_expect_false(manager.has_pending_vehicle_batch(), "Rejected static configuration should not retain a dynamic batch.")
 	controller.free()
@@ -166,6 +166,14 @@ func _test_showcase_scene() -> void:
 	_expect_node(showcase, "TransportVehicle", "Showcase should contain the transport vehicle resource.")
 	_expect_node(showcase, "Floor", "Showcase should contain a static floor.")
 	showcase.free()
+
+
+func _call_with_expected_errors_suppressed(callback: Callable) -> Variant:
+	var previous_print_error_messages := Engine.print_error_messages
+	Engine.print_error_messages = false
+	var result: Variant = callback.call()
+	Engine.print_error_messages = previous_print_error_messages
+	return result
 
 
 func _expect_materials_differ(first: MeshInstance3D, second: MeshInstance3D, message: String) -> void:
