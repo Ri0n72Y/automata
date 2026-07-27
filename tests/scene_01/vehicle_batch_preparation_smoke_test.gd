@@ -52,10 +52,10 @@ func _test_new_preparation_replaces_old(
 		manager.is_vehicle_batch_preparation_active(first),
 		"Preparing again should invalidate the previous handle."
 	)
-	_expect_false(
-		manager.commit_vehicle_batch(scene, first),
-		"Superseded preparation should not commit."
-	)
+	var superseded_commit := bool(_call_with_expected_errors_suppressed(
+		Callable(manager, "commit_vehicle_batch").bind(scene, first)
+	))
+	_expect_false(superseded_commit, "Superseded preparation should not commit.")
 	_expect_true(
 		manager.is_vehicle_batch_preparation_active(second),
 		"Only the newest handle should remain active."
@@ -79,10 +79,10 @@ func _test_forged_preparation_is_rejected(
 		manager.is_vehicle_batch_preparation_active(forged),
 		"A same-type forged handle should not become active."
 	)
-	_expect_false(
-		manager.commit_vehicle_batch(scene, forged),
-		"A same-type forged handle should be rejected by identity."
-	)
+	var forged_commit := bool(_call_with_expected_errors_suppressed(
+		Callable(manager, "commit_vehicle_batch").bind(scene, forged)
+	))
+	_expect_false(forged_commit, "A same-type forged handle should be rejected by identity.")
 	_expect_true(
 		manager.is_vehicle_batch_preparation_active(valid),
 		"Rejecting a forged handle should preserve the valid pending handle."
@@ -121,10 +121,10 @@ func _test_exit_tree_discards_pending(
 		"Real tree exit should invalidate the pending opaque handle."
 	)
 	_expect_false(manager.has_pending_vehicle_batch(), "Real tree exit should release pending actors.")
-	_expect_false(
-		manager.commit_vehicle_batch(scene, preparation),
-		"Exit-cleaned preparation should not commit."
-	)
+	var exit_cleaned_commit := bool(_call_with_expected_errors_suppressed(
+		Callable(manager, "commit_vehicle_batch").bind(scene, preparation)
+	))
+	_expect_false(exit_cleaned_commit, "Exit-cleaned preparation should not commit.")
 
 	manager.free()
 	await process_frame
@@ -133,6 +133,14 @@ func _test_exit_tree_discards_pending(
 			candidate_ref.get_ref() == null,
 			"Pending actors should be freed after the manager exits the SceneTree."
 		)
+
+
+func _call_with_expected_errors_suppressed(callback: Callable) -> Variant:
+	var previous_print_error_messages := Engine.print_error_messages
+	Engine.print_error_messages = false
+	var result: Variant = callback.call()
+	Engine.print_error_messages = previous_print_error_messages
+	return result
 
 
 func _finish() -> void:
