@@ -156,12 +156,29 @@ func _test_invalid_configuration_is_rejected() -> void:
 		"Initial valid configuration should succeed."
 	)
 
-	_expect_false(grid.configure(0, 3, 1.0), "Zero width should be rejected.")
-	_expect_false(grid.configure(2, -1, 1.0), "Negative height should be rejected.")
-	_expect_false(grid.configure(2, 3, 0.0), "Zero cell size should be rejected.")
+	var zero_width_result := bool(_call_with_expected_errors_suppressed(
+		Callable(grid, "configure").bind(0, 3, 1.0)
+	))
+	var negative_height_result := bool(_call_with_expected_errors_suppressed(
+		Callable(grid, "configure").bind(2, -1, 1.0)
+	))
+	var zero_cell_size_result := bool(_call_with_expected_errors_suppressed(
+		Callable(grid, "configure").bind(2, 3, 0.0)
+	))
+	_expect_false(zero_width_result, "Zero width should be rejected.")
+	_expect_false(negative_height_result, "Negative height should be rejected.")
+	_expect_false(zero_cell_size_result, "Zero cell size should be rejected.")
 	_expect_equal(grid.width, 2, "Rejected configuration should keep the previous width.")
 	_expect_equal(grid.height, 3, "Rejected configuration should keep the previous height.")
 	_expect_equal(grid.cell_size, 1.0, "Rejected configuration should keep the previous cell size.")
+
+
+func _call_with_expected_errors_suppressed(callback: Callable) -> Variant:
+	var previous_print_error_messages := Engine.print_error_messages
+	Engine.print_error_messages = false
+	var result: Variant = callback.call()
+	Engine.print_error_messages = previous_print_error_messages
+	return result
 
 
 func _expect_equal(actual: Variant, expected: Variant, message: String) -> void:

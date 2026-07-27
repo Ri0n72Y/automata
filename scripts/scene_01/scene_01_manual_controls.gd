@@ -9,24 +9,43 @@ func _ready() -> void:
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
-	if not (event is InputEventKey):
+	if not (event is InputEventKey) or _is_text_input_focused():
 		return
 	var key_event := event as InputEventKey
 	if not key_event.pressed or key_event.echo:
 		return
+
+	var handled := false
 	match key_event.keycode:
 		KEY_R:
-			_on_reset_pressed()
+			if not _has_command_modifier(key_event):
+				_on_reset_pressed()
+				handled = true
 		KEY_Q:
-			_call_scene_action("preview_rotate_grid", [-1])
+			if _has_only_shift_modifier(key_event):
+				_call_scene_action("preview_rotate_grid", [1])
+				_update_status("GridRoot rotated +90 degrees")
+				handled = true
 		KEY_E:
-			_call_scene_action("preview_rotate_grid", [1])
+			if _has_only_shift_modifier(key_event):
+				_call_scene_action("preview_rotate_grid", [-1])
+				_update_status("GridRoot rotated -90 degrees")
+				handled = true
 		KEY_F:
-			_on_scale_pressed()
+			if not _has_command_modifier(key_event):
+				_on_scale_pressed()
+				handled = true
 		KEY_G:
-			_on_offset_pressed()
+			if not _has_command_modifier(key_event):
+				_on_offset_pressed()
+				handled = true
 		KEY_HOME:
-			_on_restore_pressed()
+			if not _has_command_modifier(key_event):
+				_on_restore_pressed()
+				handled = true
+
+	if handled:
+		get_viewport().set_input_as_handled()
 
 
 func _on_reset_pressed() -> void:
@@ -65,6 +84,24 @@ func _call_scene_action(method_name: StringName, args: Array = []) -> void:
 		_update_status("Scene action unavailable: %s" % String(method_name))
 		return
 	scene.callv(method_name, args)
+
+
+func _is_text_input_focused() -> bool:
+	var focus_owner := get_viewport().gui_get_focus_owner()
+	return focus_owner is LineEdit or focus_owner is TextEdit
+
+
+func _has_only_shift_modifier(event: InputEventKey) -> bool:
+	return (
+		event.shift_pressed
+		and not event.ctrl_pressed
+		and not event.alt_pressed
+		and not event.meta_pressed
+	)
+
+
+func _has_command_modifier(event: InputEventKey) -> bool:
+	return event.shift_pressed or event.ctrl_pressed or event.alt_pressed or event.meta_pressed
 
 
 func _update_status(message: String) -> void:
