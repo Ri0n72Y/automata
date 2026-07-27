@@ -37,11 +37,13 @@ func _run() -> void:
 	_expect_true(selection != null, "Scene 01 should contain its grid selection controller.")
 	_expect_true(manual_controls != null, "Scene 01 should contain its manual controls.")
 	_expect_true(grid_root != null, "Scene 01 should contain GridRoot.")
+
 	if camera_rig != null and selection != null:
 		_test_camera_elevation(camera_rig)
 		await _test_four_directions_preserve_click_mapping(scene, camera_rig, selection)
 		_test_rotation_wraps(camera_rig)
-		await _test_animated_rotation(camera_rig)
+		await _test_animated_rotation_has_fixed_framing(camera_rig)
+		await _test_last_command_rotation_semantics(camera_rig)
 		if manual_controls != null and grid_root != null:
 			_test_shortcut_partition(scene, camera_rig, manual_controls, grid_root)
 		await _test_rotation_input_actions(scene, camera_rig)
@@ -161,7 +163,9 @@ func _test_rotation_wraps(camera_rig: CAMERA_RIG_SCRIPT) -> void:
 	)
 
 
-func _test_animated_rotation(camera_rig: CAMERA_RIG_SCRIPT) -> void:
+func _test_animated_rotation_has_fixed_framing(
+	camera_rig: CAMERA_RIG_SCRIPT
+) -> void:
 	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST, false)
 	var camera: Camera3D = camera_rig.get_camera()
 	_expect_true(camera != null, "Camera rig should expose SceneCamera for animation tests.")
@@ -181,11 +185,18 @@ func _test_animated_rotation(camera_rig: CAMERA_RIG_SCRIPT) -> void:
 
 	var start_position: Vector3 = camera.position
 	var start_horizontal_radius := Vector2(start_position.x, start_position.z).length()
-	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST, true)
+	var start_size: float = camera.size
+	camera_rig.rotate_clockwise(true)
 	_expect_true(camera_rig.is_transitioning(), "Camera rotation should start a Tween transition.")
 	_expect_true(
 		camera.position.is_equal_approx(start_position),
 		"Animated rotation should begin from the current rendered position without snapping."
+	)
+	_expect_close(
+		camera.size,
+		start_size,
+		0.001,
+		"Animated rotation should preserve its orthographic size at startup."
 	)
 	_expect_equal(started_transitions.size(), 1, "Animated rotation should emit one start signal.")
 	if started_transitions.size() == 1:
@@ -195,7 +206,7 @@ func _test_animated_rotation(camera_rig: CAMERA_RIG_SCRIPT) -> void:
 				CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST,
 				CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST
 			),
-			"Transition start signal should describe the requested quarter turn."
+			"Transition start signal should describe the requested clockwise quarter turn."
 		)
 
 	await create_timer(maxf(camera_rig.rotation_duration * 0.5, 0.05)).timeout
@@ -228,8 +239,14 @@ func _test_animated_rotation(camera_rig: CAMERA_RIG_SCRIPT) -> void:
 		0.1,
 		"Animated camera motion should preserve the 30 degree elevation."
 	)
+	_expect_close(
+		camera.size,
+		start_size,
+		0.001,
+		"Camera rotation should not zoom in or out at the middle of the orbit."
+	)
 
-	await create_timer(maxf(camera_rig.rotation_duration * 0.6, 0.08)).timeout
+	await create_timer(maxf(camera_rig.rotation_duration * 0.65, 0.1)).timeout
 	_expect_true(not camera_rig.is_transitioning(), "Camera transition should finish on time.")
 	_expect_equal(finished_directions.size(), 1, "Animated rotation should emit one finish signal.")
 	if finished_directions.size() == 1:
@@ -240,7 +257,69 @@ func _test_animated_rotation(camera_rig: CAMERA_RIG_SCRIPT) -> void:
 		)
 	_expect_true(
 		camera.position.x < 0.0 and camera.position.z > 0.0,
-		"Animated rotation should finish in the southwest camera quadrant."
+		"Animated clockwise rotation should finish in the southwest camera quadrant."
+	)
+	_expect_close(
+		camera.size,
+		start_size,
+		0.001,
+		"Camera rotation should finish with the same orthographic size."
+	)
+
+
+func _test_last_command_rotation_semantics(
+	camera_rig: CAMERA_RIG_SCRIPT
+) -> void:
+	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST, false)
+	camera_rig.rotate_clockwise(true)
+	await create_timer(maxf(camera_rig.rotation_duration * 0.2, 0.04)).timeout
+	camera_rig.rotate_clockwise(true)
+	camera_rig.rotate_clockwise(true)
+	_expect_equal(
+		camera_rig.get_view_direction(),
+		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST,
+		"Repeated clockwise input during one transition should keep one adjacent target."
+	)
+	await create_timer(maxf(camera_rig.rotation_duration, 0.3)).timeout
+	_expect_true(
+		not camera_rig.is_transitioning(),
+		"Repeated same-direction input should still finish after one quarter turn."
+	)
+	_expect_equal(
+		camera_rig.get_view_direction(),
+		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST,
+		"Three quick clockwise commands should produce only one quarter turn."
+	)
+
+	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST, false)
+	var camera: Camera3D = camera_rig.get_camera()
+	var start_position: Vector3 = camera.position
+	camera_rig.rotate_clockwise(true)
+	await create_timer(maxf(camera_rig.rotation_duration * 0.45, 0.08)).timeout
+	_expect_true(
+		not camera.position.is_equal_approx(start_position),
+		"Clockwise motion should be underway before reversal."
+	)
+	camera_rig.rotate_clockwise(true)
+	camera_rig.rotate_counterclockwise(true)
+	_expect_equal(
+		camera_rig.get_view_direction(),
+		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST,
+		"The last opposite command should retarget the active transition to its origin."
+	)
+	await create_timer(maxf(camera_rig.rotation_duration, 0.3)).timeout
+	_expect_true(
+		not camera_rig.is_transitioning(),
+		"Reversed transition should settle without queued extra turns."
+	)
+	_expect_equal(
+		camera_rig.get_view_direction(),
+		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST,
+		"QQE should return to the starting direction instead of rotating farther."
+	)
+	_expect_true(
+		camera.position.is_equal_approx(start_position),
+		"QQE should return the rendered camera to its starting endpoint."
 	)
 
 
@@ -254,26 +333,34 @@ func _test_shortcut_partition(
 	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST, false)
 	var restored_basis: Basis = grid_root.basis
 
-	manual_controls._unhandled_key_input(_make_key_event(KEY_E, true, false))
+	manual_controls._unhandled_key_input(_make_key_event(KEY_Q, true, false))
 	_expect_true(
 		grid_root.basis.is_equal_approx(restored_basis),
-		"Plain E should not rotate the GridRoot preview."
-	)
-	_expect_equal(
-		camera_rig.get_view_direction(),
-		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST,
-		"Calling manual controls with plain E should not alter camera state."
+		"Plain Q should not rotate the GridRoot preview."
 	)
 
-	manual_controls._unhandled_key_input(_make_key_event(KEY_E, true, false, true))
+	scene.call("preview_rotate_grid", [1])
+	var expected_positive_basis: Basis = grid_root.basis
+	scene.call("preview_restore_grid_transform")
+	manual_controls._unhandled_key_input(_make_key_event(KEY_Q, true, false, true))
 	_expect_true(
-		not grid_root.basis.is_equal_approx(restored_basis),
-		"Shift+E should rotate the GridRoot preview."
+		grid_root.basis.is_equal_approx(expected_positive_basis),
+		"Shift+Q should rotate GridRoot by positive 90 degrees."
 	)
 	_expect_equal(
 		camera_rig.get_view_direction(),
 		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST,
-		"Shift+E GridRoot preview rotation should preserve camera direction."
+		"Shift+Q GridRoot rotation should preserve camera direction."
+	)
+
+	scene.call("preview_restore_grid_transform")
+	scene.call("preview_rotate_grid", [-1])
+	var expected_negative_basis: Basis = grid_root.basis
+	scene.call("preview_restore_grid_transform")
+	manual_controls._unhandled_key_input(_make_key_event(KEY_E, true, false, true))
+	_expect_true(
+		grid_root.basis.is_equal_approx(expected_negative_basis),
+		"Shift+E should rotate GridRoot by negative 90 degrees."
 	)
 
 	scene.call("preview_restore_grid_transform")
@@ -308,33 +395,29 @@ func _test_rotation_input_actions(scene: Node, camera_rig: CAMERA_RIG_SCRIPT) ->
 			emitted_directions.append(direction)
 	)
 
-	camera_rig._unhandled_input(_make_key_event(KEY_E, true, false))
+	camera_rig._unhandled_input(_make_key_event(KEY_Q, true, false))
 	_expect_equal(
 		camera_rig.get_view_direction(),
 		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST,
-		"Clockwise action press should rotate once."
+		"Q should trigger one clockwise camera rotation."
 	)
-	_expect_equal(emitted_directions.size(), 1, "Action press should emit one direction change.")
+	_expect_equal(emitted_directions.size(), 1, "Q should emit one direction change.")
 	if emitted_directions.size() == 1:
 		_expect_equal(
 			emitted_directions[0],
 			CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST,
-			"Direction signal should contain the new direction."
+			"Q direction signal should contain the clockwise target."
 		)
 
-	camera_rig._unhandled_input(_make_key_event(KEY_E, false, false))
-	camera_rig._unhandled_input(_make_key_event(KEY_E, true, true))
-	camera_rig._unhandled_input(_make_key_event(KEY_E, true, false, true))
+	camera_rig._unhandled_input(_make_key_event(KEY_Q, false, false))
+	camera_rig._unhandled_input(_make_key_event(KEY_Q, true, true))
+	camera_rig._unhandled_input(_make_key_event(KEY_Q, true, false, true))
 	_expect_equal(
 		camera_rig.get_view_direction(),
 		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST,
-		"Release, echo, and Shift+E events should not rotate the camera."
+		"Release, echo, and Shift+Q events should not add camera turns."
 	)
-	_expect_equal(
-		emitted_directions.size(),
-		1,
-		"Ignored camera events should not emit direction changes."
-	)
+	await create_timer(maxf(camera_rig.rotation_duration * 1.1, 0.32)).timeout
 
 	var text_controls: Array[Control] = [
 		LineEdit.new(),
@@ -349,13 +432,13 @@ func _test_rotation_input_actions(scene: Node, camera_rig: CAMERA_RIG_SCRIPT) ->
 			emitted_directions
 		)
 
-	camera_rig._unhandled_input(_make_key_event(KEY_Q, true, false))
+	camera_rig._unhandled_input(_make_key_event(KEY_E, true, false))
 	_expect_equal(
 		camera_rig.get_view_direction(),
 		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST,
-		"Counterclockwise action should resume after text focus is released."
+		"E should rotate counterclockwise after text focus is released."
 	)
-	_expect_equal(emitted_directions.size(), 2, "Resumed action should emit one signal.")
+	_expect_equal(emitted_directions.size(), 2, "E should emit one additional signal.")
 
 
 func _assert_text_focus_blocks_rotation(
@@ -372,15 +455,18 @@ func _assert_text_focus_blocks_rotation(
 		text_control.has_focus(),
 		"%s should receive GUI focus during the input test." % text_control.get_class()
 	)
+	var direction_before: int = camera_rig.get_view_direction()
+	var signal_count_before: int = emitted_directions.size()
 	camera_rig._unhandled_input(_make_key_event(KEY_Q, true, false))
+	camera_rig._unhandled_input(_make_key_event(KEY_E, true, false))
 	_expect_equal(
 		camera_rig.get_view_direction(),
-		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST,
+		direction_before,
 		"Focused %s should block camera rotation." % text_control.get_class()
 	)
 	_expect_equal(
 		emitted_directions.size(),
-		1,
+		signal_count_before,
 		"Focused %s should not emit camera direction changes." % text_control.get_class()
 	)
 	text_control.release_focus()
