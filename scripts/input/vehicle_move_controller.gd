@@ -9,6 +9,9 @@ const GridPathfinderScript := preload("res://scripts/vehicles/grid_pathfinder.gd
 const MoveCommandScript := preload("res://scripts/vehicles/move_command.gd")
 const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
 const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
+const GridSelectionControllerScript := preload("res://scripts/input/grid_selection_controller.gd")
+const VehicleSelectionControllerScript := preload("res://scripts/input/vehicle_selection_controller.gd")
+const Scene01VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 
 const REJECTION_NO_VEHICLE := &"no_vehicle_selected"
 const REJECTION_BUSY := &"vehicle_busy"
@@ -21,9 +24,9 @@ const REJECTION_START_FAILED := &"start_failed"
 @export_range(0.8, 1.0, 0.01) var preview_scale: float = 0.94
 
 var controller: Node
-var vehicle_selection_controller: Node
-var grid_selection_controller: Node
-var vehicle_manager: Node
+var vehicle_selection_controller: VehicleSelectionControllerScript
+var grid_selection_controller: GridSelectionControllerScript
+var vehicle_manager: Scene01VehicleManagerScript
 var _pathfinder := GridPathfinderScript.new()
 var _target_preview: MeshInstance3D
 var _preview_is_valid: bool = false
@@ -37,9 +40,9 @@ func _ready() -> void:
 
 func configure(
 	p_controller: Node,
-	p_vehicle_selection_controller: Node,
-	p_grid_selection_controller: Node,
-	p_vehicle_manager: Node
+	p_vehicle_selection_controller: VehicleSelectionControllerScript,
+	p_grid_selection_controller: GridSelectionControllerScript,
+	p_vehicle_manager: Scene01VehicleManagerScript
 ) -> void:
 	controller = p_controller
 	vehicle_selection_controller = p_vehicle_selection_controller
@@ -103,15 +106,15 @@ func reset_controller_state() -> void:
 func refresh_target_preview() -> void:
 	if _target_preview == null or grid_selection_controller == null:
 		return
-	if not bool(grid_selection_controller.call("has_selected_cell")):
+	if not grid_selection_controller.has_selected_cell():
 		_hide_target_preview()
 		return
 	var vehicle := _get_selected_vehicle()
-	if vehicle == null or vehicle.definition == null:
+	if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
 		_hide_target_preview()
 		return
 
-	var target_anchor: Vector2i = grid_selection_controller.get("selected_cell")
+	var target_anchor := grid_selection_controller.selected_cell
 	var footprint: Vector2i = vehicle.definition.footprint
 	var cell_size := vehicle.cell_size
 	var mesh := _target_preview.mesh as BoxMesh
@@ -126,7 +129,11 @@ func refresh_target_preview() -> void:
 		footprint
 	)
 	_target_preview.position = to_local(world_center) + Vector3.UP * preview_height
-	_preview_is_valid = not _find_path(vehicle, target_anchor).is_empty()
+	_preview_is_valid = (
+		vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
+		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
+		and not _find_path(vehicle, target_anchor).is_empty()
+	)
 	var material := _target_preview.material_override as StandardMaterial3D
 	material.albedo_color = valid_target_color if _preview_is_valid else invalid_target_color
 	_target_preview.visible = true
@@ -177,7 +184,7 @@ func _on_vehicle_selection_changed(_vehicle_id: StringName, _has_selection: bool
 func _get_selected_vehicle() -> VehicleActorScript:
 	if vehicle_selection_controller == null:
 		return null
-	return vehicle_selection_controller.call("get_selected_vehicle") as VehicleActorScript
+	return vehicle_selection_controller.get_selected_vehicle()
 
 
 func _find_path(vehicle: VehicleActorScript, target_anchor: Vector2i) -> Array[Vector2i]:
@@ -208,7 +215,7 @@ func _is_footprint_walkable_for_vehicle(
 	for offset_y in range(footprint.y):
 		for offset_x in range(footprint.x):
 			candidate_cells[anchor + Vector2i(offset_x, offset_y)] = true
-	for vehicle_node in vehicle_manager.call("get_vehicles"):
+	for vehicle_node in vehicle_manager.get_vehicles():
 		var other := vehicle_node as VehicleActorScript
 		if other == null or other == moving_vehicle or other.runtime_state == null:
 			continue
@@ -220,7 +227,7 @@ func _is_footprint_walkable_for_vehicle(
 
 func _clear_grid_target() -> void:
 	if grid_selection_controller != null:
-		grid_selection_controller.call("cancel_selection")
+		grid_selection_controller.cancel_selection()
 	_hide_target_preview()
 
 
