@@ -1,0 +1,261 @@
+extends SceneTree
+
+const SCENE_PATH := "res://scenes/scene_01/scene_01_basic_packing.tscn"
+const CAMERA_RIG_SCRIPT := preload("res://scripts/camera/scene_01_camera_rig.gd")
+const GRID_SELECTION_SCRIPT := preload("res://scripts/input/grid_selection_controller.gd")
+
+var failures: int = 0
+
+
+func _init() -> void:
+	call_deferred("_run")
+
+
+func _run() -> void:
+	var packed_scene := load(SCENE_PATH) as PackedScene
+	_expect_true(packed_scene != null, "Scene 01 should load for camera rotation tests.")
+	if packed_scene == null:
+		_finish()
+		return
+
+	var scene := packed_scene.instantiate()
+	root.add_child(scene)
+	await process_frame
+	await physics_frame
+
+	var camera_rig := scene.get_node_or_null(
+		"SceneRoot/CameraRoot/Scene01CameraRig"
+	) as CAMERA_RIG_SCRIPT
+	var selection := scene.get_node_or_null(
+		"SceneRoot/GridRoot/GridSelectionController"
+	) as GRID_SELECTION_SCRIPT
+	_expect_true(camera_rig != null, "Scene 01 should contain its camera rig.")
+	_expect_true(selection != null, "Scene 01 should contain its grid selection controller.")
+	if camera_rig != null and selection != null:
+		await _test_four_directions_preserve_click_mapping(scene, camera_rig, selection)
+		_test_rotation_wraps(camera_rig)
+		await _test_rotation_input_actions(scene, camera_rig)
+
+	scene.queue_free()
+	await process_frame
+	_finish()
+
+
+func _test_four_directions_preserve_click_mapping(
+	scene: Node,
+	camera_rig: CAMERA_RIG_SCRIPT,
+	selection: GRID_SELECTION_SCRIPT
+) -> void:
+	var test_cells: Array[Vector2i] = [
+		Vector2i(1, 1),
+		Vector2i(5, 3),
+		Vector2i(10, 6),
+	]
+	var directions: Array[int] = [
+		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST,
+		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST,
+		CAMERA_RIG_SCRIPT.ViewDirection.NORTHWEST,
+		CAMERA_RIG_SCRIPT.ViewDirection.NORTHEAST,
+	]
+	var expected_signs: Array[Vector2] = [
+		Vector2(1.0, 1.0),
+		Vector2(-1.0, 1.0),
+		Vector2(-1.0, -1.0),
+		Vector2(1.0, -1.0),
+	]
+
+	for index in range(directions.size()):
+		var direction: int = directions[index]
+		_expect_true(
+			camera_rig.set_view_direction(direction),
+			"Camera should accept fixed direction %d." % direction
+		)
+		await process_frame
+		await physics_frame
+		_expect_equal(
+			camera_rig.get_view_direction(),
+			direction,
+			"Camera should report the selected fixed direction."
+		)
+		var camera: Camera3D = camera_rig.get_camera()
+		var signs: Vector2 = expected_signs[index]
+		_expect_true(
+			camera != null,
+			"Camera rig should expose SceneCamera in direction %d." % direction
+		)
+		if camera == null:
+			continue
+		_expect_true(
+			signf(camera.position.x) == signs.x and signf(camera.position.z) == signs.y,
+			"Camera horizontal position should match fixed direction %d." % direction
+		)
+
+		for cell in test_cells:
+			var world_position: Vector3 = scene.call("grid_cell_to_world", cell)
+			var screen_position: Vector2 = camera.unproject_position(world_position)
+			selection.cancel_selection()
+			_expect_true(
+				selection.select_from_screen_position(screen_position),
+				"Screen ray should hit cell %s in direction %d." % [str(cell), direction]
+			)
+			_expect_equal(
+				selection.selected_cell,
+				cell,
+				"Click mapping should preserve cell %s in direction %d." % [str(cell), direction]
+			)
+
+
+func _test_rotation_wraps(camera_rig: CAMERA_RIG_SCRIPT) -> void:
+	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST)
+	camera_rig.rotate_counterclockwise()
+	_expect_equal(
+		camera_rig.get_view_direction(),
+		CAMERA_RIG_SCRIPT.ViewDirection.NORTHEAST,
+		"Counterclockwise rotation should wrap from southeast to northeast."
+	)
+	camera_rig.rotate_clockwise()
+	_expect_equal(
+		camera_rig.get_view_direction(),
+		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST,
+		"Clockwise rotation should wrap back to southeast."
+	)
+	for _step in range(4):
+		camera_rig.rotate_clockwise()
+	_expect_equal(
+		camera_rig.get_view_direction(),
+		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST,
+		"Four clockwise rotations should return to the starting direction."
+	)
+
+
+func _test_rotation_input_actions(scene: Node, camera_rig: CAMERA_RIG_SCRIPT) -> void:
+	_expect_true(
+		InputMap.has_action(CAMERA_RIG_SCRIPT.ROTATE_COUNTERCLOCKWISE_ACTION),
+		"Counterclockwise camera action should exist in InputMap."
+	)
+	_expect_true(
+		InputMap.has_action(CAMERA_RIG_SCRIPT.ROTATE_CLOCKWISE_ACTION),
+		"Clockwise camera action should exist in InputMap."
+	)
+
+	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST)
+	var emitted_directions: Array[int] = []
+	camera_rig.view_direction_changed.connect(
+		func(direction: int) -> void:
+			emitted_directions.append(direction)
+	)
+
+	camera_rig._unhandled_input(_make_key_event(KEY_E, true, false))
+	_expect_equal(
+		camera_rig.get_view_direction(),
+		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST,
+		"Clockwise action press should rotate once."
+	)
+	_expect_equal(emitted_directions.size(), 1, "Action press should emit one direction change.")
+	_expect_equal(
+		emitted_directions[0],
+		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST,
+		"Direction signal should contain the new direction."
+	)
+
+	camera_rig._unhandled_input(_make_key_event(KEY_E, false, false))
+	camera_rig._unhandled_input(_make_key_event(KEY_E, true, true))
+	camera_rig._unhandled_input(_make_key_event(KEY_E, true, false, true))
+	_expect_equal(
+		camera_rig.get_view_direction(),
+		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST,
+		"Release, echo, and Shift+E events should not rotate the camera."
+	)
+	_expect_equal(
+		emitted_directions.size(),
+		1,
+		"Ignored camera events should not emit direction changes."
+	)
+
+	var text_controls: Array[Control] = [
+		LineEdit.new(),
+		TextEdit.new(),
+		CodeEdit.new(),
+	]
+	for text_control in text_controls:
+		await _assert_text_focus_blocks_rotation(
+			scene,
+			camera_rig,
+			text_control,
+			emitted_directions
+		)
+
+	camera_rig._unhandled_input(_make_key_event(KEY_Q, true, false))
+	_expect_equal(
+		camera_rig.get_view_direction(),
+		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST,
+		"Counterclockwise action should resume after text focus is released."
+	)
+	_expect_equal(emitted_directions.size(), 2, "Resumed action should emit one signal.")
+
+
+func _assert_text_focus_blocks_rotation(
+	scene: Node,
+	camera_rig: CAMERA_RIG_SCRIPT,
+	text_control: Control,
+	emitted_directions: Array[int]
+) -> void:
+	text_control.focus_mode = Control.FOCUS_ALL
+	scene.add_child(text_control)
+	text_control.grab_focus()
+	await process_frame
+	_expect_true(
+		text_control.has_focus(),
+		"%s should receive GUI focus during the input test." % text_control.get_class()
+	)
+	camera_rig._unhandled_input(_make_key_event(KEY_Q, true, false))
+	_expect_equal(
+		camera_rig.get_view_direction(),
+		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST,
+		"Focused %s should block camera rotation." % text_control.get_class()
+	)
+	_expect_equal(
+		emitted_directions.size(),
+		1,
+		"Focused %s should not emit camera direction changes." % text_control.get_class()
+	)
+	text_control.release_focus()
+	text_control.queue_free()
+	await process_frame
+
+
+func _make_key_event(
+	keycode: Key,
+	pressed: bool,
+	echo: bool,
+	shift_pressed: bool = false
+) -> InputEventKey:
+	var event := InputEventKey.new()
+	event.keycode = keycode
+	event.pressed = pressed
+	event.echo = echo
+	event.shift_pressed = shift_pressed
+	return event
+
+
+func _finish() -> void:
+	if failures == 0:
+		print("Scene 01 camera rotation and mapping smoke tests passed.")
+		quit(0)
+		return
+	push_error("Scene 01 camera rotation tests failed: %d failure(s)." % failures)
+	quit(1)
+
+
+func _expect_equal(actual: Variant, expected: Variant, message: String) -> void:
+	if actual == expected:
+		return
+	failures += 1
+	push_error("%s Expected %s, got %s." % [message, str(expected), str(actual)])
+
+
+func _expect_true(value: bool, message: String) -> void:
+	if value:
+		return
+	failures += 1
+	push_error(message)
