@@ -118,6 +118,21 @@ func world_to_grid_cell(world_position: Vector3) -> Vector2i:
 	return grid_model.position_to_cell(position)
 
 
+func world_to_nearest_grid_anchor(
+	world_position: Vector3,
+	footprint: Vector2i = Vector2i.ONE
+) -> Vector2i:
+	if grid_root == null or grid_model == null:
+		push_error("Scene 01 grid is not initialized.")
+		return Vector2i(-1, -1)
+	var local_position := grid_root.to_local(world_position)
+	var anchor := grid_model.position_to_nearest_anchor(local_position, footprint)
+	return Vector2i(
+		clampi(anchor.x, 0, grid_model.width - 1),
+		clampi(anchor.y, 0, grid_model.height - 1)
+	)
+
+
 func grid_cell_to_world(cell: Vector2i) -> Vector3:
 	if grid_root == null or grid_model == null:
 		push_error("Scene 01 grid is not initialized.")
@@ -267,13 +282,12 @@ func preview_restore_grid_transform() -> void:
 
 
 func _sync_grid_transform_dependents() -> void:
-	if grid_selection_controller != null:
-		grid_selection_controller.clear_hover()
-		grid_selection_controller.cancel_selection()
 	if scene_vehicle_manager != null:
 		scene_vehicle_manager.sync_vehicles_from_state()
 	if vehicle_selection_controller != null:
 		vehicle_selection_controller.refresh_highlight()
+	if grid_selection_controller != null:
+		grid_selection_controller.refresh_visuals()
 	if vehicle_move_controller != null:
 		vehicle_move_controller.sync_visuals()
 	_refresh_camera_for_grid()
