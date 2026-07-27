@@ -18,8 +18,8 @@ mouse_filter = 2
 layout_mode = 0
 offset_left = 16.0
 offset_top = 16.0
-offset_right = 352.0
-offset_bottom = 356.0
+offset_right = 372.0
+offset_bottom = 376.0
 mouse_filter = 1
 
 [node name="Margin" type="MarginContainer" parent="RootControl/Panel"]
@@ -35,16 +35,16 @@ theme_override_constants/separation = 8
 
 [node name="Title" type="Label" parent="RootControl/Panel/Margin/VBox"]
 layout_mode = 2
-text = "Scene 01 · Static Preview"
+text = "Scene 01 · Camera & Static Preview"
 theme_override_font_sizes/font_size = 20
 
 [node name="Instructions" type="Label" parent="RootControl/Panel/Margin/VBox"]
 layout_mode = 2
-text = "Q / E: rotate GridRoot\nF: toggle non-uniform scale\nG: toggle offset\nR: reset scene\nHome: restore transform"
+text = "Q / E: rotate camera\nShift + Q / E: rotate GridRoot preview\nF: toggle non-uniform scale\nG: toggle offset\nR: reset scene\nHome: restore transform"
 
 [node name="ScopeNote" type="Label" parent="RootControl/Panel/Margin/VBox"]
 layout_mode = 2
-text = "Vehicle click selection belongs to PR #32.\nPR #30 validates static vehicle visuals and data."
+text = "PR #31 validates camera rotation and grid mapping.\nVehicle click selection belongs to PR #32."
 autowrap_mode = 2
 modulate = Color(0.72, 0.8, 0.9, 1)
 
@@ -55,12 +55,12 @@ theme_override_constants/separation = 8
 [node name="RotateLeft" type="Button" parent="RootControl/Panel/Margin/VBox/RotateRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Rotate -90°"
+text = "Grid -90°"
 
 [node name="RotateRight" type="Button" parent="RootControl/Panel/Margin/VBox/RotateRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Rotate +90°"
+text = "Grid +90°"
 
 [node name="TransformRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
 layout_mode = 2
