@@ -2,6 +2,8 @@ class_name Scene01CameraRig
 extends Node3D
 
 signal view_direction_changed(direction: int)
+signal view_transition_started(from_direction: int, to_direction: int)
+signal view_transition_finished(direction: int)
 
 enum ViewDirection {
 	SOUTHEAST,
@@ -17,6 +19,8 @@ const ROTATE_CLOCKWISE_ACTION := &"camera_rotate_clockwise"
 @export_range(1.0, 2.0, 0.05) var framing_margin: float = 1.25
 @export_range(0.5, 4.0, 0.1) var distance_multiplier: float = 1.5
 @export_range(1.0, 90.0, 1.0) var minimum_distance: float = 10.0
+@export_range(10.0, 80.0, 1.0) var elevation_degrees: float = 30.0
+@export_range(0.0, 1.0, 0.01) var rotation_duration: float = 0.28
 @export var initial_view_direction: ViewDirection = ViewDirection.SOUTHEAST
 
 @onready var camera: Camera3D = %SceneCamera
@@ -26,12 +30,17 @@ var _world_center: Vector3 = Vector3.ZERO
 var _world_width: float = 1.0
 var _world_height: float = 1.0
 var _is_configured: bool = false
+var _transition_tween: Tween
 
 
 func _ready() -> void:
 	_view_direction = initial_view_direction
 	if camera != null:
 		camera.current = true
+
+
+func _exit_tree() -> void:
+	_kill_transition()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -66,6 +75,7 @@ func configure_for_grid(
 	_world_center = world_center
 	_world_width = maxf(world_width, 0.01)
 	_world_height = maxf(world_height, 0.01)
+	_kill_transition()
 	if not auto_frame_grid:
 		_is_configured = false
 		camera.current = true
@@ -77,28 +87,35 @@ func configure_for_grid(
 	camera.keep_aspect = Camera3D.KEEP_HEIGHT
 	camera.near = 0.1
 	camera.current = true
-	_apply_view_direction()
+	_apply_view_direction(false)
 
 
-func set_view_direction(direction: int) -> bool:
+func set_view_direction(direction: int, animate: bool = true) -> bool:
 	if direction < ViewDirection.SOUTHEAST or direction > ViewDirection.NORTHEAST:
 		push_error("Scene 01 camera view direction is invalid: %s." % str(direction))
 		return false
 	if _view_direction == direction:
 		return true
+
+	var previous_direction := _view_direction
 	_view_direction = direction
 	if _is_configured:
-		_apply_view_direction()
+		_apply_view_direction(animate)
 	view_direction_changed.emit(_view_direction)
+	if animate and _is_configured and rotation_duration > 0.0:
+		view_transition_started.emit(previous_direction, _view_direction)
 	return true
 
 
-func rotate_clockwise() -> void:
-	set_view_direction((_view_direction + 1) % ViewDirection.size())
+func rotate_clockwise(animate: bool = true) -> void:
+	set_view_direction((_view_direction + 1) % ViewDirection.size(), animate)
 
 
-func rotate_counterclockwise() -> void:
-	set_view_direction((_view_direction - 1 + ViewDirection.size()) % ViewDirection.size())
+func rotate_counterclockwise(animate: bool = true) -> void:
+	set_view_direction(
+		(_view_direction - 1 + ViewDirection.size()) % ViewDirection.size(),
+		animate
+	)
 
 
 func get_view_direction() -> int:
@@ -115,29 +132,105 @@ func get_orthographic_size() -> float:
 	return camera.size
 
 
+func is_transitioning() -> bool:
+	return _transition_tween != null and _transition_tween.is_valid()
+
+
 func _is_text_input_focused() -> bool:
 	var focus_owner := get_viewport().gui_get_focus_owner()
 	return focus_owner is LineEdit or focus_owner is TextEdit
 
 
-func _apply_view_direction() -> void:
+func _apply_view_direction(animate: bool) -> void:
 	if camera == null or not _is_configured:
 		return
+
+	var target_position := _calculate_camera_position(_view_direction)
+	var target_size := _calculate_size_for_position(target_position)
+	camera.far = maxf(_calculate_orbit_distance() * 4.0, 100.0)
+
+	if not animate or rotation_duration <= 0.0 or not is_inside_tree():
+		_kill_transition()
+		_set_camera_position(target_position)
+		camera.size = target_size
+		return
+
+	_kill_transition()
+	_transition_tween = create_tween()
+	_transition_tween.set_trans(Tween.TRANS_SINE)
+	_transition_tween.set_ease(Tween.EASE_IN_OUT)
+	_transition_tween.set_parallel(true)
+	_transition_tween.tween_method(
+		Callable(self, "_set_camera_position"),
+		camera.position,
+		target_position,
+		rotation_duration
+	)
+	_transition_tween.tween_property(camera, "size", target_size, rotation_duration)
+	_transition_tween.finished.connect(
+		_on_transition_finished.bind(target_position, target_size, _view_direction)
+	)
+
+
+func _calculate_orbit_distance() -> float:
 	var diagonal := maxf(
 		sqrt(_world_width * _world_width + _world_height * _world_height),
 		1.0
 	)
-	var distance := maxf(diagonal * distance_multiplier, minimum_distance)
-	var horizontal_component := distance / sqrt(2.0)
-	var horizontal_signs := _get_horizontal_signs(_view_direction)
-	camera.position = Vector3(
-		horizontal_signs.x * horizontal_component,
-		distance,
-		horizontal_signs.y * horizontal_component
+	return maxf(diagonal * distance_multiplier, minimum_distance)
+
+
+func _calculate_camera_position(direction: int) -> Vector3:
+	var orbit_distance := _calculate_orbit_distance()
+	var elevation_radians := deg_to_rad(clampf(elevation_degrees, 10.0, 80.0))
+	var horizontal_radius := orbit_distance * cos(elevation_radians)
+	var vertical_height := orbit_distance * sin(elevation_radians)
+	var diagonal_component := horizontal_radius / sqrt(2.0)
+	var horizontal_signs := _get_horizontal_signs(direction)
+	return Vector3(
+		horizontal_signs.x * diagonal_component,
+		vertical_height,
+		horizontal_signs.y * diagonal_component
 	)
+
+
+func _calculate_size_for_position(target_position: Vector3) -> float:
+	var original_transform := camera.transform
+	camera.position = target_position
 	camera.look_at(_world_center, Vector3.UP)
-	camera.far = maxf(distance * 4.0, 100.0)
-	camera.size = _calculate_required_size(_world_center, _world_width, _world_height)
+	var target_size := _calculate_required_size(
+		_world_center,
+		_world_width,
+		_world_height
+	)
+	camera.transform = original_transform
+	return target_size
+
+
+func _set_camera_position(value: Vector3) -> void:
+	if camera == null:
+		return
+	camera.position = value
+	camera.look_at(_world_center, Vector3.UP)
+
+
+func _on_transition_finished(
+	target_position: Vector3,
+	target_size: float,
+	target_direction: int
+) -> void:
+	_set_camera_position(target_position)
+	camera.size = target_size
+	_transition_tween = null
+	view_transition_finished.emit(target_direction)
+
+
+func _kill_transition() -> void:
+	if _transition_tween == null:
+		return
+	if _transition_tween.is_valid():
+		_transition_tween.kill()
+	_transition_tween = null
 
 
 func _get_horizontal_signs(direction: int) -> Vector2:
@@ -170,7 +263,7 @@ func _calculate_required_size(
 	var half_projected_width: float = 0.0
 	var half_projected_height: float = 0.0
 	for corner in corners:
-		var camera_local_corner := camera.to_local(corner)
+		var camera_local_corner: Vector3 = camera.to_local(corner)
 		half_projected_width = maxf(half_projected_width, absf(camera_local_corner.x))
 		half_projected_height = maxf(half_projected_height, absf(camera_local_corner.y))
 
