@@ -7,6 +7,7 @@ var failures: int = 0
 
 func _init() -> void:
 	_test_default_grid_conversion()
+	_test_nearest_anchor_snapping()
 	_test_grid_bounds()
 	_test_default_cell_types_and_walkability()
 	_test_offset_origin_and_cell_size()
@@ -48,6 +49,39 @@ func _test_default_grid_conversion() -> void:
 		grid.position_to_cell(grid.cell_to_position(Vector2i(11, 7))),
 		Vector2i(11, 7),
 		"Cell-to-position and position-to-cell should round trip."
+	)
+
+
+func _test_nearest_anchor_snapping() -> void:
+	var grid = GridModelScript.new()
+	_expect_true(
+		grid.configure(12, 8, 1.0, Vector3.ZERO),
+		"Nearest-anchor grid configuration should succeed."
+	)
+	_expect_equal(
+		grid.position_to_nearest_anchor(Vector3(2.48, 0.0, 3.52), Vector2i.ONE),
+		Vector2i(2, 3),
+		"A 1x1 target should snap to the nearest cell center."
+	)
+	_expect_equal(
+		grid.position_to_nearest_anchor(Vector3(3.0, 0.0, 4.0), Vector2i.ONE),
+		Vector2i(3, 4),
+		"A 1x1 center tie should resolve deterministically toward the positive cell."
+	)
+	_expect_equal(
+		grid.position_to_nearest_anchor(Vector3(5.02, 0.0, 3.98), Vector2i(2, 2)),
+		Vector2i(4, 3),
+		"A 2x2 target should snap to the nearest grid-line intersection."
+	)
+	_expect_equal(
+		grid.position_to_nearest_anchor(Vector3(3.49, 0.0, 4.0), Vector2i(2, 2)),
+		Vector2i(2, 3),
+		"A 2x2 target should choose the nearest footprint center rather than the containing cell."
+	)
+	_expect_equal(
+		grid.position_to_nearest_anchor(Vector3(3.2, 0.0, 4.2), Vector2i.ZERO),
+		grid.position_to_cell(Vector3(3.2, 0.0, 4.2)),
+		"Invalid footprints should fall back to containing-cell conversion."
 	)
 
 
@@ -121,6 +155,11 @@ func _test_offset_origin_and_cell_size() -> void:
 		grid.position_to_cell(Vector3(13.9, 3.0, -0.1)),
 		Vector2i(1, 1),
 		"Position conversion should respect origin and non-unit cell size."
+	)
+	_expect_equal(
+		grid.position_to_nearest_anchor(Vector3(12.05, 3.0, -1.95), Vector2i(2, 2)),
+		Vector2i.ZERO,
+		"Nearest footprint centers should respect origin and non-unit cell size."
 	)
 
 
