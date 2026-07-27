@@ -14,11 +14,13 @@ tonemap_mode = 2
 [node name="Scene01CameraRig" type="Node3D"]
 script = ExtResource("1_camera_rig")
 auto_frame_grid = true
+elevation_degrees = 30.0
+rotation_duration = 0.28
 
 [node name="SceneCamera" type="Camera3D" parent="."]
 unique_name_in_owner = true
-position = Vector3(10, 14, 10)
-rotation_degrees = Vector3(-45, 45, 0)
+position = Vector3(12.25, 10, 12.25)
+rotation_degrees = Vector3(-30, 45, 0)
 projection = 1
 size = 14.5
 near = 0.1
