@@ -23,13 +23,13 @@ func _unhandled_key_input(event: InputEvent) -> void:
 				handled = true
 		KEY_Q:
 			if _has_only_shift_modifier(key_event):
-				_call_scene_action("preview_rotate_grid", [-1])
-				_update_status("GridRoot rotated -90 degrees")
+				_call_scene_action("preview_rotate_grid", [1])
+				_update_status("GridRoot rotated +90 degrees")
 				handled = true
 		KEY_E:
 			if _has_only_shift_modifier(key_event):
-				_call_scene_action("preview_rotate_grid", [1])
-				_update_status("GridRoot rotated +90 degrees")
+				_call_scene_action("preview_rotate_grid", [-1])
+				_update_status("GridRoot rotated -90 degrees")
 				handled = true
 		KEY_F:
 			if not _has_command_modifier(key_event):
