@@ -182,6 +182,11 @@ func _set_view_direction(
 		push_error("Scene 01 camera view direction is invalid: %s." % str(direction))
 		return false
 	if _view_direction == direction:
+		if _is_configured and not animate:
+			_kill_transition()
+			_rendered_azimuth_degrees = _get_direction_azimuth(direction)
+			_set_camera_azimuth(_rendered_azimuth_degrees)
+			_clear_input_transition()
 		return true
 
 	var previous_direction := _view_direction
@@ -192,7 +197,7 @@ func _set_view_direction(
 	view_direction_changed.emit(_view_direction)
 	if transition_started:
 		view_transition_started.emit(previous_direction, _view_direction)
-	elif not animate:
+	else:
 		_clear_input_transition()
 	return true
 
@@ -222,6 +227,16 @@ func _apply_view_direction(animate: bool, preferred_rotation_sign: int) -> bool:
 
 	var canonical_target := _get_direction_azimuth(_view_direction)
 	if not animate or rotation_duration <= 0.0 or not is_inside_tree():
+		_kill_transition()
+		_rendered_azimuth_degrees = canonical_target
+		_set_camera_azimuth(_rendered_azimuth_degrees)
+		return false
+
+	var direct_delta := _shortest_angular_delta(
+		_rendered_azimuth_degrees,
+		canonical_target
+	)
+	if absf(direct_delta) <= 0.001:
 		_kill_transition()
 		_rendered_azimuth_degrees = canonical_target
 		_set_camera_azimuth(_rendered_azimuth_degrees)
@@ -269,13 +284,14 @@ func _resolve_target_azimuth(
 		while target >= _rendered_azimuth_degrees - 0.001:
 			target -= 360.0
 		return target
+	return _rendered_azimuth_degrees + _shortest_angular_delta(
+		_rendered_azimuth_degrees,
+		canonical_target
+	)
 
-	var shortest_delta := wrapf(
-		canonical_target - _rendered_azimuth_degrees + 180.0,
-		0.0,
-		360.0
-	) - 180.0
-	return _rendered_azimuth_degrees + shortest_delta
+
+func _shortest_angular_delta(from_degrees: float, to_degrees: float) -> float:
+	return wrapf(to_degrees - from_degrees + 180.0, 0.0, 360.0) - 180.0
 
 
 func _calculate_orbit_distance() -> float:
