@@ -58,14 +58,20 @@ func _run() -> void:
 func _test_invalid_batch_commit_is_rejected(scene: Node, manager: VEHICLE_MANAGER_SCRIPT) -> void:
 	var original_arm := manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.ARM_VEHICLE_ID)
 	var original_transport := manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.TRANSPORT_VEHICLE_ID)
-	_expect_false(manager.commit_vehicle_batch(scene, null), "Null preparation should be rejected.")
+	var null_commit := bool(_call_with_expected_errors_suppressed(
+		Callable(manager, "commit_vehicle_batch").bind(scene, null)
+	))
+	_expect_false(null_commit, "Null preparation should be rejected.")
 	_expect_equal(manager.get_vehicle_count(), 2, "Rejected commit should preserve vehicle count.")
 	_expect_true(manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.ARM_VEHICLE_ID) == original_arm, "Rejected commit should preserve arm Actor.")
 	_expect_true(manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.TRANSPORT_VEHICLE_ID) == original_transport, "Rejected commit should preserve transport Actor.")
 	var preparation = manager.prepare_vehicle_batch(scene, scene.get("grid_cell_size"))
 	_expect_true(preparation != null, "Valid preparation should succeed.")
 	_expect_true(manager.discard_vehicle_batch(preparation), "Prepared batch should be discardable once.")
-	_expect_false(manager.commit_vehicle_batch(scene, preparation), "Consumed preparation should not commit.")
+	var consumed_commit := bool(_call_with_expected_errors_suppressed(
+		Callable(manager, "commit_vehicle_batch").bind(scene, preparation)
+	))
+	_expect_false(consumed_commit, "Consumed preparation should not commit.")
 	_expect_false(manager.discard_vehicle_batch(preparation), "Consumed preparation should not discard twice.")
 	_expect_equal(manager.get_vehicle_count(), 2, "Consumed token misuse should preserve current vehicles.")
 
@@ -224,7 +230,10 @@ func _test_failed_grid_reinitialization_is_atomic(scene: Node, manager: VEHICLE_
 	original_transport.sync_from_state()
 	scene.set("grid_width", 4)
 	scene.set("grid_height", 4)
-	_expect_false(bool(scene.call("initialize_grid")), "A grid that cannot contain preset starts should be rejected.")
+	var initialized := bool(_call_with_expected_errors_suppressed(
+		Callable(scene, "initialize_grid")
+	))
+	_expect_false(initialized, "A grid that cannot contain preset starts should be rejected.")
 	var restored_model = scene.get("grid_model")
 	var restored_arm := manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.ARM_VEHICLE_ID) as VEHICLE_ACTOR_SCRIPT
 	var restored_transport := manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.TRANSPORT_VEHICLE_ID) as VEHICLE_ACTOR_SCRIPT
@@ -243,6 +252,14 @@ func _test_failed_grid_reinitialization_is_atomic(scene: Node, manager: VEHICLE_
 	_expect_equal(restored_transport.runtime_state.tray_count, 5, "Rejected grid should preserve tray state.")
 	scene.set("grid_width", previous_width)
 	scene.set("grid_height", previous_height)
+
+
+func _call_with_expected_errors_suppressed(callback: Callable) -> Variant:
+	var previous_print_error_messages := Engine.print_error_messages
+	Engine.print_error_messages = false
+	var result: Variant = callback.call()
+	Engine.print_error_messages = previous_print_error_messages
+	return result
 
 
 func _finish() -> void:
