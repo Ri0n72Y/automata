@@ -360,7 +360,7 @@ func _test_shortcut_partition(
 		"Plain Q should not rotate the GridRoot preview."
 	)
 
-	scene.call("preview_rotate_grid", [1])
+	scene.call("preview_rotate_grid", 1)
 	var expected_positive_basis: Basis = grid_root.basis
 	scene.call("preview_restore_grid_transform")
 	manual_controls._unhandled_key_input(_make_key_event(KEY_Q, true, false, true))
@@ -375,7 +375,7 @@ func _test_shortcut_partition(
 	)
 
 	scene.call("preview_restore_grid_transform")
-	scene.call("preview_rotate_grid", [-1])
+	scene.call("preview_rotate_grid", -1)
 	var expected_negative_basis: Basis = grid_root.basis
 	scene.call("preview_restore_grid_transform")
 	manual_controls._unhandled_key_input(_make_key_event(KEY_E, true, false, true))
