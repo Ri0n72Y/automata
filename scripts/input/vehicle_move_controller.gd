@@ -18,10 +18,14 @@ const REJECTION_BUSY := &"vehicle_busy"
 const REJECTION_NO_PATH := &"no_path"
 const REJECTION_START_FAILED := &"start_failed"
 
-@export var valid_target_color: Color = Color(0.2, 0.9, 0.35, 0.32)
-@export var invalid_target_color: Color = Color(1.0, 0.2, 0.18, 0.36)
+@export var valid_target_color: Color = Color(0.2, 0.9, 0.35, 0.20)
+@export var invalid_target_color: Color = Color(1.0, 0.2, 0.18, 0.23)
+@export var valid_path_color: Color = Color(0.2, 0.95, 0.42, 0.88)
+@export var invalid_path_color: Color = Color(1.0, 0.28, 0.22, 0.82)
 @export_range(0.01, 0.2, 0.01) var preview_height: float = 0.05
 @export_range(0.8, 1.0, 0.01) var preview_scale: float = 0.94
+@export_range(0.02, 0.2, 0.01) var path_line_width: float = 0.07
+@export_range(0.01, 0.2, 0.01) var path_line_height: float = 0.075
 
 var controller: Node
 var vehicle_selection_controller: VehicleSelectionControllerScript
@@ -29,13 +33,24 @@ var grid_selection_controller: GridSelectionControllerScript
 var vehicle_manager: Scene01VehicleManagerScript
 var _pathfinder := GridPathfinderScript.new()
 var _target_preview: MeshInstance3D
+var _path_preview_root: Node3D
+var _path_segments: Array[MeshInstance3D] = []
+var _preview_path: Array[Vector2i] = []
 var _preview_is_valid: bool = false
 var _last_rejection_reason: StringName = &""
+var _vehicle_ui_open: bool = false
+var _valid_path_material: StandardMaterial3D
+var _invalid_path_material: StandardMaterial3D
 
 
 func _ready() -> void:
 	_target_preview = _create_target_preview()
 	add_child(_target_preview)
+	_path_preview_root = Node3D.new()
+	_path_preview_root.name = "VehiclePathPreview"
+	add_child(_path_preview_root)
+	_valid_path_material = _create_path_material(valid_path_color)
+	_invalid_path_material = _create_path_material(invalid_path_color)
 
 
 func configure(
@@ -49,7 +64,18 @@ func configure(
 	grid_selection_controller = p_grid_selection_controller
 	vehicle_manager = p_vehicle_manager
 	_connect_input_signals()
-	refresh_target_preview()
+	_sync_live_target_mode()
+
+
+func set_vehicle_ui_open(is_open: bool) -> void:
+	if _vehicle_ui_open == is_open:
+		return
+	_vehicle_ui_open = is_open
+	_sync_live_target_mode()
+
+
+func is_vehicle_ui_open() -> bool:
+	return _vehicle_ui_open
 
 
 func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
@@ -63,6 +89,7 @@ func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
 		return false
 	if vehicle.runtime_state == null or not vehicle.runtime_state.begin_move_planning():
 		_reject(vehicle_id, target_anchor, REJECTION_BUSY)
+		refresh_target_preview()
 		return false
 
 	var path := _find_path(vehicle, target_anchor)
@@ -100,27 +127,37 @@ func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
 
 func reset_controller_state() -> void:
 	_last_rejection_reason = &""
-	_hide_target_preview()
+	_vehicle_ui_open = false
+	_hide_prediction()
 
 
 func refresh_target_preview() -> void:
-	if _target_preview == null or grid_selection_controller == null:
+	if _target_preview == null or grid_selection_controller == null or _vehicle_ui_open:
+		_hide_prediction()
 		return
 	if not grid_selection_controller.has_selected_cell():
-		_hide_target_preview()
+		_hide_prediction()
 		return
 	var vehicle := _get_selected_vehicle()
 	if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
-		_hide_target_preview()
+		_hide_prediction()
 		return
 
 	var target_anchor := grid_selection_controller.selected_cell
 	var footprint: Vector2i = vehicle.definition.footprint
 	var cell_size := vehicle.cell_size
+	var path := _find_path(vehicle, target_anchor)
+	_preview_path = path.duplicate()
+	_preview_is_valid = (
+		vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
+		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
+		and not path.is_empty()
+	)
+
 	var mesh := _target_preview.mesh as BoxMesh
 	mesh.size = Vector3(
 		float(footprint.x) * cell_size * preview_scale,
-		0.025,
+		0.02,
 		float(footprint.y) * cell_size * preview_scale
 	)
 	var world_center: Vector3 = controller.call(
@@ -129,14 +166,10 @@ func refresh_target_preview() -> void:
 		footprint
 	)
 	_target_preview.position = to_local(world_center) + Vector3.UP * preview_height
-	_preview_is_valid = (
-		vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
-		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
-		and not _find_path(vehicle, target_anchor).is_empty()
-	)
-	var material := _target_preview.material_override as StandardMaterial3D
-	material.albedo_color = valid_target_color if _preview_is_valid else invalid_target_color
+	var target_material := _target_preview.material_override as StandardMaterial3D
+	target_material.albedo_color = valid_target_color if _preview_is_valid else invalid_target_color
 	_target_preview.visible = true
+	_update_path_preview(path, footprint, _preview_is_valid)
 
 
 func sync_visuals() -> void:
@@ -149,6 +182,17 @@ func is_target_preview_visible() -> bool:
 
 func is_target_preview_valid() -> bool:
 	return is_target_preview_visible() and _preview_is_valid
+
+
+func is_path_preview_visible() -> bool:
+	for segment in _path_segments:
+		if segment != null and segment.visible:
+			return true
+	return false
+
+
+func get_preview_path() -> Array[Vector2i]:
+	return _preview_path.duplicate()
 
 
 func get_last_rejection_reason() -> StringName:
@@ -178,7 +222,22 @@ func _on_grid_selection_changed(_cell: Vector2i, _has_selection: bool) -> void:
 
 
 func _on_vehicle_selection_changed(_vehicle_id: StringName, _has_selection: bool) -> void:
-	refresh_target_preview()
+	_sync_live_target_mode()
+
+
+func _sync_live_target_mode() -> void:
+	if grid_selection_controller == null:
+		return
+	var vehicle := _get_selected_vehicle()
+	var enabled := vehicle != null and not _vehicle_ui_open
+	var footprint := Vector2i.ONE
+	if vehicle != null and vehicle.definition != null:
+		footprint = vehicle.definition.footprint
+	grid_selection_controller.set_live_target_mode(enabled, footprint)
+	if enabled:
+		refresh_target_preview()
+	else:
+		_hide_prediction()
 
 
 func _get_selected_vehicle() -> VehicleActorScript:
@@ -225,10 +284,56 @@ func _is_footprint_walkable_for_vehicle(
 	return true
 
 
+func _update_path_preview(
+	path: Array[Vector2i],
+	footprint: Vector2i,
+	is_valid: bool
+) -> void:
+	_hide_path_segments()
+	if controller == null or path.size() < 2:
+		return
+	for index in range(path.size() - 1):
+		var segment := _ensure_path_segment(index)
+		var start_world: Vector3 = controller.call(
+			"grid_footprint_center_to_world",
+			path[index],
+			footprint
+		)
+		var end_world: Vector3 = controller.call(
+			"grid_footprint_center_to_world",
+			path[index + 1],
+			footprint
+		)
+		var start_local := to_local(start_world)
+		var end_local := to_local(end_world)
+		var delta := end_local - start_local
+		var length := Vector2(delta.x, delta.z).length()
+		if length <= 0.001:
+			continue
+		var box_mesh := segment.mesh as BoxMesh
+		box_mesh.size = Vector3(length, 0.025, path_line_width)
+		segment.position = (start_local + end_local) * 0.5 + Vector3.UP * path_line_height
+		segment.rotation = Vector3(0.0, -atan2(delta.z, delta.x), 0.0)
+		segment.material_override = _valid_path_material if is_valid else _invalid_path_material
+		segment.visible = true
+
+
+func _ensure_path_segment(index: int) -> MeshInstance3D:
+	while _path_segments.size() <= index:
+		var segment := MeshInstance3D.new()
+		segment.name = "PathSegment_%d" % _path_segments.size()
+		segment.visible = false
+		segment.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		segment.mesh = BoxMesh.new()
+		_path_preview_root.add_child(segment)
+		_path_segments.append(segment)
+	return _path_segments[index]
+
+
 func _clear_grid_target() -> void:
 	if grid_selection_controller != null:
 		grid_selection_controller.cancel_selection()
-	_hide_target_preview()
+	_hide_prediction()
 
 
 func _reject(vehicle_id: StringName, target_anchor: Vector2i, reason: StringName) -> void:
@@ -236,10 +341,18 @@ func _reject(vehicle_id: StringName, target_anchor: Vector2i, reason: StringName
 	move_rejected.emit(vehicle_id, target_anchor, reason)
 
 
-func _hide_target_preview() -> void:
+func _hide_prediction() -> void:
 	_preview_is_valid = false
+	_preview_path.clear()
 	if _target_preview != null:
 		_target_preview.visible = false
+	_hide_path_segments()
+
+
+func _hide_path_segments() -> void:
+	for segment in _path_segments:
+		if segment != null:
+			segment.visible = false
 
 
 func _create_target_preview() -> MeshInstance3D:
@@ -251,7 +364,16 @@ func _create_target_preview() -> MeshInstance3D:
 	var material := StandardMaterial3D.new()
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.no_depth_test = true
+	material.no_depth_test = false
 	material.albedo_color = valid_target_color
 	preview.material_override = material
 	return preview
+
+
+func _create_path_material(color: Color) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.no_depth_test = false
+	material.albedo_color = color
+	return material
