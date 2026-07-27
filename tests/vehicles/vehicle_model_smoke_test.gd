@@ -117,10 +117,10 @@ func _test_runtime_reset_and_command_queue() -> void:
 func _test_unconfigured_definition_is_rejected() -> void:
 	var definition := VEHICLE_DEFINITION_SCRIPT.new()
 	var runtime := VEHICLE_RUNTIME_STATE_SCRIPT.new()
-	_expect_false(
-		runtime.configure(definition, Vector2i.ZERO),
-		"Runtime should reject an unconfigured definition."
-	)
+	var configured := bool(_call_with_expected_errors_suppressed(
+		Callable(runtime, "configure").bind(definition, Vector2i.ZERO)
+	))
+	_expect_false(configured, "Runtime should reject an unconfigured definition.")
 	_expect_true(runtime.definition == null, "Rejected configuration should not bind a definition.")
 
 
@@ -138,10 +138,15 @@ func _test_actor_definition_mismatch_is_rejected() -> void:
 
 	var actor := VEHICLE_ACTOR_SCRIPT.new()
 	var controller_stub := Node.new()
-	_expect_false(
-		actor.configure(transport_definition, runtime, controller_stub, 1.0),
-		"Actor should reject a runtime bound to another definition."
-	)
+	var configured := bool(_call_with_expected_errors_suppressed(
+		Callable(actor, "configure").bind(
+			transport_definition,
+			runtime,
+			controller_stub,
+			1.0
+		)
+	))
+	_expect_false(configured, "Actor should reject a runtime bound to another definition.")
 	actor.free()
 	controller_stub.free()
 
@@ -190,6 +195,14 @@ func _create_transport_definition() -> VehicleDefinition:
 	):
 		return null
 	return definition
+
+
+func _call_with_expected_errors_suppressed(callback: Callable) -> Variant:
+	var previous_print_error_messages := Engine.print_error_messages
+	Engine.print_error_messages = false
+	var result: Variant = callback.call()
+	Engine.print_error_messages = previous_print_error_messages
+	return result
 
 
 func _expect_equal(actual: Variant, expected: Variant, message: String) -> void:
