@@ -40,11 +40,11 @@ theme_override_font_sizes/font_size = 20
 
 [node name="Instructions" type="Label" parent="RootControl/Panel/Margin/VBox"]
 layout_mode = 2
-text = "Q / E: rotate camera\nShift + Q / E: rotate GridRoot preview\nF: toggle non-uniform scale\nG: toggle offset\nR: reset scene\nHome: restore transform"
+text = "Q / E: animate camera rotation (30° elevation)\nShift+Q / Shift+E: rotate GridRoot\nF: toggle non-uniform scale\nG: toggle offset\nR: reset scene\nHome: restore transform"
 
 [node name="ScopeNote" type="Label" parent="RootControl/Panel/Margin/VBox"]
 layout_mode = 2
-text = "PR #31 validates camera rotation and grid mapping.\nVehicle click selection belongs to PR #32."
+text = "Vehicle click selection belongs to PR #32.\nPR #31 validates camera rotation and world-space grid mapping."
 autowrap_mode = 2
 modulate = Color(0.72, 0.8, 0.9, 1)
 
@@ -93,7 +93,7 @@ text = "Restore Grid"
 [node name="StatusLabel" type="Label" parent="RootControl/Panel/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Static preview ready"
+text = "Camera preview ready"
 modulate = Color(0.55, 0.88, 0.72, 1)
 
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/RotateRow/RotateLeft" to="." method="_on_rotate_left_pressed"]
