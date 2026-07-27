@@ -180,6 +180,7 @@ func _test_animated_rotation(camera_rig: CAMERA_RIG_SCRIPT) -> void:
 	)
 
 	var start_position: Vector3 = camera.position
+	var start_horizontal_radius := Vector2(start_position.x, start_position.z).length()
 	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST, true)
 	_expect_true(camera_rig.is_transitioning(), "Camera rotation should start a Tween transition.")
 	_expect_true(
@@ -198,13 +199,34 @@ func _test_animated_rotation(camera_rig: CAMERA_RIG_SCRIPT) -> void:
 		)
 
 	await create_timer(maxf(camera_rig.rotation_duration * 0.5, 0.05)).timeout
+	var middle_position: Vector3 = camera.position
+	var middle_horizontal_radius := Vector2(
+		middle_position.x,
+		middle_position.z
+	).length()
+	var middle_elevation := rad_to_deg(atan2(
+		middle_position.y,
+		middle_horizontal_radius
+	))
 	_expect_true(
-		not camera.position.is_equal_approx(start_position),
+		not middle_position.is_equal_approx(start_position),
 		"Camera position should change continuously during the rotation animation."
 	)
 	_expect_true(
 		camera_rig.is_transitioning(),
 		"Camera should still be transitioning near the middle of the configured duration."
+	)
+	_expect_close(
+		middle_horizontal_radius,
+		start_horizontal_radius,
+		0.01,
+		"Animated camera motion should follow a circular orbit instead of a straight chord."
+	)
+	_expect_close(
+		middle_elevation,
+		30.0,
+		0.1,
+		"Animated camera motion should preserve the 30 degree elevation."
 	)
 
 	await create_timer(maxf(camera_rig.rotation_duration * 0.6, 0.08)).timeout
