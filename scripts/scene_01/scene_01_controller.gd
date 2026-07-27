@@ -289,13 +289,29 @@ func _configure_grid_presentation() -> void:
 func _refresh_camera_for_grid() -> void:
 	if grid_model == null or grid_root == null or scene_camera_rig == null:
 		return
-	var local_center := grid_model.local_origin + Vector3(
-		float(grid_model.width) * grid_model.cell_size * 0.5,
+	var local_min: Vector3 = grid_model.local_origin
+	var local_max: Vector3 = grid_model.local_origin + Vector3(
+		float(grid_model.width) * grid_model.cell_size,
 		0.0,
-		float(grid_model.height) * grid_model.cell_size * 0.5
+		float(grid_model.height) * grid_model.cell_size
 	)
-	var world_center := grid_root.to_global(local_center)
-	var world_scale := grid_root.global_basis.get_scale().abs()
-	var world_width := float(grid_model.width) * grid_model.cell_size * world_scale.x
-	var world_height := float(grid_model.height) * grid_model.cell_size * world_scale.z
+	var world_corners: Array[Vector3] = [
+		grid_root.to_global(Vector3(local_min.x, local_min.y, local_min.z)),
+		grid_root.to_global(Vector3(local_max.x, local_min.y, local_min.z)),
+		grid_root.to_global(Vector3(local_min.x, local_min.y, local_max.z)),
+		grid_root.to_global(Vector3(local_max.x, local_min.y, local_max.z)),
+	]
+	var min_x: float = INF
+	var max_x: float = -INF
+	var min_z: float = INF
+	var max_z: float = -INF
+	for corner in world_corners:
+		min_x = minf(min_x, corner.x)
+		max_x = maxf(max_x, corner.x)
+		min_z = minf(min_z, corner.z)
+		max_z = maxf(max_z, corner.z)
+	var local_center: Vector3 = (local_min + local_max) * 0.5
+	var world_center: Vector3 = grid_root.to_global(local_center)
+	var world_width: float = maxf(max_x - min_x, 0.01)
+	var world_height: float = maxf(max_z - min_z, 0.01)
 	scene_camera_rig.configure_for_grid(world_center, world_width, world_height)
