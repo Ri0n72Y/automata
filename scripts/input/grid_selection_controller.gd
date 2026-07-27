@@ -183,6 +183,9 @@ func refresh_visuals() -> void:
 func _world_position_to_valid_cell(world_position: Vector3) -> Vector2i:
 	if controller == null:
 		return INVALID_CELL
+	var containing_cell: Vector2i = controller.call("world_to_grid_cell", world_position)
+	if not bool(controller.call("is_grid_cell_valid", containing_cell)):
+		return INVALID_CELL
 	var cell: Vector2i = controller.call(
 		"world_to_nearest_grid_anchor",
 		world_position,
