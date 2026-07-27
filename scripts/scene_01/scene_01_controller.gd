@@ -208,6 +208,7 @@ func reset_scene_state() -> void:
 	if scene_vehicle_manager != null:
 		scene_vehicle_manager.reset_vehicles()
 		scene_vehicle_manager.sync_vehicles_from_state()
+	_refresh_camera_for_grid()
 
 
 func preview_rotate_grid(direction: int) -> void:
@@ -253,6 +254,7 @@ func _sync_grid_transform_dependents() -> void:
 		grid_selection_controller.cancel_selection()
 	if scene_vehicle_manager != null:
 		scene_vehicle_manager.sync_vehicles_from_state()
+	_refresh_camera_for_grid()
 
 
 func _configure_initial_grid_dependents() -> bool:
@@ -276,6 +278,17 @@ func _configure_grid_presentation() -> void:
 	if grid_debug_view != null:
 		grid_debug_view.draw(grid_model)
 
+	_refresh_camera_for_grid()
+	if grid_selection_controller != null:
+		var active_camera: Camera3D
+		if scene_camera_rig != null:
+			active_camera = scene_camera_rig.get_camera()
+		grid_selection_controller.configure(self, active_camera, grid_model.cell_size)
+
+
+func _refresh_camera_for_grid() -> void:
+	if grid_model == null or grid_root == null or scene_camera_rig == null:
+		return
 	var local_center := grid_model.local_origin + Vector3(
 		float(grid_model.width) * grid_model.cell_size * 0.5,
 		0.0,
@@ -285,11 +298,4 @@ func _configure_grid_presentation() -> void:
 	var world_scale := grid_root.global_basis.get_scale().abs()
 	var world_width := float(grid_model.width) * grid_model.cell_size * world_scale.x
 	var world_height := float(grid_model.height) * grid_model.cell_size * world_scale.z
-
-	if scene_camera_rig != null:
-		scene_camera_rig.configure_for_grid(world_center, world_width, world_height)
-	if grid_selection_controller != null:
-		var active_camera: Camera3D
-		if scene_camera_rig != null:
-			active_camera = scene_camera_rig.get_camera()
-		grid_selection_controller.configure(self, active_camera, grid_model.cell_size)
+	scene_camera_rig.configure_for_grid(world_center, world_width, world_height)
