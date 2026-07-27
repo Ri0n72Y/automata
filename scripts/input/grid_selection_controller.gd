@@ -21,6 +21,8 @@ var selected_cell: Vector2i = INVALID_CELL
 var _cell_size: float = 1.0
 var _target_footprint: Vector2i = Vector2i.ONE
 var _live_target_mode: bool = false
+var _last_hover_world_position: Vector3 = Vector3.ZERO
+var _has_hover_world_position: bool = false
 var _hover_highlight: MeshInstance3D
 var _selected_highlight: MeshInstance3D
 
@@ -42,6 +44,7 @@ func configure(
 	camera = p_camera
 	_cell_size = maxf(p_cell_size, 0.01)
 	_update_highlight_sizes()
+	_recalculate_hover_for_current_footprint()
 	refresh_visuals()
 
 
@@ -73,6 +76,7 @@ func set_live_target_mode(
 		maxi(footprint.y, 1)
 	)
 	_live_target_mode = enabled
+	_recalculate_hover_for_current_footprint()
 	if _live_target_mode:
 		_hide_default_highlights()
 		if has_hovered_cell():
@@ -114,6 +118,8 @@ func update_hover_from_world_position(world_position: Vector3) -> bool:
 	if cell == INVALID_CELL:
 		clear_hover()
 		return false
+	_last_hover_world_position = world_position
+	_has_hover_world_position = true
 	_set_hovered_cell(cell)
 	if _live_target_mode:
 		_set_selected_cell(cell)
@@ -125,11 +131,15 @@ func select_from_world_position(world_position: Vector3) -> bool:
 	if cell == INVALID_CELL:
 		cancel_selection()
 		return false
+	_last_hover_world_position = world_position
+	_has_hover_world_position = true
+	_set_hovered_cell(cell)
 	_set_selected_cell(cell)
 	return true
 
 
 func clear_hover() -> void:
+	_has_hover_world_position = false
 	if hovered_cell == INVALID_CELL:
 		return
 	hovered_cell = INVALID_CELL
@@ -178,6 +188,16 @@ func refresh_visuals() -> void:
 		_position_highlight(_hover_highlight, hovered_cell)
 	if has_selected_cell():
 		_position_highlight(_selected_highlight, selected_cell)
+
+
+func _recalculate_hover_for_current_footprint() -> void:
+	if not _has_hover_world_position or controller == null:
+		return
+	var recalculated_cell := _world_position_to_valid_cell(_last_hover_world_position)
+	if recalculated_cell == INVALID_CELL:
+		clear_hover()
+		return
+	_set_hovered_cell(recalculated_cell)
 
 
 func _world_position_to_valid_cell(world_position: Vector3) -> Vector2i:
