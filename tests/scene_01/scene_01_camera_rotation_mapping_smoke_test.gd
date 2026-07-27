@@ -271,6 +271,28 @@ func _test_last_command_rotation_semantics(
 	camera_rig: CAMERA_RIG_SCRIPT
 ) -> void:
 	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST, false)
+	var camera: Camera3D = camera_rig.get_camera()
+	_expect_true(camera != null, "Camera rig should expose SceneCamera for input coalescing tests.")
+	if camera == null:
+		return
+
+	var immediate_start_position: Vector3 = camera.position
+	camera_rig.rotate_clockwise(true)
+	camera_rig.rotate_counterclockwise(true)
+	_expect_equal(
+		camera_rig.get_view_direction(),
+		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST,
+		"Immediate QE should keep the starting logical direction."
+	)
+	_expect_true(
+		not camera_rig.is_transitioning(),
+		"Immediate QE at the same rendered endpoint should cancel instead of orbiting 360 degrees."
+	)
+	_expect_true(
+		camera.position.is_equal_approx(immediate_start_position),
+		"Immediate QE should keep the camera at the starting endpoint."
+	)
+
 	camera_rig.rotate_clockwise(true)
 	await create_timer(maxf(camera_rig.rotation_duration * 0.2, 0.04)).timeout
 	camera_rig.rotate_clockwise(true)
@@ -292,7 +314,6 @@ func _test_last_command_rotation_semantics(
 	)
 
 	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST, false)
-	var camera: Camera3D = camera_rig.get_camera()
 	var start_position: Vector3 = camera.position
 	camera_rig.rotate_clockwise(true)
 	await create_timer(maxf(camera_rig.rotation_duration * 0.45, 0.08)).timeout
