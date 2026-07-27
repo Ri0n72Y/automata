@@ -7,6 +7,8 @@ const ARM_SCENE: PackedScene = preload("res://scenes/scene_01/vehicles/arm_vehic
 const TRANSPORT_SCENE: PackedScene = preload("res://scenes/scene_01/vehicles/transport_vehicle_placeholder.tscn")
 const CAMERA_SCENE: PackedScene = preload("res://scenes/scene_01/components/scene_01_camera_lighting.tscn")
 const UI_SCENE: PackedScene = preload("res://scenes/scene_01/components/scene_01_manual_ui.tscn")
+const GRID_MODEL_SCRIPT := preload("res://scripts/grid/grid_model.gd")
+const VEHICLE_MANAGER_SCRIPT := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 
 var failures: int = 0
 
@@ -18,7 +20,9 @@ func _init() -> void:
 func _run() -> void:
 	_test_main_scene_structure()
 	_test_static_field()
+	_test_dynamic_field_fallback()
 	_test_vehicle_resources()
+	_test_incomplete_static_manager_rejected()
 	_test_camera_and_ui_resources()
 	_test_showcase_scene()
 
@@ -53,6 +57,47 @@ func _test_static_field() -> void:
 	field.free()
 
 
+func _test_dynamic_field_fallback() -> void:
+	var field: Node = FIELD_SCENE.instantiate()
+	var static_model := GRID_MODEL_SCRIPT.new()
+	_expect_true(
+		static_model.configure(12, 8, 1.0, Vector3.ZERO),
+		"Default static-grid model should configure."
+	)
+	field.call("draw", static_model)
+	_expect_true(bool(field.call("is_using_static_scene")), "A 12 x 8 model should use static tiles.")
+	_expect_equal(int(field.call("get_tile_count")), 96, "Static mode should expose 96 tiles.")
+
+	var large_model := GRID_MODEL_SCRIPT.new()
+	_expect_true(
+		large_model.configure(13, 8, 1.0, Vector3.ZERO),
+		"A 13 x 8 model should configure for dynamic fallback."
+	)
+	field.call("draw", large_model)
+	_expect_true(bool(field.call("is_using_dynamic_scene")), "A 13 x 8 model should use dynamic fallback.")
+	_expect_equal(int(field.call("get_tile_count")), 104, "Dynamic fallback should expose every large-grid tile.")
+	_expect_true(
+		field.call("get_tile_node", Vector2i(12, 7)) != null,
+		"Dynamic fallback queries should resolve cells outside the static capacity."
+	)
+
+	var static_tiles := field.get_node_or_null("Tiles") as Node3D
+	var static_ground := field.get_node_or_null("Tiles/GroundBody") as StaticBody3D
+	var active_ground := field.call("get_ground_body") as StaticBody3D
+	_expect_true(static_tiles != null and not static_tiles.visible, "Inactive static tiles should be hidden.")
+	_expect_true(static_ground != null and static_ground.collision_layer == 0, "Inactive static ground collision should be disabled.")
+	_expect_true(active_ground != null and active_ground != static_ground, "Dynamic mode should expose its own active ground body.")
+	if active_ground != null:
+		_expect_equal(active_ground.collision_layer, 1, "Dynamic ground should own the active ground collision layer.")
+
+	field.call("draw", static_model)
+	_expect_true(bool(field.call("is_using_static_scene")), "Returning to 12 x 8 should reactivate static tiles.")
+	_expect_true(static_tiles != null and static_tiles.visible, "Static tiles should become visible again.")
+	_expect_true(static_ground != null and static_ground.collision_layer == 1, "Static ground collision should be restored.")
+	_expect_true(field.call("get_ground_body") == static_ground, "Static queries should return the restored static ground body.")
+	field.free()
+
+
 func _test_vehicle_resources() -> void:
 	var arm: Node = ARM_SCENE.instantiate()
 	var transport: Node = TRANSPORT_SCENE.instantiate()
@@ -80,6 +125,21 @@ func _test_vehicle_resources() -> void:
 
 	arm.free()
 	transport.free()
+
+
+func _test_incomplete_static_manager_rejected() -> void:
+	var manager := VEHICLE_MANAGER_SCRIPT.new()
+	var arm: Node = ARM_SCENE.instantiate()
+	manager.add_child(arm)
+	var controller := Node.new()
+	_expect_false(
+		manager.configure(controller, 1.0),
+		"A manager with only one static preset should reject configuration."
+	)
+	_expect_equal(manager.get_child_count(), 1, "Rejected static configuration should not add dynamic vehicles.")
+	_expect_false(manager.has_pending_vehicle_batch(), "Rejected static configuration should not retain a dynamic batch.")
+	controller.free()
+	manager.free()
 
 
 func _test_camera_and_ui_resources() -> void:
@@ -137,6 +197,13 @@ func _expect_equal(actual: Variant, expected: Variant, message: String) -> void:
 
 func _expect_true(value: bool, message: String) -> void:
 	if value:
+		return
+	failures += 1
+	push_error(message)
+
+
+func _expect_false(value: bool, message: String) -> void:
+	if not value:
 		return
 	failures += 1
 	push_error(message)
