@@ -3,6 +3,12 @@ extends Node3D
 
 const GridModelScript := preload("res://scripts/grid/grid_model.gd")
 
+enum RenderMode {
+	NONE,
+	STATIC,
+	DYNAMIC,
+}
+
 @export_range(0.0, 0.25, 0.01) var tile_gap: float = 0.04
 @export_range(0.01, 0.5, 0.01) var tile_height: float = 0.08
 @export var normal_tile_color: Color = Color(0.45, 0.48, 0.52, 1.0)
@@ -19,13 +25,15 @@ const GridModelScript := preload("res://scripts/grid/grid_model.gd")
 @export var boundary_tile_material: Material
 
 var _active_tile_container: Node3D
+var _static_tile_container: Node3D
+var _render_mode: int = RenderMode.NONE
 var _draw_generation: int = 0
 var _tile_count: int = 0
 
 
 func _ready() -> void:
-	if use_static_scene_tiles:
-		_bind_static_scene()
+	if use_static_scene_tiles and _bind_static_scene():
+		_activate_static_scene()
 
 
 func draw(model: GridModelScript) -> void:
@@ -42,12 +50,20 @@ func get_tile_count() -> int:
 	return _tile_count
 
 
+func is_using_static_scene() -> bool:
+	return _render_mode == RenderMode.STATIC
+
+
+func is_using_dynamic_scene() -> bool:
+	return _render_mode == RenderMode.DYNAMIC
+
+
 func get_tile_node(cell: Vector2i) -> MeshInstance3D:
-	if use_static_scene_tiles:
+	if _render_mode == RenderMode.STATIC:
 		return get_node_or_null(
 			"Tiles/Row_%d/Tile_%d" % [cell.y, cell.x]
 		) as MeshInstance3D
-	if _active_tile_container == null:
+	if _render_mode != RenderMode.DYNAMIC or _active_tile_container == null:
 		return null
 	return _active_tile_container.get_node_or_null(
 		"Tiles/Tile_%d_%d" % [cell.x, cell.y]
@@ -55,9 +71,9 @@ func get_tile_node(cell: Vector2i) -> MeshInstance3D:
 
 
 func get_ground_body() -> StaticBody3D:
-	if use_static_scene_tiles:
+	if _render_mode == RenderMode.STATIC:
 		return get_node_or_null("Tiles/GroundBody") as StaticBody3D
-	if _active_tile_container == null:
+	if _render_mode != RenderMode.DYNAMIC or _active_tile_container == null:
 		return null
 	return _active_tile_container.get_node_or_null("GroundBody") as StaticBody3D
 
@@ -67,24 +83,50 @@ func _bind_static_scene() -> bool:
 	var ground_body := get_node_or_null("Tiles/GroundBody") as StaticBody3D
 	if tiles == null or ground_body == null:
 		return false
-	_active_tile_container = tiles
-	_tile_count = 0
-	for cell_y in range(static_grid_height):
-		for cell_x in range(static_grid_width):
-			if get_tile_node(Vector2i(cell_x, cell_y)) != null:
-				_tile_count += 1
+	_static_tile_container = tiles
 	return true
 
 
+func _activate_static_scene() -> bool:
+	if _static_tile_container == null and not _bind_static_scene():
+		return false
+	_release_dynamic_container()
+	_static_tile_container.visible = true
+	var ground_body := _static_tile_container.get_node_or_null("GroundBody") as StaticBody3D
+	if ground_body == null:
+		return false
+	ground_body.collision_layer = ground_collision_layer
+	ground_body.collision_mask = 0
+	var ground_shape := ground_body.get_node_or_null("GroundShape") as CollisionShape3D
+	if ground_shape != null:
+		ground_shape.disabled = false
+	_active_tile_container = _static_tile_container
+	_render_mode = RenderMode.STATIC
+	return true
+
+
+func _deactivate_static_scene() -> void:
+	if _static_tile_container == null and not _bind_static_scene():
+		return
+	_static_tile_container.visible = false
+	var ground_body := _static_tile_container.get_node_or_null("GroundBody") as StaticBody3D
+	if ground_body == null:
+		return
+	ground_body.collision_layer = 0
+	var ground_shape := ground_body.get_node_or_null("GroundShape") as CollisionShape3D
+	if ground_shape != null:
+		ground_shape.disabled = true
+
+
 func _apply_model_to_static_scene(model: GridModelScript) -> bool:
-	if model == null or not _bind_static_scene():
+	if model == null:
 		return false
 	if model.width > static_grid_width or model.height > static_grid_height:
 		return false
-
-	var tiles := get_node_or_null("Tiles") as Node3D
-	if tiles == null:
+	if not _activate_static_scene():
 		return false
+
+	var tiles := _static_tile_container
 	tiles.position = model.local_origin
 	tiles.scale = Vector3.ONE
 
@@ -143,10 +185,10 @@ func _static_material_for_cell_type(cell_type: int) -> Material:
 
 
 func _rebuild_dynamic(model: GridModelScript) -> void:
-	if _active_tile_container != null and not use_static_scene_tiles:
-		_active_tile_container.queue_free()
-		_active_tile_container = null
+	_deactivate_static_scene()
+	_release_dynamic_container()
 	_tile_count = 0
+	_render_mode = RenderMode.NONE
 
 	if model == null:
 		return
@@ -156,6 +198,7 @@ func _rebuild_dynamic(model: GridModelScript) -> void:
 	container.name = "TileBatch_%d" % _draw_generation
 	add_child(container)
 	_active_tile_container = container
+	_render_mode = RenderMode.DYNAMIC
 
 	var tiles := Node3D.new()
 	tiles.name = "Tiles"
@@ -208,6 +251,23 @@ func _rebuild_dynamic(model: GridModelScript) -> void:
 		float(model.height) * model.cell_size * 0.5
 	)
 	ground_body.add_child(ground_shape)
+
+
+func _release_dynamic_container() -> void:
+	if _render_mode != RenderMode.DYNAMIC or _active_tile_container == null:
+		return
+	_active_tile_container.visible = false
+	var ground_body := _active_tile_container.get_node_or_null("GroundBody") as StaticBody3D
+	if ground_body != null:
+		ground_body.collision_layer = 0
+		var ground_shape := ground_body.get_node_or_null("GroundShape") as CollisionShape3D
+		if ground_shape != null:
+			ground_shape.disabled = true
+	if _active_tile_container.is_inside_tree():
+		_active_tile_container.queue_free()
+	else:
+		_active_tile_container.free()
+	_active_tile_container = null
 
 
 func _create_tile_material(color: Color, use_emission: bool = false) -> StandardMaterial3D:
