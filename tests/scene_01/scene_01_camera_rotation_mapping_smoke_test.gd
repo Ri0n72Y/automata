@@ -38,8 +38,10 @@ func _run() -> void:
 	_expect_true(manual_controls != null, "Scene 01 should contain its manual controls.")
 	_expect_true(grid_root != null, "Scene 01 should contain GridRoot.")
 	if camera_rig != null and selection != null:
+		_test_camera_elevation(camera_rig)
 		await _test_four_directions_preserve_click_mapping(scene, camera_rig, selection)
 		_test_rotation_wraps(camera_rig)
+		await _test_animated_rotation(camera_rig)
 		if manual_controls != null and grid_root != null:
 			_test_shortcut_partition(scene, camera_rig, manual_controls, grid_root)
 		await _test_rotation_input_actions(scene, camera_rig)
@@ -48,6 +50,28 @@ func _run() -> void:
 	scene.queue_free()
 	await process_frame
 	_finish()
+
+
+func _test_camera_elevation(camera_rig: CAMERA_RIG_SCRIPT) -> void:
+	_expect_close(
+		camera_rig.elevation_degrees,
+		30.0,
+		0.01,
+		"Camera rig should use the requested 30 degree elevation."
+	)
+	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST, false)
+	var camera: Camera3D = camera_rig.get_camera()
+	_expect_true(camera != null, "Camera rig should expose SceneCamera for elevation tests.")
+	if camera == null:
+		return
+	var horizontal_distance := Vector2(camera.position.x, camera.position.z).length()
+	var actual_elevation := rad_to_deg(atan2(camera.position.y, horizontal_distance))
+	_expect_close(
+		actual_elevation,
+		30.0,
+		0.1,
+		"Configured camera position should preserve a 30 degree elevation."
+	)
 
 
 func _test_four_directions_preserve_click_mapping(
@@ -76,7 +100,7 @@ func _test_four_directions_preserve_click_mapping(
 	for index in range(directions.size()):
 		var direction: int = directions[index]
 		_expect_true(
-			camera_rig.set_view_direction(direction),
+			camera_rig.set_view_direction(direction, false),
 			"Camera should accept fixed direction %d." % direction
 		)
 		await process_frame
@@ -115,25 +139,86 @@ func _test_four_directions_preserve_click_mapping(
 
 
 func _test_rotation_wraps(camera_rig: CAMERA_RIG_SCRIPT) -> void:
-	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST)
-	camera_rig.rotate_counterclockwise()
+	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST, false)
+	camera_rig.rotate_counterclockwise(false)
 	_expect_equal(
 		camera_rig.get_view_direction(),
 		CAMERA_RIG_SCRIPT.ViewDirection.NORTHEAST,
 		"Counterclockwise rotation should wrap from southeast to northeast."
 	)
-	camera_rig.rotate_clockwise()
+	camera_rig.rotate_clockwise(false)
 	_expect_equal(
 		camera_rig.get_view_direction(),
 		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST,
 		"Clockwise rotation should wrap back to southeast."
 	)
 	for _step in range(4):
-		camera_rig.rotate_clockwise()
+		camera_rig.rotate_clockwise(false)
 	_expect_equal(
 		camera_rig.get_view_direction(),
 		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST,
 		"Four clockwise rotations should return to the starting direction."
+	)
+
+
+func _test_animated_rotation(camera_rig: CAMERA_RIG_SCRIPT) -> void:
+	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST, false)
+	var camera: Camera3D = camera_rig.get_camera()
+	_expect_true(camera != null, "Camera rig should expose SceneCamera for animation tests.")
+	if camera == null:
+		return
+
+	var started_transitions: Array[Vector2i] = []
+	var finished_directions: Array[int] = []
+	camera_rig.view_transition_started.connect(
+		func(from_direction: int, to_direction: int) -> void:
+			started_transitions.append(Vector2i(from_direction, to_direction))
+	)
+	camera_rig.view_transition_finished.connect(
+		func(direction: int) -> void:
+			finished_directions.append(direction)
+	)
+
+	var start_position: Vector3 = camera.position
+	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST, true)
+	_expect_true(camera_rig.is_transitioning(), "Camera rotation should start a Tween transition.")
+	_expect_true(
+		camera.position.is_equal_approx(start_position),
+		"Animated rotation should begin from the current rendered position without snapping."
+	)
+	_expect_equal(started_transitions.size(), 1, "Animated rotation should emit one start signal.")
+	if started_transitions.size() == 1:
+		_expect_equal(
+			started_transitions[0],
+			Vector2i(
+				CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST,
+				CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST
+			),
+			"Transition start signal should describe the requested quarter turn."
+		)
+
+	await create_timer(maxf(camera_rig.rotation_duration * 0.5, 0.05)).timeout
+	_expect_true(
+		not camera.position.is_equal_approx(start_position),
+		"Camera position should change continuously during the rotation animation."
+	)
+	_expect_true(
+		camera_rig.is_transitioning(),
+		"Camera should still be transitioning near the middle of the configured duration."
+	)
+
+	await create_timer(maxf(camera_rig.rotation_duration * 0.6, 0.08)).timeout
+	_expect_true(not camera_rig.is_transitioning(), "Camera transition should finish on time.")
+	_expect_equal(finished_directions.size(), 1, "Animated rotation should emit one finish signal.")
+	if finished_directions.size() == 1:
+		_expect_equal(
+			finished_directions[0],
+			CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST,
+			"Transition finish signal should report the final direction."
+		)
+	_expect_true(
+		camera.position.x < 0.0 and camera.position.z > 0.0,
+		"Animated rotation should finish in the southwest camera quadrant."
 	)
 
 
@@ -144,7 +229,7 @@ func _test_shortcut_partition(
 	grid_root: Node3D
 ) -> void:
 	scene.call("preview_restore_grid_transform")
-	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST)
+	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST, false)
 	var restored_basis: Basis = grid_root.basis
 
 	manual_controls._unhandled_key_input(_make_key_event(KEY_E, true, false))
@@ -186,7 +271,7 @@ func _test_rotation_input_actions(scene: Node, camera_rig: CAMERA_RIG_SCRIPT) ->
 		"Clockwise camera action should exist in InputMap."
 	)
 
-	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST)
+	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST, false)
 	var emitted_directions: Array[int] = []
 	camera_rig.view_direction_changed.connect(
 		func(direction: int) -> void:
@@ -300,6 +385,20 @@ func _expect_equal(actual: Variant, expected: Variant, message: String) -> void:
 		return
 	failures += 1
 	push_error("%s Expected %s, got %s." % [message, str(expected), str(actual)])
+
+
+func _expect_close(
+	actual: float,
+	expected: float,
+	tolerance: float,
+	message: String
+) -> void:
+	if absf(actual - expected) <= tolerance:
+		return
+	failures += 1
+	push_error(
+		"%s Expected %.3f ± %.3f, got %.3f." % [message, expected, tolerance, actual]
+	)
 
 
 func _expect_true(value: bool, message: String) -> void:
