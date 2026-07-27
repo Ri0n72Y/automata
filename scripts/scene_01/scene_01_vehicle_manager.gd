@@ -29,7 +29,10 @@ func _exit_tree() -> void:
 
 
 func configure(p_controller: Node, p_cell_size: float) -> bool:
-	if _vehicles.is_empty() and _configure_static_scene_children(p_controller, p_cell_size):
+	if _vehicles.is_empty() and _has_any_static_scene_child():
+		if not _configure_static_scene_children(p_controller, p_cell_size):
+			push_error("Scene 01 static vehicle presets are incomplete or invalid.")
+			return false
 		return true
 	var preparation := prepare_vehicle_batch(p_controller, p_cell_size)
 	if preparation == null:
@@ -47,8 +50,8 @@ func prepare_vehicle_batch(
 		return null
 
 	var vehicle_batch: Array[Node3D] = []
-	var arm_definition := _create_arm_definition()
-	var transport_definition := _create_transport_definition()
+	var arm_definition: VehicleDefinitionScript = _create_arm_definition()
+	var transport_definition: VehicleDefinitionScript = _create_transport_definition()
 	if arm_definition == null or transport_definition == null:
 		return null
 	if not _is_start_footprint_valid(p_controller, arm_definition, arm_start_cell):
@@ -60,7 +63,7 @@ func prepare_vehicle_batch(
 	):
 		return null
 
-	var arm_actor := _build_vehicle(
+	var arm_actor: VehicleActorScript = _build_vehicle(
 		p_controller,
 		arm_definition,
 		arm_start_cell,
@@ -72,7 +75,7 @@ func prepare_vehicle_batch(
 		return null
 	vehicle_batch.append(arm_actor)
 
-	var transport_actor := _build_vehicle(
+	var transport_actor: VehicleActorScript = _build_vehicle(
 		p_controller,
 		transport_definition,
 		transport_start_cell,
@@ -93,7 +96,7 @@ func commit_vehicle_batch(
 	p_controller: Node,
 	preparation: VehicleBatchPreparation
 ) -> bool:
-	var vehicle_batch := _take_prepared_batch(preparation)
+	var vehicle_batch: Array[Node3D] = _take_prepared_batch(preparation)
 	if vehicle_batch.is_empty():
 		push_error("Vehicle batch commit rejected an invalid, expired, or consumed preparation.")
 		return false
@@ -108,7 +111,7 @@ func commit_vehicle_batch(
 
 
 func discard_vehicle_batch(preparation: VehicleBatchPreparation) -> bool:
-	var vehicle_batch := _take_prepared_batch(preparation)
+	var vehicle_batch: Array[Node3D] = _take_prepared_batch(preparation)
 	if vehicle_batch.is_empty():
 		return false
 	_free_vehicle_batch(vehicle_batch)
@@ -155,6 +158,10 @@ func is_vehicle_batch_preparation_active(
 	return preparation != null and preparation == _active_preparation
 
 
+func _has_any_static_scene_child() -> bool:
+	return get_node_or_null("ArmVehicle") != null or get_node_or_null("TransportVehicle") != null
+
+
 func _configure_static_scene_children(p_controller: Node, p_cell_size: float) -> bool:
 	if p_controller == null:
 		return false
@@ -163,8 +170,8 @@ func _configure_static_scene_children(p_controller: Node, p_cell_size: float) ->
 	if arm_actor == null or transport_actor == null:
 		return false
 
-	var arm_definition := _create_arm_definition()
-	var transport_definition := _create_transport_definition()
+	var arm_definition: VehicleDefinitionScript = _create_arm_definition()
+	var transport_definition: VehicleDefinitionScript = _create_transport_definition()
 	if arm_definition == null or transport_definition == null:
 		return false
 	if not _is_start_footprint_valid(p_controller, arm_definition, arm_start_cell):
@@ -195,7 +202,9 @@ func _configure_static_scene_children(p_controller: Node, p_cell_size: float) ->
 	):
 		return false
 
-	_vehicles = [arm_actor, transport_actor]
+	_vehicles.clear()
+	_vehicles.append(arm_actor)
+	_vehicles.append(transport_actor)
 	controller = p_controller
 	return true
 
@@ -219,7 +228,7 @@ func _take_prepared_batch(preparation: VehicleBatchPreparation) -> Array[Node3D]
 	if preparation == null or preparation != _active_preparation:
 		return empty_batch
 
-	var vehicle_batch := _prepared_vehicle_batch
+	var vehicle_batch: Array[Node3D] = _prepared_vehicle_batch
 	_active_preparation = null
 	_prepared_vehicle_batch = []
 	return vehicle_batch
