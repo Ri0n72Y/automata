@@ -5,6 +5,7 @@ const VEHICLE_MANAGER_SCRIPT := preload("res://scripts/scene_01/scene_01_vehicle
 const VEHICLE_ACTOR_SCRIPT := preload("res://scripts/vehicles/vehicle_actor.gd")
 const VEHICLE_DEFINITION_SCRIPT := preload("res://scripts/vehicles/vehicle_definition.gd")
 const VEHICLE_RUNTIME_STATE_SCRIPT := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
+const GRID_MODEL_SCRIPT := preload("res://scripts/grid/grid_model.gd")
 
 var failures: int = 0
 
@@ -189,13 +190,16 @@ func _assert_camera_center(
 ) -> void:
 	if camera_rig == null:
 		return
-	var model = scene.get("grid_model")
-	var local_center := model.local_origin + Vector3(
+	var model := scene.get("grid_model") as GRID_MODEL_SCRIPT
+	_expect_true(model != null, "%s should expose GridModel for camera assertions." % context)
+	if model == null:
+		return
+	var local_center: Vector3 = model.local_origin + Vector3(
 		float(model.width) * model.cell_size * 0.5,
 		0.0,
 		float(model.height) * model.cell_size * 0.5
 	)
-	var expected_center := grid_root.to_global(local_center)
+	var expected_center: Vector3 = grid_root.to_global(local_center)
 	_expect_vector3_approx(camera_rig.global_position, expected_center, "%s should reframe the camera on the current grid center." % context)
 
 
