@@ -36,6 +36,7 @@ var _transition_tween: Tween
 
 
 func _ready() -> void:
+	_ensure_input_actions()
 	_view_direction = initial_view_direction
 	_rendered_azimuth_degrees = _get_direction_azimuth(_view_direction)
 	if camera != null:
@@ -58,6 +59,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			or key_event.meta_pressed
 		):
 			return
+	_ensure_input_actions()
 	if event.is_action_pressed(ROTATE_COUNTERCLOCKWISE_ACTION):
 		rotate_counterclockwise()
 		get_viewport().set_input_as_handled()
@@ -158,6 +160,20 @@ func _set_view_direction(
 func _is_text_input_focused() -> bool:
 	var focus_owner := get_viewport().gui_get_focus_owner()
 	return focus_owner is LineEdit or focus_owner is TextEdit
+
+
+func _ensure_input_actions() -> void:
+	_ensure_key_action(ROTATE_COUNTERCLOCKWISE_ACTION, KEY_Q)
+	_ensure_key_action(ROTATE_CLOCKWISE_ACTION, KEY_E)
+
+
+func _ensure_key_action(action: StringName, keycode: Key) -> void:
+	if InputMap.has_action(action):
+		return
+	InputMap.add_action(action)
+	var key_event := InputEventKey.new()
+	key_event.keycode = keycode
+	InputMap.action_add_event(action, key_event)
 
 
 func _apply_view_direction(animate: bool, preferred_rotation_sign: int) -> bool:
