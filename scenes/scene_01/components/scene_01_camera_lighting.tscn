@@ -1,0 +1,41 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/camera/scene_01_camera_rig.gd" id="1_camera_rig"]
+
+[sub_resource type="Environment" id="SceneEnvironment"]
+background_mode = 1
+background_color = Color(0.055, 0.075, 0.11, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.62, 0.7, 0.82, 1)
+ambient_light_energy = 0.72
+reflected_light_source = 2
+tonemap_mode = 2
+
+[node name="Scene01CameraRig" type="Node3D"]
+script = ExtResource("1_camera_rig")
+auto_frame_grid = true
+
+[node name="SceneCamera" type="Camera3D" parent="."]
+unique_name_in_owner = true
+position = Vector3(10, 14, 10)
+rotation_degrees = Vector3(-45, 45, 0)
+projection = 1
+size = 14.5
+near = 0.1
+far = 120
+current = true
+
+[node name="KeyLight" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-58, -32, 0)
+light_color = Color(1, 0.92, 0.8, 1)
+light_energy = 1.25
+shadow_enabled = true
+
+[node name="FillLight" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-38, 145, 0)
+light_color = Color(0.48, 0.64, 1, 1)
+light_energy = 0.48
+shadow_enabled = false
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("SceneEnvironment")

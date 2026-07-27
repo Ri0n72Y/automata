@@ -1,0 +1,66 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/grid_tile_static.tscn" id="1_tile"]
+
+[sub_resource type="StandardMaterial3D" id="BoundaryMaterial"]
+albedo_color = Color(0.07, 0.09, 0.13, 1)
+metallic = 0.15
+roughness = 0.72
+
+[sub_resource type="StandardMaterial3D" id="PowerMaterial"]
+albedo_color = Color(0.62, 0.78, 0.9, 1)
+metallic = 0.08
+roughness = 0.58
+emission_enabled = true
+emission = Color(0.08, 0.14, 0.2, 1)
+emission_energy_multiplier = 0.32
+
+[node name="InteriorRow" type="Node3D"]
+
+[node name="Tile_0" parent="." instance=ExtResource("1_tile")]
+position = Vector3(0.5, -0.04, 0)
+material_override = SubResource("BoundaryMaterial")
+
+[node name="Tile_1" parent="." instance=ExtResource("1_tile")]
+position = Vector3(1.5, -0.04, 0)
+material_override = SubResource("PowerMaterial")
+
+[node name="Tile_2" parent="." instance=ExtResource("1_tile")]
+position = Vector3(2.5, -0.04, 0)
+material_override = SubResource("PowerMaterial")
+
+[node name="Tile_3" parent="." instance=ExtResource("1_tile")]
+position = Vector3(3.5, -0.04, 0)
+material_override = SubResource("PowerMaterial")
+
+[node name="Tile_4" parent="." instance=ExtResource("1_tile")]
+position = Vector3(4.5, -0.04, 0)
+material_override = SubResource("PowerMaterial")
+
+[node name="Tile_5" parent="." instance=ExtResource("1_tile")]
+position = Vector3(5.5, -0.04, 0)
+material_override = SubResource("PowerMaterial")
+
+[node name="Tile_6" parent="." instance=ExtResource("1_tile")]
+position = Vector3(6.5, -0.04, 0)
+material_override = SubResource("PowerMaterial")
+
+[node name="Tile_7" parent="." instance=ExtResource("1_tile")]
+position = Vector3(7.5, -0.04, 0)
+material_override = SubResource("PowerMaterial")
+
+[node name="Tile_8" parent="." instance=ExtResource("1_tile")]
+position = Vector3(8.5, -0.04, 0)
+material_override = SubResource("PowerMaterial")
+
+[node name="Tile_9" parent="." instance=ExtResource("1_tile")]
+position = Vector3(9.5, -0.04, 0)
+material_override = SubResource("PowerMaterial")
+
+[node name="Tile_10" parent="." instance=ExtResource("1_tile")]
+position = Vector3(10.5, -0.04, 0)
+material_override = SubResource("PowerMaterial")
+
+[node name="Tile_11" parent="." instance=ExtResource("1_tile")]
+position = Vector3(11.5, -0.04, 0)
+material_override = SubResource("BoundaryMaterial")

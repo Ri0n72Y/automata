@@ -1,10 +1,14 @@
-[gd_scene load_steps=6 format=3 uid="uid://scene01basicpacking"]
+[gd_scene load_steps=10 format=3 uid="uid://scene01basicpacking"]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_controller.gd" id="1_controller"]
 [ext_resource type="Script" path="res://scripts/grid/grid_debug_view.gd" id="2_grid_debug"]
-[ext_resource type="Script" path="res://scripts/grid/grid_tile_view.gd" id="3_grid_tiles"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_field_12x8.tscn" id="3_static_field"]
 [ext_resource type="Script" path="res://scripts/input/grid_selection_controller.gd" id="4_grid_selection"]
-[ext_resource type="Script" path="res://scripts/camera/scene_01_camera_rig.gd" id="5_camera_rig"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_camera_lighting.tscn" id="5_camera_lighting"]
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_vehicle_manager.gd" id="6_vehicle_manager"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/vehicles/arm_vehicle_placeholder.tscn" id="7_arm_vehicle"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/vehicles/transport_vehicle_placeholder.tscn" id="8_transport_vehicle"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_manual_ui.tscn" id="9_manual_ui"]
 
 [node name="Scene01BasicPacking" type="Node3D"]
 script = ExtResource("1_controller")
@@ -15,9 +19,8 @@ unique_name_in_owner = true
 [node name="GridRoot" type="Node3D" parent="SceneRoot"]
 unique_name_in_owner = true
 
-[node name="GridTileView" type="Node3D" parent="SceneRoot/GridRoot"]
+[node name="GridTileView" parent="SceneRoot/GridRoot" instance=ExtResource("3_static_field")]
 unique_name_in_owner = true
-script = ExtResource("3_grid_tiles")
 
 [node name="GridDebugView" type="Node3D" parent="SceneRoot/GridRoot"]
 unique_name_in_owner = true
@@ -30,18 +33,27 @@ script = ExtResource("4_grid_selection")
 [node name="RobotRoot" type="Node3D" parent="SceneRoot"]
 unique_name_in_owner = true
 
+[node name="Scene01VehicleManager" type="Node3D" parent="SceneRoot/RobotRoot"]
+unique_name_in_owner = true
+script = ExtResource("6_vehicle_manager")
+
+[node name="ArmVehicle" parent="SceneRoot/RobotRoot/Scene01VehicleManager" instance=ExtResource("7_arm_vehicle")]
+position = Vector3(3, 0, 3)
+rotation = Vector3(0, -1.5708, 0)
+
+[node name="TransportVehicle" parent="SceneRoot/RobotRoot/Scene01VehicleManager" instance=ExtResource("8_transport_vehicle")]
+position = Vector3(8, 0, 5)
+rotation = Vector3(0, 1.5708, 0)
+
 [node name="ObjectRoot" type="Node3D" parent="SceneRoot"]
 unique_name_in_owner = true
 
 [node name="CameraRoot" type="Node3D" parent="SceneRoot"]
 unique_name_in_owner = true
 
-[node name="Scene01CameraRig" type="Node3D" parent="SceneRoot/CameraRoot"]
+[node name="Scene01CameraRig" parent="SceneRoot/CameraRoot" instance=ExtResource("5_camera_lighting")]
 unique_name_in_owner = true
-script = ExtResource("5_camera_rig")
+position = Vector3(6, 0, 4)
 
-[node name="SceneCamera" type="Camera3D" parent="SceneRoot/CameraRoot/Scene01CameraRig"]
-unique_name_in_owner = true
-
-[node name="UIRoot" type="CanvasLayer" parent="."]
+[node name="UIRoot" parent="." instance=ExtResource("9_manual_ui")]
 unique_name_in_owner = true

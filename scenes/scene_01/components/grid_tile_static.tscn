@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[sub_resource type="StandardMaterial3D" id="DefaultTileMaterial"]
+albedo_color = Color(0.34, 0.4, 0.48, 1)
+metallic = 0.04
+roughness = 0.8
+
+[sub_resource type="BoxMesh" id="TileMesh"]
+material = SubResource("DefaultTileMaterial")
+size = Vector3(0.96, 0.08, 0.96)
+
+[node name="GridTileStatic" type="MeshInstance3D"]
+mesh = SubResource("TileMesh")
+cast_shadow = 1
