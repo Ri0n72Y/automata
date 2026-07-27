@@ -18,8 +18,8 @@ mouse_filter = 2
 layout_mode = 0
 offset_left = 16.0
 offset_top = 16.0
-offset_right = 372.0
-offset_bottom = 376.0
+offset_right = 392.0
+offset_bottom = 392.0
 mouse_filter = 1
 
 [node name="Margin" type="MarginContainer" parent="RootControl/Panel"]
@@ -40,7 +40,7 @@ theme_override_font_sizes/font_size = 20
 
 [node name="Instructions" type="Label" parent="RootControl/Panel/Margin/VBox"]
 layout_mode = 2
-text = "Q / E: animate camera rotation (30° elevation)\nShift+Q / Shift+E: rotate GridRoot\nF: toggle non-uniform scale\nG: toggle offset\nR: reset scene\nHome: restore transform"
+text = "Q: camera clockwise · E: camera counterclockwise\nShift+Q: GridRoot +90° · Shift+E: GridRoot -90°\nRepeated input during rotation only changes the current target\nF: toggle non-uniform scale\nG: toggle offset\nR: reset scene\nHome: restore transform"
 
 [node name="ScopeNote" type="Label" parent="RootControl/Panel/Margin/VBox"]
 layout_mode = 2
