@@ -47,7 +47,8 @@ func configure(
 	controller = p_controller
 	cell_size = maxf(p_cell_size, 0.01)
 	vehicle_preset_id = definition.assembly_id
-	name = "Vehicle_%s" % String(definition.assembly_id)
+	if not use_static_scene_visual:
+		name = "Vehicle_%s" % String(definition.assembly_id)
 
 	if use_static_scene_visual:
 		if not _bind_static_visual():
