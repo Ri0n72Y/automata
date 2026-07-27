@@ -27,7 +27,7 @@ func _run() -> void:
 	if manager != null:
 		_test_new_preparation_replaces_old(scene, manager)
 		_test_forged_preparation_is_rejected(scene, manager)
-		_test_exit_tree_discards_pending(scene, manager)
+		await _test_exit_tree_discards_pending(scene, manager)
 
 	scene.queue_free()
 	await process_frame
@@ -100,16 +100,39 @@ func _test_exit_tree_discards_pending(
 	var preparation = manager.prepare_vehicle_batch(scene, scene.get("grid_cell_size"))
 	_expect_true(preparation != null, "Exit cleanup preparation should succeed.")
 	_expect_true(manager.has_pending_vehicle_batch(), "Manager should have a pending batch before cleanup.")
-	manager._exit_tree()
+
+	var pending_batch: Array = manager.get("_prepared_vehicle_batch")
+	_expect_true(pending_batch.size() == 2, "Pending preparation should contain both preset actors.")
+	var candidate_refs: Array[WeakRef] = []
+	for candidate in pending_batch:
+		if candidate is Node:
+			candidate_refs.append(weakref(candidate))
+			_expect_true(candidate.get_parent() == null, "Prepared actor should remain detached before commit.")
+			_expect_false(candidate.is_inside_tree(), "Prepared actor should not enter the SceneTree before commit.")
+
+	var manager_parent: Node = manager.get_parent()
+	_expect_true(manager_parent != null, "Manager should have a parent before the exit test.")
+	if manager_parent == null:
+		return
+	manager_parent.remove_child(manager)
+
 	_expect_false(
 		manager.is_vehicle_batch_preparation_active(preparation),
-		"Exit cleanup should invalidate the pending opaque handle."
+		"Real tree exit should invalidate the pending opaque handle."
 	)
-	_expect_false(manager.has_pending_vehicle_batch(), "Exit cleanup should release pending actors.")
+	_expect_false(manager.has_pending_vehicle_batch(), "Real tree exit should release pending actors.")
 	_expect_false(
 		manager.commit_vehicle_batch(scene, preparation),
 		"Exit-cleaned preparation should not commit."
 	)
+
+	manager.queue_free()
+	await process_frame
+	for candidate_ref in candidate_refs:
+		_expect_true(
+			candidate_ref.get_ref() == null,
+			"Pending actors should be freed after the manager exits the SceneTree."
+		)
 
 
 func _finish() -> void:
