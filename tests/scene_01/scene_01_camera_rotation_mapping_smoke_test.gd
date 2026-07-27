@@ -284,14 +284,22 @@ func _test_shortcut_partition(
 
 
 func _test_rotation_input_actions(scene: Node, camera_rig: CAMERA_RIG_SCRIPT) -> void:
+	var has_counterclockwise_action := InputMap.has_action(
+		CAMERA_RIG_SCRIPT.ROTATE_COUNTERCLOCKWISE_ACTION
+	)
+	var has_clockwise_action := InputMap.has_action(
+		CAMERA_RIG_SCRIPT.ROTATE_CLOCKWISE_ACTION
+	)
 	_expect_true(
-		InputMap.has_action(CAMERA_RIG_SCRIPT.ROTATE_COUNTERCLOCKWISE_ACTION),
+		has_counterclockwise_action,
 		"Counterclockwise camera action should exist in InputMap."
 	)
 	_expect_true(
-		InputMap.has_action(CAMERA_RIG_SCRIPT.ROTATE_CLOCKWISE_ACTION),
+		has_clockwise_action,
 		"Clockwise camera action should exist in InputMap."
 	)
+	if not has_counterclockwise_action or not has_clockwise_action:
+		return
 
 	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST, false)
 	var emitted_directions: Array[int] = []
@@ -307,11 +315,12 @@ func _test_rotation_input_actions(scene: Node, camera_rig: CAMERA_RIG_SCRIPT) ->
 		"Clockwise action press should rotate once."
 	)
 	_expect_equal(emitted_directions.size(), 1, "Action press should emit one direction change.")
-	_expect_equal(
-		emitted_directions[0],
-		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST,
-		"Direction signal should contain the new direction."
-	)
+	if emitted_directions.size() == 1:
+		_expect_equal(
+			emitted_directions[0],
+			CAMERA_RIG_SCRIPT.ViewDirection.SOUTHWEST,
+			"Direction signal should contain the new direction."
+		)
 
 	camera_rig._unhandled_input(_make_key_event(KEY_E, false, false))
 	camera_rig._unhandled_input(_make_key_event(KEY_E, true, true))
