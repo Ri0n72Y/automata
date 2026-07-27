@@ -126,7 +126,7 @@ func _test_exit_tree_discards_pending(
 		"Exit-cleaned preparation should not commit."
 	)
 
-	manager.queue_free()
+	manager.free()
 	await process_frame
 	for candidate_ref in candidate_refs:
 		_expect_true(
