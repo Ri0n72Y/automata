@@ -3,6 +3,7 @@ extends SceneTree
 const SCENE_PATH := "res://scenes/scene_01/scene_01_basic_packing.tscn"
 const CAMERA_RIG_SCRIPT := preload("res://scripts/camera/scene_01_camera_rig.gd")
 const GRID_SELECTION_SCRIPT := preload("res://scripts/input/grid_selection_controller.gd")
+const MANUAL_CONTROLS_SCRIPT := preload("res://scripts/scene_01/scene_01_manual_controls.gd")
 
 var failures: int = 0
 
@@ -20,6 +21,7 @@ func _run() -> void:
 
 	var scene := packed_scene.instantiate()
 	root.add_child(scene)
+	current_scene = scene
 	await process_frame
 	await physics_frame
 
@@ -29,13 +31,20 @@ func _run() -> void:
 	var selection := scene.get_node_or_null(
 		"SceneRoot/GridRoot/GridSelectionController"
 	) as GRID_SELECTION_SCRIPT
+	var manual_controls := scene.get_node_or_null("UIRoot") as MANUAL_CONTROLS_SCRIPT
+	var grid_root := scene.get_node_or_null("SceneRoot/GridRoot") as Node3D
 	_expect_true(camera_rig != null, "Scene 01 should contain its camera rig.")
 	_expect_true(selection != null, "Scene 01 should contain its grid selection controller.")
+	_expect_true(manual_controls != null, "Scene 01 should contain its manual controls.")
+	_expect_true(grid_root != null, "Scene 01 should contain GridRoot.")
 	if camera_rig != null and selection != null:
 		await _test_four_directions_preserve_click_mapping(scene, camera_rig, selection)
 		_test_rotation_wraps(camera_rig)
+		if manual_controls != null and grid_root != null:
+			_test_shortcut_partition(scene, camera_rig, manual_controls, grid_root)
 		await _test_rotation_input_actions(scene, camera_rig)
 
+	current_scene = null
 	scene.queue_free()
 	await process_frame
 	_finish()
@@ -125,6 +134,45 @@ func _test_rotation_wraps(camera_rig: CAMERA_RIG_SCRIPT) -> void:
 		camera_rig.get_view_direction(),
 		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST,
 		"Four clockwise rotations should return to the starting direction."
+	)
+
+
+func _test_shortcut_partition(
+	scene: Node,
+	camera_rig: CAMERA_RIG_SCRIPT,
+	manual_controls: MANUAL_CONTROLS_SCRIPT,
+	grid_root: Node3D
+) -> void:
+	scene.call("preview_restore_grid_transform")
+	camera_rig.set_view_direction(CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST)
+	var restored_basis: Basis = grid_root.basis
+
+	manual_controls._unhandled_key_input(_make_key_event(KEY_E, true, false))
+	_expect_true(
+		grid_root.basis.is_equal_approx(restored_basis),
+		"Plain E should not rotate the GridRoot preview."
+	)
+	_expect_equal(
+		camera_rig.get_view_direction(),
+		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST,
+		"Calling manual controls with plain E should not alter camera state."
+	)
+
+	manual_controls._unhandled_key_input(_make_key_event(KEY_E, true, false, true))
+	_expect_true(
+		not grid_root.basis.is_equal_approx(restored_basis),
+		"Shift+E should rotate the GridRoot preview."
+	)
+	_expect_equal(
+		camera_rig.get_view_direction(),
+		CAMERA_RIG_SCRIPT.ViewDirection.SOUTHEAST,
+		"Shift+E GridRoot preview rotation should preserve camera direction."
+	)
+
+	scene.call("preview_restore_grid_transform")
+	_expect_true(
+		grid_root.basis.is_equal_approx(restored_basis),
+		"GridRoot should restore after shortcut partition testing."
 	)
 
 
