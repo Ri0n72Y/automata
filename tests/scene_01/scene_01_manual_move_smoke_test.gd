@@ -107,9 +107,8 @@ func _test_manual_move_chain(
 	)
 
 	var target := Vector2i(5, 2)
-	var target_screen := camera_rig.get_camera().unproject_position(
-		scene.call("grid_cell_to_world", target)
-	)
+	var target_world: Vector3 = scene.call("grid_cell_to_world", target)
+	var target_screen := camera_rig.get_camera().unproject_position(target_world)
 	_expect_true(
 		grid_selection.select_from_screen_position(target_screen),
 		"Camera ray should select the MoveTo target anchor."
@@ -132,18 +131,17 @@ func _test_manual_move_chain(
 		"GridRoot rotation should preserve logical movement progress."
 	)
 	var active_command = arm.runtime_state.active_move_command
-	var expected_position: Vector3 = scene.call(
+	var current_world: Vector3 = scene.call(
 		"grid_footprint_center_to_world",
 		active_command.get_current_anchor(),
 		arm.definition.footprint
-	).lerp(
-		scene.call(
-			"grid_footprint_center_to_world",
-			active_command.get_next_anchor(),
-			arm.definition.footprint
-		),
-		progress_before_transform
 	)
+	var next_world: Vector3 = scene.call(
+		"grid_footprint_center_to_world",
+		active_command.get_next_anchor(),
+		arm.definition.footprint
+	)
+	var expected_position := current_world.lerp(next_world, progress_before_transform)
 	_expect_vector3_approx(
 		arm.global_position,
 		expected_position,
@@ -162,8 +160,9 @@ func _test_manual_move_chain(
 	_expect_equal(arm.runtime_state.motion_state, VEHICLE_RUNTIME_STATE_SCRIPT.MotionState.WAITING, "Arrival should restore Waiting.")
 
 	var blocked_target: Vector2i = transport.runtime_state.anchor_cell
+	var blocked_world: Vector3 = scene.call("grid_cell_to_world", blocked_target)
 	_expect_true(
-		grid_selection.select_from_world_position(scene.call("grid_cell_to_world", blocked_target)),
+		grid_selection.select_from_world_position(blocked_world),
 		"Occupied target anchor should still be selectable as ground."
 	)
 	_expect_true(move_controller.is_target_preview_visible(), "Occupied target should show a preview.")
@@ -178,6 +177,21 @@ func _test_manual_move_chain(
 	_expect_equal(arm.runtime_state.motion_state, VEHICLE_RUNTIME_STATE_SCRIPT.MotionState.BLOCKED, "Rejected planning should enter Blocked.")
 	_expect_true(grid_selection.has_selected_cell(), "Rejected target should remain selected for correction.")
 
+	var boundary_target := Vector2i(10, 5)
+	var boundary_world: Vector3 = scene.call("grid_cell_to_world", boundary_target)
+	_expect_true(
+		grid_selection.select_from_world_position(boundary_world),
+		"A walkable anchor next to the boundary should be selectable."
+	)
+	_expect_true(not move_controller.is_target_preview_valid(), "A footprint crossing boundary must be invalid.")
+	_expect_true(grid_selection.confirm_selection(), "Boundary-adjacent anchor should reach footprint validation.")
+	_expect_equal(rejected.size(), 2, "Boundary-crossing footprint should emit a rejection.")
+	_expect_equal(
+		move_controller.get_last_rejection_reason(),
+		VEHICLE_MOVE_SCRIPT.REJECTION_NO_PATH,
+		"Boundary-crossing footprint should be rejected as no_path."
+	)
+
 	scene.call("reset_scene")
 	_expect_equal(arm.runtime_state.anchor_cell, Vector2i(2, 2), "Reset should restore arm start anchor.")
 	_expect_equal(arm.runtime_state.motion_state, VEHICLE_RUNTIME_STATE_SCRIPT.MotionState.WAITING, "Reset should restore Waiting.")
@@ -185,8 +199,9 @@ func _test_manual_move_chain(
 	_expect_true(not grid_selection.has_selected_cell(), "Reset should clear ground selection.")
 	_expect_true(not move_controller.is_target_preview_visible(), "Reset should hide target preview.")
 
+	var no_vehicle_world: Vector3 = scene.call("grid_cell_to_world", Vector2i(4, 2))
 	_expect_true(
-		grid_selection.select_from_world_position(scene.call("grid_cell_to_world", Vector2i(4, 2))),
+		grid_selection.select_from_world_position(no_vehicle_world),
 		"A target can be selected without a vehicle."
 	)
 	_expect_true(grid_selection.confirm_selection(), "Ground confirmation should still emit without a vehicle.")
@@ -198,8 +213,12 @@ func _test_manual_move_chain(
 
 	grid_selection.cancel_selection()
 	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable for a no-op target.")
+	var current_anchor_world: Vector3 = scene.call(
+		"grid_cell_to_world",
+		arm.runtime_state.anchor_cell
+	)
 	_expect_true(
-		grid_selection.select_from_world_position(scene.call("grid_cell_to_world", arm.runtime_state.anchor_cell)),
+		grid_selection.select_from_world_position(current_anchor_world),
 		"Current anchor should be selectable."
 	)
 	_expect_true(move_controller.is_target_preview_valid(), "Current anchor should be a valid no-op target.")
