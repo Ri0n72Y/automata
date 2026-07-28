@@ -84,20 +84,21 @@ func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller
 	test.expect_true(arm.runtime_state.active_move_command == null, "No-op should not retain a command.")
 
 	var invalid_cases: Array[Dictionary] = [
-		{
-			"name": "other vehicle occupancy",
-			"target": transport.runtime_state.anchor_cell,
-		},
-		{
-			"name": "footprint crossing the boundary",
-			"target": Vector2i(10, 5),
-		},
+		{"name": "other vehicle occupancy", "target": transport.runtime_state.anchor_cell},
+		{"name": "left edge footprint", "target": Vector2i(0, 2)},
+		{"name": "right edge footprint", "target": Vector2i(10, 2)},
+		{"name": "bottom edge footprint", "target": Vector2i(4, 0)},
+		{"name": "top edge footprint", "target": Vector2i(4, 6)},
+		{"name": "bottom-left corner footprint", "target": Vector2i(0, 0)},
+		{"name": "bottom-right corner footprint", "target": Vector2i(10, 0)},
+		{"name": "top-left corner footprint", "target": Vector2i(0, 6)},
+		{"name": "top-right corner footprint", "target": Vector2i(10, 6)},
 	]
 	for case in invalid_cases:
 		_select_anchor(scene, grid_selection, case["target"])
 		test.expect_true(move_controller.is_target_preview_visible(), "%s should show target feedback." % case["name"])
 		test.expect_false(move_controller.is_target_preview_valid(), "%s should be invalid." % case["name"])
-		test.expect_true(grid_selection.confirm_selection(), "%s should reach command validation." % case["name"])
+		test.expect_true(grid_selection.confirm_selection(), "%s should reach footprint validation." % case["name"])
 		_expect_last_rejection(
 			rejected,
 			VEHICLE_MANAGER.ARM_VEHICLE_ID,
@@ -137,6 +138,7 @@ func _select_anchor(scene: Node, grid_selection, anchor: Vector2i) -> void:
 		grid_selection.select_from_world_position(world_position),
 		"Anchor %s should be selectable as a ground position." % str(anchor)
 	)
+	test.expect_equal(grid_selection.selected_cell, anchor, "Anchor %s should remain the selected target." % str(anchor))
 
 
 func _expect_last_rejection(
