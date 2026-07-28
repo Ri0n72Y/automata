@@ -160,7 +160,9 @@ func cancel_selection() -> void:
 
 
 func confirm_selection() -> bool:
-	if not has_selected_cell() or not is_selected_cell_walkable():
+	if not has_selected_cell():
+		return false
+	if not _live_target_mode and not is_selected_cell_walkable():
 		return false
 	selection_confirmed.emit(selected_cell)
 	return true
