@@ -44,26 +44,8 @@ func _test_initial_batch(scene: Node, manager, arm, transport) -> void:
 	if arm == null or transport == null:
 		return
 	var cases: Array[Dictionary] = [
-		{
-			"name": "arm",
-			"actor": arm,
-			"id": MANAGER.ARM_VEHICLE_ID,
-			"kind": DEFINITION.VehicleKind.ARM,
-			"weight_text": "18.0 kg",
-			"required_part": &"ArmColumn",
-			"forbidden_part": &"Tray",
-			"tray_capacity": 0,
-		},
-		{
-			"name": "transport",
-			"actor": transport,
-			"id": MANAGER.TRANSPORT_VEHICLE_ID,
-			"kind": DEFINITION.VehicleKind.TRANSPORT,
-			"weight_text": "16.0 kg",
-			"required_part": &"Tray",
-			"forbidden_part": &"ArmColumn",
-			"tray_capacity": 8,
-		},
+		{"name": "arm", "actor": arm, "id": MANAGER.ARM_VEHICLE_ID, "kind": DEFINITION.VehicleKind.ARM, "weight_text": "18.0 kg", "required_part": &"ArmColumn", "forbidden_part": &"Tray", "tray_capacity": 0},
+		{"name": "transport", "actor": transport, "id": MANAGER.TRANSPORT_VEHICLE_ID, "kind": DEFINITION.VehicleKind.TRANSPORT, "weight_text": "16.0 kg", "required_part": &"Tray", "forbidden_part": &"ArmColumn", "tray_capacity": 8},
 	]
 	for case in cases:
 		var actor = case["actor"]
@@ -120,10 +102,8 @@ func _test_reset_contract(scene: Node, arm, transport) -> void:
 func _test_grid_transform_sync(scene: Node, grid_root: Node3D, arm) -> void:
 	var camera_rig := scene.get_node_or_null("SceneRoot/CameraRoot/Scene01CameraRig") as Node3D
 	var operations: Array[Callable] = [
-		Callable(scene, "preview_restore_grid_transform"),
-		Callable(scene, "preview_rotate_grid").bind(1),
-		Callable(scene, "preview_toggle_grid_scale"),
-		Callable(scene, "preview_toggle_grid_offset"),
+		Callable(scene, "preview_restore_grid_transform"), Callable(scene, "preview_rotate_grid").bind(1),
+		Callable(scene, "preview_toggle_grid_scale"), Callable(scene, "preview_toggle_grid_offset"),
 		Callable(scene, "preview_restore_grid_transform"),
 	]
 	for operation in operations:
@@ -169,13 +149,17 @@ func _test_failed_reinitialization_atomicity(scene: Node, manager, arm, transpor
 
 
 func _test_successful_reinitialization(scene: Node, manager, old_arm, old_transport) -> void:
+	var old_arm_id: int = old_arm.get_instance_id()
+	var old_transport_id: int = old_transport.get_instance_id()
 	test.expect_true(bool(scene.call("initialize_grid")), "Valid grid reinitialization should succeed.")
 	await process_frame
 	test.expect_equal(manager.get_vehicle_count(), 2, "Successful reinitialization should retain one complete batch.")
 	var new_arm = manager.get_vehicle_by_id(MANAGER.ARM_VEHICLE_ID)
 	var new_transport = manager.get_vehicle_by_id(MANAGER.TRANSPORT_VEHICLE_ID)
 	test.expect_true(new_arm != null and new_transport != null, "Successful reinitialization should expose both presets.")
-	test.expect_true(new_arm != old_arm and new_transport != old_transport, "Successful reinitialization should replace Actor instances.")
+	if new_arm != null and new_transport != null:
+		test.expect_true(new_arm.get_instance_id() != old_arm_id, "Successful reinitialization should replace the arm Actor.")
+		test.expect_true(new_transport.get_instance_id() != old_transport_id, "Successful reinitialization should replace the transport Actor.")
 	test.expect_true(manager.get_node_or_null("ArmVehicle") == new_arm, "Replacement arm should retain stable node path.")
 	test.expect_true(manager.get_node_or_null("TransportVehicle") == new_transport, "Replacement transport should retain stable node path.")
 
