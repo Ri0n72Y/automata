@@ -31,13 +31,7 @@ func _init() -> void:
 			"configured": true,
 			"initial_state": MOVE_COMMAND_SCRIPT.State.WAITING,
 			"transitions": [
-				{
-					"finished": false,
-					"index": 0,
-					"state": MOVE_COMMAND_SCRIPT.State.WAITING,
-					"current": Vector2i(3, 3),
-					"next": Vector2i(3, 3),
-				},
+				{"finished": false, "index": 0, "state": MOVE_COMMAND_SCRIPT.State.WAITING, "current": Vector2i(3, 3), "next": Vector2i(3, 3)},
 			],
 		},
 		{
@@ -47,13 +41,7 @@ func _init() -> void:
 			"configured": true,
 			"initial_state": MOVE_COMMAND_SCRIPT.State.MOVING,
 			"transitions": [
-				{
-					"finished": true,
-					"index": 1,
-					"state": MOVE_COMMAND_SCRIPT.State.WAITING,
-					"current": Vector2i(2, 1),
-					"next": Vector2i(2, 1),
-				},
+				{"finished": true, "index": 1, "state": MOVE_COMMAND_SCRIPT.State.WAITING, "current": Vector2i(2, 1), "next": Vector2i(2, 1)},
 			],
 		},
 		{
@@ -63,20 +51,8 @@ func _init() -> void:
 			"configured": true,
 			"initial_state": MOVE_COMMAND_SCRIPT.State.MOVING,
 			"transitions": [
-				{
-					"finished": false,
-					"index": 1,
-					"state": MOVE_COMMAND_SCRIPT.State.MOVING,
-					"current": Vector2i(1, 0),
-					"next": Vector2i(2, 0),
-				},
-				{
-					"finished": true,
-					"index": 2,
-					"state": MOVE_COMMAND_SCRIPT.State.WAITING,
-					"current": Vector2i(2, 0),
-					"next": Vector2i(2, 0),
-				},
+				{"finished": false, "index": 1, "state": MOVE_COMMAND_SCRIPT.State.MOVING, "current": Vector2i(1, 0), "next": Vector2i(2, 0)},
+				{"finished": true, "index": 2, "state": MOVE_COMMAND_SCRIPT.State.WAITING, "current": Vector2i(2, 0), "next": Vector2i(2, 0)},
 			],
 		},
 	]
@@ -87,24 +63,31 @@ func _init() -> void:
 
 
 func _run_case(case: Dictionary) -> void:
-	var command := MOVE_COMMAND_SCRIPT.new()
-	var configured: bool = command.configure(case["target"], case["path"])
+	var target: Vector2i = case["target"]
+	var planned_path: Array[Vector2i] = []
+	planned_path.assign(case["path"])
+	var expected_configured: bool = case["configured"]
+	var expected_initial_state: int = case["initial_state"]
 	var context: String = case["name"]
-	test.expect_equal(configured, case["configured"], "%s configuration result." % context)
-	test.expect_equal(command.state, case["initial_state"], "%s initial state." % context)
-	test.expect_equal(command.target_anchor, case["target"], "%s target anchor." % context)
-	test.expect_equal(command.path, case["path"], "%s stores a path copy." % context)
+	var command := MOVE_COMMAND_SCRIPT.new()
+	var configured: bool = command.configure(target, planned_path)
+	test.expect_equal(configured, expected_configured, "%s configuration result." % context)
+	test.expect_equal(command.state, expected_initial_state, "%s initial state." % context)
+	test.expect_equal(command.target_anchor, target, "%s target anchor." % context)
+	test.expect_equal(command.path, planned_path, "%s stores a path copy." % context)
 	if command.path.is_empty():
 		test.expect_equal(command.get_current_anchor(), Vector2i.ZERO, "%s empty current anchor." % context)
 		test.expect_equal(command.get_next_anchor(), Vector2i.ZERO, "%s empty next anchor." % context)
 	else:
 		test.expect_equal(command.get_current_anchor(), command.path.front(), "%s starts at path index zero." % context)
 
-	for transition in case["transitions"]:
+	var transitions: Array[Dictionary] = []
+	transitions.assign(case["transitions"])
+	for transition in transitions:
 		var finished: bool = command.advance()
-		test.expect_equal(finished, transition["finished"], "%s advance result." % context)
-		test.expect_equal(command.path_index, transition["index"], "%s path index." % context)
-		test.expect_equal(command.state, transition["state"], "%s state after advance." % context)
+		test.expect_equal(finished, bool(transition["finished"]), "%s advance result." % context)
+		test.expect_equal(command.path_index, int(transition["index"]), "%s path index." % context)
+		test.expect_equal(command.state, int(transition["state"]), "%s state after advance." % context)
 		test.expect_equal(command.get_current_anchor(), transition["current"], "%s current anchor after advance." % context)
 		test.expect_equal(command.get_next_anchor(), transition["next"], "%s next anchor after advance." % context)
 
