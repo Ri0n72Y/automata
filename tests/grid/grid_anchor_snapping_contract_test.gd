@@ -97,7 +97,7 @@ func _test_offset_and_scaled_grid() -> void:
 		_expect_case(grid, case)
 
 
-func _expect_case(grid: RefCounted, case: Dictionary) -> void:
+func _expect_case(grid, case: Dictionary) -> void:
 	var position: Vector3 = case["position"]
 	var footprint: Vector2i = case["footprint"]
 	var expected: Vector2i = case["expected"]
@@ -108,7 +108,7 @@ func _expect_case(grid: RefCounted, case: Dictionary) -> void:
 
 
 func _expect_nearest_center_invariant(
-	grid: RefCounted,
+	grid,
 	position: Vector3,
 	footprint: Vector2i,
 	actual: Vector2i,
@@ -129,7 +129,7 @@ func _expect_nearest_center_invariant(
 			)
 
 
-func _footprint_center(grid: RefCounted, anchor: Vector2i, footprint: Vector2i) -> Vector3:
+func _footprint_center(grid, anchor: Vector2i, footprint: Vector2i) -> Vector3:
 	return grid.cell_to_position(anchor) + Vector3(
 		float(footprint.x - 1) * grid.cell_size * 0.5,
 		0.0,
