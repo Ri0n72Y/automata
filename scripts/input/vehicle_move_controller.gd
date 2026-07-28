@@ -39,6 +39,7 @@ var _preview_path: Array[Vector2i] = []
 var _preview_is_valid: bool = false
 var _last_rejection_reason: StringName = &""
 var _vehicle_ui_open: bool = false
+var _observed_vehicle: VehicleActorScript
 var _valid_path_material: StandardMaterial3D
 var _invalid_path_material: StandardMaterial3D
 
@@ -51,6 +52,10 @@ func _ready() -> void:
 	add_child(_path_preview_root)
 	_valid_path_material = _create_path_material(valid_path_color)
 	_invalid_path_material = _create_path_material(invalid_path_color)
+
+
+func _exit_tree() -> void:
+	_replace_observed_vehicle(null)
 
 
 func configure(
@@ -111,6 +116,7 @@ func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
 		_clear_grid_target()
 		_last_rejection_reason = &""
 		move_accepted.emit(vehicle_id, target_anchor)
+		_sync_live_target_mode()
 		return true
 
 	if not vehicle.start_move(command):
@@ -132,14 +138,14 @@ func reset_controller_state() -> void:
 
 
 func refresh_target_preview() -> void:
-	if _target_preview == null or grid_selection_controller == null or _vehicle_ui_open:
-		_hide_prediction()
-		return
-	if not grid_selection_controller.has_selected_cell():
+	if _target_preview == null or grid_selection_controller == null:
 		_hide_prediction()
 		return
 	var vehicle := _get_selected_vehicle()
-	if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
+	if not _can_show_prediction(vehicle):
+		_hide_prediction()
+		return
+	if not grid_selection_controller.has_selected_cell():
 		_hide_prediction()
 		return
 
@@ -148,11 +154,7 @@ func refresh_target_preview() -> void:
 	var cell_size := vehicle.cell_size
 	var path := _find_path(vehicle, target_anchor)
 	_preview_path = path.duplicate()
-	_preview_is_valid = (
-		vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
-		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
-		and not path.is_empty()
-	)
+	_preview_is_valid = not path.is_empty()
 
 	var mesh := _target_preview.mesh as BoxMesh
 	mesh.size = Vector3(
@@ -225,19 +227,77 @@ func _on_vehicle_selection_changed(_vehicle_id: StringName, _has_selection: bool
 	_sync_live_target_mode()
 
 
+func _on_observed_vehicle_move_started(_target_anchor: Vector2i) -> void:
+	_hide_prediction()
+
+
+func _on_observed_vehicle_move_completed(_target_anchor: Vector2i) -> void:
+	_sync_live_target_mode()
+
+
+func _on_observed_vehicle_move_blocked() -> void:
+	_sync_live_target_mode()
+
+
 func _sync_live_target_mode() -> void:
 	if grid_selection_controller == null:
 		return
 	var vehicle := _get_selected_vehicle()
-	var enabled := vehicle != null and not _vehicle_ui_open
+	_replace_observed_vehicle(vehicle)
+	var interaction_enabled := vehicle != null and not _vehicle_ui_open
 	var footprint := Vector2i.ONE
 	if vehicle != null and vehicle.definition != null:
 		footprint = vehicle.definition.footprint
-	grid_selection_controller.set_live_target_mode(enabled, footprint)
-	if enabled:
+	grid_selection_controller.set_live_target_mode(interaction_enabled, footprint)
+	if _can_show_prediction(vehicle):
 		refresh_target_preview()
 	else:
 		_hide_prediction()
+
+
+func _can_show_prediction(vehicle: VehicleActorScript) -> bool:
+	if vehicle == null or _vehicle_ui_open:
+		return false
+	if vehicle.definition == null or vehicle.runtime_state == null:
+		return false
+	return (
+		vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
+		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
+	)
+
+
+func _replace_observed_vehicle(vehicle: VehicleActorScript) -> void:
+	if _observed_vehicle == vehicle:
+		return
+	_disconnect_observed_vehicle()
+	_observed_vehicle = vehicle
+	if _observed_vehicle == null or not is_instance_valid(_observed_vehicle):
+		return
+	var started_callable := Callable(self, "_on_observed_vehicle_move_started")
+	if not _observed_vehicle.move_started.is_connected(started_callable):
+		_observed_vehicle.move_started.connect(started_callable)
+	var completed_callable := Callable(self, "_on_observed_vehicle_move_completed")
+	if not _observed_vehicle.move_completed.is_connected(completed_callable):
+		_observed_vehicle.move_completed.connect(completed_callable)
+	var blocked_callable := Callable(self, "_on_observed_vehicle_move_blocked")
+	if not _observed_vehicle.move_blocked.is_connected(blocked_callable):
+		_observed_vehicle.move_blocked.connect(blocked_callable)
+
+
+func _disconnect_observed_vehicle() -> void:
+	if _observed_vehicle == null or not is_instance_valid(_observed_vehicle):
+		_observed_vehicle = null
+		return
+	var started_callable := Callable(self, "_on_observed_vehicle_move_started")
+	if _observed_vehicle.move_started.is_connected(started_callable):
+		_observed_vehicle.move_started.disconnect(started_callable)
+	var completed_callable := Callable(self, "_on_observed_vehicle_move_completed")
+	if _observed_vehicle.move_completed.is_connected(completed_callable):
+		_observed_vehicle.move_completed.disconnect(completed_callable)
+	var blocked_callable := Callable(self, "_on_observed_vehicle_move_blocked")
+	if _observed_vehicle.move_blocked.is_connected(blocked_callable):
+		_observed_vehicle.move_blocked.disconnect(blocked_callable)
+	_observed_vehicle = null
 
 
 func _get_selected_vehicle() -> VehicleActorScript:
