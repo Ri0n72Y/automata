@@ -11,9 +11,9 @@ var test := CONTRACT.new()
 class ControllerStub extends Node3D:
 	func grid_footprint_center_to_world(anchor: Vector2i, footprint: Vector2i) -> Vector3:
 		return Vector3(
-			float(anchor.x) + float(footprint.x - 1) * 0.5,
+			float(anchor.x) + float(footprint.x) * 0.5,
 			0.0,
-			float(anchor.y) + float(footprint.y - 1) * 0.5
+			float(anchor.y) + float(footprint.y) * 0.5
 		)
 
 	func get_grid_world_basis() -> Basis:
@@ -40,7 +40,7 @@ func _run() -> void:
 		controller.add_child(actor)
 		await process_frame
 		test.expect_true(actor.is_inside_tree(), "Actor should enter the tree after attachment.")
-		test.expect_vector3_approx(actor.global_position, Vector3(2.5, 0.0, 3.5), "Tree entry should synchronize the runtime anchor.")
+		test.expect_vector3_approx(actor.global_position, Vector3(3.0, 0.0, 4.0), "Tree entry should synchronize the footprint center.")
 
 		controller.transform = Transform3D(Basis(Vector3.UP, PI * 0.5), Vector3(4.0, 0.0, -2.0))
 		actor.sync_from_state()
