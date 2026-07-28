@@ -7,6 +7,7 @@ var test := CONTRACT_TEST_SCRIPT.new()
 
 
 func _init() -> void:
+	var one_cell_door := _vertical_wall_with_opening(Vector2i(7, 5), 3, 2)
 	var cases: Array[Dictionary] = [
 		{
 			"name": "same start and goal",
@@ -112,22 +113,22 @@ func _init() -> void:
 			"reachable": false,
 		},
 		{
-			"name": "1x1 vehicle passes a one-cell corridor",
-			"start": Vector2i(0, 2),
-			"goal": Vector2i(4, 2),
+			"name": "1x1 vehicle passes a one-cell doorway between valid rooms",
+			"start": Vector2i(1, 2),
+			"goal": Vector2i(5, 2),
 			"footprint": Vector2i.ONE,
-			"grid_size": Vector2i(5, 5),
-			"blocked": _all_cells_except_row(Vector2i(5, 5), 2),
+			"grid_size": Vector2i(7, 5),
+			"blocked": one_cell_door,
 			"reachable": true,
 			"expected_size": 5,
 		},
 		{
-			"name": "2x2 vehicle cannot pass a one-cell corridor",
-			"start": Vector2i(0, 2),
-			"goal": Vector2i(3, 2),
+			"name": "2x2 vehicle cannot pass a one-cell doorway despite valid endpoints",
+			"start": Vector2i(0, 1),
+			"goal": Vector2i(5, 1),
 			"footprint": Vector2i(2, 2),
-			"grid_size": Vector2i(5, 5),
-			"blocked": _all_cells_except_row(Vector2i(5, 5), 2),
+			"grid_size": Vector2i(7, 5),
+			"blocked": one_cell_door,
 			"reachable": false,
 		},
 	]
@@ -191,7 +192,7 @@ func _expect_path_invariants(
 			continue
 		var delta := path[index] - path[index - 1]
 		test.expect_equal(
-			abs(delta.x) + abs(delta.y),
+			absi(delta.x) + absi(delta.y),
 			1,
 			"%s should use cardinal adjacent steps." % context
 		)
@@ -208,11 +209,14 @@ func _anchor_fits_grid(anchor: Vector2i, footprint: Vector2i, grid_size: Vector2
 	)
 
 
-func _all_cells_except_row(grid_size: Vector2i, open_row: int) -> Array[Vector2i]:
+func _vertical_wall_with_opening(
+	grid_size: Vector2i,
+	wall_x: int,
+	opening_y: int
+) -> Array[Vector2i]:
 	var blocked: Array[Vector2i] = []
 	for y in range(grid_size.y):
-		if y == open_row:
+		if y == opening_y:
 			continue
-		for x in range(grid_size.x):
-			blocked.append(Vector2i(x, y))
+		blocked.append(Vector2i(wall_x, y))
 	return blocked
