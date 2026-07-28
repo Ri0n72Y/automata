@@ -102,14 +102,17 @@ func _test_selection_contract(scene: Node, selection, manager, camera_rig) -> vo
 	_expect_cleared(selection, "scene reset")
 
 	test.expect_true(selection.select_vehicle(arm), "Arm should be selectable before Actor replacement.")
+	var old_arm_id: int = arm.get_instance_id()
 	test.expect_true(bool(scene.call("initialize_grid")), "Grid rebuild should succeed.")
 	await process_frame
 	await physics_frame
 	_expect_cleared(selection, "Actor replacement")
 	var replacement_arm = manager.get_vehicle_by_id(VEHICLE_MANAGER.ARM_VEHICLE_ID)
-	test.expect_true(replacement_arm != null and replacement_arm != arm, "Grid rebuild should replace the old Actor.")
-	test.expect_true(selection.select_vehicle(replacement_arm), "Replacement Actor should be selectable.")
-	_expect_selected(selection, VEHICLE_MANAGER.ARM_VEHICLE_ID, "replacement Actor")
+	test.expect_true(replacement_arm != null, "Grid rebuild should expose a replacement arm Actor.")
+	if replacement_arm != null:
+		test.expect_true(replacement_arm.get_instance_id() != old_arm_id, "Grid rebuild should replace the old Actor instance.")
+		test.expect_true(selection.select_vehicle(replacement_arm), "Replacement Actor should be selectable.")
+		_expect_selected(selection, VEHICLE_MANAGER.ARM_VEHICLE_ID, "replacement Actor")
 
 
 func _expect_selected(selection, expected_id: StringName, context: String) -> void:
