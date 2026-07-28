@@ -47,11 +47,104 @@ func _run() -> void:
 		"Manual move integration dependencies should exist."
 	)
 	if vehicle_selection != null and move_controller != null and grid_selection != null and manager != null and camera_rig != null:
+		await _test_2x2_screen_mapping_matrix(
+			scene,
+			vehicle_selection,
+			move_controller,
+			grid_selection,
+			manager,
+			camera_rig
+		)
 		await _test_user_flow(scene, vehicle_selection, move_controller, grid_selection, manager, camera_rig)
 
 	scene.queue_free()
 	await process_frame
 	test.finish(self, "Scene 01 manual move integration tests")
+
+
+func _test_2x2_screen_mapping_matrix(
+	scene: Node,
+	vehicle_selection,
+	move_controller,
+	grid_selection,
+	manager,
+	camera_rig
+) -> void:
+	var arm = manager.get_vehicle_by_id(VEHICLE_MANAGER.ARM_VEHICLE_ID)
+	test.expect_true(arm != null, "2x2 mapping should expose the arm vehicle.")
+	if arm == null:
+		return
+	test.expect_true(vehicle_selection.select_vehicle(arm), "2x2 mapping should select the arm.")
+	test.expect_equal(grid_selection.get_target_footprint(), Vector2i(2, 2), "Selected arm should configure 2x2 snapping.")
+
+	var targets: Array[Vector2i] = [Vector2i(5, 2), Vector2i(5, 4)]
+	var directions := [
+		CAMERA_RIG.ViewDirection.SOUTHEAST,
+		CAMERA_RIG.ViewDirection.SOUTHWEST,
+		CAMERA_RIG.ViewDirection.NORTHWEST,
+		CAMERA_RIG.ViewDirection.NORTHEAST,
+	]
+	for direction in directions:
+		camera_rig.set_view_direction(direction, false)
+		await process_frame
+		await physics_frame
+		for target in targets:
+			_expect_2x2_screen_target(
+				scene,
+				camera_rig.get_camera(),
+				grid_selection,
+				move_controller,
+				target,
+				"fixed direction %d" % direction
+			)
+
+	var original_duration: float = camera_rig.rotation_duration
+	camera_rig.rotation_duration = 1.0
+	camera_rig.set_view_direction(CAMERA_RIG.ViewDirection.SOUTHEAST, false)
+	camera_rig.rotate_clockwise(true)
+	await create_timer(0.2).timeout
+	test.expect_true(camera_rig.is_transitioning(), "2x2 mapping should sample an active camera transition.")
+	for target in targets:
+		_expect_2x2_screen_target(
+			scene,
+			camera_rig.get_camera(),
+			grid_selection,
+			move_controller,
+			target,
+			"mid-transition"
+		)
+	camera_rig.set_view_direction(CAMERA_RIG.ViewDirection.SOUTHWEST, false)
+	camera_rig.rotation_duration = original_duration
+	grid_selection.cancel_selection()
+	vehicle_selection.cancel_selection()
+
+
+func _expect_2x2_screen_target(
+	scene: Node,
+	camera: Camera3D,
+	grid_selection,
+	move_controller,
+	target: Vector2i,
+	context: String
+) -> void:
+	test.expect_true(camera != null, "%s should expose a camera." % context)
+	if camera == null:
+		return
+	var world_center: Vector3 = scene.call("grid_footprint_center_to_world", target, Vector2i(2, 2))
+	var screen_position := camera.unproject_position(world_center)
+	test.expect_true(
+		grid_selection.update_hover_from_screen_position(screen_position),
+		"%s should raycast target %s." % [context, str(target)]
+	)
+	test.expect_equal(
+		grid_selection.selected_cell,
+		target,
+		"%s should preserve the nearest 2x2 intersection anchor." % context
+	)
+	var path := move_controller.get_preview_path()
+	test.expect_false(path.is_empty(), "%s should expose a preview path." % context)
+	if not path.is_empty():
+		test.expect_equal(path.back(), target, "%s preview should end at the mapped anchor." % context)
 
 
 func _test_user_flow(scene: Node, vehicle_selection, move_controller, grid_selection, manager, camera_rig) -> void:
