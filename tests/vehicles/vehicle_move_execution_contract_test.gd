@@ -14,9 +14,9 @@ class FakeController extends Node3D:
 
 	func grid_footprint_center_to_world(anchor: Vector2i, footprint: Vector2i) -> Vector3:
 		var center := Vector3(
-			float(anchor.x) + float(footprint.x - 1) * 0.5,
+			float(anchor.x) + float(footprint.x) * 0.5,
 			0.0,
-			float(anchor.y) + float(footprint.y - 1) * 0.5
+			float(anchor.y) + float(footprint.y) * 0.5
 		)
 		return grid_transform * center
 
