@@ -21,6 +21,9 @@ func configure(target: Vector2i, planned_path: Array[Vector2i]) -> bool:
 	if path.is_empty() or path.back() != target_anchor:
 		state = State.BLOCKED
 		return false
+	if not _is_cardinal_path(path):
+		state = State.BLOCKED
+		return false
 	if path.size() == 1:
 		state = State.WAITING
 		return true
@@ -64,3 +67,11 @@ func is_finished() -> bool:
 
 func is_blocked() -> bool:
 	return state == State.BLOCKED
+
+
+func _is_cardinal_path(planned_path: Array[Vector2i]) -> bool:
+	for index in range(1, planned_path.size()):
+		var delta := planned_path[index] - planned_path[index - 1]
+		if absi(delta.x) + absi(delta.y) != 1:
+			return false
+	return true
