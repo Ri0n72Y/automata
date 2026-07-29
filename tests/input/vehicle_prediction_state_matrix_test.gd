@@ -77,7 +77,7 @@ func _test_visibility_matrix(context: Dictionary) -> void:
 	var move_controller = context["move_controller"]
 	var grid_selection = context["grid_selection"]
 	var arm = context["arm"]
-	var hover_world := grid_root.to_global(Vector3(5.08, 0.0, 4.02))
+	var hover_world: Vector3 = grid_root.to_global(Vector3(5.08, 0.0, 4.02))
 
 	grid_selection.update_hover_from_world_position(hover_world)
 	_expect_state("no vehicle selected", grid_selection, move_controller, false, false, false)
@@ -111,13 +111,13 @@ func _test_transition_lifecycle(context: Dictionary) -> void:
 	var grid_selection = context["grid_selection"]
 	var arm = context["arm"]
 	var transport = context["transport"]
-	var initial_target := grid_root.to_global(Vector3(5.08, 0.0, 4.02))
+	var initial_target: Vector3 = grid_root.to_global(Vector3(5.08, 0.0, 4.02))
 	grid_selection.update_hover_from_world_position(initial_target)
 	test.expect_true(grid_selection.confirm_selection(), "Current prediction should start MoveTo.")
 	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.MOVING, "Confirmation should enter Moving.")
 	_expect_state("move started", grid_selection, move_controller, true, false, false)
 
-	var latest_hover := grid_root.to_global(Vector3(9.05, 0.0, 3.05))
+	var latest_hover: Vector3 = grid_root.to_global(Vector3(9.05, 0.0, 3.05))
 	var latest_anchor := Vector2i(8, 2)
 	test.expect_true(grid_selection.update_hover_from_world_position(latest_hover), "Moving hover should still be recorded.")
 	test.expect_equal(grid_selection.selected_cell, latest_anchor, "Moving hover should retain the latest snapped anchor.")
@@ -136,7 +136,7 @@ func _test_transition_lifecycle(context: Dictionary) -> void:
 	test.expect_true(transport.move_completed.is_connected(completed_callable), "Current Actor completion signal should connect.")
 	test.expect_true(transport.move_blocked.is_connected(blocked_callable), "Current Actor blocked signal should connect.")
 	_expect_state("switched idle vehicle", grid_selection, move_controller, true, true, true)
-	var switched_path := move_controller.get_preview_path()
+	var switched_path: Array[Vector2i] = move_controller.get_preview_path()
 	if not switched_path.is_empty():
 		test.expect_equal(switched_path.front(), transport.runtime_state.anchor_cell, "Switched prediction should start from the current vehicle.")
 
