@@ -29,7 +29,7 @@ func _init() -> void:
 
 
 func _run() -> void:
-	var fixture := _fixture(true)
+	var fixture: Dictionary = _fixture(true)
 	_test_start_boundaries(fixture)
 	_test_time_boundaries(fixture)
 	_test_transform_boundary(fixture)
@@ -64,7 +64,7 @@ func _test_start_boundaries(fixture: Dictionary) -> void:
 	var actor = fixture["actor"]
 	var runtime = fixture["runtime"]
 	test.expect_false(actor.start_move(null), "Null commands should be rejected.")
-	var mismatched := _command(Vector2i(3, 1), [Vector2i(2, 1), Vector2i(3, 1)])
+	var mismatched: COMMAND = _command(Vector2i(3, 1), [Vector2i(2, 1), Vector2i(3, 1)])
 	test.expect_false(actor.start_move(mismatched), "Command start must match the current anchor.")
 	test.expect_equal(runtime.motion_state, RUNTIME.MotionState.WAITING, "Rejected starts preserve Waiting.")
 
@@ -77,7 +77,7 @@ func _test_time_boundaries(fixture: Dictionary) -> void:
 	var definition = fixture["definition"]
 	var completed: Array[Vector2i] = []
 	actor.move_completed.connect(func(target: Vector2i) -> void: completed.append(target), CONNECT_ONE_SHOT)
-	var command := _command(Vector2i(3, 1), [Vector2i(1, 1), Vector2i(2, 1), Vector2i(3, 1)])
+	var command: COMMAND = _command(Vector2i(3, 1), [Vector2i(1, 1), Vector2i(2, 1), Vector2i(3, 1)])
 	test.expect_true(actor.start_move(command), "Valid commands should start.")
 
 	actor.advance_move(0.0)
@@ -85,7 +85,7 @@ func _test_time_boundaries(fixture: Dictionary) -> void:
 	actor.advance_move(0.25)
 	test.expect_equal(runtime.anchor_cell, Vector2i(1, 1), "Segment-interior movement preserves the last reached anchor.")
 	test.expect_float_approx(actor.get_segment_progress(), 0.5, "Quarter second advances half a cell at speed two.")
-	var midpoint := controller.grid_footprint_center_to_world(Vector2i(1, 1), definition.footprint).lerp(
+	var midpoint: Vector3 = controller.grid_footprint_center_to_world(Vector2i(1, 1), definition.footprint).lerp(
 		controller.grid_footprint_center_to_world(Vector2i(2, 1), definition.footprint), 0.5
 	)
 	test.expect_vector3_approx(actor.global_position, midpoint, "Segment-interior position interpolates between centers.")
@@ -99,7 +99,7 @@ func _test_time_boundaries(fixture: Dictionary) -> void:
 	test.expect_equal(completed, [Vector2i(3, 1)], "Completion emits once.")
 
 	_reset(fixture)
-	var long_command := _command(
+	var long_command: COMMAND = _command(
 		Vector2i(4, 1),
 		[Vector2i(1, 1), Vector2i(2, 1), Vector2i(3, 1), Vector2i(4, 1)]
 	)
@@ -121,7 +121,7 @@ func _test_transform_boundary(fixture: Dictionary) -> void:
 		Vector3(5.0, 0.0, -2.0)
 	)
 	actor.sync_from_state()
-	var midpoint := controller.grid_footprint_center_to_world(Vector2i(1, 1), definition.footprint).lerp(
+	var midpoint: Vector3 = controller.grid_footprint_center_to_world(Vector2i(1, 1), definition.footprint).lerp(
 		controller.grid_footprint_center_to_world(Vector2i(2, 1), definition.footprint), 0.5
 	)
 	test.expect_float_approx(actor.get_segment_progress(), 0.5, "Transform changes preserve logical progress.")
@@ -154,7 +154,7 @@ func _test_cancel_and_reset(fixture: Dictionary) -> void:
 
 
 func _test_non_movable_definition() -> void:
-	var fixture := _fixture(false)
+	var fixture: Dictionary = _fixture(false)
 	var actor = fixture["actor"]
 	test.expect_false(
 		actor.start_move(_command(Vector2i(2, 1), [Vector2i(1, 1), Vector2i(2, 1)])),
@@ -163,8 +163,8 @@ func _test_non_movable_definition() -> void:
 	_free_fixture(fixture)
 
 
-func _command(target: Vector2i, path: Array[Vector2i]):
-	var command := COMMAND.new()
+func _command(target: Vector2i, path: Array[Vector2i]) -> COMMAND:
+	var command: COMMAND = COMMAND.new()
 	test.expect_true(command.configure(target, path), "Test command should configure.")
 	return command
 
