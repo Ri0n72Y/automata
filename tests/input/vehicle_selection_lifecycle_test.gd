@@ -84,7 +84,7 @@ func _test_selection_contract(scene: Node, selection, manager, camera_rig) -> vo
 		await process_frame
 		await physics_frame
 		selection.cancel_selection()
-		var screen_position := camera_rig.get_camera().unproject_position(
+		var screen_position: Vector2 = camera_rig.get_camera().unproject_position(
 			arm.global_position + arm.global_basis.y.normalized() * arm.cell_size * 0.25
 		)
 		test.expect_true(
@@ -94,7 +94,7 @@ func _test_selection_contract(scene: Node, selection, manager, camera_rig) -> vo
 		_expect_selected(selection, VEHICLE_MANAGER.ARM_VEHICLE_ID, "camera direction %d" % direction)
 
 	var empty_world: Vector3 = scene.call("grid_cell_to_world", Vector2i(5, 5))
-	var empty_screen := camera_rig.get_camera().unproject_position(empty_world)
+	var empty_screen: Vector2 = camera_rig.get_camera().unproject_position(empty_world)
 	test.expect_false(selection.select_from_screen_position(empty_screen), "Ground-only raycasts should not select a vehicle.")
 	_expect_selected(selection, VEHICLE_MANAGER.ARM_VEHICLE_ID, "ground click preserves selection")
 
