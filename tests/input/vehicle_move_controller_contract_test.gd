@@ -6,6 +6,7 @@ const VEHICLE_MOVE := preload("res://scripts/input/vehicle_move_controller.gd")
 const GRID_SELECTION := preload("res://scripts/input/grid_selection_controller.gd")
 const VEHICLE_MANAGER := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const RUNTIME := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
+const COMMAND := preload("res://scripts/vehicles/move_command.gd")
 const CONTRACT := preload("res://tests/support/contract_test.gd")
 
 var test := CONTRACT.new()
@@ -86,14 +87,19 @@ func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller
 	)
 
 	var no_vehicle_target := Vector2i(4, 2)
-	_select_anchor(scene, grid_selection, no_vehicle_target)
-	test.expect_true(grid_selection.confirm_selection(), "Ground confirmation API should still emit without a vehicle.")
+	test.expect_false(move_controller.request_selected_vehicle_move(no_vehicle_target), "Direct request should reject without a vehicle.")
 	_expect_last_rejection(rejected, &"", no_vehicle_target, VEHICLE_MOVE.REJECTION_NO_VEHICLE, "no vehicle selected")
 
-	grid_selection.cancel_selection()
 	test.expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable.")
 	test.expect_true(grid_selection.is_live_target_available(), "Vehicle selection should make the move command available.")
 	test.expect_false(grid_selection.is_live_target_mode(), "Vehicle selection alone should not show prediction.")
+	var accepted_before_unarmed := accepted.size()
+	var rejected_before_unarmed := rejected.size()
+	grid_selection.selection_confirmed.emit(Vector2i(5, 2))
+	test.expect_equal(accepted.size(), accepted_before_unarmed, "Unarmed confirmation signal must not accept movement.")
+	test.expect_equal(rejected.size(), rejected_before_unarmed, "Unarmed confirmation signal must be ignored without rejection noise.")
+	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.WAITING, "Unarmed confirmation preserves Waiting.")
+
 	test.expect_true(grid_selection.activate_live_target_mode(), "M-equivalent activation should arm prediction.")
 	var no_op_target: Vector2i = arm.runtime_state.anchor_cell
 	_select_anchor(scene, grid_selection, no_op_target)
@@ -133,6 +139,27 @@ func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller
 		test.expect_true(grid_selection.is_live_target_mode(), "%s rejection should keep move command mode armed." % case["name"])
 
 	arm.runtime_state.clear_move_command()
+	var transport_command: COMMAND = COMMAND.new()
+	var transport_start: Vector2i = transport.runtime_state.anchor_cell
+	var transport_target := transport_start + Vector2i.LEFT
+	test.expect_true(
+		transport_command.configure(transport_target, [transport_start, transport_target]),
+		"Concurrent lock fixture command should configure."
+	)
+	test.expect_true(transport.start_move(transport_command), "Transport should start the concurrent lock fixture move.")
+	test.expect_false(vehicle_selection.select_vehicle(transport), "Another active vehicle should prevent selection switching.")
+	var global_busy_target := Vector2i(5, 2)
+	test.expect_false(move_controller.request_selected_vehicle_move(global_busy_target), "Another active vehicle should reject a direct move request.")
+	_expect_last_rejection(
+		rejected,
+		VEHICLE_MANAGER.ARM_VEHICLE_ID,
+		global_busy_target,
+		VEHICLE_MOVE.REJECTION_BUSY,
+		"another active vehicle"
+	)
+	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.WAITING, "Global lock rejection should preserve selected vehicle Waiting.")
+	transport.reset_actor()
+
 	test.expect_true(arm.runtime_state.begin_move_planning(), "Busy boundary should enter Planning.")
 	var busy_target := Vector2i(5, 2)
 	test.expect_false(move_controller.request_selected_vehicle_move(busy_target), "Planning vehicle should reject another request.")
