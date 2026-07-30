@@ -82,11 +82,11 @@ func select_from_screen_position(screen_position: Vector2) -> bool:
 func select_vehicle(vehicle: VehicleActorScript) -> bool:
 	if vehicle == null or not is_instance_valid(vehicle) or not _is_current_vehicle(vehicle):
 		return false
-	if _has_other_active_vehicle(vehicle):
-		return false
 	if _selected_vehicle == vehicle:
 		_update_highlight(vehicle)
 		return true
+	if _has_active_vehicle():
+		return false
 	_selected_vehicle = vehicle
 	_update_highlight(vehicle)
 	set_process(true)
@@ -149,17 +149,17 @@ func _is_move_command_active() -> bool:
 	)
 
 
-func _has_other_active_vehicle(candidate: VehicleActorScript) -> bool:
+func _has_active_vehicle() -> bool:
 	if vehicle_manager == null or not vehicle_manager.has_method("get_vehicles"):
 		return false
 	var vehicle_nodes: Array = vehicle_manager.call("get_vehicles")
 	for vehicle_node in vehicle_nodes:
-		var other: VehicleActorScript = vehicle_node as VehicleActorScript
-		if other == null or other == candidate or other.runtime_state == null:
+		var vehicle: VehicleActorScript = vehicle_node as VehicleActorScript
+		if vehicle == null or vehicle.runtime_state == null:
 			continue
 		if (
-			other.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
-			or other.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING
+			vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
+			or vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING
 		):
 			return true
 	return false
