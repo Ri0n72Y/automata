@@ -63,7 +63,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			if primary_action_from_screen_position(event.position):
 				get_viewport().set_input_as_handled()
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			cancel_selection()
+			if _live_target_mode:
+				deactivate_live_target_mode()
+				get_viewport().set_input_as_handled()
+			else:
+				cancel_selection()
 		return
 
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -71,7 +75,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			if toggle_live_target_mode():
 				get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_ESCAPE:
-			cancel_selection()
+			if _live_target_mode:
+				deactivate_live_target_mode()
+				get_viewport().set_input_as_handled()
+			else:
+				cancel_selection()
 
 
 func set_live_target_mode(
@@ -139,6 +147,8 @@ func get_target_footprint() -> Vector2i:
 
 
 func primary_action_from_screen_position(screen_position: Vector2) -> bool:
+	if not _live_target_mode and _has_selected_vehicle():
+		return false
 	if not select_from_screen_position(screen_position):
 		return false
 	if _live_target_mode:
@@ -219,9 +229,7 @@ func confirm_selection() -> bool:
 	var was_live_target_mode := _live_target_mode
 	selection_confirmed.emit(selected_cell)
 	if was_live_target_mode and not has_selected_cell():
-		if _selected_vehicle_is_busy():
-			_live_target_available = false
-		deactivate_live_target_mode()
+		_finish_live_target_command()
 	return true
 
 
@@ -262,8 +270,27 @@ func _on_vehicle_selection_changed(_vehicle_id: StringName, _has_selection: bool
 	deactivate_live_target_mode()
 
 
+func _finish_live_target_command() -> void:
+	if not _live_target_mode:
+		return
+	_live_target_mode = false
+	if _selected_vehicle_is_busy():
+		_live_target_available = false
+	refresh_visuals()
+	live_target_mode_changed.emit(false)
+
+
 func _can_activate_live_target_mode() -> bool:
 	return _live_target_available and not _selected_vehicle_is_busy()
+
+
+func _has_selected_vehicle() -> bool:
+	var vehicle_selection := get_parent().get_node_or_null("VehicleSelectionController")
+	return (
+		vehicle_selection != null
+		and vehicle_selection.has_method("has_selected_vehicle")
+		and bool(vehicle_selection.call("has_selected_vehicle"))
+	)
 
 
 func _selected_vehicle_is_busy() -> bool:
