@@ -4,8 +4,10 @@ extends Node3D
 signal hover_changed(cell: Vector2i, has_hover: bool)
 signal selection_changed(cell: Vector2i, has_selection: bool)
 signal selection_confirmed(cell: Vector2i)
+signal live_target_mode_changed(active: bool)
 
 const INVALID_CELL := Vector2i(-1, -1)
+const MOVE_COMMAND_ACTION := &"vehicle_move_command"
 
 @export var ground_collision_mask: int = 1
 @export_range(1.0, 1000.0, 1.0) var ray_length: float = 200.0
@@ -20,6 +22,7 @@ var hovered_cell: Vector2i = INVALID_CELL
 var selected_cell: Vector2i = INVALID_CELL
 var _cell_size: float = 1.0
 var _target_footprint: Vector2i = Vector2i.ONE
+var _live_target_available: bool = false
 var _live_target_mode: bool = false
 var _last_hover_world_position: Vector3 = Vector3.ZERO
 var _has_hover_world_position: bool = false
@@ -33,6 +36,7 @@ func _ready() -> void:
 	add_child(_hover_highlight)
 	add_child(_selected_highlight)
 	_update_highlight_sizes()
+	_connect_vehicle_selection_lifecycle()
 
 
 func configure(
@@ -55,14 +59,16 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT:
-			select_from_screen_position(event.position)
+			if primary_action_from_screen_position(event.position):
+				get_viewport().set_input_as_handled()
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			cancel_selection()
 		return
 
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_ENTER:
-			confirm_selection()
+		if event.is_action_pressed(MOVE_COMMAND_ACTION) and not _has_command_modifier(event):
+			if toggle_live_target_mode():
+				get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_ESCAPE:
 			cancel_selection()
 
@@ -75,15 +81,53 @@ func set_live_target_mode(
 		maxi(footprint.x, 1),
 		maxi(footprint.y, 1)
 	)
-	_live_target_mode = enabled
-	_recalculate_hover_for_current_footprint()
+	_live_target_available = enabled
+	if not _live_target_available:
+		deactivate_live_target_mode()
+		return
 	if _live_target_mode:
+		_recalculate_hover_for_current_footprint()
 		_hide_default_highlights()
 		if has_hovered_cell():
 			_set_selected_cell(hovered_cell)
-		return
+
+
+func activate_live_target_mode() -> bool:
+	if not _live_target_available:
+		return false
+	if _live_target_mode:
+		return true
+	_live_target_mode = true
+	_recalculate_hover_for_current_footprint()
+	_hide_default_highlights()
+	if has_hovered_cell():
+		_set_selected_cell(hovered_cell)
+	live_target_mode_changed.emit(true)
+	return true
+
+
+func deactivate_live_target_mode() -> void:
+	var was_active := _live_target_mode
+	_live_target_mode = false
 	cancel_selection()
+	_recalculate_hover_for_current_footprint()
 	refresh_visuals()
+	if was_active:
+		live_target_mode_changed.emit(false)
+
+
+func toggle_live_target_mode() -> bool:
+	if not _live_target_available:
+		return false
+	if _live_target_mode:
+		deactivate_live_target_mode()
+	else:
+		activate_live_target_mode()
+	return true
+
+
+func is_live_target_available() -> bool:
+	return _live_target_available
 
 
 func is_live_target_mode() -> bool:
@@ -92,6 +136,14 @@ func is_live_target_mode() -> bool:
 
 func get_target_footprint() -> Vector2i:
 	return _target_footprint
+
+
+func primary_action_from_screen_position(screen_position: Vector2) -> bool:
+	if not select_from_screen_position(screen_position):
+		return false
+	if _live_target_mode:
+		return confirm_selection()
+	return true
 
 
 func update_hover_from_screen_position(screen_position: Vector2) -> bool:
@@ -164,7 +216,10 @@ func confirm_selection() -> bool:
 		return false
 	if not _live_target_mode and not is_selected_cell_walkable():
 		return false
+	var was_live_target_mode := _live_target_mode
 	selection_confirmed.emit(selected_cell)
+	if was_live_target_mode and not has_selected_cell():
+		deactivate_live_target_mode()
 	return true
 
 
@@ -192,6 +247,19 @@ func refresh_visuals() -> void:
 		_position_highlight(_selected_highlight, selected_cell)
 
 
+func _connect_vehicle_selection_lifecycle() -> void:
+	var vehicle_selection := get_parent().get_node_or_null("VehicleSelectionController")
+	if vehicle_selection == null or not vehicle_selection.has_signal("selection_changed"):
+		return
+	var changed_callable := Callable(self, "_on_vehicle_selection_changed")
+	if not vehicle_selection.is_connected("selection_changed", changed_callable):
+		vehicle_selection.connect("selection_changed", changed_callable)
+
+
+func _on_vehicle_selection_changed(_vehicle_id: StringName, _has_selection: bool) -> void:
+	deactivate_live_target_mode()
+
+
 func _recalculate_hover_for_current_footprint() -> void:
 	if not _has_hover_world_position or controller == null:
 		return
@@ -200,6 +268,8 @@ func _recalculate_hover_for_current_footprint() -> void:
 		clear_hover()
 		return
 	_set_hovered_cell(recalculated_cell)
+	if _live_target_mode:
+		_set_selected_cell(recalculated_cell)
 
 
 func _world_position_to_valid_cell(world_position: Vector3) -> Vector2i:
@@ -208,10 +278,11 @@ func _world_position_to_valid_cell(world_position: Vector3) -> Vector2i:
 	var containing_cell: Vector2i = controller.call("world_to_grid_cell", world_position)
 	if not bool(controller.call("is_grid_cell_valid", containing_cell)):
 		return INVALID_CELL
+	var active_footprint := _target_footprint if _live_target_mode else Vector2i.ONE
 	var cell: Vector2i = controller.call(
 		"world_to_nearest_grid_anchor",
 		world_position,
-		_target_footprint
+		active_footprint
 	)
 	if not bool(controller.call("is_grid_cell_valid", cell)):
 		return INVALID_CELL
@@ -249,6 +320,10 @@ func _hide_default_highlights() -> void:
 		_hover_highlight.visible = false
 	if _selected_highlight != null:
 		_selected_highlight.visible = false
+
+
+func _has_command_modifier(event: InputEventKey) -> bool:
+	return event.shift_pressed or event.ctrl_pressed or event.alt_pressed or event.meta_pressed
 
 
 func _raycast_ground(screen_position: Vector2) -> Dictionary:
