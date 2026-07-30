@@ -54,6 +54,10 @@ func _ready() -> void:
 	_invalid_path_material = _create_path_material(invalid_path_color)
 
 
+func _physics_process(_delta: float) -> void:
+	_resolve_runtime_vehicle_collisions()
+
+
 func _exit_tree() -> void:
 	_replace_observed_vehicle(null)
 
@@ -91,10 +95,6 @@ func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
 	move_requested.emit(vehicle_id, target_anchor)
 	if vehicle == null:
 		_reject(vehicle_id, target_anchor, REJECTION_NO_VEHICLE)
-		return false
-	if _has_other_active_vehicle(vehicle):
-		_reject(vehicle_id, target_anchor, REJECTION_BUSY)
-		refresh_target_preview()
 		return false
 	if vehicle.runtime_state == null or not vehicle.runtime_state.begin_move_planning():
 		_reject(vehicle_id, target_anchor, REJECTION_BUSY)
@@ -266,8 +266,6 @@ func _can_show_prediction(vehicle: VehicleActorScript) -> bool:
 		return false
 	if vehicle.definition == null or vehicle.runtime_state == null:
 		return false
-	if _has_other_active_vehicle(vehicle):
-		return false
 	return (
 		vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
 		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
@@ -314,19 +312,84 @@ func _get_selected_vehicle() -> VehicleActorScript:
 	return vehicle_selection_controller.get_selected_vehicle()
 
 
-func _has_other_active_vehicle(selected_vehicle: VehicleActorScript) -> bool:
+func _resolve_runtime_vehicle_collisions() -> void:
 	if vehicle_manager == null:
-		return false
-	for vehicle_node in vehicle_manager.get_vehicles():
-		var other := vehicle_node as VehicleActorScript
-		if other == null or other == selected_vehicle or other.runtime_state == null:
+		return
+	var vehicle_nodes := vehicle_manager.get_vehicles()
+	for first_index in range(vehicle_nodes.size()):
+		var first := vehicle_nodes[first_index] as VehicleActorScript
+		if first == null or first.runtime_state == null or first.definition == null:
 			continue
-		if (
-			other.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
-			or other.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING
-		):
-			return true
-	return false
+		for second_index in range(first_index + 1, vehicle_nodes.size()):
+			var second := vehicle_nodes[second_index] as VehicleActorScript
+			if second == null or second.runtime_state == null or second.definition == null:
+				continue
+			if not _vehicles_overlap_in_motion(first, second):
+				continue
+			_block_colliding_vehicle(first)
+			_block_colliding_vehicle(second)
+
+
+func _vehicles_overlap_in_motion(
+	first: VehicleActorScript,
+	second: VehicleActorScript
+) -> bool:
+	var first_moving := _is_vehicle_moving(first)
+	var second_moving := _is_vehicle_moving(second)
+	if not first_moving and not second_moving:
+		return false
+	return _rects_overlap(
+		_vehicle_motion_rect(first),
+		_vehicle_motion_rect(second)
+	)
+
+
+func _is_vehicle_moving(vehicle: VehicleActorScript) -> bool:
+	return (
+		vehicle != null
+		and vehicle.runtime_state != null
+		and vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING
+		and vehicle.runtime_state.active_move_command != null
+	)
+
+
+func _vehicle_motion_rect(vehicle: VehicleActorScript) -> Rect2:
+	var anchor := Vector2(
+		float(vehicle.runtime_state.anchor_cell.x),
+		float(vehicle.runtime_state.anchor_cell.y)
+	)
+	if _is_vehicle_moving(vehicle):
+		var command: MoveCommandScript = vehicle.runtime_state.active_move_command
+		var current_anchor := command.get_current_anchor()
+		var next_anchor := command.get_next_anchor()
+		var current_position := Vector2(float(current_anchor.x), float(current_anchor.y))
+		var next_position := Vector2(float(next_anchor.x), float(next_anchor.y))
+		anchor = current_position.lerp(
+			next_position,
+			clampf(vehicle.get_segment_progress(), 0.0, 1.0)
+		)
+	return Rect2(
+		anchor,
+		Vector2(
+			float(vehicle.definition.footprint.x),
+			float(vehicle.definition.footprint.y)
+		)
+	)
+
+
+func _rects_overlap(first: Rect2, second: Rect2) -> bool:
+	const EPSILON := 0.000001
+	return (
+		first.position.x < second.end.x - EPSILON
+		and first.end.x > second.position.x + EPSILON
+		and first.position.y < second.end.y - EPSILON
+		and first.end.y > second.position.y + EPSILON
+	)
+
+
+func _block_colliding_vehicle(vehicle: VehicleActorScript) -> void:
+	if _is_vehicle_moving(vehicle):
+		vehicle.cancel_move()
 
 
 func _find_path(vehicle: VehicleActorScript, target_anchor: Vector2i) -> Array[Vector2i]:
