@@ -186,8 +186,9 @@ func _expect_2x2_screen_target(
 
 func _test_user_flow(scene: Node, vehicle_selection, move_controller, grid_selection, manager, camera_rig) -> void:
 	var arm = manager.get_vehicle_by_id(VEHICLE_MANAGER.ARM_VEHICLE_ID)
-	test.expect_true(arm != null, "Arm vehicle should exist.")
-	if arm == null:
+	var transport = manager.get_vehicle_by_id(VEHICLE_MANAGER.TRANSPORT_VEHICLE_ID)
+	test.expect_true(arm != null and transport != null, "Both vehicles should exist for the user flow.")
+	if arm == null or transport == null:
 		return
 
 	camera_rig.set_view_direction(CAMERA_RIG.ViewDirection.NORTHWEST, false)
@@ -210,7 +211,29 @@ func _test_user_flow(scene: Node, vehicle_selection, move_controller, grid_selec
 	test.expect_false(move_controller.is_target_preview_visible(), "Unarmed ground click should not show a target preview.")
 	test.expect_false(move_controller.is_path_preview_visible(), "Unarmed ground click should not show a path preview.")
 
-	test.expect_true(grid_selection.activate_live_target_mode(), "M-equivalent command should arm MoveTo.")
+	test.expect_true(grid_selection.activate_live_target_mode(), "M-equivalent command should arm no-op routing.")
+	var no_op_click := _left_click(arm_screen)
+	vehicle_selection._input(no_op_click)
+	test.expect_equal(vehicle_selection.get_selected_vehicle_id(), VEHICLE_MANAGER.ARM_VEHICLE_ID, "M-mode vehicle click must preserve the selected arm.")
+	grid_selection._unhandled_input(no_op_click)
+	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.WAITING, "Vehicle click should submit an accepted no-op.")
+	test.expect_false(grid_selection.is_live_target_mode(), "Accepted no-op through the real click chain should exit M mode.")
+	test.expect_true(vehicle_selection.has_selected_vehicle(), "Accepted no-op should preserve vehicle selection.")
+
+	test.expect_true(grid_selection.activate_live_target_mode(), "M-equivalent command should re-arm occupancy routing.")
+	var transport_screen: Vector2 = camera_rig.get_camera().unproject_position(
+		transport.global_position + transport.global_basis.y.normalized() * transport.cell_size * 0.25
+	)
+	var occupied_click := _left_click(transport_screen)
+	vehicle_selection._input(occupied_click)
+	test.expect_equal(vehicle_selection.get_selected_vehicle_id(), VEHICLE_MANAGER.ARM_VEHICLE_ID, "M-mode click on another vehicle must not switch selection.")
+	grid_selection._unhandled_input(occupied_click)
+	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.BLOCKED, "Occupied vehicle click should reach footprint rejection.")
+	test.expect_true(grid_selection.is_live_target_mode(), "Occupied target rejection should keep M mode armed.")
+	test.expect_true(move_controller.is_target_preview_visible(), "Occupied target should retain red target feedback.")
+	test.expect_false(move_controller.is_target_preview_valid(), "Occupied target feedback should be invalid.")
+	arm.runtime_state.clear_move_command()
+
 	test.expect_true(grid_selection.update_hover_from_screen_position(target_screen), "Screen hover should update the MoveTo target.")
 	test.expect_equal(grid_selection.selected_cell, target, "Hover should resolve the expected 2x2 anchor.")
 	test.expect_true(move_controller.is_target_preview_valid(), "Reachable hover should show a valid target.")
@@ -260,6 +283,14 @@ func _test_user_flow(scene: Node, vehicle_selection, move_controller, grid_selec
 	test.expect_false(grid_selection.is_live_target_mode(), "Reset should leave move command mode.")
 	test.expect_false(move_controller.is_target_preview_visible(), "Reset should hide target prediction.")
 	test.expect_false(move_controller.is_path_preview_visible(), "Reset should hide path prediction.")
+
+
+func _left_click(screen_position: Vector2) -> InputEventMouseButton:
+	var event := InputEventMouseButton.new()
+	event.position = screen_position
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.pressed = true
+	return event
 
 
 func _complete_move(actor) -> void:
