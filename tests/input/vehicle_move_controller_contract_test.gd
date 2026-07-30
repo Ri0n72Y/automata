@@ -139,27 +139,51 @@ func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller
 		test.expect_true(grid_selection.is_live_target_mode(), "%s rejection should keep move command mode armed." % case["name"])
 
 	arm.runtime_state.clear_move_command()
-	var transport_command: COMMAND = COMMAND.new()
-	var transport_start: Vector2i = transport.runtime_state.anchor_cell
-	var transport_target := transport_start + Vector2i.LEFT
+	grid_selection.deactivate_live_target_mode()
+	var arm_command: COMMAND = COMMAND.new()
+	var arm_start: Vector2i = arm.runtime_state.anchor_cell
+	var arm_target := arm_start + Vector2i.RIGHT
 	test.expect_true(
-		transport_command.configure(transport_target, [transport_start, transport_target]),
-		"Concurrent lock fixture command should configure."
+		arm_command.configure(arm_target, [arm_start, arm_target]),
+		"Concurrent arm task command should configure."
 	)
-	test.expect_true(transport.start_move(transport_command), "Transport should start the concurrent lock fixture move.")
-	test.expect_false(vehicle_selection.select_vehicle(transport), "Another active vehicle should prevent selection switching.")
-	var global_busy_target := Vector2i(5, 2)
-	test.expect_false(move_controller.request_selected_vehicle_move(global_busy_target), "Another active vehicle should reject a direct move request.")
-	_expect_last_rejection(
-		rejected,
-		VEHICLE_MANAGER.ARM_VEHICLE_ID,
-		global_busy_target,
-		VEHICLE_MOVE.REJECTION_BUSY,
-		"another active vehicle"
-	)
-	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.WAITING, "Global lock rejection should preserve selected vehicle Waiting.")
+	test.expect_true(arm.start_move(arm_command), "Arm should start an independent task.")
+	test.expect_true(vehicle_selection.select_vehicle(transport), "A moving arm must not prevent selecting transport.")
+	test.expect_true(grid_selection.is_live_target_available(), "Transport command should remain available while arm is moving.")
+	var transport_target := transport.runtime_state.anchor_cell + Vector2i.LEFT
+	test.expect_true(move_controller.request_selected_vehicle_move(transport_target), "Transport should accept a non-conflicting task while arm is moving.")
+	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.MOVING, "Arm task should continue after selection changes.")
+	test.expect_equal(transport.runtime_state.motion_state, RUNTIME.MotionState.MOVING, "Transport should run concurrently.")
+	arm.reset_actor()
 	transport.reset_actor()
 
+	arm.runtime_state.anchor_cell = Vector2i(3, 3)
+	transport.runtime_state.anchor_cell = Vector2i(6, 3)
+	arm.sync_from_state()
+	transport.sync_from_state()
+	var collision_arm_command: COMMAND = COMMAND.new()
+	var collision_transport_command: COMMAND = COMMAND.new()
+	test.expect_true(
+		collision_arm_command.configure(Vector2i(4, 3), [Vector2i(3, 3), Vector2i(4, 3)]),
+		"Collision arm command should configure."
+	)
+	test.expect_true(
+		collision_transport_command.configure(Vector2i(5, 3), [Vector2i(6, 3), Vector2i(5, 3)]),
+		"Collision transport command should configure."
+	)
+	test.expect_true(arm.start_move(collision_arm_command), "Collision arm task should start.")
+	test.expect_true(transport.start_move(collision_transport_command), "Collision transport task should start.")
+	arm.advance_move(0.4)
+	transport.advance_move(1.0 / 3.0)
+	move_controller._physics_process(0.0)
+	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.BLOCKED, "Colliding arm task should stop in Blocked.")
+	test.expect_equal(transport.runtime_state.motion_state, RUNTIME.MotionState.BLOCKED, "Colliding transport task should stop in Blocked.")
+	test.expect_true(arm.runtime_state.active_move_command == null, "Colliding arm should clear its active command.")
+	test.expect_true(transport.runtime_state.active_move_command == null, "Colliding transport should clear its active command.")
+	arm.reset_actor()
+	transport.reset_actor()
+
+	test.expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable after concurrent tasks reset.")
 	test.expect_true(arm.runtime_state.begin_move_planning(), "Busy boundary should enter Planning.")
 	var busy_target := Vector2i(5, 2)
 	test.expect_false(move_controller.request_selected_vehicle_move(busy_target), "Planning vehicle should reject another request.")
@@ -172,6 +196,7 @@ func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller
 	)
 	arm.runtime_state.clear_move_command()
 
+	test.expect_true(grid_selection.activate_live_target_mode(), "A fresh M command should arm the final valid request.")
 	_select_anchor(scene, grid_selection, busy_target)
 	test.expect_true(move_controller.is_target_preview_valid(), "Reachable target should be valid.")
 	test.expect_true(grid_selection.confirm_selection(), "Reachable target should be accepted.")
@@ -180,7 +205,7 @@ func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller
 	test.expect_true(arm.runtime_state.active_move_command != null, "Valid request should retain the active command.")
 	test.expect_false(grid_selection.has_selected_cell(), "Accepted movement should clear the current target.")
 	test.expect_false(grid_selection.is_live_target_mode(), "Accepted movement should leave move command mode.")
-	test.expect_false(grid_selection.is_live_target_available(), "Move command should remain locked during movement.")
+	test.expect_false(grid_selection.is_live_target_available(), "Selected moving vehicle should lock its own move command.")
 	arm.reset_actor()
 
 
