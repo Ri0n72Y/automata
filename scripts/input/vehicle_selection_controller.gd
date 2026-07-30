@@ -51,10 +51,14 @@ func _input(event: InputEvent) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+			if _is_move_command_active():
+				return
 			cancel_selection()
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
+			if _is_move_command_active():
+				return
 			cancel_selection()
 
 
@@ -129,6 +133,15 @@ func _clear_selection(emit_change: bool) -> void:
 	set_process(false)
 	if emit_change:
 		selection_changed.emit(&"", false)
+
+
+func _is_move_command_active() -> bool:
+	var grid_selection := get_parent().get_node_or_null("GridSelectionController")
+	return (
+		grid_selection != null
+		and grid_selection.has_method("is_live_target_mode")
+		and bool(grid_selection.call("is_live_target_mode"))
+	)
 
 
 func _is_current_vehicle(vehicle: VehicleActorScript) -> bool:
