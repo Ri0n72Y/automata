@@ -46,6 +46,7 @@ func _run() -> void:
 		vehicle_selection != null and move_controller != null and grid_selection != null and manager != null and camera_rig != null,
 		"Manual move integration dependencies should exist."
 	)
+	_test_debug_ui_contract(scene)
 	if vehicle_selection != null and move_controller != null and grid_selection != null and manager != null and camera_rig != null:
 		await _test_2x2_screen_mapping_matrix(
 			scene,
@@ -62,6 +63,24 @@ func _run() -> void:
 	test.finish(self, "Scene 01 manual move integration tests")
 
 
+func _test_debug_ui_contract(scene: Node) -> void:
+	var ui = scene.get_node_or_null("UIRoot")
+	var panel := scene.get_node_or_null("UIRoot/RootControl/Panel") as PanelContainer
+	var body := scene.get_node_or_null("UIRoot/RootControl/Panel/Margin/VBox/DebugBody") as VBoxContainer
+	test.expect_true(ui != null and panel != null and body != null, "Debug UI should expose its collapsible structure.")
+	if ui == null or panel == null or body == null:
+		return
+	test.expect_true(bool(ui.call("is_collapsed")), "Debug UI should start collapsed.")
+	test.expect_false(body.visible, "Collapsed debug UI should hide all command buttons.")
+	for node in panel.find_children("*", "Button", true, false):
+		var button := node as Button
+		test.expect_equal(button.focus_mode, Control.FOCUS_NONE, "%s must ignore Enter/Space focus activation." % button.name)
+	ui.call("set_collapsed", false)
+	test.expect_true(body.visible, "Expanding debug UI should reveal command buttons.")
+	ui.call("set_collapsed", true)
+	test.expect_false(body.visible, "Collapsing debug UI should remove command buttons from mouse interaction.")
+
+
 func _test_2x2_screen_mapping_matrix(
 	scene: Node,
 	vehicle_selection,
@@ -75,6 +94,8 @@ func _test_2x2_screen_mapping_matrix(
 	if arm == null:
 		return
 	test.expect_true(vehicle_selection.select_vehicle(arm), "2x2 mapping should select the arm.")
+	test.expect_false(grid_selection.is_live_target_mode(), "Selection alone should not start prediction.")
+	test.expect_true(grid_selection.activate_live_target_mode(), "M-equivalent activation should start 2x2 prediction.")
 	test.expect_equal(grid_selection.get_target_footprint(), Vector2i(2, 2), "Selected arm should configure 2x2 snapping.")
 
 	var targets: Array[Vector2i] = [Vector2i(5, 2), Vector2i(5, 4)]
@@ -115,7 +136,7 @@ func _test_2x2_screen_mapping_matrix(
 		)
 	camera_rig.set_view_direction(CAMERA_RIG.ViewDirection.SOUTHWEST, false)
 	camera_rig.rotation_duration = original_duration
-	grid_selection.cancel_selection()
+	grid_selection.deactivate_live_target_mode()
 	vehicle_selection.cancel_selection()
 
 
@@ -160,6 +181,8 @@ func _test_user_flow(scene: Node, vehicle_selection, move_controller, grid_selec
 		arm.global_position + arm.global_basis.y.normalized() * arm.cell_size * 0.25
 	)
 	test.expect_true(vehicle_selection.select_from_screen_position(arm_screen), "Screen ray should select the arm.")
+	test.expect_false(grid_selection.is_live_target_mode(), "Selecting a vehicle should not immediately show prediction.")
+	test.expect_true(grid_selection.activate_live_target_mode(), "M-equivalent command should arm MoveTo.")
 
 	var target := Vector2i(5, 2)
 	var target_world: Vector3 = scene.call("grid_footprint_center_to_world", target, arm.definition.footprint)
@@ -168,8 +191,9 @@ func _test_user_flow(scene: Node, vehicle_selection, move_controller, grid_selec
 	test.expect_equal(grid_selection.selected_cell, target, "Hover should resolve the expected 2x2 anchor.")
 	test.expect_true(move_controller.is_target_preview_valid(), "Reachable hover should show a valid target.")
 	test.expect_true(move_controller.is_path_preview_visible(), "Reachable hover should show a path.")
-	test.expect_true(grid_selection.confirm_selection(), "Enter-equivalent confirmation should submit MoveTo.")
+	test.expect_true(grid_selection.primary_action_from_screen_position(target_screen), "Left-click-equivalent primary action should submit MoveTo.")
 	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.MOVING, "Accepted MoveTo should enter Moving.")
+	test.expect_false(grid_selection.is_live_target_mode(), "Accepted left click should leave move command mode.")
 
 	arm.advance_move(0.2)
 	var progress_before_transform: float = arm.get_segment_progress()
@@ -196,7 +220,9 @@ func _test_user_flow(scene: Node, vehicle_selection, move_controller, grid_selec
 	test.expect_equal(arm.runtime_state.anchor_cell, target, "Vehicle should reach the confirmed target.")
 	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.WAITING, "Arrival should restore Waiting.")
 	test.expect_true(vehicle_selection.has_selected_vehicle(), "Arrival should retain vehicle selection.")
+	test.expect_false(grid_selection.is_live_target_mode(), "Arrival should wait for another M command.")
 
+	test.expect_true(grid_selection.activate_live_target_mode(), "A second M command should arm another move.")
 	var second_target := Vector2i(6, 2)
 	var second_world: Vector3 = scene.call("grid_footprint_center_to_world", second_target, arm.definition.footprint)
 	test.expect_true(grid_selection.update_hover_from_world_position(second_world), "A second target should be hoverable.")
@@ -207,6 +233,7 @@ func _test_user_flow(scene: Node, vehicle_selection, move_controller, grid_selec
 	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.WAITING, "Reset should restore Waiting.")
 	test.expect_false(vehicle_selection.has_selected_vehicle(), "Reset should clear vehicle selection.")
 	test.expect_false(grid_selection.has_selected_cell(), "Reset should clear the target.")
+	test.expect_false(grid_selection.is_live_target_mode(), "Reset should leave move command mode.")
 	test.expect_false(move_controller.is_target_preview_visible(), "Reset should hide target prediction.")
 	test.expect_false(move_controller.is_path_preview_visible(), "Reset should hide path prediction.")
 
