@@ -4,7 +4,6 @@ extends Node3D
 signal selection_changed(vehicle_id: StringName, has_selection: bool)
 
 const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
-const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 
 @export var vehicle_collision_mask: int = 2
 @export_range(1.0, 1000.0, 1.0) var ray_length: float = 200.0
@@ -85,8 +84,6 @@ func select_vehicle(vehicle: VehicleActorScript) -> bool:
 	if _selected_vehicle == vehicle:
 		_update_highlight(vehicle)
 		return true
-	if _has_active_vehicle():
-		return false
 	_selected_vehicle = vehicle
 	_update_highlight(vehicle)
 	set_process(true)
@@ -147,22 +144,6 @@ func _is_move_command_active() -> bool:
 		and grid_selection.has_method("is_live_target_mode")
 		and bool(grid_selection.call("is_live_target_mode"))
 	)
-
-
-func _has_active_vehicle() -> bool:
-	if vehicle_manager == null or not vehicle_manager.has_method("get_vehicles"):
-		return false
-	var vehicle_nodes: Array = vehicle_manager.call("get_vehicles")
-	for vehicle_node in vehicle_nodes:
-		var vehicle: VehicleActorScript = vehicle_node as VehicleActorScript
-		if vehicle == null or vehicle.runtime_state == null:
-			continue
-		if (
-			vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
-			or vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING
-		):
-			return true
-	return false
 
 
 func _is_current_vehicle(vehicle: VehicleActorScript) -> bool:
