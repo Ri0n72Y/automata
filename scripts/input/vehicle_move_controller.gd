@@ -17,6 +17,7 @@ const REJECTION_NO_VEHICLE := &"no_vehicle_selected"
 const REJECTION_BUSY := &"vehicle_busy"
 const REJECTION_NO_PATH := &"no_path"
 const REJECTION_START_FAILED := &"start_failed"
+const MOTION_EPSILON := 0.000001
 
 @export var valid_target_color: Color = Color(0.2, 0.9, 0.35, 0.20)
 @export var invalid_target_color: Color = Color(1.0, 0.2, 0.18, 0.23)
@@ -40,6 +41,7 @@ var _preview_is_valid: bool = false
 var _last_rejection_reason: StringName = &""
 var _vehicle_ui_open: bool = false
 var _observed_vehicle: VehicleActorScript
+var _managed_vehicles: Array[VehicleActorScript] = []
 var _valid_path_material: StandardMaterial3D
 var _invalid_path_material: StandardMaterial3D
 
@@ -54,12 +56,13 @@ func _ready() -> void:
 	_invalid_path_material = _create_path_material(invalid_path_color)
 
 
-func _physics_process(_delta: float) -> void:
-	_resolve_runtime_vehicle_collisions()
+func _physics_process(delta: float) -> void:
+	_advance_managed_vehicles(delta)
 
 
 func _exit_tree() -> void:
 	_replace_observed_vehicle(null)
+	_disconnect_managed_vehicle_signals()
 
 
 func configure(
@@ -73,6 +76,7 @@ func configure(
 	grid_selection_controller = p_grid_selection_controller
 	vehicle_manager = p_vehicle_manager
 	_connect_input_signals()
+	_connect_managed_vehicle_signals()
 	_sync_live_target_mode()
 
 
@@ -129,6 +133,7 @@ func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
 		refresh_target_preview()
 		return false
 
+	vehicle.set_physics_process(false)
 	_clear_grid_target()
 	_last_rejection_reason = &""
 	move_accepted.emit(vehicle_id, target_anchor)
@@ -219,6 +224,37 @@ func _connect_input_signals() -> void:
 			vehicle_selection_controller.selection_changed.connect(vehicle_changed_callable)
 
 
+func _connect_managed_vehicle_signals() -> void:
+	_disconnect_managed_vehicle_signals()
+	if vehicle_manager == null:
+		return
+	for vehicle_node in vehicle_manager.get_vehicles():
+		var vehicle := vehicle_node as VehicleActorScript
+		if vehicle == null or not is_instance_valid(vehicle):
+			continue
+		_managed_vehicles.append(vehicle)
+		var started_callable := Callable(self, "_on_managed_vehicle_move_started").bind(vehicle)
+		if not vehicle.move_started.is_connected(started_callable):
+			vehicle.move_started.connect(started_callable)
+		if _is_vehicle_moving(vehicle):
+			vehicle.set_physics_process(false)
+
+
+func _disconnect_managed_vehicle_signals() -> void:
+	for vehicle in _managed_vehicles:
+		if vehicle == null or not is_instance_valid(vehicle):
+			continue
+		var started_callable := Callable(self, "_on_managed_vehicle_move_started").bind(vehicle)
+		if vehicle.move_started.is_connected(started_callable):
+			vehicle.move_started.disconnect(started_callable)
+	_managed_vehicles.clear()
+
+
+func _on_managed_vehicle_move_started(_target_anchor: Vector2i, vehicle: VehicleActorScript) -> void:
+	if vehicle != null and is_instance_valid(vehicle):
+		vehicle.set_physics_process(false)
+
+
 func _on_grid_selection_confirmed(target_anchor: Vector2i) -> void:
 	if grid_selection_controller == null or not grid_selection_controller.is_live_target_mode():
 		return
@@ -250,7 +286,13 @@ func _sync_live_target_mode() -> void:
 		return
 	var vehicle := _get_selected_vehicle()
 	_replace_observed_vehicle(vehicle)
-	var interaction_enabled := vehicle != null and not _vehicle_ui_open
+	var interaction_enabled := (
+		vehicle != null
+		and not _vehicle_ui_open
+		and vehicle.runtime_state != null
+		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
+		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
+	)
 	var footprint := Vector2i.ONE
 	if vehicle != null and vehicle.definition != null:
 		footprint = vehicle.definition.footprint
@@ -312,35 +354,275 @@ func _get_selected_vehicle() -> VehicleActorScript:
 	return vehicle_selection_controller.get_selected_vehicle()
 
 
-func _resolve_runtime_vehicle_collisions() -> void:
+func _advance_managed_vehicles(delta: float) -> void:
 	if vehicle_manager == null:
 		return
-	var vehicle_nodes := vehicle_manager.get_vehicles()
-	for first_index in range(vehicle_nodes.size()):
-		var first := vehicle_nodes[first_index] as VehicleActorScript
-		if first == null or first.runtime_state == null or first.definition == null:
+	var vehicles: Array[VehicleActorScript] = []
+	var plans: Array[Dictionary] = []
+	for vehicle_node in vehicle_manager.get_vehicles():
+		var vehicle := vehicle_node as VehicleActorScript
+		if vehicle == null or not is_instance_valid(vehicle):
 			continue
-		for second_index in range(first_index + 1, vehicle_nodes.size()):
-			var second := vehicle_nodes[second_index] as VehicleActorScript
-			if second == null or second.runtime_state == null or second.definition == null:
+		vehicles.append(vehicle)
+		plans.append(_build_motion_plan(vehicle, delta))
+
+	var blocked_ids: Dictionary = {}
+	for index in range(plans.size()):
+		var plan: Dictionary = plans[index]
+		if bool(plan.get("must_block", false)):
+			blocked_ids[vehicles[index].get_instance_id()] = true
+
+	for first_index in range(vehicles.size()):
+		for second_index in range(first_index + 1, vehicles.size()):
+			var first_plan: Dictionary = plans[first_index]
+			var second_plan: Dictionary = plans[second_index]
+			if not bool(first_plan.get("moving", false)) and not bool(second_plan.get("moving", false)):
 				continue
-			if not _vehicles_overlap_in_motion(first, second):
+			if not _motion_plans_collide(first_plan, second_plan):
 				continue
-			_block_colliding_vehicle(first)
-			_block_colliding_vehicle(second)
+			if bool(first_plan.get("moving", false)):
+				blocked_ids[vehicles[first_index].get_instance_id()] = true
+			if bool(second_plan.get("moving", false)):
+				blocked_ids[vehicles[second_index].get_instance_id()] = true
+
+	for index in range(vehicles.size()):
+		var vehicle := vehicles[index]
+		var plan: Dictionary = plans[index]
+		if blocked_ids.has(vehicle.get_instance_id()):
+			if _is_vehicle_moving(vehicle):
+				vehicle.cancel_move()
+			continue
+		if bool(plan.get("moving", false)):
+			vehicle.advance_move(delta)
 
 
-func _vehicles_overlap_in_motion(
-	first: VehicleActorScript,
-	second: VehicleActorScript
+func _build_motion_plan(vehicle: VehicleActorScript, delta: float) -> Dictionary:
+	var duration := maxf(delta, 0.0)
+	var footprint := Vector2.ZERO
+	if vehicle != null and vehicle.definition != null:
+		footprint = Vector2(
+			float(vehicle.definition.footprint.x),
+			float(vehicle.definition.footprint.y)
+		)
+	var stationary_anchor := _get_vehicle_motion_anchor(vehicle)
+	var stationary_segments: Array[Dictionary] = [
+		_motion_segment(0.0, duration, stationary_anchor, stationary_anchor)
+	]
+	if not _is_vehicle_moving(vehicle):
+		return {
+			"moving": false,
+			"must_block": false,
+			"footprint": footprint,
+			"segments": stationary_segments,
+		}
+
+	var command: MoveCommandScript = vehicle.runtime_state.active_move_command
+	var speed := vehicle.runtime_state.get_effective_speed()
+	if speed <= 0.0:
+		return {
+			"moving": true,
+			"must_block": true,
+			"footprint": footprint,
+			"segments": stationary_segments,
+		}
+
+	var segments: Array[Dictionary] = []
+	var path_index := command.path_index
+	var progress := clampf(vehicle.get_segment_progress(), 0.0, 1.0)
+	var elapsed := 0.0
+	var current_position := _path_position(command, path_index, progress)
+
+	while elapsed < duration - MOTION_EPSILON and path_index < command.path.size() - 1:
+		var remaining_fraction := 1.0 - progress
+		var remaining_time := remaining_fraction / speed
+		var step_time := minf(duration - elapsed, remaining_time)
+		var next_progress := minf(progress + step_time * speed, 1.0)
+		var next_position := _path_position(command, path_index, next_progress)
+		segments.append(_motion_segment(
+			elapsed,
+			elapsed + step_time,
+			current_position,
+			next_position
+		))
+		elapsed += step_time
+		current_position = next_position
+		progress = next_progress
+		if progress >= 1.0 - MOTION_EPSILON:
+			path_index += 1
+			progress = 0.0
+			current_position = Vector2(
+				float(command.path[path_index].x),
+				float(command.path[path_index].y)
+			)
+
+	if elapsed < duration - MOTION_EPSILON:
+		segments.append(_motion_segment(elapsed, duration, current_position, current_position))
+	if segments.is_empty():
+		segments.append(_motion_segment(0.0, duration, current_position, current_position))
+	return {
+		"moving": true,
+		"must_block": false,
+		"footprint": footprint,
+		"segments": segments,
+	}
+
+
+func _get_vehicle_motion_anchor(vehicle: VehicleActorScript) -> Vector2:
+	if vehicle == null or vehicle.runtime_state == null:
+		return Vector2.ZERO
+	if _is_vehicle_moving(vehicle):
+		var command: MoveCommandScript = vehicle.runtime_state.active_move_command
+		return _path_position(
+			command,
+			command.path_index,
+			clampf(vehicle.get_segment_progress(), 0.0, 1.0)
+		)
+	return Vector2(
+		float(vehicle.runtime_state.anchor_cell.x),
+		float(vehicle.runtime_state.anchor_cell.y)
+	)
+
+
+func _path_position(command: MoveCommandScript, path_index: int, progress: float) -> Vector2:
+	if command == null or command.path.is_empty():
+		return Vector2.ZERO
+	var safe_index := clampi(path_index, 0, command.path.size() - 1)
+	var current_anchor := command.path[safe_index]
+	if safe_index >= command.path.size() - 1:
+		return Vector2(float(current_anchor.x), float(current_anchor.y))
+	var next_anchor := command.path[safe_index + 1]
+	return Vector2(float(current_anchor.x), float(current_anchor.y)).lerp(
+		Vector2(float(next_anchor.x), float(next_anchor.y)),
+		clampf(progress, 0.0, 1.0)
+	)
+
+
+func _motion_segment(
+	start_time: float,
+	end_time: float,
+	start_position: Vector2,
+	end_position: Vector2
+) -> Dictionary:
+	return {
+		"start_time": start_time,
+		"end_time": end_time,
+		"start": start_position,
+		"end": end_position,
+	}
+
+
+func _motion_plans_collide(first_plan: Dictionary, second_plan: Dictionary) -> bool:
+	var first_segments: Array = first_plan.get("segments", [])
+	var second_segments: Array = second_plan.get("segments", [])
+	var first_size: Vector2 = first_plan.get("footprint", Vector2.ZERO)
+	var second_size: Vector2 = second_plan.get("footprint", Vector2.ZERO)
+	for first_variant in first_segments:
+		var first_segment: Dictionary = first_variant
+		for second_variant in second_segments:
+			var second_segment: Dictionary = second_variant
+			var overlap_start := maxf(
+				float(first_segment.get("start_time", 0.0)),
+				float(second_segment.get("start_time", 0.0))
+			)
+			var overlap_end := minf(
+				float(first_segment.get("end_time", 0.0)),
+				float(second_segment.get("end_time", 0.0))
+			)
+			if overlap_start > overlap_end + MOTION_EPSILON:
+				continue
+			if _segments_collide_during(
+				first_segment,
+				second_segment,
+				first_size,
+				second_size,
+				overlap_start,
+				overlap_end
+			):
+				return true
+	return false
+
+
+func _segments_collide_during(
+	first_segment: Dictionary,
+	second_segment: Dictionary,
+	first_size: Vector2,
+	second_size: Vector2,
+	overlap_start: float,
+	overlap_end: float
 ) -> bool:
-	var first_moving := _is_vehicle_moving(first)
-	var second_moving := _is_vehicle_moving(second)
-	if not first_moving and not second_moving:
+	var first_start := _segment_position_at(first_segment, overlap_start)
+	var second_start := _segment_position_at(second_segment, overlap_start)
+	var duration := maxf(overlap_end - overlap_start, 0.0)
+	if duration <= MOTION_EPSILON:
+		return _rects_overlap(
+			Rect2(first_start, first_size),
+			Rect2(second_start, second_size)
+		)
+	var first_end := _segment_position_at(first_segment, overlap_end)
+	var second_end := _segment_position_at(second_segment, overlap_end)
+	var relative_start := first_start - second_start
+	var relative_velocity := ((first_end - first_start) - (second_end - second_start)) / duration
+	var x_interval := _axis_overlap_interval(
+		relative_start.x,
+		relative_velocity.x,
+		first_size.x,
+		second_size.x,
+		duration
+	)
+	if x_interval.x > x_interval.y:
 		return false
-	return _rects_overlap(
-		_vehicle_motion_rect(first),
-		_vehicle_motion_rect(second)
+	var y_interval := _axis_overlap_interval(
+		relative_start.y,
+		relative_velocity.y,
+		first_size.y,
+		second_size.y,
+		duration
+	)
+	if y_interval.x > y_interval.y:
+		return false
+	return maxf(x_interval.x, y_interval.x) <= minf(x_interval.y, y_interval.y)
+
+
+func _segment_position_at(segment: Dictionary, time: float) -> Vector2:
+	var start_time := float(segment.get("start_time", 0.0))
+	var end_time := float(segment.get("end_time", start_time))
+	var start_position: Vector2 = segment.get("start", Vector2.ZERO)
+	var end_position: Vector2 = segment.get("end", start_position)
+	var duration := end_time - start_time
+	if duration <= MOTION_EPSILON:
+		return start_position
+	return start_position.lerp(
+		end_position,
+		clampf((time - start_time) / duration, 0.0, 1.0)
+	)
+
+
+func _axis_overlap_interval(
+	relative_start: float,
+	relative_velocity: float,
+	first_size: float,
+	second_size: float,
+	duration: float
+) -> Vector2:
+	var lower_bound := -first_size + MOTION_EPSILON
+	var upper_bound := second_size - MOTION_EPSILON
+	if absf(relative_velocity) <= MOTION_EPSILON:
+		if relative_start > lower_bound and relative_start < upper_bound:
+			return Vector2(0.0, duration)
+		return Vector2(1.0, 0.0)
+	var lower_time := (lower_bound - relative_start) / relative_velocity
+	var upper_time := (upper_bound - relative_start) / relative_velocity
+	var entry_time := maxf(0.0, minf(lower_time, upper_time))
+	var exit_time := minf(duration, maxf(lower_time, upper_time))
+	return Vector2(entry_time, exit_time)
+
+
+func _rects_overlap(first: Rect2, second: Rect2) -> bool:
+	return (
+		first.position.x < second.end.x - MOTION_EPSILON
+		and first.end.x > second.position.x + MOTION_EPSILON
+		and first.position.y < second.end.y - MOTION_EPSILON
+		and first.end.y > second.position.y + MOTION_EPSILON
 	)
 
 
@@ -351,45 +633,6 @@ func _is_vehicle_moving(vehicle: VehicleActorScript) -> bool:
 		and vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING
 		and vehicle.runtime_state.active_move_command != null
 	)
-
-
-func _vehicle_motion_rect(vehicle: VehicleActorScript) -> Rect2:
-	var anchor := Vector2(
-		float(vehicle.runtime_state.anchor_cell.x),
-		float(vehicle.runtime_state.anchor_cell.y)
-	)
-	if _is_vehicle_moving(vehicle):
-		var command: MoveCommandScript = vehicle.runtime_state.active_move_command
-		var current_anchor := command.get_current_anchor()
-		var next_anchor := command.get_next_anchor()
-		var current_position := Vector2(float(current_anchor.x), float(current_anchor.y))
-		var next_position := Vector2(float(next_anchor.x), float(next_anchor.y))
-		anchor = current_position.lerp(
-			next_position,
-			clampf(vehicle.get_segment_progress(), 0.0, 1.0)
-		)
-	return Rect2(
-		anchor,
-		Vector2(
-			float(vehicle.definition.footprint.x),
-			float(vehicle.definition.footprint.y)
-		)
-	)
-
-
-func _rects_overlap(first: Rect2, second: Rect2) -> bool:
-	const EPSILON := 0.000001
-	return (
-		first.position.x < second.end.x - EPSILON
-		and first.end.x > second.position.x + EPSILON
-		and first.position.y < second.end.y - EPSILON
-		and first.end.y > second.position.y + EPSILON
-	)
-
-
-func _block_colliding_vehicle(vehicle: VehicleActorScript) -> void:
-	if _is_vehicle_moving(vehicle):
-		vehicle.cancel_move()
 
 
 func _find_path(vehicle: VehicleActorScript, target_anchor: Vector2i) -> Array[Vector2i]:
