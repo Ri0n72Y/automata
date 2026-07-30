@@ -8,6 +8,7 @@ signal live_target_mode_changed(active: bool)
 
 const INVALID_CELL := Vector2i(-1, -1)
 const MOVE_COMMAND_ACTION := &"vehicle_move_command"
+const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 
 @export var ground_collision_mask: int = 1
 @export_range(1.0, 1000.0, 1.0) var ray_length: float = 200.0
@@ -93,7 +94,7 @@ func set_live_target_mode(
 
 
 func activate_live_target_mode() -> bool:
-	if not _live_target_available:
+	if not _can_activate_live_target_mode():
 		return false
 	if _live_target_mode:
 		return true
@@ -121,9 +122,8 @@ func toggle_live_target_mode() -> bool:
 		return false
 	if _live_target_mode:
 		deactivate_live_target_mode()
-	else:
-		activate_live_target_mode()
-	return true
+		return true
+	return activate_live_target_mode()
 
 
 func is_live_target_available() -> bool:
@@ -219,6 +219,8 @@ func confirm_selection() -> bool:
 	var was_live_target_mode := _live_target_mode
 	selection_confirmed.emit(selected_cell)
 	if was_live_target_mode and not has_selected_cell():
+		if _selected_vehicle_is_busy():
+			_live_target_available = false
 		deactivate_live_target_mode()
 	return true
 
@@ -258,6 +260,23 @@ func _connect_vehicle_selection_lifecycle() -> void:
 
 func _on_vehicle_selection_changed(_vehicle_id: StringName, _has_selection: bool) -> void:
 	deactivate_live_target_mode()
+
+
+func _can_activate_live_target_mode() -> bool:
+	return _live_target_available and not _selected_vehicle_is_busy()
+
+
+func _selected_vehicle_is_busy() -> bool:
+	var vehicle_selection := get_parent().get_node_or_null("VehicleSelectionController")
+	if vehicle_selection == null or not vehicle_selection.has_method("get_selected_vehicle"):
+		return true
+	var vehicle = vehicle_selection.call("get_selected_vehicle")
+	if vehicle == null or vehicle.runtime_state == null:
+		return true
+	return (
+		vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
+		or vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING
+	)
 
 
 func _recalculate_hover_for_current_footprint() -> void:
