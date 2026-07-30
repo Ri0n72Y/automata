@@ -92,6 +92,10 @@ func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
 	if vehicle == null:
 		_reject(vehicle_id, target_anchor, REJECTION_NO_VEHICLE)
 		return false
+	if _has_other_active_vehicle(vehicle):
+		_reject(vehicle_id, target_anchor, REJECTION_BUSY)
+		refresh_target_preview()
+		return false
 	if vehicle.runtime_state == null or not vehicle.runtime_state.begin_move_planning():
 		_reject(vehicle_id, target_anchor, REJECTION_BUSY)
 		refresh_target_preview()
@@ -216,6 +220,8 @@ func _connect_input_signals() -> void:
 
 
 func _on_grid_selection_confirmed(target_anchor: Vector2i) -> void:
+	if grid_selection_controller == null or not grid_selection_controller.is_live_target_mode():
+		return
 	request_selected_vehicle_move(target_anchor)
 
 
@@ -259,6 +265,8 @@ func _can_show_prediction(vehicle: VehicleActorScript) -> bool:
 	if vehicle == null or _vehicle_ui_open:
 		return false
 	if vehicle.definition == null or vehicle.runtime_state == null:
+		return false
+	if _has_other_active_vehicle(vehicle):
 		return false
 	return (
 		vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
@@ -304,6 +312,21 @@ func _get_selected_vehicle() -> VehicleActorScript:
 	if vehicle_selection_controller == null:
 		return null
 	return vehicle_selection_controller.get_selected_vehicle()
+
+
+func _has_other_active_vehicle(selected_vehicle: VehicleActorScript) -> bool:
+	if vehicle_manager == null:
+		return false
+	for vehicle_node in vehicle_manager.get_vehicles():
+		var other := vehicle_node as VehicleActorScript
+		if other == null or other == selected_vehicle or other.runtime_state == null:
+			continue
+		if (
+			other.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
+			or other.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING
+		):
+			return true
+	return false
 
 
 func _find_path(vehicle: VehicleActorScript, target_anchor: Vector2i) -> Array[Vector2i]:
