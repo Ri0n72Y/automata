@@ -189,6 +189,8 @@ func update_hover_from_world_position(world_position: Vector3) -> bool:
 
 
 func select_from_world_position(world_position: Vector3) -> bool:
+	if not _live_target_mode and _has_selected_vehicle():
+		return false
 	var cell := _world_position_to_valid_cell(world_position)
 	if cell == INVALID_CELL:
 		cancel_selection()
@@ -228,8 +230,12 @@ func confirm_selection() -> bool:
 		return false
 	var was_live_target_mode := _live_target_mode
 	selection_confirmed.emit(selected_cell)
-	if was_live_target_mode and not has_selected_cell():
-		_finish_live_target_command()
+	if was_live_target_mode:
+		var command_consumed := not has_selected_cell()
+		if not command_consumed:
+			command_consumed = _selected_vehicle_completed_no_op()
+		if command_consumed:
+			_finish_live_target_command()
 	return true
 
 
@@ -274,10 +280,27 @@ func _finish_live_target_command() -> void:
 	if not _live_target_mode:
 		return
 	_live_target_mode = false
+	cancel_selection()
 	if _selected_vehicle_is_busy():
 		_live_target_available = false
 	refresh_visuals()
 	live_target_mode_changed.emit(false)
+
+
+func _selected_vehicle_completed_no_op() -> bool:
+	if not has_selected_cell():
+		return false
+	var vehicle_selection := get_parent().get_node_or_null("VehicleSelectionController")
+	if vehicle_selection == null or not vehicle_selection.has_method("get_selected_vehicle"):
+		return false
+	var vehicle = vehicle_selection.call("get_selected_vehicle")
+	if vehicle == null or vehicle.runtime_state == null:
+		return false
+	return (
+		vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.WAITING
+		and vehicle.runtime_state.active_move_command == null
+		and selected_cell == vehicle.runtime_state.anchor_cell
+	)
 
 
 func _can_activate_live_target_mode() -> bool:
