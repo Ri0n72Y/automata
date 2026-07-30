@@ -16,6 +16,7 @@ func _init() -> void:
 
 
 func _run() -> void:
+	_test_move_command_input_map()
 	var packed_scene := load(SCENE_PATH) as PackedScene
 	test.expect_true(packed_scene != null, "Scene 01 should load for move controller tests.")
 	if packed_scene == null:
@@ -50,6 +51,22 @@ func _run() -> void:
 	test.finish(self, "Vehicle move controller contract tests")
 
 
+func _test_move_command_input_map() -> void:
+	test.expect_true(InputMap.has_action(GRID_SELECTION.MOVE_COMMAND_ACTION), "Move command should be an Input Map action.")
+	var has_m := false
+	var has_accept_key := false
+	for input_event in InputMap.action_get_events(GRID_SELECTION.MOVE_COMMAND_ACTION):
+		var key_event := input_event as InputEventKey
+		if key_event == null:
+			continue
+		if key_event.keycode == KEY_M:
+			has_m = true
+		if key_event.keycode == KEY_ENTER or key_event.keycode == KEY_SPACE:
+			has_accept_key = true
+	test.expect_true(has_m, "Move command should default to M.")
+	test.expect_false(has_accept_key, "Enter and Space must not be bound to MoveTo.")
+
+
 func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller, grid_selection, manager) -> void:
 	var arm = manager.get_vehicle_by_id(VEHICLE_MANAGER.ARM_VEHICLE_ID)
 	var transport = manager.get_vehicle_by_id(VEHICLE_MANAGER.TRANSPORT_VEHICLE_ID)
@@ -70,11 +87,14 @@ func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller
 
 	var no_vehicle_target := Vector2i(4, 2)
 	_select_anchor(scene, grid_selection, no_vehicle_target)
-	test.expect_true(grid_selection.confirm_selection(), "Ground confirmation should emit without a vehicle.")
+	test.expect_true(grid_selection.confirm_selection(), "Ground confirmation API should still emit without a vehicle.")
 	_expect_last_rejection(rejected, &"", no_vehicle_target, VEHICLE_MOVE.REJECTION_NO_VEHICLE, "no vehicle selected")
 
 	grid_selection.cancel_selection()
 	test.expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable.")
+	test.expect_true(grid_selection.is_live_target_available(), "Vehicle selection should make the move command available.")
+	test.expect_false(grid_selection.is_live_target_mode(), "Vehicle selection alone should not show prediction.")
+	test.expect_true(grid_selection.activate_live_target_mode(), "M-equivalent activation should arm prediction.")
 	var no_op_target: Vector2i = arm.runtime_state.anchor_cell
 	_select_anchor(scene, grid_selection, no_op_target)
 	test.expect_true(move_controller.is_target_preview_valid(), "Current anchor should be a valid no-op target.")
@@ -82,6 +102,8 @@ func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller
 	test.expect_equal(accepted.back(), {"vehicle_id": VEHICLE_MANAGER.ARM_VEHICLE_ID, "target": no_op_target}, "No-op acceptance payload.")
 	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.WAITING, "No-op should remain Waiting.")
 	test.expect_true(arm.runtime_state.active_move_command == null, "No-op should not retain a command.")
+	test.expect_false(grid_selection.is_live_target_mode(), "Accepted no-op should leave move command mode.")
+	test.expect_true(grid_selection.activate_live_target_mode(), "A new M command should re-arm after no-op.")
 
 	var invalid_cases: Array[Dictionary] = [
 		{"name": "other vehicle occupancy", "target": transport.runtime_state.anchor_cell},
@@ -108,6 +130,7 @@ func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller
 		)
 		test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.BLOCKED, "%s should enter Blocked." % case["name"])
 		test.expect_true(grid_selection.has_selected_cell(), "%s should retain the target for correction." % case["name"])
+		test.expect_true(grid_selection.is_live_target_mode(), "%s rejection should keep move command mode armed." % case["name"])
 
 	arm.runtime_state.clear_move_command()
 	test.expect_true(arm.runtime_state.begin_move_planning(), "Busy boundary should enter Planning.")
@@ -129,6 +152,8 @@ func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller
 	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.MOVING, "Valid request should enter Moving.")
 	test.expect_true(arm.runtime_state.active_move_command != null, "Valid request should retain the active command.")
 	test.expect_false(grid_selection.has_selected_cell(), "Accepted movement should clear the current target.")
+	test.expect_false(grid_selection.is_live_target_mode(), "Accepted movement should leave move command mode.")
+	test.expect_false(grid_selection.is_live_target_available(), "Move command should remain locked during movement.")
 	arm.reset_actor()
 
 
