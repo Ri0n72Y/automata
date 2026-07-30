@@ -6,7 +6,7 @@ const EXPANDED_SIZE := Vector2(422.0, 450.0)
 
 @export var start_collapsed: bool = true
 
-@onready var panel: PanelContainer = %DebugPanel
+@onready var panel: PanelContainer = %Panel
 @onready var body: VBoxContainer = %DebugBody
 @onready var collapse_button: Button = %CollapseButton
 @onready var status_label: Label = %StatusLabel
