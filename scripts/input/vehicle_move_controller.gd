@@ -251,8 +251,11 @@ func _disconnect_managed_vehicle_signals() -> void:
 
 
 func _on_managed_vehicle_move_started(_target_anchor: Vector2i, vehicle: VehicleActorScript) -> void:
-	if vehicle != null and is_instance_valid(vehicle):
-		vehicle.set_physics_process(false)
+	if vehicle == null or not is_instance_valid(vehicle):
+		return
+	vehicle.set_physics_process(false)
+	if vehicle == _get_selected_vehicle():
+		_sync_live_target_mode()
 
 
 func _on_grid_selection_confirmed(target_anchor: Vector2i) -> void:
