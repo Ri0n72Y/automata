@@ -3,11 +3,18 @@ extends CanvasLayer
 
 const COLLAPSED_SIZE := Vector2(306.0, 52.0)
 const EXPANDED_SIZE := Vector2(422.0, 450.0)
+const BODY_PATHS := [
+	NodePath("RootControl/Panel/Margin/VBox/Instructions"),
+	NodePath("RootControl/Panel/Margin/VBox/ScopeNote"),
+	NodePath("RootControl/Panel/Margin/VBox/RotateRow"),
+	NodePath("RootControl/Panel/Margin/VBox/TransformRow"),
+	NodePath("RootControl/Panel/Margin/VBox/ResetRow"),
+	NodePath("RootControl/Panel/Margin/VBox/StatusLabel"),
+]
 
 @export var start_collapsed: bool = true
 
 @onready var panel: PanelContainer = %Panel
-@onready var body: VBoxContainer = %DebugBody
 @onready var collapse_button: Button = %CollapseButton
 @onready var status_label: Label = %StatusLabel
 
@@ -62,8 +69,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 func set_collapsed(collapsed: bool) -> void:
 	_collapsed = collapsed
-	if body != null:
-		body.visible = not _collapsed
+	for path in BODY_PATHS:
+		var control := get_node_or_null(path) as Control
+		if control != null:
+			control.visible = not _collapsed
 	if collapse_button != null:
 		collapse_button.text = "▶" if _collapsed else "▼"
 	if panel != null:
