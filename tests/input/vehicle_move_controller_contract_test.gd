@@ -138,52 +138,16 @@ func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller
 		test.expect_true(grid_selection.has_selected_cell(), "%s should retain the target for correction." % case["name"])
 		test.expect_true(grid_selection.is_live_target_mode(), "%s rejection should keep move command mode armed." % case["name"])
 
-	arm.runtime_state.clear_move_command()
-	grid_selection.deactivate_live_target_mode()
-	var arm_command: COMMAND = COMMAND.new()
-	var arm_start: Vector2i = arm.runtime_state.anchor_cell
-	var arm_target: Vector2i = arm_start + Vector2i.RIGHT
-	test.expect_true(
-		arm_command.configure(arm_target, [arm_start, arm_target]),
-		"Concurrent arm task command should configure."
+	_test_concurrent_selection_availability(
+		vehicle_selection,
+		move_controller,
+		grid_selection,
+		arm,
+		transport
 	)
-	test.expect_true(arm.start_move(arm_command), "Arm should start an independent task.")
-	test.expect_true(vehicle_selection.select_vehicle(transport), "A moving arm must not prevent selecting transport.")
-	test.expect_true(grid_selection.is_live_target_available(), "Transport command should remain available while arm is moving.")
-	var transport_target: Vector2i = transport.runtime_state.anchor_cell + Vector2i.LEFT
-	test.expect_true(move_controller.request_selected_vehicle_move(transport_target), "Transport should accept a non-conflicting task while arm is moving.")
-	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.MOVING, "Arm task should continue after selection changes.")
-	test.expect_equal(transport.runtime_state.motion_state, RUNTIME.MotionState.MOVING, "Transport should run concurrently.")
-	arm.reset_actor()
-	transport.reset_actor()
+	_test_continuous_collision_boundaries(move_controller, arm, transport)
 
-	arm.runtime_state.anchor_cell = Vector2i(3, 3)
-	transport.runtime_state.anchor_cell = Vector2i(6, 3)
-	arm.sync_from_state()
-	transport.sync_from_state()
-	var collision_arm_command: COMMAND = COMMAND.new()
-	var collision_transport_command: COMMAND = COMMAND.new()
-	test.expect_true(
-		collision_arm_command.configure(Vector2i(4, 3), [Vector2i(3, 3), Vector2i(4, 3)]),
-		"Collision arm command should configure."
-	)
-	test.expect_true(
-		collision_transport_command.configure(Vector2i(5, 3), [Vector2i(6, 3), Vector2i(5, 3)]),
-		"Collision transport command should configure."
-	)
-	test.expect_true(arm.start_move(collision_arm_command), "Collision arm task should start.")
-	test.expect_true(transport.start_move(collision_transport_command), "Collision transport task should start.")
-	arm.advance_move(0.4)
-	transport.advance_move(1.0 / 3.0)
-	move_controller._physics_process(0.0)
-	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.BLOCKED, "Colliding arm task should stop in Blocked.")
-	test.expect_equal(transport.runtime_state.motion_state, RUNTIME.MotionState.BLOCKED, "Colliding transport task should stop in Blocked.")
-	test.expect_true(arm.runtime_state.active_move_command == null, "Colliding arm should clear its active command.")
-	test.expect_true(transport.runtime_state.active_move_command == null, "Colliding transport should clear its active command.")
-	arm.reset_actor()
-	transport.reset_actor()
-
-	test.expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable after concurrent tasks reset.")
+	test.expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable after collision fixtures reset.")
 	test.expect_true(arm.runtime_state.begin_move_planning(), "Busy boundary should enter Planning.")
 	var busy_target := Vector2i(5, 2)
 	test.expect_false(move_controller.request_selected_vehicle_move(busy_target), "Planning vehicle should reject another request.")
@@ -195,6 +159,7 @@ func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller
 		"busy vehicle"
 	)
 	arm.runtime_state.clear_move_command()
+	move_controller._sync_live_target_mode()
 
 	test.expect_true(grid_selection.activate_live_target_mode(), "A fresh M command should arm the final valid request.")
 	_select_anchor(scene, grid_selection, busy_target)
@@ -207,6 +172,97 @@ func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller
 	test.expect_false(grid_selection.is_live_target_mode(), "Accepted movement should leave move command mode.")
 	test.expect_false(grid_selection.is_live_target_available(), "Selected moving vehicle should lock its own move command.")
 	arm.reset_actor()
+	transport.reset_actor()
+
+
+func _test_concurrent_selection_availability(
+	vehicle_selection,
+	move_controller,
+	grid_selection,
+	arm,
+	transport
+) -> void:
+	arm.runtime_state.clear_move_command()
+	transport.runtime_state.clear_move_command()
+	grid_selection.deactivate_live_target_mode()
+	var arm_start: Vector2i = arm.runtime_state.anchor_cell
+	var arm_target: Vector2i = arm_start + Vector2i.RIGHT
+	test.expect_true(
+		arm.start_move(_command(arm_target, [arm_start, arm_target])),
+		"Arm should start an independent task."
+	)
+	test.expect_true(vehicle_selection.select_vehicle(transport), "A moving arm must not prevent selecting transport.")
+	test.expect_true(grid_selection.is_live_target_available(), "Waiting transport should expose its move command while arm moves.")
+	test.expect_true(vehicle_selection.select_vehicle(arm), "A moving vehicle may be reselected for inspection.")
+	test.expect_false(grid_selection.is_live_target_available(), "Reselected Moving vehicle must not advertise another move command.")
+	test.expect_false(grid_selection.activate_live_target_mode(), "Moving vehicle must reject M activation.")
+	test.expect_true(vehicle_selection.select_vehicle(transport), "Transport should remain selectable after inspecting moving arm.")
+	test.expect_true(grid_selection.is_live_target_available(), "Switching back to Waiting transport restores command availability.")
+	var transport_target: Vector2i = transport.runtime_state.anchor_cell + Vector2i.LEFT
+	test.expect_true(move_controller.request_selected_vehicle_move(transport_target), "Transport should accept a non-conflicting task while arm moves.")
+	move_controller._physics_process(0.1)
+	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.MOVING, "Arm task should continue after selection changes.")
+	test.expect_equal(transport.runtime_state.motion_state, RUNTIME.MotionState.MOVING, "Transport should run concurrently.")
+	arm.reset_actor()
+	transport.reset_actor()
+
+
+func _test_continuous_collision_boundaries(move_controller, arm, transport) -> void:
+	_place_vehicle(arm, Vector2i(3, 3))
+	_place_vehicle(transport, Vector2i(6, 3))
+	test.expect_true(
+		arm.start_move(_command(Vector2i(4, 3), [Vector2i(3, 3), Vector2i(4, 3)])),
+		"Head-on arm task should start."
+	)
+	test.expect_true(
+		transport.start_move(_command(Vector2i(5, 3), [Vector2i(6, 3), Vector2i(5, 3)])),
+		"Head-on transport task should start."
+	)
+	move_controller._physics_process(0.5)
+	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.BLOCKED, "Same-frame head-on arm collision should block.")
+	test.expect_equal(transport.runtime_state.motion_state, RUNTIME.MotionState.BLOCKED, "Same-frame head-on transport collision should block.")
+	test.expect_true(arm.runtime_state.active_move_command == null, "Colliding arm should clear its active command.")
+	test.expect_true(transport.runtime_state.active_move_command == null, "Colliding transport should clear its active command.")
+
+	_place_vehicle(arm, Vector2i(1, 1))
+	_place_vehicle(transport, Vector2i(4, 1))
+	test.expect_true(
+		arm.start_move(_command(
+			Vector2i(5, 1),
+			[Vector2i(1, 1), Vector2i(2, 1), Vector2i(3, 1), Vector2i(4, 1), Vector2i(5, 1)]
+		)),
+		"Long arm task should start for tunneling coverage."
+	)
+	move_controller._physics_process(2.0)
+	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.BLOCKED, "Large-delta multi-segment traversal must not tunnel through a static vehicle.")
+	test.expect_equal(transport.runtime_state.motion_state, RUNTIME.MotionState.WAITING, "Static collision target should remain Waiting.")
+	test.expect_equal(arm.runtime_state.anchor_cell, Vector2i(1, 1), "Rejected swept motion should not commit partial traversal.")
+
+	_place_vehicle(arm, Vector2i(1, 1))
+	_place_vehicle(transport, Vector2i(4, 1))
+	test.expect_true(
+		arm.start_move(_command(Vector2i(2, 1), [Vector2i(1, 1), Vector2i(2, 1)])),
+		"Edge-contact arm task should start."
+	)
+	move_controller._physics_process(0.5)
+	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.WAITING, "Footprints touching only at an edge must not collide.")
+	test.expect_equal(arm.runtime_state.anchor_cell, Vector2i(2, 1), "Edge-contact movement should complete normally.")
+	test.expect_equal(transport.runtime_state.motion_state, RUNTIME.MotionState.WAITING, "Edge-contact transport remains Waiting.")
+
+	arm.reset_actor()
+	transport.reset_actor()
+
+
+func _place_vehicle(vehicle, anchor: Vector2i) -> void:
+	vehicle.reset_actor()
+	vehicle.runtime_state.anchor_cell = anchor
+	vehicle.sync_from_state()
+
+
+func _command(target: Vector2i, path: Array[Vector2i]) -> COMMAND:
+	var command: COMMAND = COMMAND.new()
+	test.expect_true(command.configure(target, path), "Test command should configure.")
+	return command
 
 
 func _select_anchor(scene: Node, grid_selection, anchor: Vector2i) -> void:
