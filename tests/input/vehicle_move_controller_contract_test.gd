@@ -142,7 +142,7 @@ func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller
 	grid_selection.deactivate_live_target_mode()
 	var arm_command: COMMAND = COMMAND.new()
 	var arm_start: Vector2i = arm.runtime_state.anchor_cell
-	var arm_target := arm_start + Vector2i.RIGHT
+	var arm_target: Vector2i = arm_start + Vector2i.RIGHT
 	test.expect_true(
 		arm_command.configure(arm_target, [arm_start, arm_target]),
 		"Concurrent arm task command should configure."
@@ -150,7 +150,7 @@ func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller
 	test.expect_true(arm.start_move(arm_command), "Arm should start an independent task.")
 	test.expect_true(vehicle_selection.select_vehicle(transport), "A moving arm must not prevent selecting transport.")
 	test.expect_true(grid_selection.is_live_target_available(), "Transport command should remain available while arm is moving.")
-	var transport_target := transport.runtime_state.anchor_cell + Vector2i.LEFT
+	var transport_target: Vector2i = transport.runtime_state.anchor_cell + Vector2i.LEFT
 	test.expect_true(move_controller.request_selected_vehicle_move(transport_target), "Transport should accept a non-conflicting task while arm is moving.")
 	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.MOVING, "Arm task should continue after selection changes.")
 	test.expect_equal(transport.runtime_state.motion_state, RUNTIME.MotionState.MOVING, "Transport should run concurrently.")
