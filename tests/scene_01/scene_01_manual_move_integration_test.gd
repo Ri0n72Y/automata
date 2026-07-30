@@ -66,19 +66,35 @@ func _run() -> void:
 func _test_debug_ui_contract(scene: Node) -> void:
 	var ui = scene.get_node_or_null("UIRoot")
 	var panel := scene.get_node_or_null("UIRoot/RootControl/Panel") as PanelContainer
-	var body := scene.get_node_or_null("UIRoot/RootControl/Panel/Margin/VBox/DebugBody") as VBoxContainer
-	test.expect_true(ui != null and panel != null and body != null, "Debug UI should expose its collapsible structure.")
-	if ui == null or panel == null or body == null:
+	var body_paths := [
+		"UIRoot/RootControl/Panel/Margin/VBox/Instructions",
+		"UIRoot/RootControl/Panel/Margin/VBox/ScopeNote",
+		"UIRoot/RootControl/Panel/Margin/VBox/RotateRow",
+		"UIRoot/RootControl/Panel/Margin/VBox/TransformRow",
+		"UIRoot/RootControl/Panel/Margin/VBox/ResetRow",
+		"UIRoot/RootControl/Panel/Margin/VBox/StatusLabel",
+	]
+	test.expect_true(ui != null and panel != null, "Debug UI should expose its collapsible structure.")
+	if ui == null or panel == null:
 		return
+	for path in body_paths:
+		test.expect_true(scene.get_node_or_null(path) != null, "Debug UI should preserve stable path %s." % path)
 	test.expect_true(bool(ui.call("is_collapsed")), "Debug UI should start collapsed.")
-	test.expect_false(body.visible, "Collapsed debug UI should hide all command buttons.")
+	_expect_body_visibility(scene, body_paths, false, "Collapsed debug UI")
 	for node in panel.find_children("*", "Button", true, false):
 		var button := node as Button
 		test.expect_equal(button.focus_mode, Control.FOCUS_NONE, "%s must ignore Enter/Space focus activation." % button.name)
 	ui.call("set_collapsed", false)
-	test.expect_true(body.visible, "Expanding debug UI should reveal command buttons.")
+	_expect_body_visibility(scene, body_paths, true, "Expanded debug UI")
 	ui.call("set_collapsed", true)
-	test.expect_false(body.visible, "Collapsing debug UI should remove command buttons from mouse interaction.")
+	_expect_body_visibility(scene, body_paths, false, "Re-collapsed debug UI")
+
+
+func _expect_body_visibility(scene: Node, paths: Array, expected: bool, context: String) -> void:
+	for path in paths:
+		var control := scene.get_node_or_null(path) as Control
+		if control != null:
+			test.expect_equal(control.visible, expected, "%s should set %s visibility." % [context, path])
 
 
 func _test_2x2_screen_mapping_matrix(
@@ -182,11 +198,19 @@ func _test_user_flow(scene: Node, vehicle_selection, move_controller, grid_selec
 	)
 	test.expect_true(vehicle_selection.select_from_screen_position(arm_screen), "Screen ray should select the arm.")
 	test.expect_false(grid_selection.is_live_target_mode(), "Selecting a vehicle should not immediately show prediction.")
-	test.expect_true(grid_selection.activate_live_target_mode(), "M-equivalent command should arm MoveTo.")
 
 	var target := Vector2i(5, 2)
 	var target_world: Vector3 = scene.call("grid_footprint_center_to_world", target, arm.definition.footprint)
 	var target_screen: Vector2 = camera_rig.get_camera().unproject_position(target_world)
+	test.expect_false(
+		grid_selection.primary_action_from_screen_position(target_screen),
+		"Left click on ground should do nothing while a vehicle is selected but MoveTo is not armed."
+	)
+	test.expect_false(grid_selection.has_selected_cell(), "Unarmed ground click should not create a MoveTo target.")
+	test.expect_false(move_controller.is_target_preview_visible(), "Unarmed ground click should not show a target preview.")
+	test.expect_false(move_controller.is_path_preview_visible(), "Unarmed ground click should not show a path preview.")
+
+	test.expect_true(grid_selection.activate_live_target_mode(), "M-equivalent command should arm MoveTo.")
 	test.expect_true(grid_selection.update_hover_from_screen_position(target_screen), "Screen hover should update the MoveTo target.")
 	test.expect_equal(grid_selection.selected_cell, target, "Hover should resolve the expected 2x2 anchor.")
 	test.expect_true(move_controller.is_target_preview_valid(), "Reachable hover should show a valid target.")
