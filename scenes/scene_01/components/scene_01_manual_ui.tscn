@@ -51,82 +51,82 @@ layout_mode = 2
 focus_mode = 0
 text = "▶"
 
-[node name="DebugBody" type="VBoxContainer" parent="RootControl/Panel/Margin/VBox"]
-unique_name_in_owner = true
+[node name="Instructions" type="Label" parent="RootControl/Panel/Margin/VBox"]
 visible = false
 layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="Instructions" type="Label" parent="RootControl/Panel/Margin/VBox/DebugBody"]
-layout_mode = 2
-text = "Select vehicle → M: enter Move command\nMove mouse: predict target and path\nLeft click: execute · M again: cancel command\nEnter/Space do not execute movement or buttons\nRight click or Esc: clear vehicle selection\nQ/E: camera · Shift+Q/E: rotate GridRoot\nF/G: scale/offset · R: reset · Home: restore"
+text = "Select vehicle → M: enter Move command\nMove mouse: predict target and path\nLeft click: execute · M/Esc/right click: exit command\nEsc/right click again: clear vehicle selection\nEnter/Space do not execute movement or buttons\nQ/E: camera · Shift+Q/E: rotate GridRoot\nF/G: scale/offset · R: reset · Home: restore"
 autowrap_mode = 2
 
-[node name="ScopeNote" type="Label" parent="RootControl/Panel/Margin/VBox/DebugBody"]
+[node name="ScopeNote" type="Label" parent="RootControl/Panel/Margin/VBox"]
+visible = false
 layout_mode = 2
 text = "No vehicle detail UI exists in this PR.\nM is an Input Map action and can be rebound later."
 autowrap_mode = 2
 modulate = Color(0.72, 0.8, 0.9, 1)
 
-[node name="RotateRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox/DebugBody"]
+[node name="RotateRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="RotateLeft" type="Button" parent="RootControl/Panel/Margin/VBox/DebugBody/RotateRow"]
+[node name="RotateLeft" type="Button" parent="RootControl/Panel/Margin/VBox/RotateRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 text = "Grid -90°"
 
-[node name="RotateRight" type="Button" parent="RootControl/Panel/Margin/VBox/DebugBody/RotateRow"]
+[node name="RotateRight" type="Button" parent="RootControl/Panel/Margin/VBox/RotateRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 text = "Grid +90°"
 
-[node name="TransformRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox/DebugBody"]
+[node name="TransformRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Scale" type="Button" parent="RootControl/Panel/Margin/VBox/DebugBody/TransformRow"]
+[node name="Scale" type="Button" parent="RootControl/Panel/Margin/VBox/TransformRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 text = "Toggle Scale"
 
-[node name="Offset" type="Button" parent="RootControl/Panel/Margin/VBox/DebugBody/TransformRow"]
+[node name="Offset" type="Button" parent="RootControl/Panel/Margin/VBox/TransformRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 text = "Toggle Offset"
 
-[node name="ResetRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox/DebugBody"]
+[node name="ResetRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Reset" type="Button" parent="RootControl/Panel/Margin/VBox/DebugBody/ResetRow"]
+[node name="Reset" type="Button" parent="RootControl/Panel/Margin/VBox/ResetRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 text = "Reset State"
 
-[node name="Restore" type="Button" parent="RootControl/Panel/Margin/VBox/DebugBody/ResetRow"]
+[node name="Restore" type="Button" parent="RootControl/Panel/Margin/VBox/ResetRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 text = "Restore Grid"
 
-[node name="StatusLabel" type="Label" parent="RootControl/Panel/Margin/VBox/DebugBody"]
+[node name="StatusLabel" type="Label" parent="RootControl/Panel/Margin/VBox"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 text = "Select vehicle, press M, then left-click a target"
 autowrap_mode = 2
 modulate = Color(0.55, 0.88, 0.72, 1)
 
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/HeaderRow/CollapseButton" to="." method="_on_collapse_pressed"]
-[connection signal="pressed" from="RootControl/Panel/Margin/VBox/DebugBody/RotateRow/RotateLeft" to="." method="_on_rotate_left_pressed"]
-[connection signal="pressed" from="RootControl/Panel/Margin/VBox/DebugBody/RotateRow/RotateRight" to="." method="_on_rotate_right_pressed"]
-[connection signal="pressed" from="RootControl/Panel/Margin/VBox/DebugBody/TransformRow/Scale" to="." method="_on_scale_pressed"]
-[connection signal="pressed" from="RootControl/Panel/Margin/VBox/DebugBody/TransformRow/Offset" to="." method="_on_offset_pressed"]
-[connection signal="pressed" from="RootControl/Panel/Margin/VBox/DebugBody/ResetRow/Reset" to="." method="_on_reset_pressed"]
-[connection signal="pressed" from="RootControl/Panel/Margin/VBox/DebugBody/ResetRow/Restore" to="." method="_on_restore_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/RotateRow/RotateLeft" to="." method="_on_rotate_left_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/RotateRow/RotateRight" to="." method="_on_rotate_right_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/TransformRow/Scale" to="." method="_on_scale_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/TransformRow/Offset" to="." method="_on_offset_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/ResetRow/Reset" to="." method="_on_reset_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/ResetRow/Restore" to="." method="_on_restore_pressed"]
