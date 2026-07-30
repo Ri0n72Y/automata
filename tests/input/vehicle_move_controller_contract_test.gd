@@ -201,6 +201,7 @@ func _test_concurrent_selection_availability(
 	test.expect_true(grid_selection.is_live_target_available(), "Switching back to Waiting transport restores command availability.")
 	var transport_target: Vector2i = transport.runtime_state.anchor_cell + Vector2i.LEFT
 	test.expect_true(move_controller.request_selected_vehicle_move(transport_target), "Transport should accept a non-conflicting task while arm moves.")
+	test.expect_false(grid_selection.is_live_target_available(), "Programmatic move acceptance must immediately mark selected transport busy.")
 	move_controller._physics_process(0.1)
 	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.MOVING, "Arm task should continue after selection changes.")
 	test.expect_equal(transport.runtime_state.motion_state, RUNTIME.MotionState.MOVING, "Transport should run concurrently.")
