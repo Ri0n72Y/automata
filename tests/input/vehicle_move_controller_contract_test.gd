@@ -46,6 +46,7 @@ func _run() -> void:
 	)
 	if vehicle_selection != null and move_controller != null and grid_selection != null and manager != null:
 		_test_submission_boundaries(scene, vehicle_selection, move_controller, grid_selection, manager)
+		await _test_real_physics_frame_coordination(manager)
 
 	scene.queue_free()
 	await process_frame
@@ -249,6 +250,37 @@ func _test_continuous_collision_boundaries(move_controller, arm, transport) -> v
 	test.expect_equal(arm.runtime_state.anchor_cell, Vector2i(2, 1), "Edge-contact movement should complete normally.")
 	test.expect_equal(transport.runtime_state.motion_state, RUNTIME.MotionState.WAITING, "Edge-contact transport remains Waiting.")
 
+	arm.reset_actor()
+	transport.reset_actor()
+
+
+func _test_real_physics_frame_coordination(manager) -> void:
+	var arm = manager.get_vehicle_by_id(VEHICLE_MANAGER.ARM_VEHICLE_ID)
+	var transport = manager.get_vehicle_by_id(VEHICLE_MANAGER.TRANSPORT_VEHICLE_ID)
+	if arm == null or transport == null:
+		test.expect_true(false, "Real physics coordination requires both vehicles.")
+		return
+	_place_vehicle(arm, Vector2i(3, 3))
+	_place_vehicle(transport, Vector2i(6, 3))
+	test.expect_true(
+		arm.start_move(_command(Vector2i(4, 3), [Vector2i(3, 3), Vector2i(4, 3)])),
+		"Real-frame arm collision task should start."
+	)
+	test.expect_true(
+		transport.start_move(_command(Vector2i(5, 3), [Vector2i(6, 3), Vector2i(5, 3)])),
+		"Real-frame transport collision task should start."
+	)
+	test.expect_false(arm.is_physics_processing(), "Coordinator should disable actor-owned physics processing for arm.")
+	test.expect_false(transport.is_physics_processing(), "Coordinator should disable actor-owned physics processing for transport.")
+	for _frame in range(45):
+		await physics_frame
+		if (
+			arm.runtime_state.motion_state == RUNTIME.MotionState.BLOCKED
+			and transport.runtime_state.motion_state == RUNTIME.MotionState.BLOCKED
+		):
+			break
+	test.expect_equal(arm.runtime_state.motion_state, RUNTIME.MotionState.BLOCKED, "Real physics frames should block colliding arm task.")
+	test.expect_equal(transport.runtime_state.motion_state, RUNTIME.MotionState.BLOCKED, "Real physics frames should block colliding transport task.")
 	arm.reset_actor()
 	transport.reset_actor()
 
