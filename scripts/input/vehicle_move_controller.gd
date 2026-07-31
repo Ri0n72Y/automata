@@ -4,6 +4,7 @@ extends Node3D
 signal move_requested(vehicle_id: StringName, target_anchor: Vector2i)
 signal move_accepted(vehicle_id: StringName, target_anchor: Vector2i)
 signal move_rejected(vehicle_id: StringName, target_anchor: Vector2i, reason: StringName)
+signal move_stopped(vehicle_id: StringName)
 
 const GridPathfinderScript := preload("res://scripts/vehicles/grid_pathfinder.gd")
 const MoveCommandScript := preload("res://scripts/vehicles/move_command.gd")
@@ -13,6 +14,7 @@ const GridSelectionControllerScript := preload("res://scripts/input/grid_selecti
 const VehicleSelectionControllerScript := preload("res://scripts/input/vehicle_selection_controller.gd")
 const Scene01VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 
+const STOP_TASK_ACTION := &"vehicle_stop_task"
 const REJECTION_NO_VEHICLE := &"no_vehicle_selected"
 const REJECTION_BUSY := &"vehicle_busy"
 const REJECTION_NO_PATH := &"no_path"
@@ -58,6 +60,18 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_advance_managed_vehicles(delta)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _vehicle_ui_open:
+		return
+	if event is InputEventKey:
+		if event.echo or _has_command_modifier(event):
+			return
+	if not event.is_action_pressed(STOP_TASK_ACTION):
+		return
+	if request_selected_vehicle_stop():
+		get_viewport().set_input_as_handled()
 
 
 func _exit_tree() -> void:
@@ -137,6 +151,16 @@ func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
 	_clear_grid_target()
 	_last_rejection_reason = &""
 	move_accepted.emit(vehicle_id, target_anchor)
+	return true
+
+
+func request_selected_vehicle_stop() -> bool:
+	var vehicle := _get_selected_vehicle()
+	if not _is_vehicle_moving(vehicle):
+		return false
+	var vehicle_id := vehicle.get_vehicle_id()
+	vehicle.cancel_move()
+	move_stopped.emit(vehicle_id)
 	return true
 
 
@@ -360,42 +384,54 @@ func _get_selected_vehicle() -> VehicleActorScript:
 func _advance_managed_vehicles(delta: float) -> void:
 	if vehicle_manager == null:
 		return
+	var duration := maxf(delta, 0.0)
+	if duration <= MOTION_EPSILON:
+		return
+
 	var vehicles: Array[VehicleActorScript] = []
-	var plans: Array[Dictionary] = []
 	for vehicle_node in vehicle_manager.get_vehicles():
 		var vehicle := vehicle_node as VehicleActorScript
 		if vehicle == null or not is_instance_valid(vehicle):
 			continue
 		vehicles.append(vehicle)
-		plans.append(_build_motion_plan(vehicle, delta))
 
-	var blocked_ids: Dictionary = {}
-	for index in range(plans.size()):
-		var plan: Dictionary = plans[index]
-		if bool(plan.get("must_block", false)):
-			blocked_ids[vehicles[index].get_instance_id()] = true
+	for vehicle in vehicles:
+		if not _is_vehicle_moving(vehicle):
+			continue
+		if vehicle.runtime_state.get_effective_speed() > 0.0:
+			continue
+		vehicle.cancel_move()
 
-	for first_index in range(vehicles.size()):
-		for second_index in range(first_index + 1, vehicles.size()):
-			var first_plan: Dictionary = plans[first_index]
-			var second_plan: Dictionary = plans[second_index]
-			if not bool(first_plan.get("moving", false)) and not bool(second_plan.get("moving", false)):
-				continue
-			if not _motion_plans_collide(first_plan, second_plan):
-				continue
-			if bool(first_plan.get("moving", false)):
-				blocked_ids[vehicles[first_index].get_instance_id()] = true
-			if bool(second_plan.get("moving", false)):
-				blocked_ids[vehicles[second_index].get_instance_id()] = true
+	var plans: Array[Dictionary] = []
+	for vehicle in vehicles:
+		plans.append(_build_motion_plan(vehicle, duration))
 
-	for index in range(vehicles.size()):
-		var vehicle := vehicles[index]
-		var plan: Dictionary = plans[index]
-		if blocked_ids.has(vehicle.get_instance_id()):
+	var collision := _find_earliest_collision_event(vehicles, plans)
+	if collision.is_empty():
+		_advance_all_moving(vehicles, duration)
+		return
+
+	var event_time := clampf(
+		float(collision.get("time", 0.0)),
+		0.0,
+		duration
+	)
+	var moving_ids: Dictionary = collision.get("moving_ids", {})
+
+	for vehicle in vehicles:
+		if vehicle == null or not is_instance_valid(vehicle):
+			continue
+		if moving_ids.has(vehicle.get_instance_id()):
 			if _is_vehicle_moving(vehicle):
 				vehicle.cancel_move()
 			continue
-		if bool(plan.get("moving", false)):
+		if event_time > MOTION_EPSILON and _is_vehicle_moving(vehicle):
+			vehicle.advance_move(event_time)
+
+
+func _advance_all_moving(vehicles: Array[VehicleActorScript], delta: float) -> void:
+	for vehicle in vehicles:
+		if _is_vehicle_moving(vehicle):
 			vehicle.advance_move(delta)
 
 
@@ -409,7 +445,7 @@ func _build_motion_plan(vehicle: VehicleActorScript, delta: float) -> Dictionary
 		)
 	var stationary_anchor := _get_vehicle_motion_anchor(vehicle)
 	var stationary_segments: Array[Dictionary] = [
-		_motion_segment(0.0, duration, stationary_anchor, stationary_anchor)
+		_motion_segment(0.0, duration, stationary_anchor, stationary_anchor, false)
 	]
 	if not _is_vehicle_moving(vehicle):
 		return {
@@ -445,7 +481,8 @@ func _build_motion_plan(vehicle: VehicleActorScript, delta: float) -> Dictionary
 			elapsed,
 			elapsed + step_time,
 			current_position,
-			next_position
+			next_position,
+			true
 		))
 		elapsed += step_time
 		current_position = next_position
@@ -459,9 +496,21 @@ func _build_motion_plan(vehicle: VehicleActorScript, delta: float) -> Dictionary
 			)
 
 	if elapsed < duration - MOTION_EPSILON:
-		segments.append(_motion_segment(elapsed, duration, current_position, current_position))
+		segments.append(_motion_segment(
+			elapsed,
+			duration,
+			current_position,
+			current_position,
+			false
+		))
 	if segments.is_empty():
-		segments.append(_motion_segment(0.0, duration, current_position, current_position))
+		segments.append(_motion_segment(
+			0.0,
+			duration,
+			current_position,
+			current_position,
+			false
+		))
 	return {
 		"moving": true,
 		"must_block": false,
@@ -504,17 +553,54 @@ func _motion_segment(
 	start_time: float,
 	end_time: float,
 	start_position: Vector2,
-	end_position: Vector2
+	end_position: Vector2,
+	is_moving: bool
 ) -> Dictionary:
 	return {
 		"start_time": start_time,
 		"end_time": end_time,
 		"start": start_position,
 		"end": end_position,
+		"moving": is_moving,
 	}
 
 
-func _motion_plans_collide(first_plan: Dictionary, second_plan: Dictionary) -> bool:
+func _find_earliest_collision_event(
+	vehicles: Array[VehicleActorScript],
+	plans: Array[Dictionary]
+) -> Dictionary:
+	var earliest_time := INF
+	var moving_ids: Dictionary = {}
+
+	for first_index in range(vehicles.size()):
+		for second_index in range(first_index + 1, vehicles.size()):
+			var first_plan: Dictionary = plans[first_index]
+			var second_plan: Dictionary = plans[second_index]
+			if not bool(first_plan.get("moving", false)) and not bool(second_plan.get("moving", false)):
+				continue
+			var collision_time := _motion_plan_collision_time(first_plan, second_plan)
+			if is_inf(collision_time):
+				continue
+			if collision_time < earliest_time - MOTION_EPSILON:
+				earliest_time = collision_time
+				moving_ids.clear()
+			if absf(collision_time - earliest_time) > MOTION_EPSILON:
+				continue
+			if _plan_was_moving_into_time(first_plan, collision_time):
+				moving_ids[vehicles[first_index].get_instance_id()] = true
+			if _plan_was_moving_into_time(second_plan, collision_time):
+				moving_ids[vehicles[second_index].get_instance_id()] = true
+
+	if is_inf(earliest_time) or moving_ids.is_empty():
+		return {}
+	return {
+		"time": earliest_time,
+		"moving_ids": moving_ids,
+	}
+
+
+func _motion_plan_collision_time(first_plan: Dictionary, second_plan: Dictionary) -> float:
+	var earliest_time := INF
 	var first_segments: Array = first_plan.get("segments", [])
 	var second_segments: Array = second_plan.get("segments", [])
 	var first_size: Vector2 = first_plan.get("footprint", Vector2.ZERO)
@@ -533,34 +619,37 @@ func _motion_plans_collide(first_plan: Dictionary, second_plan: Dictionary) -> b
 			)
 			if overlap_start > overlap_end + MOTION_EPSILON:
 				continue
-			if _segments_collide_during(
+			var collision_time := _segments_collision_time(
 				first_segment,
 				second_segment,
 				first_size,
 				second_size,
 				overlap_start,
 				overlap_end
-			):
-				return true
-	return false
+			)
+			earliest_time = minf(earliest_time, collision_time)
+	return earliest_time
 
 
-func _segments_collide_during(
+func _segments_collision_time(
 	first_segment: Dictionary,
 	second_segment: Dictionary,
 	first_size: Vector2,
 	second_size: Vector2,
 	overlap_start: float,
 	overlap_end: float
-) -> bool:
+) -> float:
 	var first_start := _segment_position_at(first_segment, overlap_start)
 	var second_start := _segment_position_at(second_segment, overlap_start)
 	var duration := maxf(overlap_end - overlap_start, 0.0)
 	if duration <= MOTION_EPSILON:
-		return _rects_overlap(
+		if _rects_overlap(
 			Rect2(first_start, first_size),
 			Rect2(second_start, second_size)
-		)
+		):
+			return overlap_start
+		return INF
+
 	var first_end := _segment_position_at(first_segment, overlap_end)
 	var second_end := _segment_position_at(second_segment, overlap_end)
 	var relative_start := first_start - second_start
@@ -573,7 +662,7 @@ func _segments_collide_during(
 		duration
 	)
 	if x_interval.x > x_interval.y:
-		return false
+		return INF
 	var y_interval := _axis_overlap_interval(
 		relative_start.y,
 		relative_velocity.y,
@@ -582,8 +671,29 @@ func _segments_collide_during(
 		duration
 	)
 	if y_interval.x > y_interval.y:
+		return INF
+	var entry_time := maxf(x_interval.x, y_interval.x)
+	var exit_time := minf(x_interval.y, y_interval.y)
+	if entry_time > exit_time:
+		return INF
+	return overlap_start + maxf(entry_time, 0.0)
+
+
+func _plan_was_moving_into_time(plan: Dictionary, time: float) -> bool:
+	if not bool(plan.get("moving", false)):
 		return false
-	return maxf(x_interval.x, y_interval.x) <= minf(x_interval.y, y_interval.y)
+	if time <= MOTION_EPSILON:
+		return true
+	var segments: Array = plan.get("segments", [])
+	for segment_variant in segments:
+		var segment: Dictionary = segment_variant
+		if not bool(segment.get("moving", false)):
+			continue
+		var start_time := float(segment.get("start_time", 0.0))
+		var end_time := float(segment.get("end_time", start_time))
+		if time > start_time + MOTION_EPSILON and time <= end_time + MOTION_EPSILON:
+			return true
+	return false
 
 
 func _segment_position_at(segment: Dictionary, time: float) -> Vector2:
@@ -635,6 +745,15 @@ func _is_vehicle_moving(vehicle: VehicleActorScript) -> bool:
 		and vehicle.runtime_state != null
 		and vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING
 		and vehicle.runtime_state.active_move_command != null
+	)
+
+
+func _has_command_modifier(event: InputEventKey) -> bool:
+	return (
+		event.alt_pressed
+		or event.shift_pressed
+		or event.ctrl_pressed
+		or event.meta_pressed
 	)
 
 
