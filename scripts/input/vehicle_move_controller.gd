@@ -411,22 +411,72 @@ func _advance_managed_vehicles(delta: float) -> void:
 		_advance_all_moving(vehicles, duration)
 		return
 
-	var event_time := clampf(
-		float(collision.get("time", 0.0)),
-		0.0,
-		duration
-	)
+	var event_time := clampf(float(collision.get("time", 0.0)), 0.0, duration)
 	var moving_ids: Dictionary = collision.get("moving_ids", {})
-
-	for vehicle in vehicles:
-		if vehicle == null or not is_instance_valid(vehicle):
-			continue
+	for index in range(vehicles.size()):
+		var vehicle := vehicles[index]
 		if moving_ids.has(vehicle.get_instance_id()):
+			var safe_time := _last_safe_completed_time(index, plans, event_time)
+			if safe_time > MOTION_EPSILON and _is_vehicle_moving(vehicle):
+				vehicle.advance_move(safe_time)
 			if _is_vehicle_moving(vehicle):
 				vehicle.cancel_move()
 			continue
 		if event_time > MOTION_EPSILON and _is_vehicle_moving(vehicle):
 			vehicle.advance_move(event_time)
+
+
+func _last_safe_completed_time(
+	plan_index: int,
+	plans: Array[Dictionary],
+	collision_time: float
+) -> float:
+	if plan_index < 0 or plan_index >= plans.size():
+		return 0.0
+	var plan := plans[plan_index]
+	var footprint: Vector2 = plan.get("footprint", Vector2.ZERO)
+	var last_safe_time := 0.0
+	var segments: Array = plan.get("segments", [])
+	for segment_variant in segments:
+		var segment: Dictionary = segment_variant
+		if not bool(segment.get("moving", false)):
+			continue
+		var end_time := float(segment.get("end_time", 0.0))
+		if end_time > collision_time + MOTION_EPSILON:
+			continue
+		var end_position: Vector2 = segment.get("end", Vector2.ZERO)
+		var candidate := Rect2(end_position, footprint)
+		var overlaps := false
+		for other_index in range(plans.size()):
+			if other_index == plan_index:
+				continue
+			var other_plan := plans[other_index]
+			var other_size: Vector2 = other_plan.get("footprint", Vector2.ZERO)
+			var other_position := _plan_position_at(other_plan, end_time)
+			if _rects_overlap(candidate, Rect2(other_position, other_size)):
+				overlaps = true
+				break
+		if not overlaps:
+			last_safe_time = maxf(last_safe_time, end_time)
+	return last_safe_time
+
+
+func _plan_position_at(plan: Dictionary, time: float) -> Vector2:
+	var segments: Array = plan.get("segments", [])
+	if segments.is_empty():
+		return Vector2.ZERO
+	for segment_variant in segments:
+		var segment: Dictionary = segment_variant
+		var start_time := float(segment.get("start_time", 0.0))
+		var end_time := float(segment.get("end_time", start_time))
+		if time < start_time - MOTION_EPSILON or time > end_time + MOTION_EPSILON:
+			continue
+		return _segment_position_at(segment, time)
+	var first_segment: Dictionary = segments.front()
+	if time <= float(first_segment.get("start_time", 0.0)):
+		return first_segment.get("start", Vector2.ZERO)
+	var last_segment: Dictionary = segments.back()
+	return last_segment.get("end", Vector2.ZERO)
 
 
 func _advance_all_moving(vehicles: Array[VehicleActorScript], delta: float) -> void:
@@ -470,7 +520,6 @@ func _build_motion_plan(vehicle: VehicleActorScript, delta: float) -> Dictionary
 	var progress := clampf(vehicle.get_segment_progress(), 0.0, 1.0)
 	var elapsed := 0.0
 	var current_position := _path_position(command, path_index, progress)
-
 	while elapsed < duration - MOTION_EPSILON and path_index < command.path.size() - 1:
 		var remaining_fraction := 1.0 - progress
 		var remaining_time := remaining_fraction / speed
@@ -571,7 +620,6 @@ func _find_earliest_collision_event(
 ) -> Dictionary:
 	var earliest_time := INF
 	var moving_ids: Dictionary = {}
-
 	for first_index in range(vehicles.size()):
 		for second_index in range(first_index + 1, vehicles.size()):
 			var first_plan: Dictionary = plans[first_index]
@@ -643,10 +691,7 @@ func _segments_collision_time(
 	var second_start := _segment_position_at(second_segment, overlap_start)
 	var duration := maxf(overlap_end - overlap_start, 0.0)
 	if duration <= MOTION_EPSILON:
-		if _rects_overlap(
-			Rect2(first_start, first_size),
-			Rect2(second_start, second_size)
-		):
+		if _rects_overlap(Rect2(first_start, first_size), Rect2(second_start, second_size)):
 			return overlap_start
 		return INF
 
@@ -749,12 +794,7 @@ func _is_vehicle_moving(vehicle: VehicleActorScript) -> bool:
 
 
 func _has_command_modifier(event: InputEventKey) -> bool:
-	return (
-		event.alt_pressed
-		or event.shift_pressed
-		or event.ctrl_pressed
-		or event.meta_pressed
-	)
+	return event.alt_pressed or event.shift_pressed or event.ctrl_pressed or event.meta_pressed
 
 
 func _find_path(vehicle: VehicleActorScript, target_anchor: Vector2i) -> Array[Vector2i]:
