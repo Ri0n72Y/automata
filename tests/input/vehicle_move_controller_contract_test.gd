@@ -614,6 +614,122 @@ func _test_continuous_collision_boundaries(move_controller, arm, transport) -> v
 		"Collision safe anchor must be invariant across physics-frame sizes."
 	)
 
+	_place_vehicle(arm, Vector2i(1, 3))
+	_place_vehicle(transport, Vector2i(8, 3))
+	test.expect_true(
+		arm.start_move(_command(
+			Vector2i(5, 3),
+			[
+				Vector2i(1, 3),
+				Vector2i(2, 3),
+				Vector2i(3, 3),
+				Vector2i(4, 3),
+				Vector2i(5, 3),
+			]
+		)),
+		"Large-delta moving arm task should start with multiple safe nodes."
+	)
+	test.expect_true(
+		transport.start_move(_command(
+			Vector2i(4, 3),
+			[
+				Vector2i(8, 3),
+				Vector2i(7, 3),
+				Vector2i(6, 3),
+				Vector2i(5, 3),
+				Vector2i(4, 3),
+			]
+		)),
+		"Large-delta moving transport task should start with multiple safe nodes."
+	)
+	move_controller._physics_process(2.0)
+	test.expect_equal(
+		arm.runtime_state.motion_state,
+		RUNTIME.MotionState.BLOCKED,
+		"Large-delta moving collision should block arm."
+	)
+	test.expect_equal(
+		transport.runtime_state.motion_state,
+		RUNTIME.MotionState.BLOCKED,
+		"Large-delta moving collision should block transport."
+	)
+	var large_arm_safe_anchor: Vector2i = arm.runtime_state.anchor_cell
+	var large_transport_safe_anchor: Vector2i = transport.runtime_state.anchor_cell
+	test.expect_equal(
+		large_arm_safe_anchor,
+		Vector2i(3, 3),
+		"Arm should retain its last safe completed node before moving collision."
+	)
+	test.expect_equal(
+		large_transport_safe_anchor,
+		Vector2i(6, 3),
+		"Transport should retain its last safe completed node before moving collision."
+	)
+	test.expect_false(
+		_vehicle_footprints_overlap(arm, transport),
+		"Blocked moving vehicles must end on non-overlapping safe footprints."
+	)
+
+	_place_vehicle(arm, Vector2i(1, 3))
+	_place_vehicle(transport, Vector2i(8, 3))
+	test.expect_true(
+		arm.start_move(_command(
+			Vector2i(5, 3),
+			[
+				Vector2i(1, 3),
+				Vector2i(2, 3),
+				Vector2i(3, 3),
+				Vector2i(4, 3),
+				Vector2i(5, 3),
+			]
+		)),
+		"Small-step moving arm task should start for frame-invariance coverage."
+	)
+	test.expect_true(
+		transport.start_move(_command(
+			Vector2i(4, 3),
+			[
+				Vector2i(8, 3),
+				Vector2i(7, 3),
+				Vector2i(6, 3),
+				Vector2i(5, 3),
+				Vector2i(4, 3),
+			]
+		)),
+		"Small-step moving transport task should start for frame-invariance coverage."
+	)
+	for _step in range(30):
+		move_controller._physics_process(0.1)
+		if (
+			arm.runtime_state.motion_state == RUNTIME.MotionState.BLOCKED
+			and transport.runtime_state.motion_state == RUNTIME.MotionState.BLOCKED
+		):
+			break
+	test.expect_equal(
+		arm.runtime_state.motion_state,
+		RUNTIME.MotionState.BLOCKED,
+		"Small-step moving collision should block arm."
+	)
+	test.expect_equal(
+		transport.runtime_state.motion_state,
+		RUNTIME.MotionState.BLOCKED,
+		"Small-step moving collision should block transport."
+	)
+	test.expect_equal(
+		arm.runtime_state.anchor_cell,
+		large_arm_safe_anchor,
+		"Arm safe anchor must be invariant across physics-frame sizes."
+	)
+	test.expect_equal(
+		transport.runtime_state.anchor_cell,
+		large_transport_safe_anchor,
+		"Transport safe anchor must be invariant across physics-frame sizes."
+	)
+	test.expect_false(
+		_vehicle_footprints_overlap(arm, transport),
+		"Small-step blocked vehicles must end on non-overlapping safe footprints."
+	)
+
 	_place_vehicle(arm, Vector2i(2, 3))
 	_place_vehicle(transport, Vector2i(7, 3))
 	test.expect_true(
@@ -674,6 +790,19 @@ func _test_continuous_collision_boundaries(move_controller, arm, transport) -> v
 
 	arm.reset_actor()
 	transport.reset_actor()
+
+
+func _vehicle_footprints_overlap(first, second) -> bool:
+	var first_anchor: Vector2i = first.runtime_state.anchor_cell
+	var second_anchor: Vector2i = second.runtime_state.anchor_cell
+	var first_footprint: Vector2i = first.definition.footprint
+	var second_footprint: Vector2i = second.definition.footprint
+	return (
+		first_anchor.x < second_anchor.x + second_footprint.x
+		and first_anchor.x + first_footprint.x > second_anchor.x
+		and first_anchor.y < second_anchor.y + second_footprint.y
+		and first_anchor.y + first_footprint.y > second_anchor.y
+	)
 
 
 func _test_real_physics_frame_coordination(manager) -> void:
