@@ -500,7 +500,6 @@ func _build_motion_plan(vehicle: VehicleActorScript, delta: float) -> Dictionary
 	if not _is_vehicle_moving(vehicle):
 		return {
 			"moving": false,
-			"must_block": false,
 			"footprint": footprint,
 			"segments": stationary_segments,
 		}
@@ -510,7 +509,6 @@ func _build_motion_plan(vehicle: VehicleActorScript, delta: float) -> Dictionary
 	if speed <= 0.0:
 		return {
 			"moving": true,
-			"must_block": true,
 			"footprint": footprint,
 			"segments": stationary_segments,
 		}
@@ -562,7 +560,6 @@ func _build_motion_plan(vehicle: VehicleActorScript, delta: float) -> Dictionary
 		))
 	return {
 		"moving": true,
-		"must_block": false,
 		"footprint": footprint,
 		"segments": segments,
 	}
