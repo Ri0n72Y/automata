@@ -418,6 +418,7 @@ func _test_manual_stop(
 		)),
 		"Transport task should continue independently during arm stop."
 	)
+	move_controller.set_physics_process(false)
 	var stopped_before := stopped.size()
 	vehicle_selection.cancel_selection()
 	await _push_key(KEY_X)
@@ -529,6 +530,7 @@ func _test_manual_stop(
 		"Waiting X must not emit another stop event."
 	)
 	transport.reset_actor()
+	move_controller.set_physics_process(true)
 
 
 func _test_continuous_collision_boundaries(move_controller, arm, transport) -> void:
