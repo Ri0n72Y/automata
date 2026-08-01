@@ -45,7 +45,13 @@ func _run() -> void:
 		"Move controller test dependencies should exist."
 	)
 	if vehicle_selection != null and move_controller != null and grid_selection != null and manager != null:
-		_test_submission_boundaries(scene, vehicle_selection, move_controller, grid_selection, manager)
+		await _test_submission_boundaries(
+			scene,
+			vehicle_selection,
+			move_controller,
+			grid_selection,
+			manager
+		)
 		await _test_real_physics_frame_coordination(manager)
 
 	scene.queue_free()
@@ -83,7 +89,13 @@ func _test_command_input_map() -> void:
 	test.expect_true(has_x, "Stop task should default to X.")
 
 
-func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller, grid_selection, manager) -> void:
+func _test_submission_boundaries(
+	scene: Node,
+	vehicle_selection,
+	move_controller,
+	grid_selection,
+	manager
+) -> void:
 	var arm = manager.get_vehicle_by_id(VEHICLE_MANAGER.ARM_VEHICLE_ID)
 	var transport = manager.get_vehicle_by_id(VEHICLE_MANAGER.TRANSPORT_VEHICLE_ID)
 	test.expect_true(arm != null and transport != null, "Both vehicles should exist.")
@@ -234,7 +246,7 @@ func _test_submission_boundaries(scene: Node, vehicle_selection, move_controller
 		arm,
 		transport
 	)
-	_test_manual_stop(
+	await _test_manual_stop(
 		vehicle_selection,
 		move_controller,
 		grid_selection,
@@ -386,11 +398,16 @@ func _test_manual_stop(
 	grid_selection.deactivate_live_target_mode()
 	_place_vehicle(arm, Vector2i(1, 1))
 	_place_vehicle(transport, Vector2i(6, 4))
-	test.expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selected for manual stop.")
 	test.expect_true(
 		arm.start_move(_command(
-			Vector2i(3, 1),
-			[Vector2i(1, 1), Vector2i(2, 1), Vector2i(3, 1)]
+			Vector2i(5, 1),
+			[
+				Vector2i(1, 1),
+				Vector2i(2, 1),
+				Vector2i(3, 1),
+				Vector2i(4, 1),
+				Vector2i(5, 1),
+			]
 		)),
 		"Arm task should start for manual stop."
 	)
@@ -402,17 +419,56 @@ func _test_manual_stop(
 		"Transport task should continue independently during arm stop."
 	)
 	var stopped_before := stopped.size()
-	move_controller._unhandled_input(_key_event(KEY_X, true))
+	vehicle_selection.cancel_selection()
+	await _push_key(KEY_X)
 	test.expect_equal(
 		arm.runtime_state.motion_state,
 		RUNTIME.MotionState.MOVING,
-		"Modified X must not stop the selected task."
+		"Viewport X without a selected vehicle must not stop arm."
 	)
-	move_controller._unhandled_input(_key_event(KEY_X))
+	test.expect_equal(
+		transport.runtime_state.motion_state,
+		RUNTIME.MotionState.MOVING,
+		"Viewport X without a selected vehicle must not stop transport."
+	)
+	test.expect_equal(
+		stopped.size(),
+		stopped_before,
+		"Viewport X without a selection must not emit move_stopped."
+	)
+
+	test.expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selected for manual stop.")
+	var modifier_cases: Array[Dictionary] = [
+		{"name": "Shift", "shift": true, "ctrl": false, "alt": false, "meta": false},
+		{"name": "Ctrl", "shift": false, "ctrl": true, "alt": false, "meta": false},
+		{"name": "Alt", "shift": false, "ctrl": false, "alt": true, "meta": false},
+		{"name": "Meta", "shift": false, "ctrl": false, "alt": false, "meta": true},
+	]
+	for case in modifier_cases:
+		await _push_key(
+			KEY_X,
+			bool(case["shift"]),
+			bool(case["ctrl"]),
+			bool(case["alt"]),
+			bool(case["meta"])
+		)
+		test.expect_equal(
+			arm.runtime_state.motion_state,
+			RUNTIME.MotionState.MOVING,
+			"%s+X through Viewport must not stop the selected task." % case["name"]
+		)
+		test.expect_equal(
+			stopped.size(),
+			stopped_before,
+			"%s+X must not emit move_stopped." % case["name"]
+		)
+
+	var last_reached_anchor: Vector2i = arm.runtime_state.anchor_cell
+	await _push_key(KEY_X)
 	test.expect_equal(
 		arm.runtime_state.motion_state,
 		RUNTIME.MotionState.BLOCKED,
-		"X should stop the selected Moving task."
+		"Viewport X should stop the selected Moving task."
 	)
 	test.expect_true(
 		arm.runtime_state.active_move_command == null,
@@ -420,7 +476,7 @@ func _test_manual_stop(
 	)
 	test.expect_equal(
 		arm.runtime_state.anchor_cell,
-		Vector2i(1, 1),
+		last_reached_anchor,
 		"Manual stop should return to the last reached anchor."
 	)
 	test.expect_equal(
@@ -447,16 +503,31 @@ func _test_manual_stop(
 		VEHICLE_MANAGER.ARM_VEHICLE_ID,
 		"Manual stop should identify the selected vehicle."
 	)
-	test.expect_false(
-		move_controller.request_selected_vehicle_stop(),
-		"Blocked vehicle should ignore duplicate stop requests."
+
+	await _push_key(KEY_X)
+	test.expect_equal(
+		arm.runtime_state.motion_state,
+		RUNTIME.MotionState.BLOCKED,
+		"Viewport X should ignore an already Blocked vehicle."
 	)
 	test.expect_equal(
 		stopped.size(),
 		stopped_before + 1,
-		"Duplicate stop request must not emit another event."
+		"Blocked duplicate X must not emit another stop event."
 	)
+
 	arm.reset_actor()
+	await _push_key(KEY_X)
+	test.expect_equal(
+		arm.runtime_state.motion_state,
+		RUNTIME.MotionState.WAITING,
+		"Viewport X should ignore a Waiting vehicle."
+	)
+	test.expect_equal(
+		stopped.size(),
+		stopped_before + 1,
+		"Waiting X must not emit another stop event."
+	)
 	transport.reset_actor()
 
 
@@ -513,8 +584,32 @@ func _test_continuous_collision_boundaries(move_controller, arm, transport) -> v
 	)
 	test.expect_equal(
 		arm.runtime_state.anchor_cell,
-		Vector2i(1, 1),
-		"Rejected swept motion should not commit the colliding task."
+		Vector2i(2, 1),
+		"Large-delta collision should retain the last safe completed anchor."
+	)
+
+	_place_vehicle(arm, Vector2i(1, 1))
+	_place_vehicle(transport, Vector2i(4, 1))
+	test.expect_true(
+		arm.start_move(_command(
+			Vector2i(5, 1),
+			[Vector2i(1, 1), Vector2i(2, 1), Vector2i(3, 1), Vector2i(4, 1), Vector2i(5, 1)]
+		)),
+		"Small-step arm task should start for frame-invariance coverage."
+	)
+	for _step in range(20):
+		move_controller._physics_process(0.1)
+		if arm.runtime_state.motion_state == RUNTIME.MotionState.BLOCKED:
+			break
+	test.expect_equal(
+		arm.runtime_state.motion_state,
+		RUNTIME.MotionState.BLOCKED,
+		"Small-step traversal should detect the same static collision."
+	)
+	test.expect_equal(
+		arm.runtime_state.anchor_cell,
+		Vector2i(2, 1),
+		"Collision safe anchor must be invariant across physics-frame sizes."
 	)
 
 	_place_vehicle(arm, Vector2i(2, 3))
@@ -548,8 +643,8 @@ func _test_continuous_collision_boundaries(move_controller, arm, transport) -> v
 	)
 	test.expect_equal(
 		transport.runtime_state.anchor_cell,
-		Vector2i(7, 3),
-		"Colliding transport should not commit its collision-frame task."
+		Vector2i(5, 3),
+		"Later collision should retain transport's last safe completed anchor."
 	)
 
 	_place_vehicle(arm, Vector2i(1, 1))
@@ -624,6 +719,19 @@ func _test_real_physics_frame_coordination(manager) -> void:
 	transport.reset_actor()
 
 
+func _push_key(
+	keycode: int,
+	shifted: bool = false,
+	controlled: bool = false,
+	alted: bool = false,
+	metaed: bool = false
+) -> void:
+	root.push_input(_key_event(keycode, true, shifted, controlled, alted, metaed))
+	await process_frame
+	root.push_input(_key_event(keycode, false, shifted, controlled, alted, metaed))
+	await process_frame
+
+
 func _place_vehicle(vehicle, anchor: Vector2i) -> void:
 	vehicle.reset_actor()
 	vehicle.runtime_state.anchor_cell = anchor
@@ -636,11 +744,21 @@ func _command(target: Vector2i, path: Array[Vector2i]) -> COMMAND:
 	return command
 
 
-func _key_event(keycode: int, shifted: bool = false) -> InputEventKey:
+func _key_event(
+	keycode: int,
+	pressed: bool,
+	shifted: bool = false,
+	controlled: bool = false,
+	alted: bool = false,
+	metaed: bool = false
+) -> InputEventKey:
 	var event := InputEventKey.new()
-	event.pressed = true
+	event.pressed = pressed
 	event.keycode = keycode
 	event.shift_pressed = shifted
+	event.ctrl_pressed = controlled
+	event.alt_pressed = alted
+	event.meta_pressed = metaed
 	return event
 
 
