@@ -22,6 +22,10 @@ func get_accepted_item_types() -> PackedStringArray:
 	return PackedStringArray()
 
 
+func accepts_item_type(item_type: StringName) -> bool:
+	return get_accepted_item_types().has(item_type)
+
+
 func get_current_count() -> int:
 	return 0
 
@@ -57,6 +61,6 @@ func _owns_item(block: StandardBlock) -> bool:
 func _get_receiver_id() -> int:
 	if _receiver_id > 0:
 		return _receiver_id
-	_receiver_id = _next_receiver_id
-	_next_receiver_id += 1
+	_receiver_id = ItemReceiverInterface._next_receiver_id
+	ItemReceiverInterface._next_receiver_id += 1
 	return _receiver_id
