@@ -27,7 +27,10 @@ func is_infinite() -> bool:
 
 
 func get_interaction_cells() -> Array[Vector2i]:
-	return _source.get_interaction_cells() if _source != null else []
+	if _source != null:
+		return _source.get_interaction_cells()
+	var empty: Array[Vector2i] = []
+	return empty
 
 
 func take_item() -> ItemTransferResult:
