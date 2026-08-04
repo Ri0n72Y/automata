@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://d3qj14box001"]
+[gd_scene load_steps=10 format=3 uid="uid://d3qj14box001"]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_item_receiver_node.gd" id="1_node"]
 [ext_resource type="Script" path="res://scripts/objects/standard_box.gd" id="2_resource"]
