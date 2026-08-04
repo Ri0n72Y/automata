@@ -1,43 +1,37 @@
 extends Node3D
 class_name Scene01ItemSourceNode
 
-@export var interaction_cells: Array[Vector2i] = []
-
-var _source: ItemSourceInterface
+@export var source_resource: ItemSourceInterface
 
 
-func configure(source: ItemSourceInterface) -> bool:
-	if source == null:
-		return false
-	_source = source
-	_source.set_interaction_cells(interaction_cells)
-	return true
+func is_configured() -> bool:
+	return source_resource != null
 
 
 func get_source_interface() -> ItemSourceInterface:
-	return _source
+	return source_resource
 
 
 func get_output_item_type() -> StringName:
-	return _source.get_output_item_type() if _source != null else &""
+	return source_resource.get_output_item_type() if source_resource != null else &""
 
 
 func is_available() -> bool:
-	return _source != null and _source.is_available()
+	return source_resource != null and source_resource.is_available()
 
 
 func is_infinite() -> bool:
-	return _source != null and _source.is_infinite()
+	return source_resource != null and source_resource.is_infinite()
 
 
 func get_interaction_cells() -> Array[Vector2i]:
-	if _source != null:
-		return _source.get_interaction_cells()
+	if source_resource != null:
+		return source_resource.get_interaction_cells()
 	var empty: Array[Vector2i] = []
 	return empty
 
 
 func take_item() -> ItemTransferResult:
-	if _source == null:
+	if source_resource == null:
 		return ItemTransferResult.rejected(ItemTransferResult.Status.INVALID_TARGET)
-	return _source.take_item()
+	return source_resource.take_item()
