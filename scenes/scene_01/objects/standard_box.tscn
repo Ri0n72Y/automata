@@ -33,6 +33,7 @@ size = Vector3(1.7, 0.62, 0.14)
 [node name="StandardBox" type="Node3D"]
 script = ExtResource("1_node")
 receiver_resource = SubResource("Resource_box")
+editor_preview_count = 3
 
 [node name="VisualRoot" type="Node3D" parent="."]
 unique_name_in_owner = true
@@ -78,22 +79,27 @@ position = Vector3(0.17, 0.2, -0.25)
 scale = Vector3(0.72, 0.72, 0.72)
 
 [node name="Slot04" parent="VisualRoot/CapacitySlots" instance=ExtResource("3_block")]
+visible = false
 position = Vector3(0.51, 0.2, -0.25)
 scale = Vector3(0.72, 0.72, 0.72)
 
 [node name="Slot05" parent="VisualRoot/CapacitySlots" instance=ExtResource("3_block")]
+visible = false
 position = Vector3(-0.51, 0.2, 0.25)
 scale = Vector3(0.72, 0.72, 0.72)
 
 [node name="Slot06" parent="VisualRoot/CapacitySlots" instance=ExtResource("3_block")]
+visible = false
 position = Vector3(-0.17, 0.2, 0.25)
 scale = Vector3(0.72, 0.72, 0.72)
 
 [node name="Slot07" parent="VisualRoot/CapacitySlots" instance=ExtResource("3_block")]
+visible = false
 position = Vector3(0.17, 0.2, 0.25)
 scale = Vector3(0.72, 0.72, 0.72)
 
 [node name="Slot08" parent="VisualRoot/CapacitySlots" instance=ExtResource("3_block")]
+visible = false
 position = Vector3(0.51, 0.2, 0.25)
 scale = Vector3(0.72, 0.72, 0.72)
 
