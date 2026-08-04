@@ -22,6 +22,10 @@ func get_accepted_item_types() -> PackedStringArray:
 	return _receiver.get_accepted_item_types() if _receiver != null else PackedStringArray()
 
 
+func accepts_item_type(item_type: StringName) -> bool:
+	return _receiver != null and _receiver.accepts_item_type(item_type)
+
+
 func get_interaction_cells() -> Array[Vector2i]:
 	if _receiver != null:
 		return _receiver.get_interaction_cells()
