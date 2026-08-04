@@ -1,0 +1,31 @@
+[gd_scene load_steps=5 format=3 uid="uid://d3qj10block01"]
+
+[sub_resource type="StandardMaterial3D" id="BlockMaterial"]
+albedo_color = Color(0.96, 0.48, 0.06, 1)
+metallic = 0.12
+roughness = 0.52
+
+[sub_resource type="StandardMaterial3D" id="BandMaterial"]
+albedo_color = Color(1, 0.82, 0.12, 1)
+emission_enabled = true
+emission = Color(0.32, 0.16, 0.01, 1)
+emission_energy_multiplier = 0.35
+roughness = 0.4
+
+[sub_resource type="BoxMesh" id="BlockMesh"]
+size = Vector3(0.42, 0.42, 0.42)
+
+[sub_resource type="BoxMesh" id="BandMesh"]
+size = Vector3(0.46, 0.07, 0.46)
+
+[node name="StandardBlockVisual" type="Node3D"]
+
+[node name="BlockBody" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.21, 0)
+mesh = SubResource("BlockMesh")
+material_override = SubResource("BlockMaterial")
+
+[node name="TopBand" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.425, 0)
+mesh = SubResource("BandMesh")
+material_override = SubResource("BandMaterial")
