@@ -22,6 +22,10 @@ func get_output_item_type() -> StringName:
 	return _source.get_output_item_type() if _source != null else &""
 
 
+func is_available() -> bool:
+	return _source != null and _source.is_available()
+
+
 func is_infinite() -> bool:
 	return _source != null and _source.is_infinite()
 
