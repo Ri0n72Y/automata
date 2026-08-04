@@ -1,9 +1,6 @@
 extends RefCounted
 class_name ItemReceiverInterface
 
-static var _next_receiver_id: int = 1
-
-var _receiver_id: int = 0
 var _interaction_cells: Array[Vector2i] = []
 
 
@@ -47,20 +44,12 @@ func reset() -> void:
 
 
 func _claim_item(block: StandardBlock) -> bool:
-	return block != null and block.try_claim(_get_receiver_id())
+	return block != null and block.try_claim(self)
 
 
 func _release_item(block: StandardBlock) -> bool:
-	return block != null and block.release_claim(_get_receiver_id())
+	return block != null and block.release_claim(self)
 
 
 func _owns_item(block: StandardBlock) -> bool:
-	return block != null and block.is_claimed_by(_get_receiver_id())
-
-
-func _get_receiver_id() -> int:
-	if _receiver_id > 0:
-		return _receiver_id
-	_receiver_id = ItemReceiverInterface._next_receiver_id
-	ItemReceiverInterface._next_receiver_id += 1
-	return _receiver_id
+	return block != null and block.is_claimed_by(self)
