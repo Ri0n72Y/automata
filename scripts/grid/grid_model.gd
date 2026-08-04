@@ -75,6 +75,23 @@ func position_to_cell(position: Vector3) -> Vector2i:
 	)
 
 
+## Returns the footprint anchor whose geometric center is nearest to position.
+## For 1x1 this snaps to cell centers; for 2x2 it snaps to grid-line intersections.
+## The returned anchor is intentionally unbounded so callers can decide whether
+## to clamp it for feedback or reject it for simulation.
+func position_to_nearest_anchor(
+	position: Vector3,
+	footprint: Vector2i = Vector2i.ONE
+) -> Vector2i:
+	if footprint.x <= 0 or footprint.y <= 0:
+		return position_to_cell(position)
+	var grid_position := (position - _local_origin) / _cell_size
+	return Vector2i(
+		int(floor(grid_position.x - float(footprint.x) * 0.5 + 0.5)),
+		int(floor(grid_position.z - float(footprint.y) * 0.5 + 0.5))
+	)
+
+
 func is_cell_valid(cell: Vector2i) -> bool:
 	return (
 		cell.x >= 0
@@ -126,5 +143,4 @@ func _build_default_cell_types(p_width: int, p_height: int) -> PackedInt32Array:
 				or cell_y == p_height - 1
 			):
 				cell_types[cell_y * p_width + cell_x] = CellType.BOUNDARY
-
 	return cell_types

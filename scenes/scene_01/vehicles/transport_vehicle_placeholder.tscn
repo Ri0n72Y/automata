@@ -30,7 +30,7 @@ emission_energy_multiplier = 0.65
 roughness = 0.42
 
 [sub_resource type="BoxMesh" id="ChassisMesh"]
-size = Vector3(1.68, 0.34, 1.62)
+size = Vector3(1.52, 0.34, 1.48)
 
 [sub_resource type="CylinderMesh" id="WheelMesh"]
 top_radius = 0.23

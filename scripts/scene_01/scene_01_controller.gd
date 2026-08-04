@@ -5,6 +5,8 @@ const GridDebugViewScript := preload("res://scripts/grid/grid_debug_view.gd")
 const GridTileViewScript := preload("res://scripts/grid/grid_tile_view.gd")
 const SceneCameraRigScript := preload("res://scripts/camera/scene_01_camera_rig.gd")
 const GridSelectionControllerScript := preload("res://scripts/input/grid_selection_controller.gd")
+const VehicleSelectionControllerScript := preload("res://scripts/input/vehicle_selection_controller.gd")
+const VehicleMoveControllerScript := preload("res://scripts/input/vehicle_move_controller.gd")
 const Scene01VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 
 @export_group("Grid")
@@ -17,6 +19,8 @@ const Scene01VehicleManagerScript := preload("res://scripts/scene_01/scene_01_ve
 var grid_root: Node3D
 @onready var grid_tile_view: GridTileViewScript = %GridTileView
 @onready var grid_debug_view: GridDebugViewScript = %GridDebugView
+@onready var vehicle_selection_controller: VehicleSelectionControllerScript = %VehicleSelectionController
+@onready var vehicle_move_controller: VehicleMoveControllerScript = %VehicleMoveController
 @onready var grid_selection_controller: GridSelectionControllerScript = %GridSelectionController
 @onready var robot_root: Node3D = %RobotRoot
 @onready var scene_vehicle_manager: Scene01VehicleManagerScript = %Scene01VehicleManager
@@ -95,6 +99,10 @@ func initialize_grid() -> bool:
 		push_error("Scene 01 grid initialization failed because vehicle commit was rejected.")
 		return false
 
+	if vehicle_move_controller != null:
+		vehicle_move_controller.reset_controller_state()
+	if vehicle_selection_controller != null:
+		vehicle_selection_controller.cancel_selection()
 	if grid_selection_controller != null:
 		grid_selection_controller.clear_hover()
 		grid_selection_controller.cancel_selection()
@@ -108,6 +116,21 @@ func world_to_grid_cell(world_position: Vector3) -> Vector2i:
 		return Vector2i(-1, -1)
 	var position := grid_root.to_local(world_position)
 	return grid_model.position_to_cell(position)
+
+
+func world_to_nearest_grid_anchor(
+	world_position: Vector3,
+	footprint: Vector2i = Vector2i.ONE
+) -> Vector2i:
+	if grid_root == null or grid_model == null:
+		push_error("Scene 01 grid is not initialized.")
+		return Vector2i(-1, -1)
+	var local_position := grid_root.to_local(world_position)
+	var anchor := grid_model.position_to_nearest_anchor(local_position, footprint)
+	return Vector2i(
+		clampi(anchor.x, 0, grid_model.width - 1),
+		clampi(anchor.y, 0, grid_model.height - 1)
+	)
 
 
 func grid_cell_to_world(cell: Vector2i) -> Vector3:
@@ -136,6 +159,12 @@ func get_grid_world_basis() -> Basis:
 	if grid_root == null:
 		return Basis.IDENTITY
 	return grid_root.global_basis
+
+
+func get_grid_size() -> Vector2i:
+	if grid_model == null:
+		return Vector2i.ZERO
+	return Vector2i(grid_model.width, grid_model.height)
 
 
 func is_grid_cell_valid(cell: Vector2i) -> bool:
@@ -202,6 +231,10 @@ func reset_scene_state() -> void:
 	_preview_offset_enabled = false
 	if grid_root != null:
 		grid_root.transform = _initial_grid_root_transform
+	if vehicle_move_controller != null:
+		vehicle_move_controller.reset_controller_state()
+	if vehicle_selection_controller != null:
+		vehicle_selection_controller.cancel_selection()
 	if grid_selection_controller != null:
 		grid_selection_controller.clear_hover()
 		grid_selection_controller.cancel_selection()
@@ -249,11 +282,14 @@ func preview_restore_grid_transform() -> void:
 
 
 func _sync_grid_transform_dependents() -> void:
-	if grid_selection_controller != null:
-		grid_selection_controller.clear_hover()
-		grid_selection_controller.cancel_selection()
 	if scene_vehicle_manager != null:
 		scene_vehicle_manager.sync_vehicles_from_state()
+	if vehicle_selection_controller != null:
+		vehicle_selection_controller.refresh_highlight()
+	if grid_selection_controller != null:
+		grid_selection_controller.refresh_visuals()
+	if vehicle_move_controller != null:
+		vehicle_move_controller.sync_visuals()
 	_refresh_camera_for_grid()
 
 
@@ -279,11 +315,20 @@ func _configure_grid_presentation() -> void:
 		grid_debug_view.draw(grid_model)
 
 	_refresh_camera_for_grid()
+	var active_camera: Camera3D
+	if scene_camera_rig != null:
+		active_camera = scene_camera_rig.get_camera()
+	if vehicle_selection_controller != null:
+		vehicle_selection_controller.configure(active_camera, scene_vehicle_manager)
 	if grid_selection_controller != null:
-		var active_camera: Camera3D
-		if scene_camera_rig != null:
-			active_camera = scene_camera_rig.get_camera()
 		grid_selection_controller.configure(self, active_camera, grid_model.cell_size)
+	if vehicle_move_controller != null:
+		vehicle_move_controller.configure(
+			self,
+			vehicle_selection_controller,
+			grid_selection_controller,
+			scene_vehicle_manager
+		)
 
 
 func _refresh_camera_for_grid() -> void:

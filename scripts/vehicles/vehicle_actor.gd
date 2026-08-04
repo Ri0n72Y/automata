@@ -1,8 +1,13 @@
 class_name VehicleActor
 extends Node3D
 
+signal move_started(target_anchor: Vector2i)
+signal move_completed(target_anchor: Vector2i)
+signal move_blocked()
+
 const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
 const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
+const MoveCommandScript := preload("res://scripts/vehicles/move_command.gd")
 
 @export var vehicle_selection_layer: int = 2
 @export var use_static_scene_visual: bool = false
@@ -18,6 +23,7 @@ var _selection_area: Area3D
 var _debug_label: Label3D
 var _visual_parts: Dictionary = {}
 var _visual_generation: int = 0
+var _segment_progress: float = 0.0
 
 
 func _ready() -> void:
@@ -57,6 +63,8 @@ func configure(
 	else:
 		_rebuild_visual()
 
+	_segment_progress = 0.0
+	set_physics_process(false)
 	sync_from_state()
 	return true
 
@@ -66,22 +74,99 @@ func sync_from_state() -> void:
 		return
 	if not is_inside_tree():
 		return
-	global_position = controller.call(
-		"grid_footprint_center_to_world",
-		runtime_state.anchor_cell,
-		definition.footprint
-	)
-	var grid_basis: Basis = controller.call("get_grid_world_basis")
-	global_basis = grid_basis * Basis(
-		Vector3.UP,
-		-float(runtime_state.facing) * PI * 0.5
-	)
+	if (
+		runtime_state.active_move_command != null
+		and runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING
+	):
+		_sync_movement_transform()
+	else:
+		global_position = _anchor_to_world(runtime_state.anchor_cell)
+		_sync_actor_basis()
 	_update_debug_label()
+
+
+func start_move(command: MoveCommandScript) -> bool:
+	if definition == null or runtime_state == null or controller == null:
+		return false
+	if not definition.can_move():
+		return false
+	if command == null or command.state != MoveCommandScript.State.MOVING:
+		return false
+	if command.path.is_empty() or command.path.front() != runtime_state.anchor_cell:
+		return false
+	if not runtime_state.assign_move_command(command):
+		return false
+
+	_segment_progress = 0.0
+	set_physics_process(true)
+	_sync_movement_transform()
+	move_started.emit(command.target_anchor)
+	return true
+
+
+func _physics_process(delta: float) -> void:
+	advance_move(delta)
+
+
+func advance_move(delta: float) -> void:
+	if runtime_state == null:
+		set_physics_process(false)
+		return
+	var command: MoveCommandScript = runtime_state.active_move_command
+	if command == null or runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING:
+		set_physics_process(false)
+		return
+	if command.path_index >= command.path.size() - 1:
+		_finish_move(command.target_anchor)
+		return
+
+	var speed_in_cells := runtime_state.get_effective_speed()
+	if speed_in_cells <= 0.0:
+		_block_move()
+		return
+
+	var remaining_distance := maxf(delta, 0.0) * speed_in_cells
+	if remaining_distance <= 0.0:
+		_sync_movement_transform()
+		return
+
+	while remaining_distance > 0.000001:
+		command = runtime_state.active_move_command
+		if command == null or command.state != MoveCommandScript.State.MOVING:
+			return
+		var remaining_segment := 1.0 - _segment_progress
+		var step := minf(remaining_distance, remaining_segment)
+		_segment_progress += step
+		remaining_distance -= step
+		_sync_movement_transform()
+		if _segment_progress < 0.999999:
+			return
+
+		var reached_anchor := command.get_next_anchor()
+		runtime_state.anchor_cell = reached_anchor
+		var finished := command.advance()
+		_segment_progress = 0.0
+		if finished:
+			_finish_move(command.target_anchor)
+			return
+		_sync_movement_transform()
+
+
+func cancel_move() -> void:
+	if runtime_state == null or runtime_state.active_move_command == null:
+		return
+	runtime_state.block_move_command()
+	_segment_progress = 0.0
+	set_physics_process(false)
+	sync_from_state()
+	move_blocked.emit()
 
 
 func reset_actor() -> void:
 	if runtime_state == null:
 		return
+	set_physics_process(false)
+	_segment_progress = 0.0
 	runtime_state.reset()
 	sync_from_state()
 
@@ -119,6 +204,56 @@ func get_debug_label_text() -> String:
 	if _debug_label == null or not is_instance_valid(_debug_label):
 		return ""
 	return _debug_label.text
+
+
+func get_segment_progress() -> float:
+	return _segment_progress
+
+
+func _anchor_to_world(anchor: Vector2i) -> Vector3:
+	return controller.call(
+		"grid_footprint_center_to_world",
+		anchor,
+		definition.footprint
+	)
+
+
+func _sync_movement_transform() -> void:
+	if runtime_state == null or runtime_state.active_move_command == null:
+		return
+	var command: MoveCommandScript = runtime_state.active_move_command
+	var current_anchor := command.get_current_anchor()
+	var next_anchor := command.get_next_anchor()
+	var current_world := _anchor_to_world(current_anchor)
+	var next_world := _anchor_to_world(next_anchor)
+	global_position = current_world.lerp(next_world, clampf(_segment_progress, 0.0, 1.0))
+	_sync_actor_basis()
+
+
+func _sync_actor_basis() -> void:
+	var grid_basis: Basis = controller.call("get_grid_world_basis")
+	global_basis = grid_basis * Basis(
+		Vector3.UP,
+		-float(runtime_state.facing) * PI * 0.5
+	)
+
+
+func _finish_move(target_anchor: Vector2i) -> void:
+	runtime_state.anchor_cell = target_anchor
+	_segment_progress = 0.0
+	global_position = _anchor_to_world(target_anchor)
+	_sync_actor_basis()
+	runtime_state.complete_move_command()
+	set_physics_process(false)
+	move_completed.emit(target_anchor)
+
+
+func _block_move() -> void:
+	runtime_state.block_move_command()
+	_segment_progress = 0.0
+	set_physics_process(false)
+	sync_from_state()
+	move_blocked.emit()
 
 
 func _bind_static_visual() -> bool:
