@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3 uid="uid://d3qj14box001"]
+
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_item_receiver_node.gd" id="1_node"]
+[ext_resource type="Script" path="res://scripts/objects/standard_box.gd" id="2_resource"]
+
+[sub_resource type="Resource" id="Resource_box"]
+resource_local_to_scene = true
+script = ExtResource("2_resource")
+
+[node name="StandardBox" type="Node3D"]
+script = ExtResource("1_node")
+receiver_resource = SubResource("Resource_box")
