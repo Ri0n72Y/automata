@@ -2,7 +2,9 @@ extends SceneTree
 
 const SCENE_PATH := "res://scenes/scene_01/scene_01_basic_packing.tscn"
 const BLOCK_SCENE_PATH := "res://scenes/scene_01/objects/standard_block_placeholder.tscn"
-const OBJECT_MANAGER_PATH := "SceneRoot/ObjectRoot/Scene01ObjectManager"
+const GRID_ROOT_PATH := "SceneRoot/GridRoot"
+const OBJECT_ROOT_PATH := "SceneRoot/ObjectRoot"
+const OBJECT_MANAGER_PATH := OBJECT_ROOT_PATH + "/Scene01ObjectManager"
 const PILE_PATH := OBJECT_MANAGER_PATH + "/InfiniteBlockPile"
 const BOX_PATH := OBJECT_MANAGER_PATH + "/StandardBox"
 const VEHICLE_MANAGER_PATH := "SceneRoot/RobotRoot/Scene01VehicleManager"
@@ -27,11 +29,17 @@ func _run() -> void:
 	root.add_child(scene)
 	await process_frame
 
+	var grid_root: Node3D = scene.get_node_or_null(GRID_ROOT_PATH) as Node3D
+	var object_root: GridTransformFollower = scene.get_node_or_null(
+		OBJECT_ROOT_PATH
+	) as GridTransformFollower
 	var pile_node: Scene01ItemSourceNode = scene.get_node_or_null(PILE_PATH) as Scene01ItemSourceNode
 	var box_node: Scene01ItemReceiverNode = scene.get_node_or_null(BOX_PATH) as Scene01ItemReceiverNode
 	var vehicle_manager: Scene01VehicleManager = scene.get_node_or_null(
 		VEHICLE_MANAGER_PATH
 	) as Scene01VehicleManager
+	_expect_true(grid_root != null, "Scene should contain GridRoot.")
+	_expect_true(object_root != null, "ObjectRoot should use the grid transform follower.")
 	_expect_true(pile_node != null, "Scene should contain the pile visual scene.")
 	_expect_true(box_node != null, "Scene should contain the box visual scene.")
 	_expect_true(vehicle_manager != null, "Scene should contain the vehicle manager.")
@@ -64,6 +72,15 @@ func _run() -> void:
 	if vehicle_manager != null:
 		_test_vehicle_state_visuals(vehicle_manager)
 
+	if grid_root != null and object_root != null:
+		scene.call("preview_rotate_grid", 1)
+		await process_frame
+		_expect_equal(
+			object_root.global_transform,
+			grid_root.global_transform,
+			"ObjectRoot should follow the complete GridRoot transform."
+		)
+
 	scene.call("reset_scene")
 	await process_frame
 	if box_node != null:
@@ -71,6 +88,12 @@ func _run() -> void:
 		_expect_equal(box_node.get_capacity_label_text(), "3/8  IN", "Reset should restore box label.")
 	if vehicle_manager != null:
 		_assert_reset_vehicle_visuals(vehicle_manager)
+	if grid_root != null and object_root != null:
+		_expect_equal(
+			object_root.global_transform,
+			grid_root.global_transform,
+			"Reset should keep object and grid transforms aligned."
+		)
 
 	scene.queue_free()
 	await process_frame
