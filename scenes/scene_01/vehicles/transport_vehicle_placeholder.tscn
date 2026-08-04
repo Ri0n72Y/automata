@@ -1,6 +1,7 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scripts/vehicles/vehicle_actor.gd" id="1_actor"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/objects/standard_block_placeholder.tscn" id="2_block"]
 
 [sub_resource type="StandardMaterial3D" id="ChassisMaterial"]
 albedo_color = Color(0.04, 0.38, 0.26, 1)
@@ -102,6 +103,59 @@ position = Vector3(0, 0.81, 0.66)
 mesh = SubResource("RailMesh")
 material_override = SubResource("RailMaterial")
 
+[node name="TraySlots" type="Node3D" parent="VisualRoot"]
+unique_name_in_owner = true
+
+[node name="Slot01" parent="VisualRoot/TraySlots" instance=ExtResource("2_block")]
+visible = false
+position = Vector3(-0.45, 0.7, -0.25)
+scale = Vector3(0.62, 0.62, 0.62)
+
+[node name="Slot02" parent="VisualRoot/TraySlots" instance=ExtResource("2_block")]
+visible = false
+position = Vector3(-0.15, 0.7, -0.25)
+scale = Vector3(0.62, 0.62, 0.62)
+
+[node name="Slot03" parent="VisualRoot/TraySlots" instance=ExtResource("2_block")]
+visible = false
+position = Vector3(0.15, 0.7, -0.25)
+scale = Vector3(0.62, 0.62, 0.62)
+
+[node name="Slot04" parent="VisualRoot/TraySlots" instance=ExtResource("2_block")]
+visible = false
+position = Vector3(0.45, 0.7, -0.25)
+scale = Vector3(0.62, 0.62, 0.62)
+
+[node name="Slot05" parent="VisualRoot/TraySlots" instance=ExtResource("2_block")]
+visible = false
+position = Vector3(-0.45, 0.7, 0.25)
+scale = Vector3(0.62, 0.62, 0.62)
+
+[node name="Slot06" parent="VisualRoot/TraySlots" instance=ExtResource("2_block")]
+visible = false
+position = Vector3(-0.15, 0.7, 0.25)
+scale = Vector3(0.62, 0.62, 0.62)
+
+[node name="Slot07" parent="VisualRoot/TraySlots" instance=ExtResource("2_block")]
+visible = false
+position = Vector3(0.15, 0.7, 0.25)
+scale = Vector3(0.62, 0.62, 0.62)
+
+[node name="Slot08" parent="VisualRoot/TraySlots" instance=ExtResource("2_block")]
+visible = false
+position = Vector3(0.45, 0.7, 0.25)
+scale = Vector3(0.62, 0.62, 0.62)
+
+[node name="TrayCountLabel" type="Label3D" parent="VisualRoot"]
+unique_name_in_owner = true
+position = Vector3(0, 1.18, 0)
+billboard = 1
+no_depth_test = true
+text = "0/8"
+font_size = 22
+outline_size = 7
+modulate = Color(0.78, 1, 1, 1)
+
 [node name="DirectionMarker" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.57, -0.77)
 mesh = SubResource("MarkerMesh")
@@ -118,7 +172,7 @@ shape = SubResource("SelectionShape")
 
 [node name="DebugLabel" type="Label3D" parent="VisualRoot"]
 unique_name_in_owner = true
-position = Vector3(0, 1.45, 0)
+position = Vector3(0, 1.56, 0)
 billboard = 1
 no_depth_test = true
 text = "Transport Vehicle\n16.0 kg"
