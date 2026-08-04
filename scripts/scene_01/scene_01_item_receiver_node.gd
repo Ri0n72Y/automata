@@ -1,7 +1,18 @@
+@tool
 extends Node3D
 class_name Scene01ItemReceiverNode
 
 @export var receiver_resource: ItemReceiverInterface
+
+var _editor_preview_count: int = 0
+@export_group("Editor Preview")
+@export_range(0, 64, 1) var editor_preview_count: int:
+	get:
+		return _editor_preview_count
+	set(value):
+		_editor_preview_count = value
+		if Engine.is_editor_hint():
+			call_deferred("refresh_visual")
 
 var _capacity_slots_root: Node3D
 var _capacity_label: Label3D
@@ -10,12 +21,14 @@ var _capacity_slots: Array[Node3D] = []
 
 func _ready() -> void:
 	_bind_capacity_visual()
-	_connect_count_signal()
+	if not Engine.is_editor_hint():
+		_connect_count_signal()
 	refresh_visual()
 
 
 func _exit_tree() -> void:
-	_disconnect_count_signal()
+	if not Engine.is_editor_hint():
+		_disconnect_count_signal()
 
 
 func is_configured() -> bool:
@@ -62,11 +75,15 @@ func take_item() -> ItemTransferResult:
 
 
 func refresh_visual() -> void:
-	var visible_count := clampi(get_current_count(), 0, _capacity_slots.size())
+	if _capacity_slots_root == null and is_inside_tree():
+		_bind_capacity_visual()
+	var display_count: int = editor_preview_count if Engine.is_editor_hint() else get_current_count()
+	var display_capacity: int = _capacity_slots.size() if Engine.is_editor_hint() else get_capacity()
+	var visible_count: int = clampi(display_count, 0, _capacity_slots.size())
 	for index in range(_capacity_slots.size()):
 		_capacity_slots[index].visible = index < visible_count
 	if _capacity_label != null:
-		_capacity_label.text = "%d/%d  IN" % [get_current_count(), get_capacity()]
+		_capacity_label.text = "%d/%d  IN" % [display_count, display_capacity]
 
 
 func get_visible_slot_count() -> int:
