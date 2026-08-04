@@ -3,8 +3,11 @@ class_name StandardBox
 
 signal count_changed(previous_count: int, current_count: int)
 
-const CAPACITY: int = 8
-const INITIAL_COUNT: int = 3
+const DEFAULT_CAPACITY: int = 8
+const DEFAULT_INITIAL_COUNT: int = 3
+
+@export_range(1, 64, 1) var capacity: int = DEFAULT_CAPACITY
+@export_range(0, 64, 1) var initial_count: int = DEFAULT_INITIAL_COUNT
 
 var _items: Array[StandardBlock] = []
 
@@ -18,7 +21,11 @@ func get_accepted_item_types() -> PackedStringArray:
 
 
 func get_capacity() -> int:
-	return CAPACITY
+	return capacity
+
+
+func get_initial_count() -> int:
+	return mini(initial_count, capacity)
 
 
 func get_current_count() -> int:
@@ -26,7 +33,7 @@ func get_current_count() -> int:
 
 
 func is_full() -> bool:
-	return get_current_count() >= CAPACITY
+	return get_current_count() >= get_capacity()
 
 
 func is_empty() -> bool:
@@ -77,7 +84,7 @@ func reset() -> void:
 
 func _reset_items_without_signal() -> void:
 	_release_all_items()
-	for _index in range(INITIAL_COUNT):
+	for _index in range(get_initial_count()):
 		var block := StandardBlock.create()
 		_claim_item(block)
 		_items.append(block)
