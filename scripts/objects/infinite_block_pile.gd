@@ -10,6 +10,10 @@ func get_output_item_type() -> StringName:
 	return StandardBlock.TYPE_ID
 
 
+func is_available() -> bool:
+	return true
+
+
 func is_infinite() -> bool:
 	return true
 
