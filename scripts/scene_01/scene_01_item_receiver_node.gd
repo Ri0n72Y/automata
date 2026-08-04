@@ -23,7 +23,10 @@ func get_accepted_item_types() -> PackedStringArray:
 
 
 func get_interaction_cells() -> Array[Vector2i]:
-	return _receiver.get_interaction_cells() if _receiver != null else []
+	if _receiver != null:
+		return _receiver.get_interaction_cells()
+	var empty: Array[Vector2i] = []
+	return empty
 
 
 func get_current_count() -> int:
