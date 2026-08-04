@@ -10,24 +10,34 @@ enum Status {
 	ALREADY_CONTAINED,
 }
 
-var status: Status = Status.INVALID_TARGET
-var item: StandardBlock
+var _status: int = Status.INVALID_TARGET
+var _item: StandardBlock
+
+var status: int:
+	get:
+		return _status
+
+var item: StandardBlock:
+	get:
+		return _item
 
 
 static func accepted(value: StandardBlock = null) -> ItemTransferResult:
 	return _create(Status.ACCEPTED, value)
 
 
-static func rejected(value: Status) -> ItemTransferResult:
+static func rejected(value: int) -> ItemTransferResult:
+	if value == Status.ACCEPTED:
+		value = Status.INVALID_TARGET
 	return _create(value, null)
 
 
-static func _create(value: Status, block: StandardBlock) -> ItemTransferResult:
+static func _create(value: int, block: StandardBlock) -> ItemTransferResult:
 	var result := ItemTransferResult.new()
-	result.status = value
-	result.item = block
+	result._status = value
+	result._item = block
 	return result
 
 
 func is_success() -> bool:
-	return status == Status.ACCEPTED
+	return _status == Status.ACCEPTED
