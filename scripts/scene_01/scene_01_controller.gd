@@ -8,6 +8,7 @@ const GridSelectionControllerScript := preload("res://scripts/input/grid_selecti
 const VehicleSelectionControllerScript := preload("res://scripts/input/vehicle_selection_controller.gd")
 const VehicleMoveControllerScript := preload("res://scripts/input/vehicle_move_controller.gd")
 const Scene01VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
+const Scene01ObjectManagerScript := preload("res://scripts/scene_01/scene_01_object_manager.gd")
 
 @export_group("Grid")
 @export_range(1, 256, 1) var grid_width: int = 12
@@ -25,6 +26,7 @@ var grid_root: Node3D
 @onready var robot_root: Node3D = %RobotRoot
 @onready var scene_vehicle_manager: Scene01VehicleManagerScript = %Scene01VehicleManager
 @onready var object_root: Node3D = %ObjectRoot
+@onready var scene_object_manager: Scene01ObjectManagerScript = %Scene01ObjectManager
 @onready var camera_root: Node3D = %CameraRoot
 @onready var scene_camera_rig: SceneCameraRigScript = %Scene01CameraRig
 @onready var ui_root: CanvasLayer = %UIRoot
@@ -53,6 +55,8 @@ func _ready() -> void:
 		_initial_grid_root_transform = grid_root.transform
 	if grid_model != null and not _configure_initial_grid_dependents():
 		push_error("Scene 01 grid dependents failed to initialize.")
+	if scene_object_manager != null:
+		scene_object_manager.box_count_changed.connect(_on_object_box_count_changed)
 	reset_scene_state()
 
 
@@ -224,7 +228,6 @@ func reset_scene() -> void:
 func reset_scene_state() -> void:
 	is_running = false
 	timer = 0.0
-	box_count = 3
 	target_box_count = 8
 	automation_rate = 0.0
 	_preview_scale_enabled = false
@@ -241,6 +244,12 @@ func reset_scene_state() -> void:
 	if scene_vehicle_manager != null:
 		scene_vehicle_manager.reset_vehicles()
 		scene_vehicle_manager.sync_vehicles_from_state()
+	if scene_object_manager != null:
+		scene_object_manager.reset_objects()
+		var standard_box := scene_object_manager.get_standard_box()
+		box_count = standard_box.get_current_count() if standard_box != null else 3
+	else:
+		box_count = 3
 	_refresh_camera_for_grid()
 
 
@@ -360,3 +369,7 @@ func _refresh_camera_for_grid() -> void:
 	var world_width: float = maxf(max_x - min_x, 0.01)
 	var world_height: float = maxf(max_z - min_z, 0.01)
 	scene_camera_rig.configure_for_grid(world_center, world_width, world_height)
+
+
+func _on_object_box_count_changed(_previous_count: int, current_count: int) -> void:
+	box_count = current_count
