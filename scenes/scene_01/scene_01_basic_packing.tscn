@@ -67,9 +67,11 @@ script = ExtResource("12_object_manager")
 
 [node name="InfiniteBlockPile" parent="SceneRoot/ObjectRoot/Scene01ObjectManager" instance=ExtResource("13_item_source")]
 unique_name_in_owner = true
+position = Vector3(-0.85, 0, 4)
 
 [node name="StandardBox" parent="SceneRoot/ObjectRoot/Scene01ObjectManager" instance=ExtResource("14_item_receiver")]
 unique_name_in_owner = true
+position = Vector3(12.85, 0, 4)
 
 [node name="CameraRoot" type="Node3D" parent="SceneRoot"]
 unique_name_in_owner = true
