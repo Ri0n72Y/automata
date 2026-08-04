@@ -70,15 +70,7 @@ func _run() -> void:
 		_expect_equal(box_node.get_visible_slot_count(), 3, "Reset should restore three box slots.")
 		_expect_equal(box_node.get_capacity_label_text(), "3/8  IN", "Reset should restore box label.")
 	if vehicle_manager != null:
-		var arm_actor: VehicleActor = vehicle_manager.get_vehicle_by_id(&"arm_vehicle")
-		var transport_actor: VehicleActor = vehicle_manager.get_vehicle_by_id(&"transport_vehicle")
-		var arm_visual: VehicleStateVisual = arm_actor.get_node_or_null("VisualRoot") as VehicleStateVisual
-		var transport_visual: VehicleStateVisual = transport_actor.get_node_or_null("VisualRoot") as VehicleStateVisual
-		arm_visual.refresh_visual(true)
-		transport_visual.refresh_visual(true)
-		_expect_true(not arm_visual.is_carry_warning_visible(), "Reset should hide carry warning.")
-		_expect_equal(transport_visual.get_visible_tray_slot_count(), 0, "Reset should clear tray slots.")
-		_expect_equal(transport_visual.get_tray_count_label_text(), "0/8", "Reset should clear tray label.")
+		_assert_reset_vehicle_visuals(vehicle_manager)
 
 	scene.queue_free()
 	await process_frame
@@ -110,6 +102,9 @@ func _test_vehicle_state_visuals(vehicle_manager: Scene01VehicleManager) -> void
 	_expect_true(transport_visual != null, "Transport VisualRoot should use the state presenter.")
 	if arm_visual == null or transport_visual == null:
 		return
+	if arm_actor.runtime_state == null or transport_actor.runtime_state == null:
+		_expect_true(false, "Vehicle runtime states should be configured before visual testing.")
+		return
 
 	arm_visual.refresh_visual(true)
 	transport_visual.refresh_visual(true)
@@ -124,6 +119,24 @@ func _test_vehicle_state_visuals(vehicle_manager: Scene01VehicleManager) -> void
 	_expect_true(arm_visual.is_carry_warning_visible(), "Carrying state should show yellow warning.")
 	_expect_equal(transport_visual.get_visible_tray_slot_count(), 5, "Tray should show five loaded slots.")
 	_expect_equal(transport_visual.get_tray_count_label_text(), "5/8", "Tray label should show 5/8.")
+
+
+func _assert_reset_vehicle_visuals(vehicle_manager: Scene01VehicleManager) -> void:
+	var arm_actor: VehicleActor = vehicle_manager.get_vehicle_by_id(&"arm_vehicle")
+	var transport_actor: VehicleActor = vehicle_manager.get_vehicle_by_id(&"transport_vehicle")
+	if arm_actor == null or transport_actor == null:
+		_expect_true(false, "Reset visual checks require both vehicles.")
+		return
+	var arm_visual: VehicleStateVisual = arm_actor.get_node_or_null("VisualRoot") as VehicleStateVisual
+	var transport_visual: VehicleStateVisual = transport_actor.get_node_or_null("VisualRoot") as VehicleStateVisual
+	if arm_visual == null or transport_visual == null:
+		_expect_true(false, "Reset visual checks require both state presenters.")
+		return
+	arm_visual.refresh_visual(true)
+	transport_visual.refresh_visual(true)
+	_expect_true(not arm_visual.is_carry_warning_visible(), "Reset should hide carry warning.")
+	_expect_equal(transport_visual.get_visible_tray_slot_count(), 0, "Reset should clear tray slots.")
+	_expect_equal(transport_visual.get_tray_count_label_text(), "0/8", "Reset should clear tray label.")
 
 
 func _finish() -> void:
