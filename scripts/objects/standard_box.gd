@@ -13,6 +13,11 @@ func _init() -> void:
 	_reset_items_without_signal()
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		_release_all_items()
+
+
 func get_accepted_item_types() -> PackedStringArray:
 	return PackedStringArray([StandardBlock.TYPE_ID])
 
@@ -76,10 +81,14 @@ func reset() -> void:
 
 
 func _reset_items_without_signal() -> void:
-	for block in _items:
-		_release_item(block)
-	_items.clear()
+	_release_all_items()
 	for _index in range(INITIAL_COUNT):
 		var block := StandardBlock.create()
 		_claim_item(block)
 		_items.append(block)
+
+
+func _release_all_items() -> void:
+	for block in _items:
+		_release_item(block)
+	_items.clear()
