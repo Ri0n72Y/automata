@@ -173,7 +173,7 @@ func _test_receiver_lifetime_releases_ownership() -> void:
 	var block := StandardBlock.create()
 	var receiver: StandardBox = StandardBox.new()
 	_expect_true(receiver.put_item(block).is_success(), "Receiver should initially claim the block.")
-	var receiver_ref := weakref(receiver)
+	var receiver_ref: WeakRef = weakref(receiver)
 	receiver = null
 	_expect_true(receiver_ref.get_ref() == null, "Receiver should be released with no strong references.")
 	_expect_false(block.is_claimed(), "A destroyed receiver should not leave a stale claim.")
