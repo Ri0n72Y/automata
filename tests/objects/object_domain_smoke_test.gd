@@ -8,6 +8,7 @@ func _init() -> void:
 	_test_source_interface_contract()
 	_test_standard_box_contract()
 	_test_cross_receiver_ownership()
+	_test_receiver_lifetime_releases_ownership()
 	_test_box_reset_and_signals()
 
 	if failures == 0:
@@ -166,6 +167,18 @@ func _test_cross_receiver_ownership() -> void:
 	_expect_true(taken.is_success(), "First receiver should release the claimed block on take.")
 	_expect_true(taken.item == block, "The appended block should be the first item taken back.")
 	_expect_true(second_box.put_item(block).is_success(), "Released block should be transferable.")
+
+
+func _test_receiver_lifetime_releases_ownership() -> void:
+	var block := StandardBlock.create()
+	var receiver: StandardBox = StandardBox.new()
+	_expect_true(receiver.put_item(block).is_success(), "Receiver should initially claim the block.")
+	var receiver_ref := weakref(receiver)
+	receiver = null
+	_expect_true(receiver_ref.get_ref() == null, "Receiver should be released with no strong references.")
+	_expect_false(block.is_claimed(), "A destroyed receiver should not leave a stale claim.")
+	var replacement := StandardBox.new()
+	_expect_true(replacement.put_item(block).is_success(), "Block should be reusable after receiver destruction.")
 
 
 func _test_box_reset_and_signals() -> void:
