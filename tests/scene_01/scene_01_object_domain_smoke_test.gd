@@ -20,25 +20,65 @@ func _run() -> void:
 	await process_frame
 
 	var object_root := scene.get_node_or_null("SceneRoot/ObjectRoot")
-	var manager := scene.get_node_or_null("SceneRoot/ObjectRoot/Scene01ObjectManager") as Scene01ObjectManager
-	var pile_node := scene.get_node_or_null("SceneRoot/ObjectRoot/Scene01ObjectManager/InfiniteBlockPile")
-	var box_node := scene.get_node_or_null("SceneRoot/ObjectRoot/Scene01ObjectManager/StandardBox")
+	var manager := scene.get_node_or_null(
+		"SceneRoot/ObjectRoot/Scene01ObjectManager"
+	) as Scene01ObjectManager
+	var pile_node := scene.get_node_or_null(
+		"SceneRoot/ObjectRoot/Scene01ObjectManager/InfiniteBlockPile"
+	) as Scene01ItemSourceNode
+	var box_node := scene.get_node_or_null(
+		"SceneRoot/ObjectRoot/Scene01ObjectManager/StandardBox"
+	) as Scene01ItemReceiverNode
 	_expect_true(object_root != null, "Scene 01 should retain ObjectRoot.")
 	_expect_true(manager != null, "Scene 01 should expose a stable object manager node.")
-	_expect_true(pile_node != null, "Scene 01 should expose a stable infinite pile node.")
-	_expect_true(box_node != null, "Scene 01 should expose a stable standard box node.")
+	_expect_true(pile_node != null, "Scene 01 should expose a source interface node.")
+	_expect_true(box_node != null, "Scene 01 should expose a receiver interface node.")
 
-	if manager != null:
+	if manager != null and pile_node != null and box_node != null:
 		var pile := manager.get_block_pile()
 		var box := manager.get_standard_box()
-		_expect_equal(box.get_current_count(), 3, "Integrated box should start at three of eight.")
-		var produced := pile.take_item()
-		_expect_true(produced.is_success(), "Integrated pile should produce a standard block.")
-		_expect_true(box.put_item(produced.item).is_success(), "Integrated box should accept pile output.")
-		_expect_equal(box.get_current_count(), 4, "Integrated transfer should change box count.")
-		manager.reset_objects()
-		_expect_equal(box.get_current_count(), 3, "Object manager reset should restore box count.")
-		_expect_equal(pile.produced_count, 0, "Object manager reset should restore pile observation state.")
+		var source := pile_node.get_source_interface()
+		var receiver := box_node.get_receiver_interface()
+		_expect_true(source != null, "Pile node should expose its source interface.")
+		_expect_true(receiver != null, "Box node should expose its receiver interface.")
+		_expect_true(source == manager.get_block_pile_source(), "Manager and node should share source.")
+		_expect_true(
+			receiver == manager.get_standard_box_receiver(),
+			"Manager and node should share receiver."
+		)
+		_expect_equal(
+			pile_node.get_output_item_type(),
+			StandardBlock.TYPE_ID,
+			"Scene source node should advertise standard blocks."
+		)
+		_expect_true(pile_node.is_infinite(), "Scene pile source should remain infinite.")
+		_expect_true(
+			box_node.get_accepted_item_types().has(StandardBlock.TYPE_ID),
+			"Scene receiver node should advertise accepted standard blocks."
+		)
+		_expect_equal(box_node.get_capacity(), 8, "Integrated box capacity should be eight.")
+		_expect_equal(box_node.get_current_count(), 3, "Integrated box should start at three.")
+
+		var produced := pile_node.take_item()
+		_expect_true(produced.is_success(), "Integrated source should produce a standard block.")
+		_expect_true(box_node.put_item(produced.item).is_success(), "Receiver should accept source output.")
+		_expect_equal(box_node.get_current_count(), 4, "Integrated transfer should change box count.")
+		_expect_equal(scene.get("box_count"), 4, "Scene legacy box count should follow domain events.")
+		_expect_equal(pile.get_produced_count(), 1, "Integrated pile should track production.")
+
+		scene.call("reset_scene")
+		_expect_equal(box_node.get_current_count(), 3, "Scene reset should restore box count.")
+		_expect_equal(pile.get_produced_count(), 0, "Scene reset should restore pile state.")
+		_expect_equal(scene.get("box_count"), 3, "Scene reset should synchronize legacy box count.")
+		_expect_true(
+			pile_node.get_source_interface() == source,
+			"Scene reset should preserve the stable source interface instance."
+		)
+		_expect_true(
+			box_node.get_receiver_interface() == receiver,
+			"Scene reset should preserve the stable receiver interface instance."
+		)
+		_expect_true(box == manager.get_standard_box(), "Scene reset should preserve domain objects.")
 
 	scene.queue_free()
 	await process_frame
