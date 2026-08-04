@@ -19,6 +19,10 @@ func get_output_item_type() -> StringName:
 	return &""
 
 
+func is_available() -> bool:
+	return false
+
+
 func is_infinite() -> bool:
 	return false
 
