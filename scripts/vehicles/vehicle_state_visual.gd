@@ -1,5 +1,26 @@
+@tool
 extends Node3D
 class_name VehicleStateVisual
+
+var _editor_preview_arm_has_item: bool = false
+var _editor_preview_tray_count: int = 0
+
+@export_group("Editor Preview")
+@export var editor_preview_arm_has_item: bool:
+	get:
+		return _editor_preview_arm_has_item
+	set(value):
+		_editor_preview_arm_has_item = value
+		if Engine.is_editor_hint():
+			call_deferred("refresh_visual", true)
+
+@export_range(0, 8, 1) var editor_preview_tray_count: int:
+	get:
+		return _editor_preview_tray_count
+	set(value):
+		_editor_preview_tray_count = value
+		if Engine.is_editor_hint():
+			call_deferred("refresh_visual", true)
 
 var _actor: VehicleActor
 var _carry_warning: Label3D
@@ -11,10 +32,14 @@ var _initialized: bool = false
 
 
 func _ready() -> void:
-	_actor = get_parent() as VehicleActor
 	_carry_warning = get_node_or_null("CarryWarning") as Label3D
 	_tray_slots_root = get_node_or_null("TraySlots") as Node3D
 	_tray_count_label = get_node_or_null("TrayCountLabel") as Label3D
+	if Engine.is_editor_hint():
+		set_process(false)
+		refresh_visual(true)
+		return
+	_actor = get_parent() as VehicleActor
 	refresh_visual(true)
 
 
@@ -23,6 +48,13 @@ func _process(_delta: float) -> void:
 
 
 func refresh_visual(force: bool = false) -> void:
+	if _carry_warning == null and _tray_slots_root == null and is_inside_tree():
+		_carry_warning = get_node_or_null("CarryWarning") as Label3D
+		_tray_slots_root = get_node_or_null("TraySlots") as Node3D
+		_tray_count_label = get_node_or_null("TrayCountLabel") as Label3D
+	if Engine.is_editor_hint():
+		_refresh_state_values(editor_preview_arm_has_item, editor_preview_tray_count)
+		return
 	if _actor == null:
 		_actor = get_parent() as VehicleActor
 	if _actor == null or _actor.runtime_state == null:
@@ -59,6 +91,12 @@ func get_tray_count_label_text() -> String:
 	return _tray_count_label.text if _tray_count_label != null else ""
 
 
+func _refresh_state_values(arm_has_item: bool, tray_count: int) -> void:
+	if _carry_warning != null:
+		_carry_warning.visible = arm_has_item
+	_refresh_tray_visual(tray_count)
+
+
 func _refresh_tray_visual(tray_count: int) -> void:
 	var slot_count: int = _tray_slots_root.get_child_count() if _tray_slots_root != null else 0
 	var visible_count: int = clampi(tray_count, 0, slot_count)
@@ -69,6 +107,7 @@ func _refresh_tray_visual(tray_count: int) -> void:
 				slot.visible = index < visible_count
 	if _tray_count_label != null:
 		var capacity: int = slot_count
-		if _actor.definition != null and _actor.definition.tray_capacity > 0:
-			capacity = _actor.definition.tray_capacity
+		if not Engine.is_editor_hint() and _actor != null and _actor.definition != null:
+			if _actor.definition.tray_capacity > 0:
+				capacity = _actor.definition.tray_capacity
 		_tray_count_label.text = "%d/%d" % [tray_count, capacity]
