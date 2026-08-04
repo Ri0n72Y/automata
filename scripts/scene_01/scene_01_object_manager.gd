@@ -7,54 +7,55 @@ signal pile_produced_count_changed(previous_count: int, current_count: int)
 @onready var _block_pile_node: Scene01ItemSourceNode = %InfiniteBlockPile
 @onready var _standard_box_node: Scene01ItemReceiverNode = %StandardBox
 
-var _block_pile: InfiniteBlockPile
-var _standard_box: StandardBox
-
 
 func _ready() -> void:
-	initialize_objects()
+	if not initialize_objects():
+		push_error("Scene 01 static object resources failed to initialize.")
 
 
 func initialize_objects() -> bool:
-	if _block_pile == null:
-		_block_pile = InfiniteBlockPile.new()
-		_block_pile.produced_count_changed.connect(_on_pile_produced_count_changed)
-	if _standard_box == null:
-		_standard_box = StandardBox.new()
-		_standard_box.count_changed.connect(_on_box_count_changed)
 	if _block_pile_node == null or _standard_box_node == null:
 		return false
-	return (
-		_block_pile_node.configure(_block_pile)
-		and _standard_box_node.configure(_standard_box)
-	)
+	if not _block_pile_node.is_configured() or not _standard_box_node.is_configured():
+		return false
+	var block_pile := _block_pile_node.get_source_interface() as InfiniteBlockPile
+	var standard_box := _standard_box_node.get_receiver_interface() as StandardBox
+	if block_pile == null or standard_box == null:
+		return false
+	if not block_pile.produced_count_changed.is_connected(_on_pile_produced_count_changed):
+		block_pile.produced_count_changed.connect(_on_pile_produced_count_changed)
+	if not standard_box.count_changed.is_connected(_on_box_count_changed):
+		standard_box.count_changed.connect(_on_box_count_changed)
+	return true
 
 
 func reset_objects() -> void:
 	if not initialize_objects():
 		return
-	_block_pile.reset()
-	_standard_box.reset()
+	get_block_pile().reset()
+	get_standard_box().reset()
 
 
 func get_block_pile() -> InfiniteBlockPile:
-	initialize_objects()
-	return _block_pile
+	if _block_pile_node == null:
+		return null
+	return _block_pile_node.get_source_interface() as InfiniteBlockPile
 
 
 func get_standard_box() -> StandardBox:
-	initialize_objects()
-	return _standard_box
+	if _standard_box_node == null:
+		return null
+	return _standard_box_node.get_receiver_interface() as StandardBox
 
 
 func get_block_pile_source() -> ItemSourceInterface:
-	if not initialize_objects():
+	if _block_pile_node == null:
 		return null
 	return _block_pile_node.get_source_interface()
 
 
 func get_standard_box_receiver() -> ItemReceiverInterface:
-	if not initialize_objects():
+	if _standard_box_node == null:
 		return null
 	return _standard_box_node.get_receiver_interface()
 
