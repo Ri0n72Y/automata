@@ -16,6 +16,10 @@ func _init() -> void:
 	_reset_items_without_signal()
 
 
+func _setup_local_to_scene() -> void:
+	_reset_items_without_signal()
+
+
 func get_accepted_item_types() -> PackedStringArray:
 	return PackedStringArray([StandardBlock.TYPE_ID])
 
