@@ -13,11 +13,6 @@ func _init() -> void:
 	_reset_items_without_signal()
 
 
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_PREDELETE:
-		_release_all_items()
-
-
 func get_accepted_item_types() -> PackedStringArray:
 	return PackedStringArray([StandardBlock.TYPE_ID])
 
