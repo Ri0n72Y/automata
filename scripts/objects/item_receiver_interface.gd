@@ -1,17 +1,17 @@
-extends RefCounted
+extends Resource
 class_name ItemReceiverInterface
 
-var _interaction_cells: Array[Vector2i] = []
+@export var interaction_cells: Array[Vector2i] = []
 
 
 func set_interaction_cells(cells: Array[Vector2i]) -> void:
-	_interaction_cells.clear()
-	_interaction_cells.append_array(cells)
+	interaction_cells.clear()
+	interaction_cells.append_array(cells)
 
 
 func get_interaction_cells() -> Array[Vector2i]:
 	var result: Array[Vector2i] = []
-	result.append_array(_interaction_cells)
+	result.append_array(interaction_cells)
 	return result
 
 
