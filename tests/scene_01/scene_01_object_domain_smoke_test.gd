@@ -51,7 +51,12 @@ func _run() -> void:
 			StandardBlock.TYPE_ID,
 			"Scene source node should advertise standard blocks."
 		)
+		_expect_true(pile_node.is_available(), "Scene pile source should be available.")
 		_expect_true(pile_node.is_infinite(), "Scene pile source should remain infinite.")
+		_expect_true(
+			box_node.accepts_item_type(StandardBlock.TYPE_ID),
+			"Scene receiver node should accept standard blocks."
+		)
 		_expect_true(
 			box_node.get_accepted_item_types().has(StandardBlock.TYPE_ID),
 			"Scene receiver node should advertise accepted standard blocks."
