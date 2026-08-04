@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://scene01basicpacking"]
+[gd_scene load_steps=13 format=3 uid="uid://scene01basicpacking"]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_controller.gd" id="1_controller"]
 [ext_resource type="Script" path="res://scripts/grid/grid_debug_view.gd" id="2_grid_debug"]
@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_manual_ui.tscn" id="9_manual_ui"]
 [ext_resource type="Script" path="res://scripts/input/vehicle_selection_controller.gd" id="10_vehicle_selection"]
 [ext_resource type="Script" path="res://scripts/input/vehicle_move_controller.gd" id="11_vehicle_move"]
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_object_manager.gd" id="12_object_manager"]
 
 [node name="Scene01BasicPacking" type="Node3D"]
 script = ExtResource("1_controller")
@@ -56,6 +57,16 @@ position = Vector3(8, 0, 5)
 rotation = Vector3(0, 1.5708, 0)
 
 [node name="ObjectRoot" type="Node3D" parent="SceneRoot"]
+unique_name_in_owner = true
+
+[node name="Scene01ObjectManager" type="Node3D" parent="SceneRoot/ObjectRoot"]
+unique_name_in_owner = true
+script = ExtResource("12_object_manager")
+
+[node name="InfiniteBlockPile" type="Node3D" parent="SceneRoot/ObjectRoot/Scene01ObjectManager"]
+unique_name_in_owner = true
+
+[node name="StandardBox" type="Node3D" parent="SceneRoot/ObjectRoot/Scene01ObjectManager"]
 unique_name_in_owner = true
 
 [node name="CameraRoot" type="Node3D" parent="SceneRoot"]
