@@ -101,20 +101,29 @@ func reset() -> void:
 func replace_count_for_compatibility(value: int) -> bool:
 	if not _configured or value < 0 or value > _capacity:
 		return false
-	var previous_count := get_current_count()
-	_release_all_items()
+	if value == get_current_count():
+		return true
+
+	var replacement: Array[StandardBlock] = []
 	for _index in range(value):
 		var block := StandardBlock.create()
 		if not _claim_item(block):
-			_release_all_items()
+			_release_items(replacement)
 			return false
-		_items.append(block)
-	if previous_count != get_current_count():
-		count_changed.emit(previous_count, get_current_count())
+		replacement.append(block)
+
+	var previous_count := get_current_count()
+	_release_all_items()
+	_items = replacement
+	count_changed.emit(previous_count, get_current_count())
 	return true
 
 
 func _release_all_items() -> void:
-	for block in _items:
-		_release_item(block)
+	_release_items(_items)
 	_items.clear()
+
+
+func _release_items(items: Array[StandardBlock]) -> void:
+	for block in items:
+		_release_item(block)
