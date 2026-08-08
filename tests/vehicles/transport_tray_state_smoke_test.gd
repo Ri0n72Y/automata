@@ -134,7 +134,7 @@ func _test_compatibility_count_rebuilds_real_inventory() -> void:
 	var items: Array = tray.get_items()
 	_expect_equal(items.size(), 5, "Compatibility inventory should expose five item instances.")
 	for item in items:
-		_expect_true(item is STANDARD_BLOCK_SCRIPT, "Compatibility inventory entries should be StandardBlock instances.")
+		_expect_true(item != null and item.get_script() == STANDARD_BLOCK_SCRIPT, "Compatibility inventory entries should be StandardBlock instances.")
 		_expect_true(item.is_claimed_by(tray), "Compatibility inventory entries should be tray-owned.")
 
 	var ids_before: Array[int] = []
