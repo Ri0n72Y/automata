@@ -7,6 +7,7 @@ const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.g
 const ItemSourceInterfaceScript := preload("res://scripts/objects/item_source_interface.gd")
 const ItemReceiverInterfaceScript := preload("res://scripts/objects/item_receiver_interface.gd")
 const ItemTransferResultScript := preload("res://scripts/objects/item_transfer_result.gd")
+const StandardBlockScript := preload("res://scripts/objects/standard_block.gd")
 
 
 func execute(runtime: VehicleRuntimeStateScript, target: Variant) -> GrabDropResultScript:
@@ -97,7 +98,7 @@ func _take_from_target(target: Variant) -> ItemTransferResultScript:
 	return null
 
 
-func _rollback_grab_target(target: Variant, block: StandardBlock) -> void:
+func _rollback_grab_target(target: Variant, block: StandardBlockScript) -> void:
 	if block == null:
 		return
 	var receiver := target as ItemReceiverInterfaceScript
