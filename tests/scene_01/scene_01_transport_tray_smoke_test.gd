@@ -88,7 +88,7 @@ func _run() -> void:
 		_expect_equal(visual.get_visible_tray_slot_count(), 0, "Reset should clear tray visual slots.")
 		_expect_equal(visual.get_tray_count_label_text(), "0/8", "Reset should clear tray visual label.")
 
-	var collision_block := _test_collision_preserves_inventory(move_controller, arm, transport)
+	var collision_block: Variant = _test_collision_preserves_inventory(move_controller, arm, transport)
 	scene.call("reset_scene")
 	await process_frame
 	if collision_block != null:
@@ -139,7 +139,7 @@ func _test_move_and_stop_preserve_inventory(
 	_expect_true(block.is_claimed_by(transport.runtime_state.tray_state), "Manual stop should preserve tray ownership.")
 
 
-func _test_collision_preserves_inventory(move_controller, arm, transport):
+func _test_collision_preserves_inventory(move_controller, arm, transport) -> Variant:
 	_place_vehicle(arm, Vector2i(3, 3))
 	_place_vehicle(transport, Vector2i(6, 3))
 	var block := STANDARD_BLOCK_SCRIPT.create()
@@ -234,7 +234,7 @@ func _place_vehicle(vehicle, anchor: Vector2i) -> void:
 	vehicle.sync_from_state()
 
 
-func _command(target: Vector2i, path: Array[Vector2i]):
+func _command(target: Vector2i, path: Array[Vector2i]) -> Variant:
 	var command := MOVE_COMMAND_SCRIPT.new()
 	if not command.configure(target, path):
 		failures += 1
