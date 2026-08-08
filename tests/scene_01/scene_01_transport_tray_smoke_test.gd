@@ -2,6 +2,7 @@ extends SceneTree
 
 const STANDARD_BLOCK_SCRIPT := preload("res://scripts/objects/standard_block.gd")
 const VEHICLE_STATE_VISUAL_SCRIPT := preload("res://scripts/vehicles/vehicle_state_visual.gd")
+const VEHICLE_MANAGER_SCRIPT := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 
 const SCENE_PATH := "res://scenes/scene_01/scene_01_basic_packing.tscn"
 const VEHICLE_MANAGER_PATH := "SceneRoot/RobotRoot/Scene01VehicleManager"
@@ -25,7 +26,7 @@ func _run() -> void:
 	root.add_child(scene)
 	await process_frame
 
-	var manager := scene.get_node_or_null(VEHICLE_MANAGER_PATH) as Scene01VehicleManager
+	var manager := scene.get_node_or_null(VEHICLE_MANAGER_PATH) as VEHICLE_MANAGER_SCRIPT
 	_expect_true(manager != null, "Scene 01 should contain the vehicle manager.")
 	if manager == null:
 		scene.queue_free()
@@ -56,7 +57,7 @@ func _run() -> void:
 	_expect_equal(runtime.tray_count, 1, "Runtime tray_count should derive from real inventory.")
 	_expect_true(block.is_claimed_by(runtime.tray_state), "Inserted block should be owned by real tray state.")
 
-	var visual := transport.get_node_or_null("VisualRoot") as VehicleStateVisualScript
+	var visual := transport.get_node_or_null("VisualRoot") as VEHICLE_STATE_VISUAL_SCRIPT
 	_expect_true(visual != null, "Transport vehicle should expose the existing tray visual presenter.")
 	if visual != null:
 		visual.refresh_visual(true)
