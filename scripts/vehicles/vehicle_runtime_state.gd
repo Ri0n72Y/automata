@@ -4,6 +4,7 @@ extends RefCounted
 const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
 const MoveCommandScript := preload("res://scripts/vehicles/move_command.gd")
 const TransportTrayStateScript := preload("res://scripts/vehicles/transport_tray_state.gd")
+const StandardBlockScript := preload("res://scripts/objects/standard_block.gd")
 
 enum Facing {
 	NORTH,
@@ -20,7 +21,7 @@ enum MotionState {
 }
 
 var _definition: VehicleDefinitionScript
-var _arm_has_item: bool = false
+var _carried_item: StandardBlockScript
 var _tray_state: TransportTrayStateScript
 var _active_move_command: MoveCommandScript
 
@@ -28,9 +29,13 @@ var definition: VehicleDefinitionScript:
 	get:
 		return _definition
 
+var carried_item: StandardBlockScript:
+	get:
+		return _carried_item
+
 var arm_has_item: bool:
 	get:
-		return _arm_has_item
+		return _carried_item != null
 
 var tray_state: TransportTrayStateScript:
 	get:
@@ -86,7 +91,7 @@ func reset() -> void:
 	motion_state = MotionState.WAITING
 	_active_move_command = null
 	command_queue.clear()
-	_arm_has_item = false
+	_clear_carried_item()
 	if _tray_state != null:
 		_tray_state.reset()
 
@@ -134,13 +139,39 @@ func clear_move_command() -> void:
 	motion_state = MotionState.WAITING
 
 
+func claim_carried_item(block: StandardBlockScript) -> bool:
+	if _definition == null or not _definition.has_capability(
+		VehicleDefinitionScript.CAPABILITY_CAN_GRAB
+	):
+		return false
+	if block == null or not block.is_valid() or _carried_item != null:
+		return false
+	if not block.try_claim(self):
+		return false
+	_carried_item = block
+	return true
+
+
+func release_carried_item() -> StandardBlockScript:
+	if _carried_item == null or not _carried_item.is_claimed_by(self):
+		return null
+	var block := _carried_item
+	if not block.release_claim(self):
+		return null
+	_carried_item = null
+	return block
+
+
 func set_arm_has_item(value: bool) -> bool:
 	if _definition == null or not _definition.has_capability(
 		VehicleDefinitionScript.CAPABILITY_CAN_GRAB
 	):
 		return false
-	_arm_has_item = value
-	return true
+	if value == arm_has_item:
+		return true
+	if value:
+		return claim_carried_item(StandardBlockScript.create())
+	return release_carried_item() != null
 
 
 func set_tray_count(value: int) -> bool:
@@ -156,6 +187,12 @@ func enqueue_command(command: Dictionary) -> void:
 func get_effective_speed() -> float:
 	if _definition == null:
 		return 0.0
-	if _arm_has_item:
+	if arm_has_item:
 		return _definition.base_speed * _definition.carrying_speed_multiplier
 	return _definition.base_speed
+
+
+func _clear_carried_item() -> void:
+	if _carried_item != null and _carried_item.is_claimed_by(self):
+		_carried_item.release_claim(self)
+	_carried_item = null
