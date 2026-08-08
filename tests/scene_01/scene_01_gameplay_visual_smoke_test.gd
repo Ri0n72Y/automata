@@ -1,5 +1,8 @@
 extends SceneTree
 
+const GridTransformFollowerScript := preload("res://scripts/scene_01/grid_transform_follower.gd")
+const VehicleStateVisualScript := preload("res://scripts/vehicles/vehicle_state_visual.gd")
+
 const SCENE_PATH := "res://scenes/scene_01/scene_01_basic_packing.tscn"
 const BLOCK_SCENE_PATH := "res://scenes/scene_01/objects/standard_block_placeholder.tscn"
 const GRID_ROOT_PATH := "SceneRoot/GridRoot"
@@ -30,9 +33,9 @@ func _run() -> void:
 	await process_frame
 
 	var grid_root: Node3D = scene.get_node_or_null(GRID_ROOT_PATH) as Node3D
-	var object_root: GridTransformFollower = scene.get_node_or_null(
+	var object_root: GridTransformFollowerScript = scene.get_node_or_null(
 		OBJECT_ROOT_PATH
-	) as GridTransformFollower
+	) as GridTransformFollowerScript
 	var pile_node: Scene01ItemSourceNode = scene.get_node_or_null(PILE_PATH) as Scene01ItemSourceNode
 	var box_node: Scene01ItemReceiverNode = scene.get_node_or_null(BOX_PATH) as Scene01ItemReceiverNode
 	var vehicle_manager: Scene01VehicleManager = scene.get_node_or_null(
@@ -119,8 +122,8 @@ func _test_vehicle_state_visuals(vehicle_manager: Scene01VehicleManager) -> void
 	if arm_actor == null or transport_actor == null:
 		return
 
-	var arm_visual: VehicleStateVisual = arm_actor.get_node_or_null("VisualRoot") as VehicleStateVisual
-	var transport_visual: VehicleStateVisual = transport_actor.get_node_or_null("VisualRoot") as VehicleStateVisual
+	var arm_visual: VehicleStateVisualScript = arm_actor.get_node_or_null("VisualRoot") as VehicleStateVisualScript
+	var transport_visual: VehicleStateVisualScript = transport_actor.get_node_or_null("VisualRoot") as VehicleStateVisualScript
 	_expect_true(arm_visual != null, "Arm VisualRoot should use the state presenter.")
 	_expect_true(transport_visual != null, "Transport VisualRoot should use the state presenter.")
 	if arm_visual == null or transport_visual == null:
@@ -150,8 +153,8 @@ func _assert_reset_vehicle_visuals(vehicle_manager: Scene01VehicleManager) -> vo
 	if arm_actor == null or transport_actor == null:
 		_expect_true(false, "Reset visual checks require both vehicles.")
 		return
-	var arm_visual: VehicleStateVisual = arm_actor.get_node_or_null("VisualRoot") as VehicleStateVisual
-	var transport_visual: VehicleStateVisual = transport_actor.get_node_or_null("VisualRoot") as VehicleStateVisual
+	var arm_visual: VehicleStateVisualScript = arm_actor.get_node_or_null("VisualRoot") as VehicleStateVisualScript
+	var transport_visual: VehicleStateVisualScript = transport_actor.get_node_or_null("VisualRoot") as VehicleStateVisualScript
 	if arm_visual == null or transport_visual == null:
 		_expect_true(false, "Reset visual checks require both state presenters.")
 		return
