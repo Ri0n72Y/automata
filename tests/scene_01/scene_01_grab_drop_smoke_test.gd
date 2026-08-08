@@ -64,7 +64,7 @@ func _run() -> void:
 	_test_rotation_contract(controller, selection, arm, transport)
 	_test_pile_tray_box_flow(controller, arm, transport, object_manager)
 	_test_busy_boundary(controller, arm, object_manager)
-	_test_reset_contract(scene, controller, arm, transport, object_manager)
+	await _test_reset_contract(scene, controller, arm, transport, object_manager)
 
 	scene.queue_free()
 	await process_frame
@@ -248,13 +248,12 @@ func _test_reset_contract(scene, controller, arm, transport, object_manager) -> 
 
 
 func _place_vehicle(vehicle, anchor: Vector2i, facing: int) -> void:
-	vehicle.reset_actor()
 	vehicle.runtime_state.anchor_cell = anchor
 	vehicle.runtime_state.facing = facing
 	vehicle.sync_from_state()
 
 
-func _expect_action_key(action: StringName, keycode: Key, message: String) -> void:
+func _expect_action_key(action: StringName, keycode: int, message: String) -> void:
 	_expect_true(InputMap.has_action(action), "%s Input action must exist." % String(action))
 	if not InputMap.has_action(action):
 		return
