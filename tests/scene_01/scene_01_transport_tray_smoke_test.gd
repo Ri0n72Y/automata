@@ -207,7 +207,7 @@ func _test_vehicle_reinitialization_lifecycle(scene: Node, manager) -> void:
 
 	scene.set("grid_width", original_width)
 	scene.set("grid_height", original_height)
-	var tray_ref := weakref(tray)
+	var tray_ref: WeakRef = weakref(tray)
 	transport = null
 	preserved = null
 	tray = null
