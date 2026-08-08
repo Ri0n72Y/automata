@@ -10,6 +10,7 @@ var count_events: Array[Vector2i] = []
 
 
 func _init() -> void:
+	_test_configuration_boundaries()
 	_test_configuration_and_inventory_contract()
 	_test_full_empty_and_type_rejection()
 	_test_cross_receiver_ownership()
@@ -22,6 +23,21 @@ func _init() -> void:
 		return
 	push_error("Transport tray state smoke tests failed: %d failure(s)." % failures)
 	quit(1)
+
+
+func _test_configuration_boundaries() -> void:
+	for invalid_capacity in [0, -1]:
+		var invalid_tray := TRAY_STATE_SCRIPT.new()
+		var configured := bool(_quiet(Callable(invalid_tray, "configure").bind(invalid_capacity)))
+		_expect_false(configured, "Tray should reject capacity %d." % invalid_capacity)
+		_expect_false(invalid_tray.is_configured(), "Rejected capacity should leave tray unconfigured.")
+		_expect_equal(invalid_tray.get_capacity(), 0, "Rejected capacity should preserve default capacity.")
+
+	var tray := TRAY_STATE_SCRIPT.new()
+	_expect_true(tray.configure(8), "Tray should accept its first valid configuration.")
+	var second_configure := bool(_quiet(Callable(tray, "configure").bind(4)))
+	_expect_false(second_configure, "Tray configuration should be immutable after success.")
+	_expect_equal(tray.get_capacity(), 8, "Rejected reconfiguration should preserve original capacity.")
 
 
 func _test_configuration_and_inventory_contract() -> void:
@@ -67,22 +83,27 @@ func _test_configuration_and_inventory_contract() -> void:
 func _test_full_empty_and_type_rejection() -> void:
 	var tray := TRAY_STATE_SCRIPT.new()
 	_expect_true(tray.configure(2), "Small tray should configure.")
+	count_events.clear()
+	tray.count_changed.connect(_on_count_changed)
 	_expect_equal(
 		tray.take_item().status,
 		TRANSFER_RESULT_SCRIPT.Status.EMPTY,
 		"Empty tray should reject take."
 	)
+	_expect_true(count_events.is_empty(), "Rejected empty take should emit no count event.")
 	_expect_equal(
 		tray.put_item("invalid").status,
 		TRANSFER_RESULT_SCRIPT.Status.TYPE_MISMATCH,
 		"Tray should reject non-standard-block values."
 	)
+	_expect_true(count_events.is_empty(), "Rejected wrong type should emit no count event.")
 	var first := STANDARD_BLOCK_SCRIPT.create()
 	var second := STANDARD_BLOCK_SCRIPT.create()
 	var overflow := STANDARD_BLOCK_SCRIPT.create()
 	_expect_true(tray.put_item(first).is_success(), "First block should fit.")
 	_expect_true(tray.put_item(second).is_success(), "Second block should fit.")
 	_expect_equal(tray.get_current_count(), 2, "Tray should reach capacity.")
+	var events_before_overflow := count_events.duplicate()
 	_expect_equal(
 		tray.put_item(overflow).status,
 		TRANSFER_RESULT_SCRIPT.Status.FULL,
@@ -90,6 +111,7 @@ func _test_full_empty_and_type_rejection() -> void:
 	)
 	_expect_equal(tray.get_current_count(), 2, "Rejected overflow should not mutate tray count.")
 	_expect_false(overflow.is_claimed(), "Rejected overflow block should remain unclaimed.")
+	_expect_equal(count_events, events_before_overflow, "Rejected overflow should emit no count event.")
 
 
 func _test_cross_receiver_ownership() -> void:
@@ -101,6 +123,8 @@ func _test_cross_receiver_ownership() -> void:
 	box.reset()
 	var block := STANDARD_BLOCK_SCRIPT.create()
 	_expect_true(box.put_item(block).is_success(), "Box should claim the block first.")
+	count_events.clear()
+	tray.count_changed.connect(_on_count_changed)
 	_expect_equal(
 		tray.put_item(block).status,
 		TRANSFER_RESULT_SCRIPT.Status.ALREADY_CONTAINED,
@@ -108,6 +132,7 @@ func _test_cross_receiver_ownership() -> void:
 	)
 	_expect_equal(tray.get_current_count(), 0, "Cross-receiver rejection should be atomic.")
 	_expect_true(box.contains_item(block), "Original receiver should retain ownership.")
+	_expect_true(count_events.is_empty(), "Cross-receiver rejection should emit no count event.")
 
 
 func _test_reset_releases_items() -> void:
@@ -124,6 +149,9 @@ func _test_reset_releases_items() -> void:
 	_expect_false(first.is_claimed(), "Reset should release first block ownership.")
 	_expect_false(second.is_claimed(), "Reset should release second block ownership.")
 	_expect_equal(count_events, [Vector2i(2, 0)], "Reset should emit one aggregate count event.")
+	count_events.clear()
+	tray.reset()
+	_expect_true(count_events.is_empty(), "Resetting an empty tray should be an event-free no-op.")
 
 
 func _test_compatibility_count_rebuilds_real_inventory() -> void:
@@ -155,6 +183,15 @@ func _test_compatibility_count_rebuilds_real_inventory() -> void:
 	for item in tray.get_items():
 		ids_after_rejection.append(item.get_block_id())
 	_expect_equal(ids_after_rejection, ids_before, "Rejected compatibility update should preserve item identities.")
+	_expect_true(count_events.is_empty(), "Rejected compatibility update should emit no count event.")
+
+
+func _quiet(callback: Callable) -> Variant:
+	var previous_print_error_messages := Engine.print_error_messages
+	Engine.print_error_messages = false
+	var result: Variant = callback.call()
+	Engine.print_error_messages = previous_print_error_messages
+	return result
 
 
 func _on_count_changed(previous_count: int, current_count: int) -> void:
