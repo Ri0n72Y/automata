@@ -134,10 +134,27 @@ func _test_compatibility_count_rebuilds_real_inventory() -> void:
 	var items: Array = tray.get_items()
 	_expect_equal(items.size(), 5, "Compatibility inventory should expose five item instances.")
 	for item in items:
-		_expect_true(item is StandardBlock, "Compatibility inventory entries should be StandardBlock instances.")
+		_expect_true(item is STANDARD_BLOCK_SCRIPT, "Compatibility inventory entries should be StandardBlock instances.")
 		_expect_true(item.is_claimed_by(tray), "Compatibility inventory entries should be tray-owned.")
+
+	var ids_before: Array[int] = []
+	for item in items:
+		ids_before.append(item.get_block_id())
+	count_events.clear()
+	tray.count_changed.connect(_on_count_changed)
+	_expect_true(tray.replace_count_for_compatibility(5), "Same compatibility count should be accepted as a no-op.")
+	var ids_after: Array[int] = []
+	for item in tray.get_items():
+		ids_after.append(item.get_block_id())
+	_expect_equal(ids_after, ids_before, "Same-count compatibility update should preserve item identities.")
+	_expect_true(count_events.is_empty(), "Same-count compatibility update should emit no count event.")
+
 	_expect_false(tray.replace_count_for_compatibility(9), "Compatibility count should reject overflow.")
 	_expect_equal(tray.get_current_count(), 5, "Rejected compatibility update should preserve inventory.")
+	var ids_after_rejection: Array[int] = []
+	for item in tray.get_items():
+		ids_after_rejection.append(item.get_block_id())
+	_expect_equal(ids_after_rejection, ids_before, "Rejected compatibility update should preserve item identities.")
 
 
 func _on_count_changed(previous_count: int, current_count: int) -> void:
