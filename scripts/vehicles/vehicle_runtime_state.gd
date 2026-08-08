@@ -3,6 +3,7 @@ extends RefCounted
 
 const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
 const MoveCommandScript := preload("res://scripts/vehicles/move_command.gd")
+const TransportTrayStateScript := preload("res://scripts/vehicles/transport_tray_state.gd")
 
 enum Facing {
 	NORTH,
@@ -20,7 +21,7 @@ enum MotionState {
 
 var _definition: VehicleDefinitionScript
 var _arm_has_item: bool = false
-var _tray_count: int = 0
+var _tray_state: TransportTrayStateScript
 var _active_move_command: MoveCommandScript
 
 var definition: VehicleDefinitionScript:
@@ -31,9 +32,13 @@ var arm_has_item: bool:
 	get:
 		return _arm_has_item
 
+var tray_state: TransportTrayStateScript:
+	get:
+		return _tray_state
+
 var tray_count: int:
 	get:
-		return _tray_count
+		return _tray_state.get_current_count() if _tray_state != null else 0
 
 var active_move_command: MoveCommandScript:
 	get:
@@ -60,7 +65,15 @@ func configure(
 		push_error("Vehicle facing is invalid.")
 		return false
 
+	var new_tray_state: TransportTrayStateScript
+	if p_definition.has_capability(VehicleDefinitionScript.CAPABILITY_HAS_TRAY):
+		new_tray_state = TransportTrayStateScript.new()
+		if not new_tray_state.configure(p_definition.tray_capacity):
+			push_error("Vehicle runtime state could not configure transport tray state.")
+			return false
+
 	_definition = p_definition
+	_tray_state = new_tray_state
 	_initial_anchor_cell = p_anchor_cell
 	_initial_facing = p_facing
 	reset()
@@ -74,7 +87,8 @@ func reset() -> void:
 	_active_move_command = null
 	command_queue.clear()
 	_arm_has_item = false
-	_tray_count = 0
+	if _tray_state != null:
+		_tray_state.reset()
 
 
 func begin_move_planning() -> bool:
@@ -130,14 +144,9 @@ func set_arm_has_item(value: bool) -> bool:
 
 
 func set_tray_count(value: int) -> bool:
-	if _definition == null or not _definition.has_capability(
-		VehicleDefinitionScript.CAPABILITY_HAS_TRAY
-	):
+	if _tray_state == null:
 		return false
-	if value < 0 or value > _definition.tray_capacity:
-		return false
-	_tray_count = value
-	return true
+	return _tray_state.replace_count_for_compatibility(value)
 
 
 func enqueue_command(command: Dictionary) -> void:
