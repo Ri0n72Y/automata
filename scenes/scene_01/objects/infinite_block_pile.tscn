@@ -1,0 +1,54 @@
+[gd_scene load_steps=7 format=3 uid="uid://d3qj14pile01"]
+
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_item_source_node.gd" id="1_node"]
+[ext_resource type="Script" path="res://scripts/objects/infinite_block_pile.gd" id="2_resource"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/objects/standard_block_placeholder.tscn" id="3_block"]
+
+[sub_resource type="Resource" id="Resource_pile"]
+resource_local_to_scene = true
+script = ExtResource("2_resource")
+interaction_cells = Array[Vector2i]([Vector2i(0, 3), Vector2i(0, 4)])
+
+[sub_resource type="StandardMaterial3D" id="BaseMaterial"]
+albedo_color = Color(0.16, 0.19, 0.24, 1)
+metallic = 0.35
+roughness = 0.58
+
+[sub_resource type="BoxMesh" id="BaseMesh"]
+size = Vector3(1.3, 0.2, 1.3)
+
+[node name="InfiniteBlockPile" type="Node3D"]
+script = ExtResource("1_node")
+source_resource = SubResource("Resource_pile")
+
+[node name="VisualRoot" type="Node3D" parent="."]
+unique_name_in_owner = true
+
+[node name="Base" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.1, 0)
+mesh = SubResource("BaseMesh")
+material_override = SubResource("BaseMaterial")
+
+[node name="BlockA" parent="VisualRoot" instance=ExtResource("3_block")]
+position = Vector3(-0.28, 0.2, -0.25)
+
+[node name="BlockB" parent="VisualRoot" instance=ExtResource("3_block")]
+position = Vector3(0.28, 0.2, -0.25)
+
+[node name="BlockC" parent="VisualRoot" instance=ExtResource("3_block")]
+position = Vector3(-0.28, 0.2, 0.25)
+
+[node name="BlockD" parent="VisualRoot" instance=ExtResource("3_block")]
+position = Vector3(0.28, 0.2, 0.25)
+
+[node name="BlockTop" parent="VisualRoot" instance=ExtResource("3_block")]
+position = Vector3(0, 0.64, 0)
+
+[node name="SourceLabel" type="Label3D" parent="VisualRoot"]
+position = Vector3(0, 1.35, 0)
+billboard = 1
+no_depth_test = true
+text = "∞  OUT"
+font_size = 34
+outline_size = 8
+modulate = Color(1, 0.8, 0.2, 1)
