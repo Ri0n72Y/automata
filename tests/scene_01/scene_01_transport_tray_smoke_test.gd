@@ -112,12 +112,13 @@ func _test_move_and_stop_preserve_inventory(
 	transport,
 	block
 ) -> void:
-	_expect_true(vehicle_selection.select_vehicle(transport), "Transport should be selectable with tray cargo.")
+	if not vehicle_selection.select_vehicle(transport):
+		_expect_true(false, "Transport should be selectable with tray cargo.")
+		return
 	var target_anchor: Vector2i = transport.runtime_state.anchor_cell + Vector2i.LEFT
-	_expect_true(
-		move_controller.request_selected_vehicle_move(target_anchor),
-		"Transport should accept a real MoveTo while carrying tray cargo."
-	)
+	if not move_controller.request_selected_vehicle_move(target_anchor):
+		_expect_true(false, "Transport should accept a real MoveTo while carrying tray cargo.")
+		return
 	move_controller._physics_process(0.1)
 	_expect_equal(
 		transport.runtime_state.motion_state,
@@ -126,10 +127,9 @@ func _test_move_and_stop_preserve_inventory(
 	)
 	_expect_equal(transport.runtime_state.tray_count, 1, "Move execution should preserve tray count.")
 	_expect_true(block.is_claimed_by(transport.runtime_state.tray_state), "Move execution should preserve tray ownership.")
-	_expect_true(
-		move_controller.request_selected_vehicle_stop(),
-		"Selected moving transport should accept the same stop path used by X."
-	)
+	if not move_controller.request_selected_vehicle_stop():
+		_expect_true(false, "Selected moving transport should accept the same stop path used by X.")
+		return
 	_expect_equal(
 		transport.runtime_state.motion_state,
 		VEHICLE_RUNTIME_STATE_SCRIPT.MotionState.BLOCKED,
@@ -143,17 +143,20 @@ func _test_collision_preserves_inventory(move_controller, arm, transport):
 	_place_vehicle(arm, Vector2i(3, 3))
 	_place_vehicle(transport, Vector2i(6, 3))
 	var block := STANDARD_BLOCK_SCRIPT.create()
-	_expect_true(
-		transport.runtime_state.tray_state.put_item(block).is_success(),
-		"Transport tray should accept collision-test cargo."
-	)
+	if not transport.runtime_state.tray_state.put_item(block).is_success():
+		_expect_true(false, "Transport tray should accept collision-test cargo.")
+		return null
 	var arm_command = _command(Vector2i(4, 3), [Vector2i(3, 3), Vector2i(4, 3)])
 	var transport_command = _command(Vector2i(5, 3), [Vector2i(6, 3), Vector2i(5, 3)])
-	_expect_true(arm_command != null and arm.start_move(arm_command), "Arm collision task should start.")
-	_expect_true(
-		transport_command != null and transport.start_move(transport_command),
-		"Transport collision task should start with tray cargo."
-	)
+	if arm_command == null or transport_command == null:
+		return block
+	if not arm.start_move(arm_command):
+		_expect_true(false, "Arm collision task should start.")
+		return block
+	if not transport.start_move(transport_command):
+		_expect_true(false, "Transport collision task should start with tray cargo.")
+		arm.reset_actor()
+		return block
 	move_controller._physics_process(0.5)
 	_expect_equal(
 		transport.runtime_state.motion_state,
@@ -175,7 +178,9 @@ func _test_vehicle_reinitialization_lifecycle(scene: Node, manager) -> void:
 	if tray == null:
 		return
 	var block := STANDARD_BLOCK_SCRIPT.create()
-	_expect_true(tray.put_item(block).is_success(), "Lifecycle tray should accept one block.")
+	if not tray.put_item(block).is_success():
+		_expect_true(false, "Lifecycle tray should accept one block.")
+		return
 	var original_width: int = scene.get("grid_width")
 	var original_height: int = scene.get("grid_height")
 	var original_actor_id: int = transport.get_instance_id()
@@ -183,12 +188,18 @@ func _test_vehicle_reinitialization_lifecycle(scene: Node, manager) -> void:
 
 	scene.set("grid_width", 4)
 	scene.set("grid_height", 4)
-	var rejected := bool(_quiet(Callable(scene, "initialize_grid")))
-	_expect_false(rejected, "Invalid grid rebuild should reject before replacing transport.")
+	var initialized := bool(_quiet(Callable(scene, "initialize_grid")))
+	_expect_false(initialized, "Invalid grid rebuild should reject before replacing transport.")
 	var preserved = manager.get_vehicle_by_id(TRANSPORT_VEHICLE_ID)
 	_expect_true(preserved == transport, "Rejected rebuild should preserve transport Actor identity.")
-	_expect_true(
-		preserved != null and preserved.runtime_state.tray_state.get_instance_id() == original_tray_id,
+	if preserved == null or preserved.runtime_state == null or preserved.runtime_state.tray_state == null:
+		_expect_true(false, "Rejected rebuild should preserve a complete transport runtime and tray.")
+		scene.set("grid_width", original_width)
+		scene.set("grid_height", original_height)
+		return
+	_expect_equal(
+		preserved.runtime_state.tray_state.get_instance_id(),
+		original_tray_id,
 		"Rejected rebuild should preserve tray-state identity."
 	)
 	_expect_equal(preserved.runtime_state.tray_count, 1, "Rejected rebuild should preserve tray inventory.")
@@ -200,15 +211,19 @@ func _test_vehicle_reinitialization_lifecycle(scene: Node, manager) -> void:
 	transport = null
 	preserved = null
 	tray = null
-	_expect_true(bool(scene.call("initialize_grid")), "Valid grid rebuild should replace the vehicle batch.")
+	if not bool(scene.call("initialize_grid")):
+		_expect_true(false, "Valid grid rebuild should replace the vehicle batch.")
+		return
 	await process_frame
 	await process_frame
 	var replacement = manager.get_vehicle_by_id(TRANSPORT_VEHICLE_ID)
 	_expect_true(replacement != null, "Valid rebuild should provide replacement transport.")
 	if replacement != null:
 		_expect_true(replacement.get_instance_id() != original_actor_id, "Valid rebuild should replace transport Actor identity.")
-		_expect_true(replacement.runtime_state.tray_state != null, "Replacement transport should own a fresh tray state.")
-		_expect_equal(replacement.runtime_state.tray_count, 0, "Replacement transport tray should start empty.")
+		_expect_true(replacement.runtime_state != null, "Replacement transport should own runtime state.")
+		if replacement.runtime_state != null:
+			_expect_true(replacement.runtime_state.tray_state != null, "Replacement transport should own a fresh tray state.")
+			_expect_equal(replacement.runtime_state.tray_count, 0, "Replacement transport tray should start empty.")
 	_expect_true(tray_ref.get_ref() == null, "Retired tray state should be released after vehicle replacement.")
 	_expect_false(block.is_claimed(), "Vehicle replacement should not leave cargo claimed by a retired tray.")
 
