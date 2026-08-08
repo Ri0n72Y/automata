@@ -24,6 +24,14 @@ var _command := GrabDropCommandScript.new()
 var _last_result: GrabDropResultScript
 
 
+func _ready() -> void:
+	configure(
+		get_node_or_null("../VehicleSelectionController") as VehicleSelectionControllerScript,
+		get_node_or_null("../../RobotRoot/Scene01VehicleManager") as Scene01VehicleManagerScript,
+		get_node_or_null("../../ObjectRoot/Scene01ObjectManager") as Scene01ObjectManagerScript
+	)
+
+
 func configure(
 	p_vehicle_selection_controller: VehicleSelectionControllerScript,
 	p_vehicle_manager: Scene01VehicleManagerScript,
