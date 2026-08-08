@@ -54,13 +54,13 @@ text = "▶"
 [node name="Instructions" type="Label" parent="RootControl/Panel/Margin/VBox"]
 visible = false
 layout_mode = 2
-text = "Select vehicle → M: enter Move command\nMove mouse: predict target and path\nLeft click: execute · M/Esc/right click: exit command\nX: stop selected moving vehicle task\nEsc/right click again: clear vehicle selection\nEnter/Space do not execute movement or buttons\nQ/E: camera · Shift+Q/E: rotate GridRoot\nF/G: scale/offset · R: reset · Home: restore"
+text = "Select vehicle → M: enter Move command\nMove mouse: predict target and path\nLeft click: execute · M/Esc/right click: exit command\nArm selected → A/D: rotate facing · C: GrabDrop forward\nX: stop selected moving vehicle task\nEsc/right click again: clear vehicle selection\nQ/E: camera · Shift+Q/E: rotate GridRoot\nF/G: scale/offset · R: reset · Home: restore"
 autowrap_mode = 2
 
 [node name="ScopeNote" type="Label" parent="RootControl/Panel/Margin/VBox"]
 visible = false
 layout_mode = 2
-text = "No vehicle detail UI exists in this PR.\nM and X are Input Map actions and can be rebound later."
+text = "M, X, A, D and C are Input Map actions.\nGrabDrop currently targets the forward interaction edge."
 autowrap_mode = 2
 modulate = Color(0.72, 0.8, 0.9, 1)
 
