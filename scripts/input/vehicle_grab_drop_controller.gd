@@ -21,7 +21,6 @@ var vehicle_selection_controller: VehicleSelectionControllerScript
 var vehicle_manager: Scene01VehicleManagerScript
 var object_manager: Scene01ObjectManagerScript
 var _command := GrabDropCommandScript.new()
-var _last_result: GrabDropResultScript
 
 
 func _ready() -> void:
@@ -40,7 +39,6 @@ func configure(
 	vehicle_selection_controller = p_vehicle_selection_controller
 	vehicle_manager = p_vehicle_manager
 	object_manager = p_object_manager
-	_last_result = null
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -64,17 +62,21 @@ func _unhandled_input(event: InputEvent) -> void:
 func request_selected_grab_drop() -> GrabDropResultScript:
 	var vehicle := _get_selected_vehicle()
 	if vehicle == null or vehicle.runtime_state == null:
-		_last_result = GrabDropResultScript.rejected(
+		var missing_vehicle_result := GrabDropResultScript.rejected(
 			GrabDropResultScript.Action.NONE,
 			GrabDropResultScript.Status.NO_TARGET
 		)
-		grab_drop_completed.emit(&"", _last_result.action, _last_result.status)
-		return _last_result
+		grab_drop_completed.emit(
+			&"",
+			missing_vehicle_result.action,
+			missing_vehicle_result.status
+		)
+		return missing_vehicle_result
 	var target := resolve_target_for_vehicle(vehicle)
-	_last_result = _command.execute(vehicle.runtime_state, target)
+	var result := _command.execute(vehicle.runtime_state, target)
 	vehicle.sync_from_state()
-	grab_drop_completed.emit(vehicle.get_vehicle_id(), _last_result.action, _last_result.status)
-	return _last_result
+	grab_drop_completed.emit(vehicle.get_vehicle_id(), result.action, result.status)
+	return result
 
 
 func rotate_selected_arm(direction: int) -> bool:
@@ -144,14 +146,6 @@ func get_forward_interaction_cells(vehicle: VehicleActorScript) -> Array[Vector2
 			for offset_y in range(footprint.y):
 				result.append(anchor + Vector2i(-1, offset_y))
 	return result
-
-
-func get_last_result() -> GrabDropResultScript:
-	return _last_result
-
-
-func reset_controller_state() -> void:
-	_last_result = null
 
 
 func _get_selected_vehicle() -> VehicleActorScript:
