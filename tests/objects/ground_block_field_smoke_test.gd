@@ -1,0 +1,106 @@
+extends SceneTree
+
+const GROUND_BLOCK_FIELD_SCRIPT := preload("res://scripts/objects/ground_block_field.gd")
+const ITEM_TRANSFER_RESULT_SCRIPT := preload("res://scripts/objects/item_transfer_result.gd")
+const STANDARD_BLOCK_SCRIPT := preload("res://scripts/objects/standard_block.gd")
+
+var failures: int = 0
+
+
+func _init() -> void:
+	_test_put_take_and_occupied_contract()
+	_test_reset_releases_ownership()
+	_test_cell_interface_is_stable_and_weak()
+
+	if failures == 0:
+		print("Ground block field smoke tests passed.")
+		quit(0)
+		return
+	push_error("Ground block field smoke tests failed: %d failure(s)." % failures)
+	quit(1)
+
+
+func _test_put_take_and_occupied_contract() -> void:
+	var field := GROUND_BLOCK_FIELD_SCRIPT.new()
+	var cell := Vector2i(4, 1)
+	var first := STANDARD_BLOCK_SCRIPT.create()
+	var second := STANDARD_BLOCK_SCRIPT.create()
+
+	var put_first = field.put_item(cell, first)
+	_expect_equal(put_first.status, ITEM_TRANSFER_RESULT_SCRIPT.Status.ACCEPTED, "First ground put should succeed.")
+	_expect_true(field.has_item(cell), "Ground cell should become occupied.")
+	_expect_true(field.get_item(cell) == first, "Ground field should preserve exact block identity.")
+	_expect_true(first.is_claimed_by(field), "Ground field should own placed block.")
+
+	var occupied = field.put_item(cell, second)
+	_expect_equal(occupied.status, ITEM_TRANSFER_RESULT_SCRIPT.Status.OCCUPIED, "Occupied ground cell should reject second block.")
+	_expect_true(field.get_item(cell) == first, "Occupied rejection must preserve original block.")
+	_expect_false(second.is_claimed(), "Occupied rejection must not claim rejected block.")
+
+	var taken = field.take_item(cell)
+	_expect_equal(taken.status, ITEM_TRANSFER_RESULT_SCRIPT.Status.ACCEPTED, "Ground take should succeed.")
+	_expect_true(taken.item == first, "Ground take should return exact placed block.")
+	_expect_false(first.is_claimed(), "Ground take should release field ownership.")
+	_expect_false(field.has_item(cell), "Ground cell should become empty after take.")
+
+	var empty = field.take_item(cell)
+	_expect_equal(empty.status, ITEM_TRANSFER_RESULT_SCRIPT.Status.EMPTY, "Empty ground take should reject as EMPTY.")
+
+
+func _test_reset_releases_ownership() -> void:
+	var field := GROUND_BLOCK_FIELD_SCRIPT.new()
+	var a := STANDARD_BLOCK_SCRIPT.create()
+	var b := STANDARD_BLOCK_SCRIPT.create()
+	_expect_true(field.put_item(Vector2i(2, 2), a).is_success(), "Reset fixture should place block A.")
+	_expect_true(field.put_item(Vector2i(3, 2), b).is_success(), "Reset fixture should place block B.")
+	field.reset()
+	_expect_equal(field.get_occupied_cells().size(), 0, "Reset should clear all occupied ground cells.")
+	_expect_false(a.is_claimed(), "Reset should release block A ownership.")
+	_expect_false(b.is_claimed(), "Reset should release block B ownership.")
+
+
+func _test_cell_interface_is_stable_and_weak() -> void:
+	var field = GROUND_BLOCK_FIELD_SCRIPT.new()
+	var cell := Vector2i(5, 1)
+	var first_interface = field.get_cell_interface(cell)
+	var second_interface = field.get_cell_interface(cell)
+	_expect_true(first_interface != null, "Ground cell interface should be created.")
+	_expect_true(first_interface == second_interface, "Ground cell interface identity should be stable per cell.")
+	if first_interface == null:
+		return
+	_expect_equal(first_interface.get_interaction_cells(), [cell], "Ground interface should expose exactly one interaction cell.")
+	_expect_equal(first_interface.get_capacity(), 1, "Ground interface capacity should be one.")
+	_expect_false(first_interface.can_take_item(), "Empty ground interface should not be a Grab source.")
+
+	var block := STANDARD_BLOCK_SCRIPT.create()
+	_expect_true(first_interface.put_item(block).is_success(), "Ground interface should delegate Drop to field.")
+	_expect_true(first_interface.can_take_item(), "Occupied ground interface should become a Grab source.")
+	var taken = first_interface.take_item()
+	_expect_true(taken.is_success() and taken.item == block, "Ground interface Grab should return exact block.")
+
+	var field_ref: WeakRef = weakref(field)
+	field = null
+	_expect_true(field_ref.get_ref() == null, "Cell interface must not keep GroundBlockField alive through a strong cycle.")
+	var invalid_put = first_interface.put_item(STANDARD_BLOCK_SCRIPT.create())
+	_expect_equal(invalid_put.status, ITEM_TRANSFER_RESULT_SCRIPT.Status.INVALID_TARGET, "Orphan cell interface should reject after field lifetime ends.")
+
+
+func _expect_equal(actual: Variant, expected: Variant, message: String) -> void:
+	if actual == expected:
+		return
+	failures += 1
+	push_error("%s Expected %s, got %s." % [message, str(expected), str(actual)])
+
+
+func _expect_true(value: bool, message: String) -> void:
+	if value:
+		return
+	failures += 1
+	push_error(message)
+
+
+func _expect_false(value: bool, message: String) -> void:
+	if not value:
+		return
+	failures += 1
+	push_error(message)
