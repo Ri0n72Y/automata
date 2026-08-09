@@ -8,11 +8,13 @@ signal box_count_changed(previous_count: int, current_count: int)
 signal pile_produced_count_changed(previous_count: int, current_count: int)
 signal ground_block_changed(cell: Vector2i, has_item: bool)
 
+@export var ground_block_field: GroundBlockFieldScript
+@export var scene_controller_path: NodePath = NodePath("../../..")
+
 @onready var _block_pile_node: Scene01ItemSourceNode = %InfiniteBlockPile
 @onready var _standard_box_node: Scene01ItemReceiverNode = %StandardBox
 @onready var _ground_visual_root: Node3D = %GroundBlockVisuals
 
-var _ground_block_field := GroundBlockFieldScript.new()
 var _ground_visuals: Dictionary = {}
 
 
@@ -22,7 +24,12 @@ func _ready() -> void:
 
 
 func initialize_objects() -> bool:
-	if _block_pile_node == null or _standard_box_node == null or _ground_visual_root == null:
+	if (
+		_block_pile_node == null
+		or _standard_box_node == null
+		or _ground_visual_root == null
+		or ground_block_field == null
+	):
 		return false
 	if not _block_pile_node.is_configured() or not _standard_box_node.is_configured():
 		return false
@@ -30,20 +37,41 @@ func initialize_objects() -> bool:
 	var standard_box := _standard_box_node.get_receiver_interface() as StandardBox
 	if block_pile == null or standard_box == null:
 		return false
+	refresh_ground_cell_policy()
 	if not block_pile.produced_count_changed.is_connected(_on_pile_produced_count_changed):
 		block_pile.produced_count_changed.connect(_on_pile_produced_count_changed)
 	if not standard_box.count_changed.is_connected(_on_box_count_changed):
 		standard_box.count_changed.connect(_on_box_count_changed)
 	var ground_changed_callable := Callable(self, "_on_ground_cell_changed")
-	if not _ground_block_field.cell_changed.is_connected(ground_changed_callable):
-		_ground_block_field.cell_changed.connect(ground_changed_callable)
+	if not ground_block_field.cell_changed.is_connected(ground_changed_callable):
+		ground_block_field.cell_changed.connect(ground_changed_callable)
 	return true
+
+
+func refresh_ground_cell_policy() -> void:
+	if ground_block_field == null:
+		return
+	var scene_controller := _get_scene_controller()
+	if scene_controller == null:
+		return
+	if not scene_controller.has_method("get_grid_size") or not scene_controller.has_method(
+		"is_grid_cell_walkable"
+	):
+		return
+	var grid_size: Vector2i = scene_controller.call("get_grid_size")
+	var valid_cells: Array[Vector2i] = []
+	for y in range(grid_size.y):
+		for x in range(grid_size.x):
+			var cell := Vector2i(x, y)
+			if bool(scene_controller.call("is_grid_cell_walkable", cell)):
+				valid_cells.append(cell)
+	ground_block_field.configure_valid_cells(valid_cells)
 
 
 func reset_objects() -> void:
 	if not initialize_objects():
 		return
-	_ground_block_field.reset()
+	ground_block_field.reset()
 	get_block_pile().reset()
 	get_standard_box().reset()
 
@@ -63,15 +91,17 @@ func get_item_interaction_interfaces() -> Array[Variant]:
 
 
 func get_ground_block_field() -> GroundBlockFieldScript:
-	return _ground_block_field
+	return ground_block_field
 
 
 func get_ground_cell_interface(cell: Vector2i) -> ItemReceiverInterface:
-	return _ground_block_field.get_cell_interface(cell)
+	if ground_block_field == null:
+		return null
+	return ground_block_field.get_cell_interface(cell)
 
 
 func has_ground_block(cell: Vector2i) -> bool:
-	return _ground_block_field.has_item(cell)
+	return ground_block_field != null and ground_block_field.has_item(cell)
 
 
 func get_ground_block_visual(cell: Vector2i) -> Node3D:
@@ -127,20 +157,16 @@ func _on_ground_cell_changed(
 func _create_ground_visual(cell: Vector2i) -> void:
 	if _ground_visual_root == null:
 		return
+	var scene_controller := _get_scene_controller()
+	if scene_controller == null or not scene_controller.has_method("grid_cell_to_world"):
+		return
 	var visual := StandardBlockScene.instantiate() as Node3D
 	if visual == null:
 		return
 	visual.name = "GroundBlock_%d_%d" % [cell.x, cell.y]
 	_ground_visual_root.add_child(visual)
-	var scene := get_tree().current_scene
-	var grid_root: Node3D
-	if scene != null:
-		grid_root = scene.get_node_or_null("SceneRoot/GridRoot") as Node3D
-	if scene != null and grid_root != null and scene.has_method("grid_cell_to_world"):
-		var world_position: Vector3 = scene.call("grid_cell_to_world", cell)
-		visual.position = grid_root.to_local(world_position)
-	else:
-		visual.position = Vector3(float(cell.x) + 0.5, 0.0, float(cell.y) + 0.5)
+	var world_position: Vector3 = scene_controller.call("grid_cell_to_world", cell)
+	visual.position = _ground_visual_root.to_local(world_position)
 	_ground_visuals[cell] = visual
 
 
@@ -152,6 +178,12 @@ func _remove_ground_visual(cell: Vector2i) -> void:
 	if visual.get_parent() != null:
 		visual.get_parent().remove_child(visual)
 	visual.free()
+
+
+func _get_scene_controller() -> Node:
+	if scene_controller_path.is_empty():
+		return null
+	return get_node_or_null(scene_controller_path)
 
 
 func _on_box_count_changed(previous_count: int, current_count: int) -> void:
