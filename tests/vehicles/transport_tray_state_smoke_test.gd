@@ -5,6 +5,13 @@ const STANDARD_BLOCK_SCRIPT := preload("res://scripts/objects/standard_block.gd"
 const STANDARD_BOX_SCRIPT := preload("res://scripts/objects/standard_box.gd")
 const TRANSFER_RESULT_SCRIPT := preload("res://scripts/objects/item_transfer_result.gd")
 
+class TrayGuardProbe extends RefCounted:
+	var available: bool = true
+
+	func can_interact_with_tray(_tray: TRAY_STATE_SCRIPT) -> bool:
+		return available
+
+
 var failures: int = 0
 var count_events: Array[Vector2i] = []
 
@@ -14,6 +21,7 @@ func _init() -> void:
 	_test_configuration_and_inventory_contract()
 	_test_full_empty_and_type_rejection()
 	_test_cross_receiver_ownership()
+	_test_access_guard_is_weak_and_fail_closed()
 	_test_reset_releases_items()
 	_test_compatibility_count_rebuilds_real_inventory()
 
@@ -133,6 +141,39 @@ func _test_cross_receiver_ownership() -> void:
 	_expect_equal(tray.get_current_count(), 0, "Cross-receiver rejection should be atomic.")
 	_expect_true(box.contains_item(block), "Original receiver should retain ownership.")
 	_expect_true(count_events.is_empty(), "Cross-receiver rejection should emit no count event.")
+
+
+func _test_access_guard_is_weak_and_fail_closed() -> void:
+	var tray := TRAY_STATE_SCRIPT.new()
+	_expect_true(tray.configure(8), "Guarded tray should configure.")
+	var guard := TrayGuardProbe.new()
+	_expect_true(
+		tray.configure_access_guard(guard, &"can_interact_with_tray"),
+		"Tray should bind a valid interaction guard."
+	)
+	var block := STANDARD_BLOCK_SCRIPT.create()
+	_expect_true(tray.put_item(block).is_success(), "Available guard should allow tray writes.")
+	guard.available = false
+	_expect_false(tray.can_take_item(), "Unavailable guard should disable tray source capability.")
+	_expect_equal(
+		tray.take_item().status,
+		TRANSFER_RESULT_SCRIPT.Status.INVALID_TARGET,
+		"Unavailable guard should reject tray reads."
+	)
+	_expect_true(tray.contains_item(block), "Guard rejection should preserve tray ownership.")
+	var guard_ref: WeakRef = weakref(guard)
+	guard = null
+	_expect_true(guard_ref.get_ref() == null, "Tray access guard must not keep its owner alive.")
+	_expect_false(tray.can_take_item(), "Orphaned guarded tray should fail closed.")
+	var rejected := STANDARD_BLOCK_SCRIPT.create()
+	_expect_equal(
+		tray.put_item(rejected).status,
+		TRANSFER_RESULT_SCRIPT.Status.INVALID_TARGET,
+		"Orphaned guarded tray should reject writes."
+	)
+	_expect_false(rejected.is_claimed(), "Orphaned guard rejection must not claim new blocks.")
+	tray.reset()
+	_expect_false(block.is_claimed(), "Reset must still release tray inventory when interaction guard is unavailable.")
 
 
 func _test_reset_releases_items() -> void:
