@@ -40,7 +40,7 @@ func configure_valid_cells(cells: Array[Vector2i]) -> void:
 
 
 func configure_access_guard(owner: Object, method_name: StringName) -> bool:
-	if owner == null or method_name.is_empty() or not owner.has_method(method_name):
+	if owner == null or method_name == &"" or not owner.has_method(method_name):
 		return false
 	_access_guard_ref = weakref(owner)
 	_access_guard_method = method_name
@@ -63,7 +63,7 @@ func can_access_cell(cell: Vector2i) -> bool:
 		return true
 	if _access_guard_ref == null:
 		return false
-	var guard_owner := _access_guard_ref.get_ref()
+	var guard_owner: Object = _access_guard_ref.get_ref() as Object
 	if guard_owner == null or not guard_owner.has_method(_access_guard_method):
 		return false
 	return bool(guard_owner.call(_access_guard_method, cell))
