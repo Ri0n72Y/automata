@@ -76,6 +76,9 @@ func configure(
 		if not new_tray_state.configure(p_definition.tray_capacity):
 			push_error("Vehicle runtime state could not configure transport tray state.")
 			return false
+		if not new_tray_state.configure_access_guard(self, &"is_tray_interaction_available"):
+			push_error("Vehicle runtime state could not bind transport tray access guard.")
+			return false
 
 	_definition = p_definition
 	_tray_state = new_tray_state
@@ -142,6 +145,15 @@ func clear_move_command() -> void:
 	motion_state = MotionState.WAITING
 
 
+func is_tray_interaction_available(tray: TransportTrayStateScript) -> bool:
+	return (
+		tray != null
+		and tray == _tray_state
+		and motion_state != MotionState.PLANNING
+		and motion_state != MotionState.MOVING
+	)
+
+
 func claim_carried_item(block: StandardBlockScript) -> bool:
 	if _definition == null or not _definition.has_capability(
 		VehicleDefinitionScript.CAPABILITY_CAN_GRAB
@@ -185,7 +197,7 @@ func set_tray_count(value: int) -> bool:
 
 func get_item_interaction_interfaces(interaction_cells: Array[Vector2i]) -> Array[Variant]:
 	var interfaces: Array[Variant] = []
-	if motion_state == MotionState.PLANNING or motion_state == MotionState.MOVING:
+	if not is_tray_interaction_available(_tray_state):
 		_clear_item_interaction_cells()
 		return interfaces
 	if _tray_state != null:
