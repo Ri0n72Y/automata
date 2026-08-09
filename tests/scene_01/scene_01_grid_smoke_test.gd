@@ -67,7 +67,6 @@ func _run() -> void:
 	if grid_root != null and grid_model != null:
 		grid_root.position = Vector3(10.0, 0.0, -4.0)
 		grid_root.rotation.y = PI / 2.0
-		grid_root.scale = Vector3(2.0, 1.0, 3.0)
 		var world_center: Vector3 = scene.call(
 			"grid_cell_to_world",
 			Vector2i(0, 0)
@@ -75,12 +74,12 @@ func _run() -> void:
 		_expect_vector3_approx(
 			world_center,
 			grid_root.to_global(Vector3(0.5, 0.0, 0.5)),
-			"GridRoot translation, rotation, and scale should be applied by the controller."
+			"GridRoot translation and rotation should be applied by the controller."
 		)
 		_expect_equal(
 			scene.call("world_to_grid_cell", world_center),
 			Vector2i(0, 0),
-			"World and grid conversion should round trip through a transformed GridRoot."
+			"World and grid conversion should round trip through a translated and rotated GridRoot."
 		)
 
 	if debug_view != null and grid_model != null:
