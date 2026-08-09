@@ -133,7 +133,9 @@ func _create_ground_visual(cell: Vector2i) -> void:
 	visual.name = "GroundBlock_%d_%d" % [cell.x, cell.y]
 	_ground_visual_root.add_child(visual)
 	var scene := get_tree().current_scene
-	var grid_root := scene.get_node_or_null("SceneRoot/GridRoot") as Node3D if scene != null else null
+	var grid_root: Node3D
+	if scene != null:
+		grid_root = scene.get_node_or_null("SceneRoot/GridRoot") as Node3D
 	if scene != null and grid_root != null and scene.has_method("grid_cell_to_world"):
 		var world_position: Vector3 = scene.call("grid_cell_to_world", cell)
 		visual.position = grid_root.to_local(world_position)
