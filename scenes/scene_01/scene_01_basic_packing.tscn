@@ -81,6 +81,7 @@ unique_name_in_owner = true
 script = ExtResource("12_object_manager")
 ground_block_field = SubResource("Resource_ground_field")
 scene_controller_path = NodePath("../../..")
+vehicle_manager_path = NodePath("../../RobotRoot/Scene01VehicleManager")
 
 [node name="GroundBlockVisuals" type="Node3D" parent="SceneRoot/ObjectRoot/Scene01ObjectManager"]
 unique_name_in_owner = true
