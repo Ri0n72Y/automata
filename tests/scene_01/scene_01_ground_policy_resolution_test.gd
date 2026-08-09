@@ -86,7 +86,7 @@ func _test_grid_policy_updates_immediately(scene, object_manager) -> void:
 	_expect_true(object_manager.get_ground_block_visual(cell) != null, "Policy fixture should create ground visual.")
 
 	_expect_true(
-		scene.call("set_grid_cell_type", cell, GRID_MODEL_SCRIPT.CellType.BOUNDARY),
+		bool(scene.call("set_grid_cell_type", cell, GRID_MODEL_SCRIPT.CellType.BOUNDARY)),
 		"Changing occupied ground cell to Boundary should succeed."
 	)
 	_expect_true(
@@ -99,7 +99,7 @@ func _test_grid_policy_updates_immediately(scene, object_manager) -> void:
 		"Grid policy mutation must immediately remove the invalid ground visual."
 	)
 	_expect_true(
-		scene.call("set_grid_cell_type", cell, GRID_MODEL_SCRIPT.CellType.NORMAL_TILE),
+		bool(scene.call("set_grid_cell_type", cell, GRID_MODEL_SCRIPT.CellType.NORMAL_TILE)),
 		"Ground policy fixture should restore the cell for subsequent tests."
 	)
 	_expect_true(
