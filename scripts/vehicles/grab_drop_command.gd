@@ -116,6 +116,8 @@ func _map_transfer_status(status: int) -> int:
 			return GrabDropResultScript.Status.TYPE_MISMATCH
 		ItemTransferResultScript.Status.ALREADY_CONTAINED:
 			return GrabDropResultScript.Status.ALREADY_CONTAINED
+		ItemTransferResultScript.Status.OCCUPIED:
+			return GrabDropResultScript.Status.GROUND_OCCUPIED
 		ItemTransferResultScript.Status.INVALID_TARGET:
 			return GrabDropResultScript.Status.INVALID_TARGET
 		_:
