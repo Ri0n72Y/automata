@@ -15,6 +15,7 @@ func configure(field: Object, cell: Vector2i) -> bool:
 		not field.has_method("put_item")
 		or not field.has_method("take_item")
 		or not field.has_method("has_item")
+		or not field.has_method("can_access_cell")
 	):
 		return false
 	_field_ref = weakref(field)
@@ -33,7 +34,11 @@ func get_accepted_item_types() -> PackedStringArray:
 
 func can_take_item() -> bool:
 	var field := _get_field()
-	return field != null and bool(field.call("has_item", _cell))
+	return (
+		field != null
+		and bool(field.call("can_access_cell", _cell))
+		and bool(field.call("has_item", _cell))
+	)
 
 
 func get_current_count() -> int:
