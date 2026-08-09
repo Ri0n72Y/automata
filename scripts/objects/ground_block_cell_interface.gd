@@ -4,7 +4,7 @@ class_name GroundBlockCellInterface
 const ItemTransferResultScript := preload("res://scripts/objects/item_transfer_result.gd")
 const StandardBlockScript := preload("res://scripts/objects/standard_block.gd")
 
-var _field: Object
+var _field_ref: WeakRef
 var _cell: Vector2i = Vector2i.ZERO
 
 
@@ -13,7 +13,7 @@ func configure(field: Object, cell: Vector2i) -> bool:
 		return false
 	if not field.has_method("put_item") or not field.has_method("take_item"):
 		return false
-	_field = field
+	_field_ref = weakref(field)
 	_cell = cell
 	set_interaction_cells([cell])
 	return true
@@ -28,7 +28,8 @@ func get_accepted_item_types() -> PackedStringArray:
 
 
 func can_take_item() -> bool:
-	return _field != null and bool(_field.call("has_item", _cell))
+	var field := _get_field()
+	return field != null and bool(field.call("has_item", _cell))
 
 
 func get_current_count() -> int:
@@ -40,12 +41,20 @@ func get_capacity() -> int:
 
 
 func put_item(item: Variant) -> ItemTransferResultScript:
-	if _field == null:
+	var field := _get_field()
+	if field == null:
 		return ItemTransferResultScript.rejected(ItemTransferResultScript.Status.INVALID_TARGET)
-	return _field.call("put_item", _cell, item) as ItemTransferResultScript
+	return field.call("put_item", _cell, item) as ItemTransferResultScript
 
 
 func take_item() -> ItemTransferResultScript:
-	if _field == null:
+	var field := _get_field()
+	if field == null:
 		return ItemTransferResultScript.rejected(ItemTransferResultScript.Status.INVALID_TARGET)
-	return _field.call("take_item", _cell) as ItemTransferResultScript
+	return field.call("take_item", _cell) as ItemTransferResultScript
+
+
+func _get_field() -> Object:
+	if _field_ref == null:
+		return null
+	return _field_ref.get_ref()
