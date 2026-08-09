@@ -39,7 +39,6 @@ var automation_rate: float = 0.0
 var is_running: bool = false
 
 var _initial_grid_root_transform: Transform3D = Transform3D.IDENTITY
-var _preview_scale_enabled: bool = false
 var _preview_offset_enabled: bool = false
 
 
@@ -230,7 +229,6 @@ func reset_scene_state() -> void:
 	timer = 0.0
 	target_box_count = 8
 	automation_rate = 0.0
-	_preview_scale_enabled = false
 	_preview_offset_enabled = false
 	if grid_root != null:
 		grid_root.transform = _initial_grid_root_transform
@@ -261,14 +259,6 @@ func preview_rotate_grid(direction: int) -> void:
 	_sync_grid_transform_dependents()
 
 
-func preview_toggle_grid_scale() -> void:
-	if grid_root == null:
-		return
-	_preview_scale_enabled = not _preview_scale_enabled
-	grid_root.scale = Vector3(1.35, 1.0, 0.78) if _preview_scale_enabled else Vector3.ONE
-	_sync_grid_transform_dependents()
-
-
 func preview_toggle_grid_offset() -> void:
 	if grid_root == null:
 		return
@@ -284,7 +274,6 @@ func preview_toggle_grid_offset() -> void:
 func preview_restore_grid_transform() -> void:
 	if grid_root == null:
 		return
-	_preview_scale_enabled = false
 	_preview_offset_enabled = false
 	grid_root.transform = _initial_grid_root_transform
 	_sync_grid_transform_dependents()
