@@ -58,10 +58,6 @@ func _unhandled_key_input(event: InputEvent) -> void:
 				_call_scene_action("preview_rotate_grid", [-1])
 				_update_status("GridRoot rotated -90 degrees")
 				handled = true
-		KEY_F:
-			if not _has_command_modifier(key_event):
-				_on_scale_pressed()
-				handled = true
 		KEY_G:
 			if not _has_command_modifier(key_event):
 				_on_offset_pressed()
@@ -112,11 +108,6 @@ func _on_rotate_left_pressed() -> void:
 func _on_rotate_right_pressed() -> void:
 	_call_scene_action("preview_rotate_grid", [1])
 	_update_status("GridRoot rotated +90 degrees")
-
-
-func _on_scale_pressed() -> void:
-	_call_scene_action("preview_toggle_grid_scale")
-	_update_status("GridRoot scale toggled")
 
 
 func _on_offset_pressed() -> void:
