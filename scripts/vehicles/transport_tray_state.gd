@@ -6,6 +6,9 @@ signal count_changed(previous_count: int, current_count: int)
 var _capacity: int = 0
 var _items: Array[StandardBlock] = []
 var _configured: bool = false
+var _access_guard_ref: WeakRef
+var _access_guard_method: StringName = &""
+var _has_access_guard: bool = false
 
 var capacity: int:
 	get:
@@ -24,6 +27,15 @@ func configure(p_capacity: int) -> bool:
 	return true
 
 
+func configure_access_guard(owner: Object, method_name: StringName) -> bool:
+	if owner == null or method_name == &"" or not owner.has_method(method_name):
+		return false
+	_access_guard_ref = weakref(owner)
+	_access_guard_method = method_name
+	_has_access_guard = true
+	return true
+
+
 func is_configured() -> bool:
 	return _configured
 
@@ -33,7 +45,7 @@ func get_accepted_item_types() -> PackedStringArray:
 
 
 func can_take_item() -> bool:
-	return true
+	return _configured and _is_interaction_available()
 
 
 func get_capacity() -> int:
@@ -61,7 +73,7 @@ func get_items() -> Array[StandardBlock]:
 
 
 func put_item(item: Variant) -> ItemTransferResult:
-	if not _configured:
+	if not _configured or not _is_interaction_available():
 		return ItemTransferResult.rejected(ItemTransferResult.Status.INVALID_TARGET)
 	if not item is StandardBlock:
 		return ItemTransferResult.rejected(ItemTransferResult.Status.TYPE_MISMATCH)
@@ -81,7 +93,7 @@ func put_item(item: Variant) -> ItemTransferResult:
 
 
 func take_item() -> ItemTransferResult:
-	if not _configured:
+	if not _configured or not _is_interaction_available():
 		return ItemTransferResult.rejected(ItemTransferResult.Status.INVALID_TARGET)
 	if is_empty():
 		return ItemTransferResult.rejected(ItemTransferResult.Status.EMPTY)
@@ -121,6 +133,17 @@ func replace_count_for_compatibility(value: int) -> bool:
 	_items = replacement
 	count_changed.emit(previous_count, get_current_count())
 	return true
+
+
+func _is_interaction_available() -> bool:
+	if not _has_access_guard:
+		return true
+	if _access_guard_ref == null:
+		return false
+	var guard_owner: Object = _access_guard_ref.get_ref() as Object
+	if guard_owner == null or not guard_owner.has_method(_access_guard_method):
+		return false
+	return bool(guard_owner.call(_access_guard_method, self))
 
 
 func _release_all_items() -> void:
