@@ -19,10 +19,18 @@ const GRAB_DROP_ACTION := &"vehicle_grab_drop"
 const ROTATE_COUNTERCLOCKWISE_ACTION := &"vehicle_rotate_counterclockwise"
 const ROTATE_CLOCKWISE_ACTION := &"vehicle_rotate_clockwise"
 
+@export var valid_interaction_color: Color = Color(0.2, 0.92, 0.38, 0.28)
+@export var invalid_interaction_color: Color = Color(1.0, 0.24, 0.18, 0.28)
+@export_range(0.01, 0.2, 0.01) var preview_height: float = 0.06
+@export_range(0.5, 1.0, 0.01) var preview_scale: float = 0.86
+
 var vehicle_selection_controller: VehicleSelectionControllerScript
 var vehicle_manager: Scene01VehicleManagerScript
 var object_manager: Scene01ObjectManagerScript
 var _command := GrabDropCommandScript.new()
+var _preview_meshes: Array[MeshInstance3D] = []
+var _preview_cells: Array[Vector2i] = []
+var _preview_is_valid: bool = false
 
 
 func _ready() -> void:
@@ -31,6 +39,12 @@ func _ready() -> void:
 		get_node_or_null("../../RobotRoot/Scene01VehicleManager") as Scene01VehicleManagerScript,
 		get_node_or_null("../../ObjectRoot/Scene01ObjectManager") as Scene01ObjectManagerScript
 	)
+	set_process(true)
+	refresh_interaction_preview()
+
+
+func _process(_delta: float) -> void:
+	refresh_interaction_preview()
 
 
 func configure(
@@ -77,6 +91,7 @@ func request_selected_grab_drop() -> GrabDropResultScript:
 	var target := resolve_target_for_vehicle(vehicle)
 	var result := _command.execute(vehicle.runtime_state, target)
 	vehicle.sync_from_state()
+	refresh_interaction_preview()
 	grab_drop_completed.emit(vehicle.get_vehicle_id(), result.action, result.status)
 	return result
 
@@ -90,6 +105,7 @@ func rotate_selected_arm(direction: int) -> bool:
 		return false
 	vehicle.runtime_state.facing = posmod(vehicle.runtime_state.facing + step, 4)
 	vehicle.sync_from_state()
+	refresh_interaction_preview()
 	facing_changed.emit(vehicle.get_vehicle_id(), vehicle.runtime_state.facing)
 	return true
 
@@ -100,8 +116,9 @@ func resolve_target_for_vehicle(vehicle: VehicleActorScript) -> Variant:
 	var front_cells := get_forward_interaction_cells(vehicle)
 	if front_cells.is_empty():
 		return null
+	var all_interfaces := _collect_item_interaction_interfaces()
 	var candidates: Array[Variant] = []
-	for interaction_interface in _collect_item_interaction_interfaces():
+	for interaction_interface in all_interfaces:
 		if not _is_action_compatible(vehicle.runtime_state, interaction_interface):
 			continue
 		var interaction_cells := _get_interaction_cells(interaction_interface)
@@ -110,9 +127,11 @@ func resolve_target_for_vehicle(vehicle: VehicleActorScript) -> Variant:
 		if not candidates.has(interaction_interface):
 			candidates.append(interaction_interface)
 
-	if candidates.size() != 1:
+	if candidates.size() > 1:
 		return null
-	return candidates[0]
+	if candidates.size() == 1:
+		return candidates[0]
+	return _resolve_ground_target(vehicle, front_cells, all_interfaces)
 
 
 func get_forward_interaction_cells(vehicle: VehicleActorScript) -> Array[Vector2i]:
@@ -135,6 +154,84 @@ func get_forward_interaction_cells(vehicle: VehicleActorScript) -> Array[Vector2
 			for offset_y in range(footprint.y):
 				result.append(anchor + Vector2i(-1, offset_y))
 	return result
+
+
+func get_primary_ground_interaction_cell(vehicle: VehicleActorScript) -> Vector2i:
+	var front_cells := get_forward_interaction_cells(vehicle)
+	if front_cells.is_empty():
+		return Vector2i(-1, -1)
+	return front_cells[0]
+
+
+func refresh_interaction_preview() -> void:
+	var vehicle := _get_selected_vehicle()
+	if not _can_preview(vehicle):
+		_hide_interaction_preview()
+		return
+	var target := resolve_target_for_vehicle(vehicle)
+	var cells := get_forward_interaction_cells(vehicle)
+	if target != null:
+		var target_cells := _get_interaction_cells(target)
+		var overlap: Array[Vector2i] = []
+		for cell in cells:
+			if target_cells.has(cell):
+				overlap.append(cell)
+		if not overlap.is_empty():
+			cells = overlap
+	_preview_is_valid = target != null and _is_target_ready(vehicle.runtime_state, target)
+	_show_interaction_preview(vehicle, cells, _preview_is_valid)
+
+
+func is_interaction_preview_visible() -> bool:
+	return not _preview_cells.is_empty()
+
+
+func is_interaction_preview_valid() -> bool:
+	return is_interaction_preview_visible() and _preview_is_valid
+
+
+func get_interaction_preview_cells() -> Array[Vector2i]:
+	return _preview_cells.duplicate()
+
+
+func _resolve_ground_target(
+	vehicle: VehicleActorScript,
+	front_cells: Array[Vector2i],
+	all_interfaces: Array[Variant]
+) -> ItemReceiverInterfaceScript:
+	if object_manager == null or front_cells.is_empty():
+		return null
+	var cell := front_cells[0]
+	if not _is_legal_ground_cell(vehicle, cell, all_interfaces):
+		return null
+	var ground_interface := object_manager.get_ground_cell_interface(cell) as ItemReceiverInterfaceScript
+	if ground_interface == null:
+		return null
+	if not vehicle.runtime_state.arm_has_item and not ground_interface.can_take_item():
+		return null
+	return ground_interface
+
+
+func _is_legal_ground_cell(
+	vehicle: VehicleActorScript,
+	cell: Vector2i,
+	all_interfaces: Array[Variant]
+) -> bool:
+	if vehicle == null or vehicle.controller == null:
+		return false
+	if not vehicle.controller.has_method("is_grid_cell_walkable"):
+		return false
+	if not bool(vehicle.controller.call("is_grid_cell_walkable", cell)):
+		return false
+	for interaction_interface in all_interfaces:
+		if _get_interaction_cells(interaction_interface).has(cell):
+			return false
+	if vehicle_manager != null:
+		for vehicle_node in vehicle_manager.get_vehicles():
+			var actor := vehicle_node as VehicleActorScript
+			if actor != null and actor.get_occupied_cells().has(cell):
+				return false
+	return true
 
 
 func _collect_item_interaction_interfaces() -> Array[Variant]:
@@ -173,6 +270,24 @@ func _is_action_compatible(runtime: VehicleRuntimeStateScript, target: Variant) 
 	return receiver != null and receiver.can_take_item()
 
 
+func _is_target_ready(runtime: VehicleRuntimeStateScript, target: Variant) -> bool:
+	if runtime == null or target == null:
+		return false
+	if runtime.arm_has_item:
+		var receiver := target as ItemReceiverInterfaceScript
+		if receiver == null or runtime.carried_item == null:
+			return false
+		if not receiver.accepts_item_type(runtime.carried_item.get_item_type()):
+			return false
+		var capacity := receiver.get_capacity()
+		return capacity <= 0 or receiver.get_current_count() < capacity
+	var source := target as ItemSourceInterfaceScript
+	if source != null:
+		return source.is_available()
+	var receiver := target as ItemReceiverInterfaceScript
+	return receiver != null and receiver.can_take_item() and receiver.get_current_count() > 0
+
+
 func _get_interaction_cells(target: Variant) -> Array[Vector2i]:
 	var source := target as ItemSourceInterfaceScript
 	if source != null:
@@ -184,6 +299,55 @@ func _get_interaction_cells(target: Variant) -> Array[Vector2i]:
 	return empty_cells
 
 
+func _show_interaction_preview(
+	vehicle: VehicleActorScript,
+	cells: Array[Vector2i],
+	is_valid: bool
+) -> void:
+	_ensure_preview_mesh_count(cells.size())
+	_preview_cells = cells.duplicate()
+	for index in range(_preview_meshes.size()):
+		var preview := _preview_meshes[index]
+		if index >= cells.size():
+			preview.visible = false
+			continue
+		var mesh := preview.mesh as BoxMesh
+		mesh.size = Vector3(
+			vehicle.cell_size * preview_scale,
+			0.015,
+			vehicle.cell_size * preview_scale
+		)
+		var material := preview.material_override as StandardMaterial3D
+		material.albedo_color = valid_interaction_color if is_valid else invalid_interaction_color
+		var world_position: Vector3 = vehicle.controller.call("grid_cell_to_world", cells[index])
+		preview.global_position = world_position + Vector3.UP * preview_height
+		preview.visible = true
+
+
+func _hide_interaction_preview() -> void:
+	_preview_cells.clear()
+	_preview_is_valid = false
+	for preview in _preview_meshes:
+		preview.visible = false
+
+
+func _ensure_preview_mesh_count(count: int) -> void:
+	while _preview_meshes.size() < count:
+		var preview := MeshInstance3D.new()
+		preview.name = "GrabDropInteractionPreview_%d" % _preview_meshes.size()
+		preview.top_level = true
+		preview.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var mesh := BoxMesh.new()
+		preview.mesh = mesh
+		var material := StandardMaterial3D.new()
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		material.no_depth_test = false
+		preview.material_override = material
+		add_child(preview)
+		_preview_meshes.append(preview)
+
+
 func _get_selected_vehicle() -> VehicleActorScript:
 	if vehicle_selection_controller == null:
 		return null
@@ -191,6 +355,17 @@ func _get_selected_vehicle() -> VehicleActorScript:
 
 
 func _can_rotate(vehicle: VehicleActorScript) -> bool:
+	if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
+		return false
+	if not vehicle.definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_GRAB):
+		return false
+	return (
+		vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
+		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
+	)
+
+
+func _can_preview(vehicle: VehicleActorScript) -> bool:
 	if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
 		return false
 	if not vehicle.definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_GRAB):
