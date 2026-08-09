@@ -117,14 +117,12 @@ func _test_ground_policy_and_instance_isolation(first_scene, second_scene, first
 	_expect_true(first_manager.get_ground_block_visual(second_cell) == null, "Second visual must not leak into first Scene01.")
 
 	first_scene.call("reset_scene")
-	await process_frame
 	_expect_false(first_manager.has_ground_block(first_cell), "Resetting first Scene01 should clear only its ground state.")
 	_expect_true(second_manager.has_ground_block(second_cell), "Resetting first Scene01 must preserve second ground state.")
 	_expect_false(first_block.is_claimed(), "First reset should release first block ownership.")
 	_expect_true(second_block.is_claimed_by(second_manager.get_ground_block_field()), "Second block ownership should remain local.")
 
 	second_scene.call("reset_scene")
-	await process_frame
 
 
 func _test_moving_tray_is_not_interactable(controller, selection, vehicle_manager) -> void:
