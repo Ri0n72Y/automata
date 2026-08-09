@@ -182,6 +182,8 @@ func set_tray_count(value: int) -> bool:
 
 func get_item_interaction_interfaces(interaction_cells: Array[Vector2i]) -> Array[Variant]:
 	var interfaces: Array[Variant] = []
+	if motion_state == MotionState.PLANNING or motion_state == MotionState.MOVING:
+		return interfaces
 	if _tray_state != null:
 		_tray_state.set_interaction_cells(interaction_cells)
 		interfaces.append(_tray_state)
