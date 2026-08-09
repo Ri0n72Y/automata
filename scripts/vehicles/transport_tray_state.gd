@@ -32,6 +32,10 @@ func get_accepted_item_types() -> PackedStringArray:
 	return PackedStringArray([StandardBlock.TYPE_ID])
 
 
+func can_take_item() -> bool:
+	return true
+
+
 func get_capacity() -> int:
 	return _capacity
 
