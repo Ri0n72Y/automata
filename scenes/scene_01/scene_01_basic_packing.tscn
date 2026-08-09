@@ -72,6 +72,9 @@ script = ExtResource("15_grid_follower")
 unique_name_in_owner = true
 script = ExtResource("12_object_manager")
 
+[node name="GroundBlockVisuals" type="Node3D" parent="SceneRoot/ObjectRoot/Scene01ObjectManager"]
+unique_name_in_owner = true
+
 [node name="InfiniteBlockPile" parent="SceneRoot/ObjectRoot/Scene01ObjectManager" instance=ExtResource("13_item_source")]
 unique_name_in_owner = true
 position = Vector3(-0.85, 0, 4)
