@@ -36,6 +36,20 @@ func reset_objects() -> void:
 	get_standard_box().reset()
 
 
+func get_item_interaction_interfaces() -> Array[Variant]:
+	var interfaces: Array[Variant] = []
+	for node in find_children("*", "", true, false):
+		if node.has_method("get_source_interface"):
+			var source = node.call("get_source_interface")
+			if source != null and not interfaces.has(source):
+				interfaces.append(source)
+		if node.has_method("get_receiver_interface"):
+			var receiver = node.call("get_receiver_interface")
+			if receiver != null and not interfaces.has(receiver):
+				interfaces.append(receiver)
+	return interfaces
+
+
 func get_block_pile() -> InfiniteBlockPile:
 	if _block_pile_node == null:
 		return null
