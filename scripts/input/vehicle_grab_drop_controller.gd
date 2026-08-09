@@ -180,7 +180,8 @@ func _get_interaction_cells(target: Variant) -> Array[Vector2i]:
 	var receiver := target as ItemReceiverInterfaceScript
 	if receiver != null:
 		return receiver.get_interaction_cells()
-	return []
+	var empty_cells: Array[Vector2i] = []
+	return empty_cells
 
 
 func _get_selected_vehicle() -> VehicleActorScript:
