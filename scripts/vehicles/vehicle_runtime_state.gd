@@ -94,7 +94,7 @@ func reset() -> void:
 	_clear_carried_item()
 	if _tray_state != null:
 		_tray_state.reset()
-		_tray_state.set_interaction_cells([])
+	_clear_item_interaction_cells()
 
 
 func begin_move_planning() -> bool:
@@ -207,8 +207,10 @@ func get_effective_speed() -> float:
 
 
 func _clear_item_interaction_cells() -> void:
-	if _tray_state != null:
-		_tray_state.set_interaction_cells([])
+	if _tray_state == null:
+		return
+	var empty_cells: Array[Vector2i] = []
+	_tray_state.set_interaction_cells(empty_cells)
 
 
 func _clear_carried_item() -> void:
