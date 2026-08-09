@@ -113,7 +113,11 @@ func get_standard_box_node() -> Scene01ItemReceiverNode:
 	return _standard_box_node
 
 
-func _on_ground_cell_changed(cell: Vector2i, _previous_item, current_item) -> void:
+func _on_ground_cell_changed(
+	cell: Vector2i,
+	_previous_item: Variant,
+	current_item: Variant
+) -> void:
 	_remove_ground_visual(cell)
 	if current_item != null:
 		_create_ground_visual(cell)
@@ -129,8 +133,10 @@ func _create_ground_visual(cell: Vector2i) -> void:
 	visual.name = "GroundBlock_%d_%d" % [cell.x, cell.y]
 	_ground_visual_root.add_child(visual)
 	var scene := get_tree().current_scene
-	if scene != null and scene.has_method("grid_cell_to_world"):
-		visual.global_position = scene.call("grid_cell_to_world", cell)
+	var grid_root := scene.get_node_or_null("SceneRoot/GridRoot") as Node3D if scene != null else null
+	if scene != null and grid_root != null and scene.has_method("grid_cell_to_world"):
+		var world_position: Vector3 = scene.call("grid_cell_to_world", cell)
+		visual.position = grid_root.to_local(world_position)
 	else:
 		visual.position = Vector3(float(cell.x) + 0.5, 0.0, float(cell.y) + 0.5)
 	_ground_visuals[cell] = visual
@@ -143,7 +149,7 @@ func _remove_ground_visual(cell: Vector2i) -> void:
 		return
 	if visual.get_parent() != null:
 		visual.get_parent().remove_child(visual)
-	visual.queue_free()
+	visual.free()
 
 
 func _on_box_count_changed(previous_count: int, current_count: int) -> void:
