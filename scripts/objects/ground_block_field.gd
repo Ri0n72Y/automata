@@ -11,6 +11,9 @@ var _items: Dictionary = {}
 var _interfaces: Dictionary = {}
 var _valid_cells: Dictionary = {}
 var _has_cell_policy: bool = false
+var _access_guard_ref: WeakRef
+var _access_guard_method: StringName = &""
+var _has_access_guard: bool = false
 
 
 func configure_valid_cells(cells: Array[Vector2i]) -> void:
@@ -36,6 +39,15 @@ func configure_valid_cells(cells: Array[Vector2i]) -> void:
 			_interfaces.erase(cell)
 
 
+func configure_access_guard(owner: Object, method_name: StringName) -> bool:
+	if owner == null or method_name.is_empty() or not owner.has_method(method_name):
+		return false
+	_access_guard_ref = weakref(owner)
+	_access_guard_method = method_name
+	_has_access_guard = true
+	return true
+
+
 func is_configured() -> bool:
 	return _has_cell_policy
 
@@ -44,8 +56,21 @@ func is_cell_allowed(cell: Vector2i) -> bool:
 	return _has_cell_policy and _valid_cells.has(cell)
 
 
-func get_cell_interface(cell: Vector2i) -> GroundBlockCellInterfaceScript:
+func can_access_cell(cell: Vector2i) -> bool:
 	if not is_cell_allowed(cell):
+		return false
+	if not _has_access_guard:
+		return true
+	if _access_guard_ref == null:
+		return false
+	var guard_owner := _access_guard_ref.get_ref()
+	if guard_owner == null or not guard_owner.has_method(_access_guard_method):
+		return false
+	return bool(guard_owner.call(_access_guard_method, cell))
+
+
+func get_cell_interface(cell: Vector2i) -> GroundBlockCellInterfaceScript:
+	if not can_access_cell(cell):
 		return null
 	var existing := _interfaces.get(cell) as GroundBlockCellInterfaceScript
 	if existing != null:
@@ -76,7 +101,7 @@ func get_occupied_cells() -> Array[Vector2i]:
 
 
 func put_item(cell: Vector2i, item: Variant) -> ItemTransferResultScript:
-	if not is_cell_allowed(cell):
+	if not can_access_cell(cell):
 		return ItemTransferResultScript.rejected(ItemTransferResultScript.Status.INVALID_TARGET)
 	var block := item as StandardBlockScript
 	if block == null or not block.is_valid():
@@ -91,7 +116,7 @@ func put_item(cell: Vector2i, item: Variant) -> ItemTransferResultScript:
 
 
 func take_item(cell: Vector2i) -> ItemTransferResultScript:
-	if not is_cell_allowed(cell):
+	if not can_access_cell(cell):
 		return ItemTransferResultScript.rejected(ItemTransferResultScript.Status.INVALID_TARGET)
 	var block := get_item(cell)
 	if block == null:
