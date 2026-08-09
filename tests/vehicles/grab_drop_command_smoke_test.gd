@@ -2,6 +2,7 @@ extends SceneTree
 
 const VEHICLE_DEFINITION_SCRIPT := preload("res://scripts/vehicles/vehicle_definition.gd")
 const VEHICLE_RUNTIME_STATE_SCRIPT := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
+const MOVE_COMMAND_SCRIPT := preload("res://scripts/vehicles/move_command.gd")
 const GRAB_DROP_COMMAND_SCRIPT := preload("res://scripts/vehicles/grab_drop_command.gd")
 const GRAB_DROP_RESULT_SCRIPT := preload("res://scripts/vehicles/grab_drop_result.gd")
 const INFINITE_BLOCK_PILE_SCRIPT := preload("res://scripts/objects/infinite_block_pile.gd")
@@ -12,6 +13,7 @@ var failures: int = 0
 
 func _init() -> void:
 	_test_infinite_pile_to_arm_to_tray_round_trip()
+	_test_standard_box_is_drop_only()
 	_test_drop_failure_restores_arm_ownership()
 	_test_busy_and_capability_boundaries()
 	_test_reset_and_compatibility_state()
@@ -32,6 +34,7 @@ func _test_infinite_pile_to_arm_to_tray_round_trip() -> void:
 		return
 	var pile := INFINITE_BLOCK_PILE_SCRIPT.new()
 	var command := GRAB_DROP_COMMAND_SCRIPT.new()
+	_expect_true(transport.tray_state.can_take_item(), "Transport tray must advertise take capability.")
 
 	var grab = command.execute(arm, pile)
 	_expect_equal(grab.status, GRAB_DROP_RESULT_SCRIPT.Status.ACCEPTED, "Pile grab should succeed.")
@@ -81,6 +84,28 @@ func _test_infinite_pile_to_arm_to_tray_round_trip() -> void:
 	_expect_equal(box_drop.item.get_block_id(), block_id, "Box transfer should preserve block identity.")
 
 
+func _test_standard_box_is_drop_only() -> void:
+	var arm := _make_arm_runtime()
+	if arm == null:
+		return
+	var box := STANDARD_BOX_SCRIPT.new()
+	box.capacity = 8
+	box.initial_count = 3
+	box.reset()
+	var initial_count: int = box.get_current_count()
+	var command := GRAB_DROP_COMMAND_SCRIPT.new()
+
+	_expect_false(box.can_take_item(), "StandardBox must not advertise Grab source capability.")
+	var invalid_grab = command.execute(arm, box)
+	_expect_equal(
+		invalid_grab.status,
+		GRAB_DROP_RESULT_SCRIPT.Status.INVALID_TARGET,
+		"Empty arm must reject StandardBox as a Grab source."
+	)
+	_expect_equal(box.get_current_count(), initial_count, "Rejected box Grab must preserve box count.")
+	_expect_false(arm.arm_has_item, "Rejected box Grab must preserve empty arm state.")
+
+
 func _test_drop_failure_restores_arm_ownership() -> void:
 	var arm := _make_arm_runtime()
 	if arm == null:
@@ -114,10 +139,30 @@ func _test_busy_and_capability_boundaries() -> void:
 	var command := GRAB_DROP_COMMAND_SCRIPT.new()
 
 	_expect_true(arm.begin_move_planning(), "Busy fixture should enter Planning.")
-	var busy = command.execute(arm, pile)
-	_expect_equal(busy.status, GRAB_DROP_RESULT_SCRIPT.Status.BUSY, "Planning arm should reject GrabDrop.")
-	_expect_equal(pile.get_produced_count(), 0, "Busy rejection must not consume the source.")
-	_expect_false(arm.arm_has_item, "Busy rejection must not mutate arm carry state.")
+	var planning_busy = command.execute(arm, pile)
+	_expect_equal(
+		planning_busy.status,
+		GRAB_DROP_RESULT_SCRIPT.Status.BUSY,
+		"Planning arm should reject GrabDrop."
+	)
+	_expect_equal(pile.get_produced_count(), 0, "Planning rejection must not consume the source.")
+	_expect_false(arm.arm_has_item, "Planning rejection must not mutate arm carry state.")
+	arm.clear_move_command()
+
+	var move_command := MOVE_COMMAND_SCRIPT.new()
+	_expect_true(
+		move_command.configure(Vector2i(3, 2), [Vector2i(2, 2), Vector2i(3, 2)]),
+		"Moving fixture command should configure."
+	)
+	_expect_true(arm.assign_move_command(move_command), "Busy fixture should enter Moving.")
+	var moving_busy = command.execute(arm, pile)
+	_expect_equal(
+		moving_busy.status,
+		GRAB_DROP_RESULT_SCRIPT.Status.BUSY,
+		"Moving arm should reject GrabDrop."
+	)
+	_expect_equal(pile.get_produced_count(), 0, "Moving rejection must not consume the source.")
+	_expect_false(arm.arm_has_item, "Moving rejection must not mutate arm carry state.")
 	arm.clear_move_command()
 
 	var unsupported = command.execute(transport, pile)
