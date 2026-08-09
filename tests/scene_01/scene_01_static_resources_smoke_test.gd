@@ -155,7 +155,7 @@ func _test_camera_and_ui_resources() -> void:
 
 	var ui: Node = UI_SCENE.instantiate()
 	_expect_node(ui, "RootControl/Panel/Margin/VBox/RotateRow/RotateLeft", "Manual UI should expose rotation controls.")
-	_expect_node(ui, "RootControl/Panel/Margin/VBox/TransformRow/Scale", "Manual UI should expose scale controls.")
+	_expect_node(ui, "RootControl/Panel/Margin/VBox/TransformRow/Offset", "Manual UI should expose offset controls.")
 	_expect_node(ui, "RootControl/Panel/Margin/VBox/ResetRow/Reset", "Manual UI should expose reset controls.")
 	ui.free()
 
