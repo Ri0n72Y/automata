@@ -1,6 +1,8 @@
 extends SceneTree
 
 const SCENE_PATH := "res://scenes/scene_01/scene_01_basic_packing.tscn"
+const GRAB_DROP_CONTROLLER_SCRIPT := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
+const GRID_SELECTION_SCRIPT := preload("res://scripts/input/grid_selection_controller.gd")
 const VEHICLE_SELECTION_SCRIPT := preload("res://scripts/input/vehicle_selection_controller.gd")
 const VEHICLE_MANAGER_SCRIPT := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const OBJECT_MANAGER_SCRIPT := preload("res://scripts/scene_01/scene_01_object_manager.gd")
@@ -24,6 +26,12 @@ func _run() -> void:
 	await process_frame
 	await physics_frame
 
+	var grab_drop_controller := scene.get_node_or_null(
+		"SceneRoot/GridRoot/VehicleGrabDropController"
+	) as GRAB_DROP_CONTROLLER_SCRIPT
+	var grid_selection := scene.get_node_or_null(
+		"SceneRoot/GridRoot/GridSelectionController"
+	) as GRID_SELECTION_SCRIPT
 	var selection := scene.get_node_or_null(
 		"SceneRoot/GridRoot/VehicleSelectionController"
 	) as VEHICLE_SELECTION_SCRIPT
@@ -36,11 +44,19 @@ func _run() -> void:
 	var status_label := scene.get_node_or_null(
 		"UIRoot/RootControl/Panel/Margin/VBox/StatusLabel"
 	) as Label
+	_expect_true(grab_drop_controller != null, "Input test requires GrabDrop controller.")
+	_expect_true(grid_selection != null, "Input test requires grid selection controller.")
 	_expect_true(selection != null, "Input test requires vehicle selection controller.")
 	_expect_true(vehicle_manager != null, "Input test requires vehicle manager.")
 	_expect_true(object_manager != null, "Input test requires object manager.")
 	_expect_true(status_label != null, "Input test requires GrabDrop status feedback label.")
-	if selection == null or vehicle_manager == null or object_manager == null:
+	if (
+		grab_drop_controller == null
+		or grid_selection == null
+		or selection == null
+		or vehicle_manager == null
+		or object_manager == null
+	):
 		scene.queue_free()
 		await process_frame
 		_finish()
@@ -72,6 +88,42 @@ func _run() -> void:
 	if pile != null and ground_field != null:
 		_place_vehicle(arm, Vector2i(1, 3), VEHICLE_RUNTIME_STATE_SCRIPT.Facing.WEST)
 		var produced_before: int = pile.get_produced_count()
+
+		grab_drop_controller.refresh_interaction_preview()
+		_expect_true(
+			grab_drop_controller.is_interaction_preview_visible(),
+			"Selected Waiting arm should show GrabDrop preview before MoveTo mode."
+		)
+		var facing_before_move_mode: int = arm.runtime_state.facing
+		await _push_key(KEY_M)
+		_expect_true(grid_selection.is_live_target_mode(), "Viewport M should enter MoveTo target mode.")
+		grab_drop_controller.refresh_interaction_preview()
+		_expect_false(
+			grab_drop_controller.is_interaction_preview_visible(),
+			"GrabDrop preview must hide while MoveTo target mode is active."
+		)
+		await _push_key(KEY_C)
+		_expect_equal(
+			pile.get_produced_count(),
+			produced_before,
+			"Viewport C must not Grab while MoveTo target mode is active."
+		)
+		_expect_false(arm.runtime_state.arm_has_item, "MoveTo-mode C must preserve empty arm.")
+		await _push_key(KEY_A)
+		_expect_equal(
+			arm.runtime_state.facing,
+			facing_before_move_mode,
+			"Viewport A must not rotate arm while MoveTo target mode is active."
+		)
+		await _push_key(KEY_D)
+		_expect_equal(
+			arm.runtime_state.facing,
+			facing_before_move_mode,
+			"Viewport D must not rotate arm while MoveTo target mode is active."
+		)
+		await _push_key(KEY_M)
+		_expect_false(grid_selection.is_live_target_mode(), "Second Viewport M should exit MoveTo target mode.")
+
 		var modifier_cases: Array[Dictionary] = [
 			{"shift": true, "ctrl": false, "alt": false, "meta": false, "name": "Shift"},
 			{"shift": false, "ctrl": true, "alt": false, "meta": false, "name": "Ctrl"},
