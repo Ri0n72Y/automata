@@ -169,15 +169,14 @@ func get_standard_box_node() -> Scene01ItemReceiverNode:
 
 func _cache_static_item_interaction_interfaces() -> void:
 	_static_item_interaction_interfaces.clear()
-	for node in find_children("*", "", true, false):
-		if node.has_method("get_source_interface"):
-			var source = node.call("get_source_interface")
-			if source != null and not _static_item_interaction_interfaces.has(source):
-				_static_item_interaction_interfaces.append(source)
-		if node.has_method("get_receiver_interface"):
-			var receiver = node.call("get_receiver_interface")
-			if receiver != null and not _static_item_interaction_interfaces.has(receiver):
-				_static_item_interaction_interfaces.append(receiver)
+	if _block_pile_node != null:
+		var source := _block_pile_node.get_source_interface()
+		if source != null:
+			_static_item_interaction_interfaces.append(source)
+	if _standard_box_node != null:
+		var receiver := _standard_box_node.get_receiver_interface()
+		if receiver != null and not _static_item_interaction_interfaces.has(receiver):
+			_static_item_interaction_interfaces.append(receiver)
 
 
 func _get_interaction_cells(target: Variant) -> Array[Vector2i]:
