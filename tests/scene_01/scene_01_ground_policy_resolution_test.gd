@@ -176,10 +176,13 @@ func _test_runtime_grid_geometry_is_immutable(scene, object_manager) -> void:
 	if visual == null:
 		return
 
-	var previous_model = scene.get("grid_model")
+	var previous_model := scene.get("grid_model") as GRID_MODEL_SCRIPT
+	_expect_true(previous_model != null, "Runtime geometry fixture requires current GridModel.")
+	if previous_model == null:
+		return
 	var previous_visual_position: Vector3 = visual.position
-	var previous_cell_size: float = float(scene.get("grid_cell_size"))
-	var previous_origin: Vector3 = scene.get("grid_local_origin")
+	var previous_cell_size: float = previous_model.cell_size
+	var previous_origin: Vector3 = previous_model.local_origin
 	scene.set("grid_cell_size", previous_cell_size + 0.5)
 	scene.set("grid_local_origin", previous_origin + Vector3(0.25, 0.0, -0.25))
 	var initialized := bool(_call_with_expected_errors_suppressed(Callable(scene, "initialize_grid")))
