@@ -74,7 +74,7 @@ func _run() -> void:
 	var first_grab = controller.request_selected_grab_drop()
 	_expect_equal(first_grab.status, GRAB_DROP_RESULT_SCRIPT.Status.ACCEPTED, "Pile Grab should prepare first ground block.")
 	if not first_grab.is_success() or first_grab.item == null:
-		_finish_scene(scene)
+		await _finish_scene(scene)
 		return
 	var first_block = first_grab.item
 	if status_label != null:
@@ -119,7 +119,7 @@ func _run() -> void:
 	var second_grab = controller.request_selected_grab_drop()
 	_expect_equal(second_grab.status, GRAB_DROP_RESULT_SCRIPT.Status.ACCEPTED, "Pile should provide second block.")
 	if not second_grab.is_success() or second_grab.item == null:
-		_finish_scene(scene)
+		await _finish_scene(scene)
 		return
 	var second_block = second_grab.item
 	_place_vehicle(arm, ground_anchor, VEHICLE_RUNTIME_STATE_SCRIPT.Facing.NORTH)
@@ -162,7 +162,7 @@ func _run() -> void:
 	controller.refresh_interaction_preview()
 	_expect_false(controller.is_interaction_preview_visible(), "Cancelling selection should hide interaction preview.")
 
-	_finish_scene(scene)
+	await _finish_scene(scene)
 
 
 func _place_vehicle(vehicle, anchor: Vector2i, facing: int) -> void:
