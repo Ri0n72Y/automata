@@ -62,8 +62,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		var key_event := event as InputEventKey
 		if key_event.echo or _has_command_modifier(key_event) or _is_text_input_focused():
 			return
-		if _is_move_target_mode_active():
-			return
+	if _is_move_target_mode_active():
+		return
 	if event.is_action_pressed(GRAB_DROP_ACTION):
 		request_selected_grab_drop()
 		get_viewport().set_input_as_handled()
