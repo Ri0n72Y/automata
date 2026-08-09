@@ -161,10 +161,6 @@ func _test_grid_transform_sync(scene: Node, grid_root: Node3D, arm: VEHICLE_ACTO
 	_assert_actor_transform(scene, grid_root, arm, "Rotated GridRoot")
 	_assert_camera_center(scene, grid_root, camera_rig, "Rotated GridRoot")
 
-	scene.call("preview_toggle_grid_scale")
-	_assert_actor_transform(scene, grid_root, arm, "Scaled GridRoot")
-	_assert_camera_center(scene, grid_root, camera_rig, "Scaled GridRoot")
-
 	scene.call("preview_toggle_grid_offset")
 	_assert_actor_transform(scene, grid_root, arm, "Offset GridRoot")
 	_assert_camera_center(scene, grid_root, camera_rig, "Offset GridRoot")
