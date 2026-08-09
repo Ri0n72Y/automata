@@ -131,7 +131,7 @@ func resolve_target_for_vehicle(vehicle: VehicleActorScript) -> Variant:
 		return null
 	if candidates.size() == 1:
 		return candidates[0]
-	return _resolve_ground_target(vehicle, front_cells, all_interfaces)
+	return _resolve_ground_target(vehicle, all_interfaces)
 
 
 func get_forward_interaction_cells(vehicle: VehicleActorScript) -> Array[Vector2i]:
@@ -157,10 +157,20 @@ func get_forward_interaction_cells(vehicle: VehicleActorScript) -> Array[Vector2
 
 
 func get_primary_ground_interaction_cell(vehicle: VehicleActorScript) -> Vector2i:
-	var front_cells := get_forward_interaction_cells(vehicle)
-	if front_cells.is_empty():
+	if vehicle == null or vehicle.runtime_state == null or vehicle.definition == null:
 		return Vector2i(-1, -1)
-	return front_cells[0]
+	var anchor: Vector2i = vehicle.runtime_state.anchor_cell
+	var footprint: Vector2i = vehicle.definition.footprint
+	match vehicle.runtime_state.facing:
+		VehicleRuntimeStateScript.Facing.NORTH:
+			return anchor + Vector2i(0, -1)
+		VehicleRuntimeStateScript.Facing.EAST:
+			return anchor + Vector2i(footprint.x, 0)
+		VehicleRuntimeStateScript.Facing.SOUTH:
+			return anchor + Vector2i(footprint.x - 1, footprint.y)
+		VehicleRuntimeStateScript.Facing.WEST:
+			return anchor + Vector2i(-1, footprint.y - 1)
+	return Vector2i(-1, -1)
 
 
 func refresh_interaction_preview() -> void:
@@ -196,13 +206,12 @@ func get_interaction_preview_cells() -> Array[Vector2i]:
 
 func _resolve_ground_target(
 	vehicle: VehicleActorScript,
-	front_cells: Array[Vector2i],
 	all_interfaces: Array[Variant]
 ) -> ItemReceiverInterfaceScript:
-	if object_manager == null or front_cells.is_empty():
+	if object_manager == null:
 		return null
-	var cell := front_cells[0]
-	if not _is_legal_ground_cell(vehicle, cell, all_interfaces):
+	var cell := get_primary_ground_interaction_cell(vehicle)
+	if cell == Vector2i(-1, -1) or not _is_legal_ground_cell(vehicle, cell, all_interfaces):
 		return null
 	var ground_interface := object_manager.get_ground_cell_interface(cell) as ItemReceiverInterfaceScript
 	if ground_interface == null:
