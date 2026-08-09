@@ -1,4 +1,4 @@
-extends RefCounted
+extends Resource
 class_name GroundBlockField
 
 const GroundBlockCellInterfaceScript := preload("res://scripts/objects/ground_block_cell_interface.gd")
@@ -9,9 +9,33 @@ signal cell_changed(cell: Vector2i, previous_item: StandardBlockScript, current_
 
 var _items: Dictionary = {}
 var _interfaces: Dictionary = {}
+var _valid_cells: Dictionary = {}
+var _has_cell_policy: bool = false
+
+
+func configure_valid_cells(cells: Array[Vector2i]) -> void:
+	var next_valid_cells: Dictionary = {}
+	for cell in cells:
+		next_valid_cells[cell] = true
+	if _has_cell_policy and next_valid_cells == _valid_cells:
+		return
+	if _has_cell_policy:
+		reset()
+	_valid_cells = next_valid_cells
+	_has_cell_policy = true
+	for cell_variant in _interfaces.keys():
+		var cell: Vector2i = cell_variant
+		if not _valid_cells.has(cell):
+			_interfaces.erase(cell)
+
+
+func is_cell_allowed(cell: Vector2i) -> bool:
+	return not _has_cell_policy or _valid_cells.has(cell)
 
 
 func get_cell_interface(cell: Vector2i) -> GroundBlockCellInterfaceScript:
+	if not is_cell_allowed(cell):
+		return null
 	var existing := _interfaces.get(cell) as GroundBlockCellInterfaceScript
 	if existing != null:
 		return existing
@@ -23,10 +47,12 @@ func get_cell_interface(cell: Vector2i) -> GroundBlockCellInterfaceScript:
 
 
 func has_item(cell: Vector2i) -> bool:
-	return _items.has(cell)
+	return is_cell_allowed(cell) and _items.has(cell)
 
 
 func get_item(cell: Vector2i) -> StandardBlockScript:
+	if not is_cell_allowed(cell):
+		return null
 	return _items.get(cell) as StandardBlockScript
 
 
@@ -39,6 +65,8 @@ func get_occupied_cells() -> Array[Vector2i]:
 
 
 func put_item(cell: Vector2i, item: Variant) -> ItemTransferResultScript:
+	if not is_cell_allowed(cell):
+		return ItemTransferResultScript.rejected(ItemTransferResultScript.Status.INVALID_TARGET)
 	var block := item as StandardBlockScript
 	if block == null or not block.is_valid():
 		return ItemTransferResultScript.rejected(ItemTransferResultScript.Status.TYPE_MISMATCH)
@@ -52,6 +80,8 @@ func put_item(cell: Vector2i, item: Variant) -> ItemTransferResultScript:
 
 
 func take_item(cell: Vector2i) -> ItemTransferResultScript:
+	if not is_cell_allowed(cell):
+		return ItemTransferResultScript.rejected(ItemTransferResultScript.Status.INVALID_TARGET)
 	var block := get_item(cell)
 	if block == null:
 		return ItemTransferResultScript.rejected(ItemTransferResultScript.Status.EMPTY)
@@ -68,7 +98,7 @@ func take_item(cell: Vector2i) -> ItemTransferResultScript:
 func reset() -> void:
 	var occupied := get_occupied_cells()
 	for cell in occupied:
-		var block := get_item(cell)
+		var block := _items.get(cell) as StandardBlockScript
 		_items.erase(cell)
 		if block != null and block.is_claimed_by(self):
 			block.release_claim(self)
