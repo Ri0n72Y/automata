@@ -118,27 +118,7 @@ func rotate_selected_arm(direction: int) -> bool:
 
 
 func resolve_target_for_vehicle(vehicle: VehicleActorScript) -> Variant:
-	if vehicle == null or vehicle.runtime_state == null or vehicle.definition == null:
-		return null
-	var front_cells := get_forward_interaction_cells(vehicle)
-	if front_cells.is_empty():
-		return null
-	var all_interfaces := _collect_item_interaction_interfaces()
-	var candidates: Array[Variant] = []
-	for interaction_interface in all_interfaces:
-		if not _is_action_compatible(vehicle.runtime_state, interaction_interface):
-			continue
-		var interaction_cells := _get_interaction_cells(interaction_interface)
-		if interaction_cells.is_empty() or not _cells_overlap(front_cells, interaction_cells):
-			continue
-		if not candidates.has(interaction_interface):
-			candidates.append(interaction_interface)
-
-	if candidates.size() > 1:
-		return null
-	if candidates.size() == 1:
-		return candidates[0]
-	return _resolve_ground_target(vehicle, all_interfaces)
+	return _resolve_target_from_interfaces(vehicle, _collect_item_interaction_interfaces())
 
 
 func get_forward_interaction_cells(vehicle: VehicleActorScript) -> Array[Vector2i]:
@@ -185,7 +165,8 @@ func refresh_interaction_preview() -> void:
 	if not _can_preview(vehicle):
 		_hide_interaction_preview()
 		return
-	var target := resolve_target_for_vehicle(vehicle)
+	var all_interfaces := _collect_item_interaction_interfaces()
+	var target := _resolve_target_from_interfaces(vehicle, all_interfaces)
 	var cells := get_forward_interaction_cells(vehicle)
 	if target != null:
 		var target_cells := _get_interaction_cells(target)
@@ -196,11 +177,11 @@ func refresh_interaction_preview() -> void:
 		if not overlap.is_empty():
 			cells = overlap
 	else:
-		var all_interfaces := _collect_item_interaction_interfaces()
 		var ground_cell := get_primary_ground_interaction_cell(vehicle)
 		if (
 			ground_cell != Vector2i(-1, -1)
-			and _is_legal_ground_cell(vehicle, ground_cell, all_interfaces)
+			and object_manager != null
+			and object_manager.is_ground_cell_interactable(ground_cell)
 		):
 			cells = [ground_cell]
 	_preview_is_valid = target != null and _is_target_ready(vehicle.runtime_state, target)
@@ -219,43 +200,46 @@ func get_interaction_preview_cells() -> Array[Vector2i]:
 	return _preview_cells.duplicate()
 
 
-func _resolve_ground_target(
+func _resolve_target_from_interfaces(
 	vehicle: VehicleActorScript,
 	all_interfaces: Array[Variant]
-) -> ItemReceiverInterfaceScript:
-	if object_manager == null:
+) -> Variant:
+	if vehicle == null or vehicle.runtime_state == null or vehicle.definition == null:
+		return null
+	var front_cells := get_forward_interaction_cells(vehicle)
+	if front_cells.is_empty():
+		return null
+	var candidates: Array[Variant] = []
+	for interaction_interface in all_interfaces:
+		if not _is_action_compatible(vehicle.runtime_state, interaction_interface):
+			continue
+		var interaction_cells := _get_interaction_cells(interaction_interface)
+		if interaction_cells.is_empty() or not _cells_overlap(front_cells, interaction_cells):
+			continue
+		if not candidates.has(interaction_interface):
+			candidates.append(interaction_interface)
+	var ground_candidate := _get_ground_candidate(vehicle)
+	if ground_candidate != null and not candidates.has(ground_candidate):
+		candidates.append(ground_candidate)
+	if candidates.size() != 1:
+		return null
+	return candidates[0]
+
+
+func _get_ground_candidate(vehicle: VehicleActorScript) -> ItemReceiverInterfaceScript:
+	if object_manager == null or vehicle == null or vehicle.runtime_state == null:
 		return null
 	var cell := get_primary_ground_interaction_cell(vehicle)
-	if cell == Vector2i(-1, -1) or not _is_legal_ground_cell(vehicle, cell, all_interfaces):
+	if cell == Vector2i(-1, -1):
 		return null
 	var ground_interface := object_manager.get_ground_cell_interface(cell) as ItemReceiverInterfaceScript
 	if ground_interface == null:
 		return null
 	if not vehicle.runtime_state.arm_has_item and not ground_interface.can_take_item():
 		return null
+	if not _is_action_compatible(vehicle.runtime_state, ground_interface):
+		return null
 	return ground_interface
-
-
-func _is_legal_ground_cell(
-	vehicle: VehicleActorScript,
-	cell: Vector2i,
-	all_interfaces: Array[Variant]
-) -> bool:
-	if vehicle == null or vehicle.controller == null:
-		return false
-	if not vehicle.controller.has_method("is_grid_cell_walkable"):
-		return false
-	if not bool(vehicle.controller.call("is_grid_cell_walkable", cell)):
-		return false
-	for interaction_interface in all_interfaces:
-		if _get_interaction_cells(interaction_interface).has(cell):
-			return false
-	if vehicle_manager != null:
-		for vehicle_node in vehicle_manager.get_vehicles():
-			var actor := vehicle_node as VehicleActorScript
-			if actor != null and actor.get_occupied_cells().has(cell):
-				return false
-	return true
 
 
 func _collect_item_interaction_interfaces() -> Array[Variant]:
