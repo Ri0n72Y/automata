@@ -4,6 +4,7 @@ const SCENE_PATH := "res://scenes/scene_01/scene_01_basic_packing.tscn"
 const GRID_MODEL_SCRIPT := preload("res://scripts/grid/grid_model.gd")
 const GRAB_DROP_CONTROLLER_SCRIPT := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
 const GRAB_DROP_RESULT_SCRIPT := preload("res://scripts/vehicles/grab_drop_result.gd")
+const ITEM_TRANSFER_RESULT_SCRIPT := preload("res://scripts/objects/item_transfer_result.gd")
 const VEHICLE_MANAGER_SCRIPT := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const OBJECT_MANAGER_SCRIPT := preload("res://scripts/scene_01/scene_01_object_manager.gd")
 const VEHICLE_RUNTIME_STATE_SCRIPT := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
@@ -44,6 +45,7 @@ func _run() -> void:
 		return
 
 	_test_scene_adapter_legality(object_manager, vehicle_manager)
+	_test_cached_ground_interface_rechecks_dynamic_occupancy(object_manager, vehicle_manager)
 	_test_grid_policy_updates_immediately(scene, object_manager)
 	_test_ground_and_tray_ambiguity(scene, controller, object_manager, vehicle_manager)
 
@@ -68,6 +70,54 @@ func _test_scene_adapter_legality(object_manager, vehicle_manager) -> void:
 		object_manager.get_ground_cell_interface(Vector2i(4, 1)) != null,
 		"Ordinary walkable unoccupied cell should remain a legal ground target."
 	)
+
+
+func _test_cached_ground_interface_rechecks_dynamic_occupancy(object_manager, vehicle_manager) -> void:
+	var transport = vehicle_manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.TRANSPORT_VEHICLE_ID)
+	_expect_true(transport != null, "Cached-interface fixture requires transport vehicle.")
+	if transport == null or transport.runtime_state == null:
+		return
+	var field = object_manager.get_ground_block_field()
+	_expect_true(field != null, "Cached-interface fixture requires ground field.")
+	if field == null:
+		return
+	var cell := Vector2i(4, 1)
+	var cached_interface = object_manager.get_ground_cell_interface(cell)
+	_expect_true(cached_interface != null, "Cached-interface fixture requires legal ground before vehicle arrival.")
+	if cached_interface == null:
+		return
+	var block := STANDARD_BLOCK_SCRIPT.create()
+	_expect_true(cached_interface.put_item(block).is_success(), "Cached-interface fixture should place a ground block.")
+	var original_anchor: Vector2i = transport.runtime_state.anchor_cell
+	var original_facing: int = transport.runtime_state.facing
+	_place_vehicle(transport, cell, original_facing)
+
+	_expect_false(
+		cached_interface.can_take_item(),
+		"Cached ground interface must become non-interactable after a vehicle occupies its cell."
+	)
+	_expect_equal(
+		cached_interface.take_item().status,
+		ITEM_TRANSFER_RESULT_SCRIPT.Status.INVALID_TARGET,
+		"Cached ground interface must revalidate dynamic occupancy before take."
+	)
+	var rejected_block := STANDARD_BLOCK_SCRIPT.create()
+	_expect_equal(
+		field.put_item(cell, rejected_block).status,
+		ITEM_TRANSFER_RESULT_SCRIPT.Status.INVALID_TARGET,
+		"Raw GroundBlockField writes must also revalidate Scene dynamic occupancy."
+	)
+	_expect_false(rejected_block.is_claimed(), "Rejected raw Field write must not claim the block.")
+	_expect_true(field.get_item(cell) == block, "Dynamic occupancy rejection must preserve existing ground ownership.")
+
+	_place_vehicle(transport, original_anchor, original_facing)
+	_expect_true(cached_interface.can_take_item(), "Cached ground interface should recover after vehicle leaves.")
+	var recovered_take = cached_interface.take_item()
+	_expect_true(
+		recovered_take.is_success() and recovered_take.item == block,
+		"Recovered cached interface should return the exact original ground block."
+	)
+	_expect_false(block.is_claimed(), "Recovered take should release ground ownership.")
 
 
 func _test_grid_policy_updates_immediately(scene, object_manager) -> void:
