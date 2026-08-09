@@ -79,6 +79,12 @@ func initialize_grid() -> bool:
 		grid_model = model
 		return true
 
+	if grid_model != null and not _has_same_runtime_grid_geometry(grid_model, model):
+		push_error(
+			"Scene 01 runtime grid geometry is immutable; rebuild with the existing width, height, cell size, and local origin."
+		)
+		return false
+
 	var previous_model := grid_model
 	grid_model = model
 	var preparation: Scene01VehicleManagerScript.VehicleBatchPreparation
@@ -335,6 +341,20 @@ func _configure_grid_presentation() -> void:
 func _sync_ground_cell_policy() -> void:
 	if scene_object_manager != null:
 		scene_object_manager.refresh_ground_cell_policy()
+
+
+func _has_same_runtime_grid_geometry(
+	current_model: GridModelScript,
+	candidate_model: GridModelScript
+) -> bool:
+	if current_model == null or candidate_model == null:
+		return false
+	return (
+		current_model.width == candidate_model.width
+		and current_model.height == candidate_model.height
+		and is_equal_approx(current_model.cell_size, candidate_model.cell_size)
+		and current_model.local_origin.is_equal_approx(candidate_model.local_origin)
+	)
 
 
 func _refresh_camera_for_grid() -> void:
