@@ -12,9 +12,9 @@ var _interfaces: Dictionary = {}
 
 
 func get_cell_interface(cell: Vector2i) -> GroundBlockCellInterfaceScript:
-	var existing: Variant = _interfaces.get(cell)
-	if existing is GroundBlockCellInterfaceScript:
-		return existing as GroundBlockCellInterfaceScript
+	var existing := _interfaces.get(cell) as GroundBlockCellInterfaceScript
+	if existing != null:
+		return existing
 	var interaction := GroundBlockCellInterfaceScript.new()
 	if not interaction.configure(self, cell):
 		return null
@@ -27,8 +27,7 @@ func has_item(cell: Vector2i) -> bool:
 
 
 func get_item(cell: Vector2i) -> StandardBlockScript:
-	var item: Variant = _items.get(cell)
-	return item as StandardBlockScript
+	return _items.get(cell) as StandardBlockScript
 
 
 func get_occupied_cells() -> Array[Vector2i]:
@@ -40,8 +39,6 @@ func get_occupied_cells() -> Array[Vector2i]:
 
 
 func put_item(cell: Vector2i, item: Variant) -> ItemTransferResultScript:
-	if not item is StandardBlockScript:
-		return ItemTransferResultScript.rejected(ItemTransferResultScript.Status.TYPE_MISMATCH)
 	var block := item as StandardBlockScript
 	if block == null or not block.is_valid():
 		return ItemTransferResultScript.rejected(ItemTransferResultScript.Status.TYPE_MISMATCH)
