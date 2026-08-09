@@ -54,7 +54,7 @@ text = "▶"
 [node name="Instructions" type="Label" parent="RootControl/Panel/Margin/VBox"]
 visible = false
 layout_mode = 2
-text = "Select vehicle → M: enter Move command\nMove mouse: predict target and path\nLeft click: execute · M/Esc/right click: exit command\nArm selected → A/D: rotate facing · C: GrabDrop forward\nX: stop selected moving vehicle task\nEsc/right click again: clear vehicle selection\nEnter/Space do not execute movement or buttons\nQ/E: camera · Shift+Q/E: rotate GridRoot\nF/G: scale/offset · R: reset · Home: restore"
+text = "Select vehicle → M: enter Move command\nMove mouse: predict target and path\nLeft click: execute · M/Esc/right click: exit command\nArm selected → A/D: rotate facing · C: GrabDrop forward\nX: stop selected moving vehicle task\nEsc/right click again: clear vehicle selection\nEnter/Space do not execute movement or buttons\nQ/E: camera · Shift+Q/E: rotate GridRoot\nG: offset · R: reset · Home: restore"
 autowrap_mode = 2
 
 [node name="ScopeNote" type="Label" parent="RootControl/Panel/Margin/VBox"]
@@ -85,12 +85,6 @@ text = "Grid +90°"
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 8
-
-[node name="Scale" type="Button" parent="RootControl/Panel/Margin/VBox/TransformRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-text = "Toggle Scale"
 
 [node name="Offset" type="Button" parent="RootControl/Panel/Margin/VBox/TransformRow"]
 layout_mode = 2
@@ -126,7 +120,6 @@ modulate = Color(0.55, 0.88, 0.72, 1)
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/HeaderRow/CollapseButton" to="." method="_on_collapse_pressed"]
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/RotateRow/RotateLeft" to="." method="_on_rotate_left_pressed"]
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/RotateRow/RotateRight" to="." method="_on_rotate_right_pressed"]
-[connection signal="pressed" from="RootControl/Panel/Margin/VBox/TransformRow/Scale" to="." method="_on_scale_pressed"]
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/TransformRow/Offset" to="." method="_on_offset_pressed"]
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/ResetRow/Reset" to="." method="_on_reset_pressed"]
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/ResetRow/Restore" to="." method="_on_restore_pressed"]
