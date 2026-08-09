@@ -180,6 +180,14 @@ func set_tray_count(value: int) -> bool:
 	return _tray_state.replace_count_for_compatibility(value)
 
 
+func get_item_interaction_interfaces(interaction_cells: Array[Vector2i]) -> Array[Variant]:
+	var interfaces: Array[Variant] = []
+	if _tray_state != null:
+		_tray_state.set_interaction_cells(interaction_cells)
+		interfaces.append(_tray_state)
+	return interfaces
+
+
 func enqueue_command(command: Dictionary) -> void:
 	command_queue.append(command.duplicate(true))
 
