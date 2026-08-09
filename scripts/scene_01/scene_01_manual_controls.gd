@@ -1,6 +1,9 @@
 class_name Scene01ManualControls
 extends CanvasLayer
 
+const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.gd")
+const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
+
 const COLLAPSED_SIZE := Vector2(306.0, 52.0)
 const EXPANDED_SIZE := Vector2(422.0, 450.0)
 const BODY_PATHS := [
@@ -25,6 +28,7 @@ func _ready() -> void:
 	_disable_button_focus(panel)
 	set_collapsed(start_collapsed)
 	_update_status("Select vehicle, press M, then left-click a target")
+	call_deferred("_connect_grab_drop_feedback")
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
@@ -119,6 +123,75 @@ func _on_offset_pressed() -> void:
 func _on_restore_pressed() -> void:
 	_call_scene_action("preview_restore_grid_transform")
 	_update_status("GridRoot transform restored")
+
+
+func _connect_grab_drop_feedback() -> void:
+	var scene := get_tree().current_scene
+	if scene == null:
+		return
+	var controller := scene.get_node_or_null("SceneRoot/GridRoot/VehicleGrabDropController")
+	if controller == null:
+		return
+	var completed_callable := Callable(self, "_on_grab_drop_completed")
+	if controller.has_signal("grab_drop_completed") and not controller.is_connected(
+		"grab_drop_completed",
+		completed_callable
+	):
+		controller.connect("grab_drop_completed", completed_callable)
+	var facing_callable := Callable(self, "_on_arm_facing_changed")
+	if controller.has_signal("facing_changed") and not controller.is_connected(
+		"facing_changed",
+		facing_callable
+	):
+		controller.connect("facing_changed", facing_callable)
+
+
+func _on_grab_drop_completed(_vehicle_id: StringName, action: int, status: int) -> void:
+	var action_name := "Grab" if action == GrabDropResultScript.Action.GRAB else "Drop"
+	if action == GrabDropResultScript.Action.NONE:
+		action_name = "GrabDrop"
+	if status == GrabDropResultScript.Status.ACCEPTED:
+		_update_status("%s accepted" % action_name)
+		return
+	_update_status("%s rejected: %s" % [action_name, _grab_drop_status_text(status)])
+
+
+func _on_arm_facing_changed(_vehicle_id: StringName, facing: int) -> void:
+	var facing_name := "Unknown"
+	match facing:
+		VehicleRuntimeStateScript.Facing.NORTH:
+			facing_name = "North"
+		VehicleRuntimeStateScript.Facing.EAST:
+			facing_name = "East"
+		VehicleRuntimeStateScript.Facing.SOUTH:
+			facing_name = "South"
+		VehicleRuntimeStateScript.Facing.WEST:
+			facing_name = "West"
+	_update_status("Arm facing: %s" % facing_name)
+
+
+func _grab_drop_status_text(status: int) -> String:
+	match status:
+		GrabDropResultScript.Status.NO_CAPABILITY:
+			return "no capability"
+		GrabDropResultScript.Status.BUSY:
+			return "vehicle busy"
+		GrabDropResultScript.Status.NO_TARGET:
+			return "no compatible target"
+		GrabDropResultScript.Status.EMPTY:
+			return "source empty"
+		GrabDropResultScript.Status.FULL:
+			return "target full"
+		GrabDropResultScript.Status.TYPE_MISMATCH:
+			return "type mismatch"
+		GrabDropResultScript.Status.ALREADY_CONTAINED:
+			return "item already contained"
+		GrabDropResultScript.Status.GROUND_OCCUPIED:
+			return "ground occupied"
+		GrabDropResultScript.Status.OWNERSHIP_CONFLICT:
+			return "ownership conflict"
+		_:
+			return "invalid target"
 
 
 func _call_scene_action(method_name: StringName, args: Array = []) -> void:
