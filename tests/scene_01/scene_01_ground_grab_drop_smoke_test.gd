@@ -60,6 +60,7 @@ func _run() -> void:
 		_finish()
 		return
 	_expect_true(selection.select_vehicle(arm), "Ground test should select arm.")
+	_test_ground_socket_rotation_contract(controller, arm)
 
 	var pile = object_manager.get_block_pile()
 	var ground_field = object_manager.get_ground_block_field()
@@ -86,7 +87,7 @@ func _run() -> void:
 	_expect_equal(
 		controller.get_primary_ground_interaction_cell(arm),
 		ground_cell,
-		"North-facing arm should use stable first front cell as ground target."
+		"North-facing arm should use rotating front-left socket as ground target."
 	)
 	controller.refresh_interaction_preview()
 	_expect_true(controller.is_interaction_preview_visible(), "Loaded arm should show ground interaction preview.")
@@ -163,6 +164,23 @@ func _run() -> void:
 	_expect_false(controller.is_interaction_preview_visible(), "Cancelling selection should hide interaction preview.")
 
 	await _finish_scene(scene)
+
+
+func _test_ground_socket_rotation_contract(controller, arm) -> void:
+	var anchor := Vector2i(4, 3)
+	var cases: Array[Dictionary] = [
+		{"facing": VEHICLE_RUNTIME_STATE_SCRIPT.Facing.NORTH, "cell": Vector2i(4, 2), "name": "North"},
+		{"facing": VEHICLE_RUNTIME_STATE_SCRIPT.Facing.EAST, "cell": Vector2i(6, 3), "name": "East"},
+		{"facing": VEHICLE_RUNTIME_STATE_SCRIPT.Facing.SOUTH, "cell": Vector2i(5, 5), "name": "South"},
+		{"facing": VEHICLE_RUNTIME_STATE_SCRIPT.Facing.WEST, "cell": Vector2i(3, 4), "name": "West"},
+	]
+	for socket_case: Dictionary in cases:
+		_place_vehicle(arm, anchor, int(socket_case["facing"]))
+		_expect_equal(
+			controller.get_primary_ground_interaction_cell(arm),
+			socket_case["cell"],
+			"%s facing should rotate the same front-left ground socket." % String(socket_case["name"])
+		)
 
 
 func _place_vehicle(vehicle, anchor: Vector2i, facing: int) -> void:
