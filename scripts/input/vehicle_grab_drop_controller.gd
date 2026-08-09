@@ -9,6 +9,8 @@ const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definit
 const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 const GrabDropCommandScript := preload("res://scripts/vehicles/grab_drop_command.gd")
 const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.gd")
+const ItemSourceInterfaceScript := preload("res://scripts/objects/item_source_interface.gd")
+const ItemReceiverInterfaceScript := preload("res://scripts/objects/item_receiver_interface.gd")
 const VehicleSelectionControllerScript := preload("res://scripts/input/vehicle_selection_controller.gd")
 const Scene01VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const Scene01ObjectManagerScript := preload("res://scripts/scene_01/scene_01_object_manager.gd")
@@ -99,27 +101,14 @@ func resolve_target_for_vehicle(vehicle: VehicleActorScript) -> Variant:
 	if front_cells.is_empty():
 		return null
 	var candidates: Array[Variant] = []
-
-	if object_manager != null:
-		var pile_source = object_manager.get_block_pile_source()
-		if pile_source != null and _cells_overlap(front_cells, pile_source.get_interaction_cells()):
-			candidates.append(pile_source)
-		var box_receiver = object_manager.get_standard_box_receiver()
-		if box_receiver != null and _cells_overlap(front_cells, box_receiver.get_interaction_cells()):
-			candidates.append(box_receiver)
-
-	if vehicle_manager != null:
-		var transport := vehicle_manager.get_vehicle_by_id(
-			Scene01VehicleManagerScript.TRANSPORT_VEHICLE_ID
-		)
-		if (
-			transport != null
-			and transport != vehicle
-			and transport.runtime_state != null
-			and transport.runtime_state.tray_state != null
-			and _cells_overlap(front_cells, transport.get_occupied_cells())
-		):
-			candidates.append(transport.runtime_state.tray_state)
+	for interaction_interface in _collect_item_interaction_interfaces():
+		if not _is_action_compatible(vehicle.runtime_state, interaction_interface):
+			continue
+		var interaction_cells := _get_interaction_cells(interaction_interface)
+		if interaction_cells.is_empty() or not _cells_overlap(front_cells, interaction_cells):
+			continue
+		if not candidates.has(interaction_interface):
+			candidates.append(interaction_interface)
 
 	if candidates.size() != 1:
 		return null
@@ -146,6 +135,52 @@ func get_forward_interaction_cells(vehicle: VehicleActorScript) -> Array[Vector2
 			for offset_y in range(footprint.y):
 				result.append(anchor + Vector2i(-1, offset_y))
 	return result
+
+
+func _collect_item_interaction_interfaces() -> Array[Variant]:
+	var interfaces: Array[Variant] = []
+	if object_manager != null:
+		for interaction_interface in object_manager.get_item_interaction_interfaces():
+			if interaction_interface != null and not interfaces.has(interaction_interface):
+				interfaces.append(interaction_interface)
+	if vehicle_manager != null:
+		for vehicle_node in vehicle_manager.get_vehicles():
+			var actor := vehicle_node as VehicleActorScript
+			if actor == null or actor.runtime_state == null:
+				continue
+			for interaction_interface in actor.runtime_state.get_item_interaction_interfaces(
+				actor.get_occupied_cells()
+			):
+				if interaction_interface != null and not interfaces.has(interaction_interface):
+					interfaces.append(interaction_interface)
+	return interfaces
+
+
+func _is_action_compatible(runtime: VehicleRuntimeStateScript, target: Variant) -> bool:
+	if runtime == null:
+		return false
+	if runtime.arm_has_item:
+		var receiver := target as ItemReceiverInterfaceScript
+		return (
+			receiver != null
+			and runtime.carried_item != null
+			and receiver.accepts_item_type(runtime.carried_item.get_item_type())
+		)
+	var source := target as ItemSourceInterfaceScript
+	if source != null:
+		return true
+	var receiver := target as ItemReceiverInterfaceScript
+	return receiver != null and receiver.can_take_item()
+
+
+func _get_interaction_cells(target: Variant) -> Array[Vector2i]:
+	var source := target as ItemSourceInterfaceScript
+	if source != null:
+		return source.get_interaction_cells()
+	var receiver := target as ItemReceiverInterfaceScript
+	if receiver != null:
+		return receiver.get_interaction_cells()
+	return []
 
 
 func _get_selected_vehicle() -> VehicleActorScript:
