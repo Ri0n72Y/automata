@@ -18,6 +18,10 @@ const Scene01ObjectManagerScript := preload("res://scripts/scene_01/scene_01_obj
 const GRAB_DROP_ACTION := &"vehicle_grab_drop"
 const ROTATE_COUNTERCLOCKWISE_ACTION := &"vehicle_rotate_counterclockwise"
 const ROTATE_CLOCKWISE_ACTION := &"vehicle_rotate_clockwise"
+const PREVIEW_SLOT_PATHS: Array[NodePath] = [
+	NodePath("GrabDropInteractionPreview/Slot0"),
+	NodePath("GrabDropInteractionPreview/Slot1"),
+]
 
 @export var valid_interaction_color: Color = Color(0.2, 0.92, 0.38, 0.28)
 @export var invalid_interaction_color: Color = Color(1.0, 0.24, 0.18, 0.28)
@@ -34,6 +38,7 @@ var _preview_is_valid: bool = false
 
 
 func _ready() -> void:
+	_bind_static_preview_slots()
 	configure(
 		get_node_or_null("../VehicleSelectionController") as VehicleSelectionControllerScript,
 		get_node_or_null("../../RobotRoot/Scene01VehicleManager") as Scene01VehicleManagerScript,
@@ -323,7 +328,9 @@ func _show_interaction_preview(
 	cells: Array[Vector2i],
 	is_valid: bool
 ) -> void:
-	_ensure_preview_mesh_count(cells.size())
+	if cells.size() > _preview_meshes.size():
+		_hide_interaction_preview()
+		return
 	_preview_cells = cells.duplicate()
 	for index in range(_preview_meshes.size()):
 		var preview := _preview_meshes[index]
@@ -331,13 +338,15 @@ func _show_interaction_preview(
 			preview.visible = false
 			continue
 		var mesh := preview.mesh as BoxMesh
-		mesh.size = Vector3(
-			vehicle.cell_size * preview_scale,
-			0.015,
-			vehicle.cell_size * preview_scale
-		)
+		if mesh != null:
+			mesh.size = Vector3(
+				vehicle.cell_size * preview_scale,
+				0.015,
+				vehicle.cell_size * preview_scale
+			)
 		var material := preview.material_override as StandardMaterial3D
-		material.albedo_color = valid_interaction_color if is_valid else invalid_interaction_color
+		if material != null:
+			material.albedo_color = valid_interaction_color if is_valid else invalid_interaction_color
 		var world_position: Vector3 = vehicle.controller.call("grid_cell_to_world", cells[index])
 		preview.global_position = world_position + Vector3.UP * preview_height
 		preview.visible = true
@@ -350,21 +359,12 @@ func _hide_interaction_preview() -> void:
 		preview.visible = false
 
 
-func _ensure_preview_mesh_count(count: int) -> void:
-	while _preview_meshes.size() < count:
-		var preview := MeshInstance3D.new()
-		preview.name = "GrabDropInteractionPreview_%d" % _preview_meshes.size()
-		preview.top_level = true
-		preview.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		var mesh := BoxMesh.new()
-		preview.mesh = mesh
-		var material := StandardMaterial3D.new()
-		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		material.no_depth_test = false
-		preview.material_override = material
-		add_child(preview)
-		_preview_meshes.append(preview)
+func _bind_static_preview_slots() -> void:
+	_preview_meshes.clear()
+	for path in PREVIEW_SLOT_PATHS:
+		var preview := get_node_or_null(path) as MeshInstance3D
+		if preview != null:
+			_preview_meshes.append(preview)
 
 
 func _get_selected_vehicle() -> VehicleActorScript:
