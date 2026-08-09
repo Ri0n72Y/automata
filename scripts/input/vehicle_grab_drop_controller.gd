@@ -62,6 +62,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		var key_event := event as InputEventKey
 		if key_event.echo or _has_command_modifier(key_event) or _is_text_input_focused():
 			return
+		if _is_move_target_mode_active():
+			return
 	if event.is_action_pressed(GRAB_DROP_ACTION):
 		request_selected_grab_drop()
 		get_viewport().set_input_as_handled()
@@ -188,6 +190,14 @@ func refresh_interaction_preview() -> void:
 				overlap.append(cell)
 		if not overlap.is_empty():
 			cells = overlap
+	else:
+		var all_interfaces := _collect_item_interaction_interfaces()
+		var ground_cell := get_primary_ground_interaction_cell(vehicle)
+		if (
+			ground_cell != Vector2i(-1, -1)
+			and _is_legal_ground_cell(vehicle, ground_cell, all_interfaces)
+		):
+			cells = [ground_cell]
 	_preview_is_valid = target != null and _is_target_ready(vehicle.runtime_state, target)
 	_show_interaction_preview(vehicle, cells, _preview_is_valid)
 
@@ -379,9 +389,20 @@ func _can_preview(vehicle: VehicleActorScript) -> bool:
 		return false
 	if not vehicle.definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_GRAB):
 		return false
+	if _is_move_target_mode_active():
+		return false
 	return (
 		vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
 		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
+	)
+
+
+func _is_move_target_mode_active() -> bool:
+	var grid_selection := get_node_or_null("../GridSelectionController")
+	return (
+		grid_selection != null
+		and grid_selection.has_method("is_live_target_mode")
+		and bool(grid_selection.call("is_live_target_mode"))
 	)
 
 
