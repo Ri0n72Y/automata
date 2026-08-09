@@ -11,7 +11,11 @@ var _cell: Vector2i = Vector2i.ZERO
 func configure(field: Object, cell: Vector2i) -> bool:
 	if field == null:
 		return false
-	if not field.has_method("put_item") or not field.has_method("take_item"):
+	if (
+		not field.has_method("put_item")
+		or not field.has_method("take_item")
+		or not field.has_method("has_item")
+	):
 		return false
 	_field_ref = weakref(field)
 	_cell = cell
