@@ -19,10 +19,17 @@ func configure_valid_cells(cells: Array[Vector2i]) -> void:
 		next_valid_cells[cell] = true
 	if _has_cell_policy and next_valid_cells == _valid_cells:
 		return
-	if _has_cell_policy:
-		reset()
 	_valid_cells = next_valid_cells
 	_has_cell_policy = true
+	for cell_variant in get_occupied_cells():
+		var cell: Vector2i = cell_variant
+		if _valid_cells.has(cell):
+			continue
+		var block := _items.get(cell) as StandardBlockScript
+		_items.erase(cell)
+		if block != null and block.is_claimed_by(self):
+			block.release_claim(self)
+		cell_changed.emit(cell, block, null)
 	for cell_variant in _interfaces.keys():
 		var cell: Vector2i = cell_variant
 		if not _valid_cells.has(cell):
