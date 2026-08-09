@@ -5,8 +5,10 @@ const VEHICLE_RUNTIME_STATE_SCRIPT := preload("res://scripts/vehicles/vehicle_ru
 const MOVE_COMMAND_SCRIPT := preload("res://scripts/vehicles/move_command.gd")
 const GRAB_DROP_COMMAND_SCRIPT := preload("res://scripts/vehicles/grab_drop_command.gd")
 const GRAB_DROP_RESULT_SCRIPT := preload("res://scripts/vehicles/grab_drop_result.gd")
+const ITEM_TRANSFER_RESULT_SCRIPT := preload("res://scripts/objects/item_transfer_result.gd")
 const INFINITE_BLOCK_PILE_SCRIPT := preload("res://scripts/objects/infinite_block_pile.gd")
 const STANDARD_BOX_SCRIPT := preload("res://scripts/objects/standard_box.gd")
+const STANDARD_BLOCK_SCRIPT := preload("res://scripts/objects/standard_block.gd")
 
 var failures: int = 0
 
@@ -16,6 +18,8 @@ func _init() -> void:
 	_test_standard_box_is_drop_only()
 	_test_drop_failure_restores_arm_ownership()
 	_test_busy_and_capability_boundaries()
+	_test_cached_tray_respects_owner_motion_guard()
+	_test_explicit_rejection_status_contract()
 	_test_reset_and_compatibility_state()
 	_test_no_target_contract()
 
@@ -172,6 +176,93 @@ func _test_busy_and_capability_boundaries() -> void:
 		"Transport vehicle should reject GrabDrop without can_grab."
 	)
 	_expect_equal(pile.get_produced_count(), 0, "Capability rejection must not consume source.")
+
+
+func _test_cached_tray_respects_owner_motion_guard() -> void:
+	var arm := _make_arm_runtime()
+	var transport := _make_transport_runtime()
+	if arm == null or transport == null or transport.tray_state == null:
+		return
+	var command := GRAB_DROP_COMMAND_SCRIPT.new()
+	var cached_tray = transport.tray_state
+	var tray_block := STANDARD_BLOCK_SCRIPT.create()
+	_expect_true(cached_tray.put_item(tray_block).is_success(), "Cached-tray fixture should load one block while Waiting.")
+	_expect_equal(cached_tray.get_current_count(), 1, "Cached-tray fixture should start at 1/8.")
+
+	_expect_true(transport.begin_move_planning(), "Cached tray owner should enter Planning.")
+	_expect_false(cached_tray.can_take_item(), "Cached tray must become unavailable while owner is Planning.")
+	var planning_grab = command.execute(arm, cached_tray)
+	_expect_equal(
+		planning_grab.status,
+		GRAB_DROP_RESULT_SCRIPT.Status.INVALID_TARGET,
+		"Shared command must reject a cached tray while its owner is Planning."
+	)
+	_expect_equal(cached_tray.get_current_count(), 1, "Planning rejection must preserve cached tray inventory.")
+	_expect_true(tray_block.is_claimed_by(cached_tray), "Planning rejection must preserve tray ownership.")
+	_expect_false(arm.arm_has_item, "Planning target rejection must preserve empty arm.")
+
+	transport.clear_move_command()
+	_expect_true(cached_tray.can_take_item(), "Same cached tray should recover when owner returns to Waiting.")
+	var recovered_grab = command.execute(arm, cached_tray)
+	_expect_equal(recovered_grab.status, GRAB_DROP_RESULT_SCRIPT.Status.ACCEPTED, "Recovered cached tray should be grabbable.")
+	_expect_true(arm.carried_item == tray_block, "Recovered Grab should transfer the exact cached tray block.")
+	_expect_equal(cached_tray.get_current_count(), 0, "Recovered Grab should empty the tray.")
+
+	var move_command := MOVE_COMMAND_SCRIPT.new()
+	_expect_true(
+		move_command.configure(Vector2i(5, 3), [Vector2i(6, 3), Vector2i(5, 3)]),
+		"Cached-tray Moving fixture should configure."
+	)
+	_expect_true(transport.assign_move_command(move_command), "Cached tray owner should enter Moving.")
+	_expect_false(cached_tray.can_take_item(), "Cached tray must remain unavailable while owner is Moving.")
+	var moving_drop = command.execute(arm, cached_tray)
+	_expect_equal(
+		moving_drop.status,
+		GRAB_DROP_RESULT_SCRIPT.Status.INVALID_TARGET,
+		"Shared command must reject Drop to a cached tray while its owner is Moving."
+	)
+	_expect_true(arm.carried_item == tray_block, "Moving target rejection must restore exact arm cargo.")
+	_expect_true(tray_block.is_claimed_by(arm), "Moving target rejection must preserve arm ownership.")
+	_expect_equal(cached_tray.get_current_count(), 0, "Moving target rejection must preserve empty tray inventory.")
+
+	transport.clear_move_command()
+	var recovered_drop = command.execute(arm, cached_tray)
+	_expect_equal(recovered_drop.status, GRAB_DROP_RESULT_SCRIPT.Status.ACCEPTED, "Same cached tray should accept Drop after owner stops.")
+	_expect_true(cached_tray.contains_item(tray_block), "Recovered Drop should restore exact item to cached tray.")
+	_expect_false(arm.arm_has_item, "Recovered Drop should empty the arm.")
+
+
+func _test_explicit_rejection_status_contract() -> void:
+	var arm := _make_arm_runtime()
+	var transport := _make_transport_runtime()
+	if arm == null or transport == null or transport.tray_state == null:
+		return
+	var command := GRAB_DROP_COMMAND_SCRIPT.new()
+
+	var empty_grab = command.execute(arm, transport.tray_state)
+	_expect_equal(
+		empty_grab.status,
+		GRAB_DROP_RESULT_SCRIPT.Status.EMPTY,
+		"Empty compatible tray should surface source-empty through GrabDropCommand."
+	)
+	_expect_false(arm.arm_has_item, "Source-empty rejection must preserve empty arm.")
+	_expect_equal(transport.tray_count, 0, "Source-empty rejection must preserve tray count.")
+
+	_expect_equal(
+		command._map_transfer_status(ITEM_TRANSFER_RESULT_SCRIPT.Status.TYPE_MISMATCH),
+		GRAB_DROP_RESULT_SCRIPT.Status.TYPE_MISMATCH,
+		"GrabDropCommand should preserve type-mismatch result semantics."
+	)
+	_expect_equal(
+		command._map_transfer_status(ITEM_TRANSFER_RESULT_SCRIPT.Status.ALREADY_CONTAINED),
+		GRAB_DROP_RESULT_SCRIPT.Status.ALREADY_CONTAINED,
+		"GrabDropCommand should preserve duplicate-consumption result semantics."
+	)
+	_expect_equal(
+		command._map_transfer_status(ITEM_TRANSFER_RESULT_SCRIPT.Status.OCCUPIED),
+		GRAB_DROP_RESULT_SCRIPT.Status.GROUND_OCCUPIED,
+		"GrabDropCommand should map occupied receiver state to ground-occupied semantics."
+	)
 
 
 func _test_reset_and_compatibility_state() -> void:
