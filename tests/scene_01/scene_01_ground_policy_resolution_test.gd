@@ -47,6 +47,7 @@ func _run() -> void:
 	_test_scene_adapter_legality(object_manager, vehicle_manager)
 	_test_cached_ground_interface_rechecks_dynamic_occupancy(object_manager, vehicle_manager)
 	_test_grid_policy_updates_immediately(scene, object_manager)
+	_test_runtime_grid_geometry_is_immutable(scene, object_manager)
 	_test_ground_and_tray_ambiguity(scene, controller, object_manager, vehicle_manager)
 
 	await _finish_scene(scene)
@@ -158,6 +159,45 @@ func _test_grid_policy_updates_immediately(scene, object_manager) -> void:
 	)
 
 
+func _test_runtime_grid_geometry_is_immutable(scene, object_manager) -> void:
+	var field = object_manager.get_ground_block_field()
+	if field == null:
+		_expect_true(false, "Runtime geometry fixture requires ground field.")
+		return
+	var cell := Vector2i(4, 1)
+	var interaction = object_manager.get_ground_cell_interface(cell)
+	_expect_true(interaction != null, "Runtime geometry fixture requires legal ground cell.")
+	if interaction == null:
+		return
+	var block := STANDARD_BLOCK_SCRIPT.create()
+	_expect_true(interaction.put_item(block).is_success(), "Runtime geometry fixture should place one ground block.")
+	var visual := object_manager.get_ground_block_visual(cell)
+	_expect_true(visual != null, "Runtime geometry fixture should create an existing static block visual instance.")
+	if visual == null:
+		return
+
+	var previous_model = scene.get("grid_model")
+	var previous_visual_position: Vector3 = visual.position
+	var previous_cell_size: float = float(scene.get("grid_cell_size"))
+	var previous_origin: Vector3 = scene.get("grid_local_origin")
+	scene.set("grid_cell_size", previous_cell_size + 0.5)
+	scene.set("grid_local_origin", previous_origin + Vector3(0.25, 0.0, -0.25))
+	var initialized := bool(_call_with_expected_errors_suppressed(Callable(scene, "initialize_grid")))
+	_expect_false(
+		initialized,
+		"Scene01 should reject runtime grid geometry changes because static scene objects are authored for fixed geometry."
+	)
+	_expect_true(scene.get("grid_model") == previous_model, "Rejected geometry rebuild must preserve GridModel identity.")
+	_expect_true(field.get_item(cell) == block, "Rejected geometry rebuild must preserve ground block identity.")
+	_expect_true(block.is_claimed_by(field), "Rejected geometry rebuild must preserve ground ownership.")
+	_expect_true(object_manager.get_ground_block_visual(cell) == visual, "Rejected geometry rebuild must preserve visual identity.")
+	_expect_true(visual.position.is_equal_approx(previous_visual_position), "Rejected geometry rebuild must preserve visual position.")
+
+	scene.set("grid_cell_size", previous_cell_size)
+	scene.set("grid_local_origin", previous_origin)
+	field.reset()
+
+
 func _test_ground_and_tray_ambiguity(scene, controller, object_manager, vehicle_manager) -> void:
 	scene.call("reset_scene")
 	var arm = vehicle_manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.ARM_VEHICLE_ID)
@@ -210,6 +250,14 @@ func _test_ground_and_tray_ambiguity(scene, controller, object_manager, vehicle_
 	_expect_true(ground_block.is_claimed_by(object_manager.get_ground_block_field()), "Ambiguous rejection must preserve ground ownership.")
 	_expect_true(tray_block.is_claimed_by(transport.runtime_state.tray_state), "Ambiguous rejection must preserve tray ownership.")
 	_expect_false(arm.runtime_state.arm_has_item, "Ambiguous rejection must preserve empty arm state.")
+
+
+func _call_with_expected_errors_suppressed(callback: Callable) -> Variant:
+	var previous_print_error_messages := Engine.print_error_messages
+	Engine.print_error_messages = false
+	var result: Variant = callback.call()
+	Engine.print_error_messages = previous_print_error_messages
+	return result
 
 
 func _place_vehicle(vehicle, anchor: Vector2i, facing: int) -> void:
