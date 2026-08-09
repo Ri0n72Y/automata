@@ -110,6 +110,7 @@ func initialize_grid() -> bool:
 		grid_selection_controller.clear_hover()
 		grid_selection_controller.cancel_selection()
 	_configure_grid_presentation()
+	_sync_ground_cell_policy()
 	return true
 
 
@@ -189,6 +190,7 @@ func set_grid_cell_type(cell: Vector2i, cell_type: int) -> bool:
 		return false
 	if is_node_ready() and grid_tile_view != null:
 		grid_tile_view.draw(grid_model)
+	_sync_ground_cell_policy()
 	return true
 
 
@@ -300,6 +302,7 @@ func _configure_initial_grid_dependents() -> bool:
 	):
 		return false
 	_configure_grid_presentation()
+	_sync_ground_cell_policy()
 	return true
 
 
@@ -327,6 +330,11 @@ func _configure_grid_presentation() -> void:
 			grid_selection_controller,
 			scene_vehicle_manager
 		)
+
+
+func _sync_ground_cell_policy() -> void:
+	if scene_object_manager != null:
+		scene_object_manager.refresh_ground_cell_policy()
 
 
 func _refresh_camera_for_grid() -> void:
