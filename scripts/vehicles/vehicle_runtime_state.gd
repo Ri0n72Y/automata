@@ -94,6 +94,7 @@ func reset() -> void:
 	_clear_carried_item()
 	if _tray_state != null:
 		_tray_state.reset()
+		_tray_state.set_interaction_cells([])
 
 
 func begin_move_planning() -> bool:
@@ -101,6 +102,7 @@ func begin_move_planning() -> bool:
 		return false
 	if motion_state == MotionState.PLANNING or motion_state == MotionState.MOVING:
 		return false
+	_clear_item_interaction_cells()
 	motion_state = MotionState.PLANNING
 	return true
 
@@ -115,6 +117,7 @@ func assign_move_command(command: MoveCommandScript) -> bool:
 		return false
 	if _active_move_command != null:
 		return false
+	_clear_item_interaction_cells()
 	_active_move_command = command
 	motion_state = MotionState.MOVING
 	return true
@@ -183,6 +186,7 @@ func set_tray_count(value: int) -> bool:
 func get_item_interaction_interfaces(interaction_cells: Array[Vector2i]) -> Array[Variant]:
 	var interfaces: Array[Variant] = []
 	if motion_state == MotionState.PLANNING or motion_state == MotionState.MOVING:
+		_clear_item_interaction_cells()
 		return interfaces
 	if _tray_state != null:
 		_tray_state.set_interaction_cells(interaction_cells)
@@ -200,6 +204,11 @@ func get_effective_speed() -> float:
 	if arm_has_item:
 		return _definition.base_speed * _definition.carrying_speed_multiplier
 	return _definition.base_speed
+
+
+func _clear_item_interaction_cells() -> void:
+	if _tray_state != null:
+		_tray_state.set_interaction_cells([])
 
 
 func _clear_carried_item() -> void:
