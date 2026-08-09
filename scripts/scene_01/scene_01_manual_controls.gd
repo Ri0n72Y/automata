@@ -16,6 +16,10 @@ const BODY_PATHS := [
 ]
 
 @export var start_collapsed: bool = true
+@export var scene_controller_path: NodePath = NodePath("..")
+@export var grab_drop_controller_path: NodePath = NodePath(
+	"../SceneRoot/GridRoot/VehicleGrabDropController"
+)
 
 @onready var panel: PanelContainer = %Panel
 @onready var collapse_button: Button = %CollapseButton
@@ -126,10 +130,7 @@ func _on_restore_pressed() -> void:
 
 
 func _connect_grab_drop_feedback() -> void:
-	var scene := get_tree().current_scene
-	if scene == null:
-		return
-	var controller := scene.get_node_or_null("SceneRoot/GridRoot/VehicleGrabDropController")
+	var controller := _get_grab_drop_controller()
 	if controller == null:
 		return
 	var completed_callable := Callable(self, "_on_grab_drop_completed")
@@ -195,11 +196,23 @@ func _grab_drop_status_text(status: int) -> String:
 
 
 func _call_scene_action(method_name: StringName, args: Array = []) -> void:
-	var scene := get_tree().current_scene
-	if scene == null or not scene.has_method(method_name):
+	var scene_controller := _get_scene_controller()
+	if scene_controller == null or not scene_controller.has_method(method_name):
 		_update_status("Scene action unavailable: %s" % String(method_name))
 		return
-	scene.callv(method_name, args)
+	scene_controller.callv(method_name, args)
+
+
+func _get_scene_controller() -> Node:
+	if scene_controller_path.is_empty():
+		return null
+	return get_node_or_null(scene_controller_path)
+
+
+func _get_grab_drop_controller() -> Node:
+	if grab_drop_controller_path.is_empty():
+		return null
+	return get_node_or_null(grab_drop_controller_path)
 
 
 func _disable_button_focus(node: Node) -> void:
