@@ -60,7 +60,7 @@ autowrap_mode = 2
 [node name="ScopeNote" type="Label" parent="RootControl/Panel/Margin/VBox"]
 visible = false
 layout_mode = 2
-text = "M, X, A, D and C are Input Map actions.\nGrabDrop: green = executable, red = blocked/invalid.\nObjects use the full forward edge; ground uses the rotating front-left socket."
+text = "M, X, A, D and C are Input Map actions.\nGrabDrop: green = executable, red = blocked/invalid.\nObjects use the full forward edge; ground uses the rotating front-left socket.\nWhile M target mode is active, A/D/C and GrabDrop preview are disabled."
 autowrap_mode = 2
 modulate = Color(0.72, 0.8, 0.9, 1)
 
