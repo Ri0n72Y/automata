@@ -3,6 +3,8 @@ class_name Scene01ObjectManager
 
 const GroundBlockFieldScript := preload("res://scripts/objects/ground_block_field.gd")
 const StandardBlockScene := preload("res://scenes/scene_01/objects/standard_block_placeholder.tscn")
+const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
+const Scene01VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 
 signal box_count_changed(previous_count: int, current_count: int)
 signal pile_produced_count_changed(previous_count: int, current_count: int)
@@ -10,12 +12,14 @@ signal ground_block_changed(cell: Vector2i, has_item: bool)
 
 @export var ground_block_field: GroundBlockFieldScript
 @export var scene_controller_path: NodePath = NodePath("../../..")
+@export var vehicle_manager_path: NodePath = NodePath("../../RobotRoot/Scene01VehicleManager")
 
 @onready var _block_pile_node: Scene01ItemSourceNode = %InfiniteBlockPile
 @onready var _standard_box_node: Scene01ItemReceiverNode = %StandardBox
 @onready var _ground_visual_root: Node3D = %GroundBlockVisuals
 
 var _ground_visuals: Dictionary = {}
+var _static_item_interaction_interfaces: Array[Variant] = []
 
 
 func _ready() -> void:
@@ -37,6 +41,7 @@ func initialize_objects() -> bool:
 	var standard_box := _standard_box_node.get_receiver_interface() as StandardBox
 	if block_pile == null or standard_box == null:
 		return false
+	_cache_static_item_interaction_interfaces()
 	refresh_ground_cell_policy()
 	if not block_pile.produced_count_changed.is_connected(_on_pile_produced_count_changed):
 		block_pile.produced_count_changed.connect(_on_pile_produced_count_changed)
@@ -58,12 +63,21 @@ func refresh_ground_cell_policy() -> void:
 		"is_grid_cell_walkable"
 	):
 		return
+	if _static_item_interaction_interfaces.is_empty():
+		_cache_static_item_interaction_interfaces()
+	var static_blocked_cells: Dictionary = {}
+	for interaction_interface in _static_item_interaction_interfaces:
+		for interaction_cell in _get_interaction_cells(interaction_interface):
+			static_blocked_cells[interaction_cell] = true
 	var grid_size: Vector2i = scene_controller.call("get_grid_size")
 	var valid_cells: Array[Vector2i] = []
 	for y in range(grid_size.y):
 		for x in range(grid_size.x):
 			var cell := Vector2i(x, y)
-			if bool(scene_controller.call("is_grid_cell_walkable", cell)):
+			if (
+				bool(scene_controller.call("is_grid_cell_walkable", cell))
+				and not static_blocked_cells.has(cell)
+			):
 				valid_cells.append(cell)
 	ground_block_field.configure_valid_cells(valid_cells)
 
@@ -77,36 +91,36 @@ func reset_objects() -> void:
 
 
 func get_item_interaction_interfaces() -> Array[Variant]:
-	var interfaces: Array[Variant] = []
-	for node in find_children("*", "", true, false):
-		if node.has_method("get_source_interface"):
-			var source = node.call("get_source_interface")
-			if source != null and not interfaces.has(source):
-				interfaces.append(source)
-		if node.has_method("get_receiver_interface"):
-			var receiver = node.call("get_receiver_interface")
-			if receiver != null and not interfaces.has(receiver):
-				interfaces.append(receiver)
-	return interfaces
+	return _static_item_interaction_interfaces.duplicate()
 
 
 func get_ground_block_field() -> GroundBlockFieldScript:
-	refresh_ground_cell_policy()
 	return ground_block_field
 
 
+func is_ground_cell_interactable(cell: Vector2i) -> bool:
+	if ground_block_field == null or not ground_block_field.is_cell_allowed(cell):
+		return false
+	for interaction_interface in _static_item_interaction_interfaces:
+		if _get_interaction_cells(interaction_interface).has(cell):
+			return false
+	var vehicle_manager := _get_vehicle_manager()
+	if vehicle_manager != null:
+		for vehicle_node in vehicle_manager.get_vehicles():
+			var actor := vehicle_node as VehicleActorScript
+			if actor != null and actor.get_occupied_cells().has(cell):
+				return false
+	return true
+
+
 func get_ground_cell_interface(cell: Vector2i) -> ItemReceiverInterface:
-	if ground_block_field == null:
+	if ground_block_field == null or not is_ground_cell_interactable(cell):
 		return null
-	refresh_ground_cell_policy()
 	return ground_block_field.get_cell_interface(cell)
 
 
 func has_ground_block(cell: Vector2i) -> bool:
-	if ground_block_field == null:
-		return false
-	refresh_ground_cell_policy()
-	return ground_block_field.has_item(cell)
+	return ground_block_field != null and ground_block_field.has_item(cell)
 
 
 func get_ground_block_visual(cell: Vector2i) -> Node3D:
@@ -146,6 +160,30 @@ func get_block_pile_node() -> Scene01ItemSourceNode:
 
 func get_standard_box_node() -> Scene01ItemReceiverNode:
 	return _standard_box_node
+
+
+func _cache_static_item_interaction_interfaces() -> void:
+	_static_item_interaction_interfaces.clear()
+	for node in find_children("*", "", true, false):
+		if node.has_method("get_source_interface"):
+			var source = node.call("get_source_interface")
+			if source != null and not _static_item_interaction_interfaces.has(source):
+				_static_item_interaction_interfaces.append(source)
+		if node.has_method("get_receiver_interface"):
+			var receiver = node.call("get_receiver_interface")
+			if receiver != null and not _static_item_interaction_interfaces.has(receiver):
+				_static_item_interaction_interfaces.append(receiver)
+
+
+func _get_interaction_cells(target: Variant) -> Array[Vector2i]:
+	var source := target as ItemSourceInterface
+	if source != null:
+		return source.get_interaction_cells()
+	var receiver := target as ItemReceiverInterface
+	if receiver != null:
+		return receiver.get_interaction_cells()
+	var empty_cells: Array[Vector2i] = []
+	return empty_cells
 
 
 func _on_ground_cell_changed(
@@ -189,6 +227,12 @@ func _get_scene_controller() -> Node:
 	if scene_controller_path.is_empty():
 		return null
 	return get_node_or_null(scene_controller_path)
+
+
+func _get_vehicle_manager() -> Scene01VehicleManagerScript:
+	if vehicle_manager_path.is_empty():
+		return null
+	return get_node_or_null(vehicle_manager_path) as Scene01VehicleManagerScript
 
 
 func _on_box_count_changed(previous_count: int, current_count: int) -> void:
