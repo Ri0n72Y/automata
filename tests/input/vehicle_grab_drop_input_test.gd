@@ -66,12 +66,13 @@ func _run() -> void:
 	if pile != null:
 		_place_vehicle(arm, Vector2i(1, 3), VEHICLE_RUNTIME_STATE_SCRIPT.Facing.WEST)
 		var produced_before: int = pile.get_produced_count()
-		for modifiers in [
+		var modifier_cases: Array[Dictionary] = [
 			{"shift": true, "ctrl": false, "alt": false, "meta": false, "name": "Shift"},
 			{"shift": false, "ctrl": true, "alt": false, "meta": false, "name": "Ctrl"},
 			{"shift": false, "ctrl": false, "alt": true, "meta": false, "name": "Alt"},
 			{"shift": false, "ctrl": false, "alt": false, "meta": true, "name": "Meta"},
-		]:
+		]
+		for modifiers: Dictionary in modifier_cases:
 			await _push_key(
 				KEY_C,
 				bool(modifiers["shift"]),
