@@ -43,6 +43,8 @@ func initialize_objects() -> bool:
 	var standard_box := _standard_box_node.get_receiver_interface() as StandardBox
 	if block_pile == null or standard_box == null:
 		return false
+	if not ground_block_field.configure_access_guard(self, &"is_ground_cell_interactable"):
+		return false
 	_cache_static_item_interaction_interfaces()
 	refresh_ground_cell_policy()
 	if not ground_block_field.is_configured():
