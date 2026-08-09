@@ -34,7 +34,8 @@ func get_item(cell: Vector2i) -> StandardBlockScript:
 func get_occupied_cells() -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
 	for cell_variant in _items.keys():
-		cells.append(cell_variant as Vector2i)
+		var cell: Vector2i = cell_variant
+		cells.append(cell)
 	return cells
 
 
