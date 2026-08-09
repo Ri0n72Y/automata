@@ -36,8 +36,12 @@ func configure_valid_cells(cells: Array[Vector2i]) -> void:
 			_interfaces.erase(cell)
 
 
+func is_configured() -> bool:
+	return _has_cell_policy
+
+
 func is_cell_allowed(cell: Vector2i) -> bool:
-	return not _has_cell_policy or _valid_cells.has(cell)
+	return _has_cell_policy and _valid_cells.has(cell)
 
 
 func get_cell_interface(cell: Vector2i) -> GroundBlockCellInterfaceScript:
