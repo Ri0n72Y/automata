@@ -91,17 +91,22 @@ func get_item_interaction_interfaces() -> Array[Variant]:
 
 
 func get_ground_block_field() -> GroundBlockFieldScript:
+	refresh_ground_cell_policy()
 	return ground_block_field
 
 
 func get_ground_cell_interface(cell: Vector2i) -> ItemReceiverInterface:
 	if ground_block_field == null:
 		return null
+	refresh_ground_cell_policy()
 	return ground_block_field.get_cell_interface(cell)
 
 
 func has_ground_block(cell: Vector2i) -> bool:
-	return ground_block_field != null and ground_block_field.has_item(cell)
+	if ground_block_field == null:
+		return false
+	refresh_ground_cell_policy()
+	return ground_block_field.has_item(cell)
 
 
 func get_ground_block_visual(cell: Vector2i) -> Node3D:
