@@ -33,6 +33,8 @@ func initialize_objects() -> bool:
 		or _standard_box_node == null
 		or _ground_visual_root == null
 		or ground_block_field == null
+		or _get_scene_controller() == null
+		or _get_vehicle_manager() == null
 	):
 		return false
 	if not _block_pile_node.is_configured() or not _standard_box_node.is_configured():
@@ -43,6 +45,8 @@ func initialize_objects() -> bool:
 		return false
 	_cache_static_item_interaction_interfaces()
 	refresh_ground_cell_policy()
+	if not ground_block_field.is_configured():
+		return false
 	if not block_pile.produced_count_changed.is_connected(_on_pile_produced_count_changed):
 		block_pile.produced_count_changed.connect(_on_pile_produced_count_changed)
 	if not standard_box.count_changed.is_connected(_on_box_count_changed):
@@ -105,11 +109,12 @@ func is_ground_cell_interactable(cell: Vector2i) -> bool:
 		if _get_interaction_cells(interaction_interface).has(cell):
 			return false
 	var vehicle_manager := _get_vehicle_manager()
-	if vehicle_manager != null:
-		for vehicle_node in vehicle_manager.get_vehicles():
-			var actor := vehicle_node as VehicleActorScript
-			if actor != null and actor.get_occupied_cells().has(cell):
-				return false
+	if vehicle_manager == null:
+		return false
+	for vehicle_node in vehicle_manager.get_vehicles():
+		var actor := vehicle_node as VehicleActorScript
+		if actor != null and actor.get_occupied_cells().has(cell):
+			return false
 	return true
 
 
