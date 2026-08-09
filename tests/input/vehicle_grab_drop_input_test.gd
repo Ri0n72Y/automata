@@ -66,13 +66,28 @@ func _run() -> void:
 	if pile != null:
 		_place_vehicle(arm, Vector2i(1, 3), VEHICLE_RUNTIME_STATE_SCRIPT.Facing.WEST)
 		var produced_before: int = pile.get_produced_count()
-		await _push_key(KEY_C, true)
-		_expect_equal(
-			pile.get_produced_count(),
-			produced_before,
-			"Shift+C must not execute GrabDrop."
-		)
-		_expect_false(arm.runtime_state.arm_has_item, "Shift+C must preserve empty arm.")
+		for modifiers in [
+			{"shift": true, "ctrl": false, "alt": false, "meta": false, "name": "Shift"},
+			{"shift": false, "ctrl": true, "alt": false, "meta": false, "name": "Ctrl"},
+			{"shift": false, "ctrl": false, "alt": true, "meta": false, "name": "Alt"},
+			{"shift": false, "ctrl": false, "alt": false, "meta": true, "name": "Meta"},
+		]:
+			await _push_key(
+				KEY_C,
+				bool(modifiers["shift"]),
+				bool(modifiers["ctrl"]),
+				bool(modifiers["alt"]),
+				bool(modifiers["meta"])
+			)
+			_expect_equal(
+				pile.get_produced_count(),
+				produced_before,
+				"%s+C must not execute GrabDrop." % String(modifiers["name"])
+			)
+			_expect_false(
+				arm.runtime_state.arm_has_item,
+				"%s+C must preserve empty arm." % String(modifiers["name"])
+			)
 
 		await _push_key(KEY_C)
 		_expect_equal(
@@ -96,18 +111,34 @@ func _run() -> void:
 	_finish()
 
 
-func _push_key(keycode: int, shifted: bool = false) -> void:
-	root.push_input(_key_event(keycode, true, shifted))
+func _push_key(
+	keycode: int,
+	shifted: bool = false,
+	controlled: bool = false,
+	alted: bool = false,
+	metaed: bool = false
+) -> void:
+	root.push_input(_key_event(keycode, true, shifted, controlled, alted, metaed))
 	await process_frame
-	root.push_input(_key_event(keycode, false, shifted))
+	root.push_input(_key_event(keycode, false, shifted, controlled, alted, metaed))
 	await process_frame
 
 
-func _key_event(keycode: int, pressed: bool, shifted: bool = false) -> InputEventKey:
+func _key_event(
+	keycode: int,
+	pressed: bool,
+	shifted: bool = false,
+	controlled: bool = false,
+	alted: bool = false,
+	metaed: bool = false
+) -> InputEventKey:
 	var event := InputEventKey.new()
 	event.pressed = pressed
 	event.keycode = keycode
 	event.shift_pressed = shifted
+	event.ctrl_pressed = controlled
+	event.alt_pressed = alted
+	event.meta_pressed = metaed
 	return event
 
 
