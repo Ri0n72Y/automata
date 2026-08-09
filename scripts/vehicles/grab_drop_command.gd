@@ -93,7 +93,7 @@ func _take_from_target(target: Variant) -> ItemTransferResultScript:
 	if source != null:
 		return source.take_item()
 	var receiver := target as ItemReceiverInterfaceScript
-	if receiver != null:
+	if receiver != null and receiver.can_take_item():
 		return receiver.take_item()
 	return null
 
@@ -102,7 +102,7 @@ func _rollback_grab_target(target: Variant, block: StandardBlockScript) -> void:
 	if block == null:
 		return
 	var receiver := target as ItemReceiverInterfaceScript
-	if receiver != null and not block.is_claimed():
+	if receiver != null and receiver.can_take_item() and not block.is_claimed():
 		receiver.put_item(block)
 
 
