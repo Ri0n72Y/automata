@@ -171,7 +171,7 @@ func _test_runtime_grid_geometry_is_immutable(scene, object_manager) -> void:
 		return
 	var block := STANDARD_BLOCK_SCRIPT.create()
 	_expect_true(interaction.put_item(block).is_success(), "Runtime geometry fixture should place one ground block.")
-	var visual := object_manager.get_ground_block_visual(cell)
+	var visual: Node3D = object_manager.get_ground_block_visual(cell) as Node3D
 	_expect_true(visual != null, "Runtime geometry fixture should create an existing static block visual instance.")
 	if visual == null:
 		return
@@ -191,13 +191,12 @@ func _test_runtime_grid_geometry_is_immutable(scene, object_manager) -> void:
 		"Scene01 should reject runtime grid geometry changes because static scene objects are authored for fixed geometry."
 	)
 	_expect_true(scene.get("grid_model") == previous_model, "Rejected geometry rebuild must preserve GridModel identity.")
+	_expect_equal(scene.get("grid_cell_size"), previous_cell_size, "Rejected geometry rebuild must restore exported cell size.")
+	_expect_equal(scene.get("grid_local_origin"), previous_origin, "Rejected geometry rebuild must restore exported local origin.")
 	_expect_true(field.get_item(cell) == block, "Rejected geometry rebuild must preserve ground block identity.")
 	_expect_true(block.is_claimed_by(field), "Rejected geometry rebuild must preserve ground ownership.")
 	_expect_true(object_manager.get_ground_block_visual(cell) == visual, "Rejected geometry rebuild must preserve visual identity.")
 	_expect_true(visual.position.is_equal_approx(previous_visual_position), "Rejected geometry rebuild must preserve visual position.")
-
-	scene.set("grid_cell_size", previous_cell_size)
-	scene.set("grid_local_origin", previous_origin)
 	field.reset()
 
 
