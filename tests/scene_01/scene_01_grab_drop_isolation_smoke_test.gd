@@ -196,7 +196,7 @@ func _test_feedback_is_instance_local(controller, selection, vehicle_manager, fi
 	var second_before := second_status.text
 	var result = controller.request_selected_grab_drop()
 	_expect_true(result.is_success(), "First Scene01 Grab should succeed for feedback isolation.")
-	_expect_equal(first_status.text, "Grab accepted", "First Scene01 UI should receive its controller feedback.")
+	_expect_equal(first_status.text, "抓取成功", "First Scene01 player UI should receive localized controller feedback.")
 	_expect_equal(second_status.text, second_before, "Second Scene01 UI must not receive first controller feedback.")
 
 
