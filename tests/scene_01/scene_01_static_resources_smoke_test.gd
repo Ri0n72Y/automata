@@ -7,6 +7,7 @@ const ARM_SCENE: PackedScene = preload("res://scenes/scene_01/vehicles/arm_vehic
 const TRANSPORT_SCENE: PackedScene = preload("res://scenes/scene_01/vehicles/transport_vehicle_placeholder.tscn")
 const CAMERA_SCENE: PackedScene = preload("res://scenes/scene_01/components/scene_01_camera_lighting.tscn")
 const UI_SCENE: PackedScene = preload("res://scenes/scene_01/components/scene_01_manual_ui.tscn")
+const DEBUG_UI_SCENE: PackedScene = preload("res://scenes/scene_01/components/scene_01_debug_ui.tscn")
 const GRID_MODEL_SCRIPT := preload("res://scripts/grid/grid_model.gd")
 const VEHICLE_MANAGER_SCRIPT := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 
@@ -41,7 +42,12 @@ func _test_main_scene_structure() -> void:
 	_expect_node(scene, "SceneRoot/RobotRoot/Scene01VehicleManager/ArmVehicle", "Main scene should contain the static arm vehicle instance.")
 	_expect_node(scene, "SceneRoot/RobotRoot/Scene01VehicleManager/TransportVehicle", "Main scene should contain the static transport vehicle instance.")
 	_expect_node(scene, "SceneRoot/CameraRoot/Scene01CameraRig", "Main scene should instance static camera and lighting.")
-	_expect_node(scene, "UIRoot", "Main scene should instance the static manual UI.")
+	_expect_node(scene, "UIRoot", "Main scene should instance the player guide UI.")
+	_expect_node(scene, "DebugUIRoot", "Main scene should instance a separate debug UI.")
+	var debug_view := scene.get_node_or_null("SceneRoot/GridRoot/GridDebugView")
+	_expect_true(debug_view != null, "Main scene should contain GridDebugView.")
+	if debug_view != null:
+		_expect_false(bool(debug_view.get("show_coordinates")), "Grid coordinates should be hidden by default.")
 	scene.free()
 
 
@@ -110,6 +116,28 @@ func _test_vehicle_resources() -> void:
 	_expect_node(arm, "VisualRoot/WorkHead", "Arm vehicle should have a work head.")
 	_expect_node(arm, "VisualRoot/DirectionMarker", "Arm vehicle should expose its facing marker.")
 
+	var arm_beam := arm.get_node_or_null("VisualRoot/ArmBeam") as MeshInstance3D
+	var arm_head := arm.get_node_or_null("VisualRoot/WorkHead") as MeshInstance3D
+	var direction_marker := arm.get_node_or_null("VisualRoot/DirectionMarker") as MeshInstance3D
+	_expect_true(
+		arm_beam != null and arm_beam.position.z < 0.0 and absf(arm_beam.position.x) < 0.01,
+		"Arm beam should extend toward local -Z, matching logical NORTH."
+	)
+	_expect_true(
+		arm_head != null and arm_beam != null and arm_head.position.z < arm_beam.position.z,
+		"Arm work head should sit in front of the beam."
+	)
+	_expect_true(
+		direction_marker != null and direction_marker.position.z < 0.0,
+		"Direction marker should point along the same local -Z side as the arm."
+	)
+	if arm_head != null:
+		var head_mesh := arm_head.mesh as BoxMesh
+		_expect_true(
+			head_mesh != null and head_mesh.size.x > 1.0,
+			"Arm work head should span the two-cell front edge visually."
+		)
+
 	_expect_node(transport, "VisualRoot/Body", "Transport vehicle should have a chassis.")
 	_expect_node(transport, "VisualRoot/WheelFrontLeft", "Transport vehicle should have visible wheels.")
 	_expect_node(transport, "VisualRoot/Tray", "Transport vehicle should have a tray.")
@@ -154,11 +182,21 @@ func _test_camera_and_ui_resources() -> void:
 	_expect_node(camera_scene, "WorldEnvironment", "Static camera resource should include an environment.")
 	camera_scene.free()
 
-	var ui: Node = UI_SCENE.instantiate()
-	_expect_node(ui, "RootControl/Panel/Margin/VBox/RotateRow/RotateLeft", "Manual UI should expose rotation controls.")
-	_expect_node(ui, "RootControl/Panel/Margin/VBox/TransformRow/Offset", "Manual UI should expose offset controls.")
-	_expect_node(ui, "RootControl/Panel/Margin/VBox/ResetRow/Reset", "Manual UI should expose reset controls.")
-	ui.free()
+	var guide_ui: Node = UI_SCENE.instantiate()
+	_expect_node(guide_ui, "RootControl/Panel/Margin/VBox/Instructions", "Player guide should expose instructions.")
+	_expect_node(guide_ui, "RootControl/Panel/Margin/VBox/StatusLabel", "Player guide should expose gameplay feedback.")
+	_expect_true(
+		guide_ui.get_node_or_null("RootControl/Panel/Margin/VBox/RotateRow") == null,
+		"Player guide should not contain debug transform controls."
+	)
+	guide_ui.free()
+
+	var debug_ui: Node = DEBUG_UI_SCENE.instantiate()
+	_expect_node(debug_ui, "RootControl/Panel/Margin/VBox/CoordinatesRow/CoordinatesButton", "Debug UI should expose coordinate visibility control.")
+	_expect_node(debug_ui, "RootControl/Panel/Margin/VBox/RotateRow/RotateLeft", "Debug UI should expose rotation controls.")
+	_expect_node(debug_ui, "RootControl/Panel/Margin/VBox/TransformRow/Offset", "Debug UI should expose offset controls.")
+	_expect_node(debug_ui, "RootControl/Panel/Margin/VBox/ResetRow/Reset", "Debug UI should expose reset controls.")
+	debug_ui.free()
 
 
 func _test_showcase_scene() -> void:
