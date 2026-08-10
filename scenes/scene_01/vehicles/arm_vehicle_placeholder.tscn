@@ -43,10 +43,10 @@ radial_segments = 20
 size = Vector3(0.28, 0.92, 0.28)
 
 [sub_resource type="BoxMesh" id="BeamMesh"]
-size = Vector3(1.08, 0.18, 0.24)
+size = Vector3(0.24, 0.18, 1.08)
 
 [sub_resource type="BoxMesh" id="HeadMesh"]
-size = Vector3(0.3, 0.32, 0.34)
+size = Vector3(1.34, 0.32, 0.34)
 
 [sub_resource type="BoxMesh" id="MarkerMesh"]
 size = Vector3(0.46, 0.12, 0.22)
@@ -93,17 +93,17 @@ mesh = SubResource("WheelMesh")
 material_override = SubResource("WheelMaterial")
 
 [node name="ArmColumn" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(-0.18, 0.93, 0.06)
+position = Vector3(0, 0.93, 0.18)
 mesh = SubResource("ColumnMesh")
 material_override = SubResource("SupportMaterial")
 
 [node name="ArmBeam" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(0.28, 1.38, 0.06)
+position = Vector3(0, 1.38, -0.28)
 mesh = SubResource("BeamMesh")
 material_override = SubResource("WorkMaterial")
 
 [node name="WorkHead" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(0.88, 1.2, 0.06)
+position = Vector3(0, 1.2, -0.88)
 mesh = SubResource("HeadMesh")
 material_override = SubResource("SupportMaterial")
 
