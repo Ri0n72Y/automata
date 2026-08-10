@@ -161,23 +161,29 @@ func _run() -> void:
 			"Viewport C cargo should be owned by arm runtime."
 		)
 		if status_label != null:
-			_expect_equal(status_label.text, "Grab accepted", "Viewport C Grab should update manual feedback.")
+			_expect_equal(status_label.text, "抓取成功", "Viewport C Grab should update Chinese player feedback.")
 
 		var carried = arm.runtime_state.carried_item
 		var ground_cell := Vector2i(4, 1)
 		_place_vehicle(arm, Vector2i(4, 2), VEHICLE_RUNTIME_STATE_SCRIPT.Facing.NORTH)
+		grab_drop_controller.refresh_interaction_preview()
+		_expect_equal(
+			grab_drop_controller.get_interaction_preview_cells(),
+			[Vector2i(4, 1), Vector2i(5, 1)],
+			"Viewport flow should expose both front workspace cells."
+		)
 		await _push_key(KEY_C)
 		_expect_false(arm.runtime_state.arm_has_item, "Viewport C should Drop carried block to legal ground.")
 		_expect_true(ground_field.get_item(ground_cell) == carried, "Viewport ground Drop should preserve exact block identity.")
 		if status_label != null:
-			_expect_equal(status_label.text, "Drop accepted", "Viewport ground Drop should update manual feedback.")
+			_expect_equal(status_label.text, "放置成功", "Viewport ground Drop should update Chinese player feedback.")
 
 		await _push_key(KEY_C)
 		_expect_true(arm.runtime_state.carried_item == carried, "Second Viewport C should Grab same block from ground.")
 		_expect_true(carried.is_claimed_by(arm.runtime_state), "Ground re-Grab through Viewport should restore arm ownership.")
 		_expect_false(ground_field.has_item(ground_cell), "Ground cell should empty after Viewport re-Grab.")
 		if status_label != null:
-			_expect_equal(status_label.text, "Grab accepted", "Viewport ground Grab should update manual feedback.")
+			_expect_equal(status_label.text, "抓取成功", "Viewport ground Grab should update Chinese player feedback.")
 
 	scene.call("reset_scene")
 	await process_frame
