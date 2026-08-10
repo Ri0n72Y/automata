@@ -193,16 +193,20 @@ func _test_submission_boundaries(
 		"A new M command should re-arm after no-op."
 	)
 
+	var grid_size: Vector2i = scene.call("get_grid_size")
+	var footprint: Vector2i = arm.definition.footprint
+	var right_edge_anchor_x: int = grid_size.x - footprint.x
+	var top_edge_anchor_y: int = grid_size.y - footprint.y
 	var invalid_cases: Array[Dictionary] = [
 		{"name": "other vehicle occupancy", "target": transport.runtime_state.anchor_cell},
 		{"name": "left edge footprint", "target": Vector2i(0, 2)},
-		{"name": "right edge footprint", "target": Vector2i(10, 2)},
+		{"name": "right edge footprint", "target": Vector2i(right_edge_anchor_x, 2)},
 		{"name": "bottom edge footprint", "target": Vector2i(4, 0)},
-		{"name": "top edge footprint", "target": Vector2i(4, 6)},
+		{"name": "top edge footprint", "target": Vector2i(4, top_edge_anchor_y)},
 		{"name": "bottom-left corner footprint", "target": Vector2i(0, 0)},
-		{"name": "bottom-right corner footprint", "target": Vector2i(10, 0)},
-		{"name": "top-left corner footprint", "target": Vector2i(0, 6)},
-		{"name": "top-right corner footprint", "target": Vector2i(10, 6)},
+		{"name": "bottom-right corner footprint", "target": Vector2i(right_edge_anchor_x, 0)},
+		{"name": "top-left corner footprint", "target": Vector2i(0, top_edge_anchor_y)},
+		{"name": "top-right corner footprint", "target": Vector2i(right_edge_anchor_x, top_edge_anchor_y)},
 	]
 	for case in invalid_cases:
 		_select_anchor(scene, grid_selection, case["target"])
