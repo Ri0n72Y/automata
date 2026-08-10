@@ -31,7 +31,6 @@ func _run() -> void:
 		pre_ready_grid_root.add_child(ready_probe)
 
 	root.add_child(scene)
-	# SceneTree.process_frame is the Godot 4.x signal used to wait for _ready().
 	await process_frame
 
 	var grid_root := scene.get_node_or_null("SceneRoot/GridRoot") as Node3D
@@ -60,8 +59,8 @@ func _run() -> void:
 		)
 		_expect_equal(
 			debug_view.get_debug_label_count(),
-			96,
-			"Default 12 x 8 grid should create 96 debug labels."
+			160,
+			"Default 16 x 10 grid should create 160 debug labels."
 		)
 
 	if grid_root != null and grid_model != null:
@@ -107,7 +106,7 @@ func _run() -> void:
 		)
 		_expect_equal(
 			debug_view.get_debug_label_count(),
-			96,
+			160,
 			"Re-enabled drawing should restore the coordinate labels."
 		)
 
@@ -120,7 +119,7 @@ func _run() -> void:
 		)
 		_expect_equal(
 			debug_view.get_debug_label_count(),
-			96,
+			160,
 			"Repeated drawing should replace the active debug labels."
 		)
 		if debug_view.get_child_count() == 1:
