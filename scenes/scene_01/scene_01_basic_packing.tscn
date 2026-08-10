@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://scene01basicpacking"]
+[gd_scene load_steps=22 format=3 uid="uid://scene01basicpacking"]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_controller.gd" id="1_controller"]
 [ext_resource type="Script" path="res://scripts/grid/grid_debug_view.gd" id="2_grid_debug"]
@@ -19,6 +19,7 @@
 [ext_resource type="Script" path="res://scripts/objects/ground_block_field.gd" id="17_ground_field"]
 [ext_resource type="PackedScene" path="res://scenes/scene_01/components/grab_drop_interaction_preview.tscn" id="18_grab_drop_preview"]
 [ext_resource type="Script" path="res://scripts/input/vehicle_grab_drop_input_router.gd" id="19_grab_drop_input"]
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_static_grid_layout.gd" id="20_static_grid_layout"]
 
 [sub_resource type="Resource" id="Resource_ground_field"]
 resource_local_to_scene = true
@@ -34,6 +35,10 @@ unique_name_in_owner = true
 
 [node name="GridRoot" type="Node3D" parent="SceneRoot"]
 unique_name_in_owner = true
+
+[node name="StaticGridLayout" type="Node" parent="SceneRoot/GridRoot"]
+script = ExtResource("20_static_grid_layout")
+boundary_cells = Array[Vector2i]([Vector2i(11, 3), Vector2i(11, 4)])
 
 [node name="GridTileView" parent="SceneRoot/GridRoot" instance=ExtResource("3_static_field")]
 unique_name_in_owner = true
