@@ -3,6 +3,7 @@ class_name GrabDropCommand
 
 const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
 const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
+const GrabDropInteractionPolicyScript := preload("res://scripts/vehicles/grab_drop_interaction_policy.gd")
 const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.gd")
 const ItemSourceInterfaceScript := preload("res://scripts/objects/item_source_interface.gd")
 const ItemReceiverInterfaceScript := preload("res://scripts/objects/item_receiver_interface.gd")
@@ -29,11 +30,13 @@ func execute(runtime: VehicleRuntimeStateScript, target: Variant) -> GrabDropRes
 			GrabDropResultScript.Action.NONE,
 			GrabDropResultScript.Status.BUSY
 		)
-	if target == null:
-		return GrabDropResultScript.rejected(
-			GrabDropResultScript.Action.DROP if runtime.arm_has_item else GrabDropResultScript.Action.GRAB,
-			GrabDropResultScript.Status.NO_TARGET
-		)
+	var action := (
+		GrabDropResultScript.Action.DROP
+		if runtime.arm_has_item
+		else GrabDropResultScript.Action.GRAB
+	)
+	if target == null or not GrabDropInteractionPolicyScript.is_target_in_range(runtime, target):
+		return GrabDropResultScript.rejected(action, GrabDropResultScript.Status.NO_TARGET)
 	if runtime.arm_has_item:
 		return _execute_drop(runtime, target)
 	return _execute_grab(runtime, target)
