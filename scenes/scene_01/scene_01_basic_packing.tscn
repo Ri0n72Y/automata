@@ -110,6 +110,7 @@ position = Vector3(8, 0, 5)
 
 [node name="UIRoot" parent="." instance=ExtResource("9_manual_ui")]
 unique_name_in_owner = true
+scene_controller_path = NodePath("..")
 grab_drop_controller_path = NodePath("../SceneRoot/GridRoot/VehicleGrabDropController")
 
 [node name="DebugUIRoot" parent="." instance=ExtResource("20_debug_ui")]
