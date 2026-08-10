@@ -72,6 +72,8 @@ func initialize_grid() -> bool:
 		grid_cell_size,
 		grid_local_origin
 	):
+		if is_node_ready() and grid_model != null:
+			_restore_runtime_grid_geometry_exports()
 		push_error("Scene 01 grid configuration is invalid.")
 		return false
 
@@ -80,6 +82,7 @@ func initialize_grid() -> bool:
 		return true
 
 	if grid_model != null and not _has_same_runtime_grid_geometry(grid_model, model):
+		_restore_runtime_grid_geometry_exports()
 		push_error(
 			"Scene 01 runtime grid geometry is immutable; rebuild with the existing width, height, cell size, and local origin."
 		)
@@ -355,6 +358,15 @@ func _has_same_runtime_grid_geometry(
 		and is_equal_approx(current_model.cell_size, candidate_model.cell_size)
 		and current_model.local_origin.is_equal_approx(candidate_model.local_origin)
 	)
+
+
+func _restore_runtime_grid_geometry_exports() -> void:
+	if grid_model == null:
+		return
+	grid_width = grid_model.width
+	grid_height = grid_model.height
+	grid_cell_size = grid_model.cell_size
+	grid_local_origin = grid_model.local_origin
 
 
 func _refresh_camera_for_grid() -> void:
