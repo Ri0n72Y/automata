@@ -7,7 +7,7 @@
 [sub_resource type="Resource" id="Resource_box"]
 resource_local_to_scene = true
 script = ExtResource("2_resource")
-interaction_cells = Array[Vector2i]([Vector2i(15, 3), Vector2i(15, 4)])
+interaction_cells = Array[Vector2i]([Vector2i(11, 3), Vector2i(11, 4)])
 capacity = 8
 initial_count = 3
 
