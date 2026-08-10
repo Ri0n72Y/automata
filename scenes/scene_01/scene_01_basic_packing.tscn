@@ -98,7 +98,7 @@ position = Vector3(0.5, 0, 4)
 
 [node name="StandardBox" parent="SceneRoot/ObjectRoot/Scene01ObjectManager" instance=ExtResource("14_item_receiver")]
 unique_name_in_owner = true
-position = Vector3(15.5, 0, 4)
+position = Vector3(11.5, 0, 4)
 
 [node name="CameraRoot" type="Node3D" parent="SceneRoot"]
 unique_name_in_owner = true
