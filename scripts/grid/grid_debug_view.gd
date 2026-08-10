@@ -3,7 +3,7 @@ extends Node3D
 
 const GridModelScript := preload("res://scripts/grid/grid_model.gd")
 
-@export var show_coordinates: bool = true
+@export var show_coordinates: bool = false
 @export var label_height: float = 0.02
 @export var label_pixel_size: float = 0.01
 @export_range(1, 4096, 1) var max_debug_labels: int = 512
