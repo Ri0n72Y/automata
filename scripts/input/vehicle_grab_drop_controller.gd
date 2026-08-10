@@ -7,6 +7,7 @@ signal facing_changed(vehicle_id: StringName, facing: int)
 const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
 const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
 const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
+const GrabDropInteractionPolicyScript := preload("res://scripts/vehicles/grab_drop_interaction_policy.gd")
 const GrabDropCommandScript := preload("res://scripts/vehicles/grab_drop_command.gd")
 const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.gd")
 const ItemSourceInterfaceScript := preload("res://scripts/objects/item_source_interface.gd")
@@ -95,7 +96,7 @@ func request_selected_grab_drop() -> GrabDropResultScript:
 			missing_vehicle_result.status
 		)
 		return missing_vehicle_result
-	var target := resolve_target_for_vehicle(vehicle)
+	var target: Variant = resolve_target_for_vehicle(vehicle)
 	var result := _command.execute(vehicle.runtime_state, target)
 	vehicle.sync_from_state()
 	refresh_interaction_preview()
@@ -122,42 +123,16 @@ func resolve_target_for_vehicle(vehicle: VehicleActorScript) -> Variant:
 
 
 func get_forward_interaction_cells(vehicle: VehicleActorScript) -> Array[Vector2i]:
-	var result: Array[Vector2i] = []
-	if vehicle == null or vehicle.runtime_state == null or vehicle.definition == null:
-		return result
-	var anchor: Vector2i = vehicle.runtime_state.anchor_cell
-	var footprint: Vector2i = vehicle.definition.footprint
-	match vehicle.runtime_state.facing:
-		VehicleRuntimeStateScript.Facing.NORTH:
-			for offset_x in range(footprint.x):
-				result.append(anchor + Vector2i(offset_x, -1))
-		VehicleRuntimeStateScript.Facing.EAST:
-			for offset_y in range(footprint.y):
-				result.append(anchor + Vector2i(footprint.x, offset_y))
-		VehicleRuntimeStateScript.Facing.SOUTH:
-			for offset_x in range(footprint.x):
-				result.append(anchor + Vector2i(offset_x, footprint.y))
-		VehicleRuntimeStateScript.Facing.WEST:
-			for offset_y in range(footprint.y):
-				result.append(anchor + Vector2i(-1, offset_y))
-	return result
+	if vehicle == null:
+		var empty_cells: Array[Vector2i] = []
+		return empty_cells
+	return GrabDropInteractionPolicyScript.get_forward_interaction_cells(vehicle.runtime_state)
 
 
 func get_primary_ground_interaction_cell(vehicle: VehicleActorScript) -> Vector2i:
-	if vehicle == null or vehicle.runtime_state == null or vehicle.definition == null:
+	if vehicle == null:
 		return Vector2i(-1, -1)
-	var anchor: Vector2i = vehicle.runtime_state.anchor_cell
-	var footprint: Vector2i = vehicle.definition.footprint
-	match vehicle.runtime_state.facing:
-		VehicleRuntimeStateScript.Facing.NORTH:
-			return anchor + Vector2i(0, -1)
-		VehicleRuntimeStateScript.Facing.EAST:
-			return anchor + Vector2i(footprint.x, 0)
-		VehicleRuntimeStateScript.Facing.SOUTH:
-			return anchor + Vector2i(footprint.x - 1, footprint.y)
-		VehicleRuntimeStateScript.Facing.WEST:
-			return anchor + Vector2i(-1, footprint.y - 1)
-	return Vector2i(-1, -1)
+	return GrabDropInteractionPolicyScript.get_primary_interaction_cell(vehicle.runtime_state)
 
 
 func refresh_interaction_preview() -> void:
@@ -166,7 +141,7 @@ func refresh_interaction_preview() -> void:
 		_hide_interaction_preview()
 		return
 	var all_interfaces := _collect_item_interaction_interfaces()
-	var target := _resolve_target_from_interfaces(vehicle, all_interfaces)
+	var target: Variant = _resolve_target_from_interfaces(vehicle, all_interfaces)
 	var cells := get_forward_interaction_cells(vehicle)
 	if target != null:
 		var target_cells := _get_interaction_cells(target)
@@ -206,15 +181,14 @@ func _resolve_target_from_interfaces(
 ) -> Variant:
 	if vehicle == null or vehicle.runtime_state == null or vehicle.definition == null:
 		return null
-	var front_cells := get_forward_interaction_cells(vehicle)
-	if front_cells.is_empty():
-		return null
 	var candidates: Array[Variant] = []
 	for interaction_interface in all_interfaces:
 		if not _is_action_compatible(vehicle.runtime_state, interaction_interface):
 			continue
-		var interaction_cells := _get_interaction_cells(interaction_interface)
-		if interaction_cells.is_empty() or not _cells_overlap(front_cells, interaction_cells):
+		if not GrabDropInteractionPolicyScript.is_target_in_range(
+			vehicle.runtime_state,
+			interaction_interface
+		):
 			continue
 		if not candidates.has(interaction_interface):
 			candidates.append(interaction_interface)
@@ -238,6 +212,11 @@ func _get_ground_candidate(vehicle: VehicleActorScript) -> ItemReceiverInterface
 	if not vehicle.runtime_state.arm_has_item and not ground_interface.can_take_item():
 		return null
 	if not _is_action_compatible(vehicle.runtime_state, ground_interface):
+		return null
+	if not GrabDropInteractionPolicyScript.is_target_in_range(
+		vehicle.runtime_state,
+		ground_interface
+	):
 		return null
 	return ground_interface
 
@@ -297,14 +276,7 @@ func _is_target_ready(runtime: VehicleRuntimeStateScript, target: Variant) -> bo
 
 
 func _get_interaction_cells(target: Variant) -> Array[Vector2i]:
-	var source := target as ItemSourceInterfaceScript
-	if source != null:
-		return source.get_interaction_cells()
-	var receiver := target as ItemReceiverInterfaceScript
-	if receiver != null:
-		return receiver.get_interaction_cells()
-	var empty_cells: Array[Vector2i] = []
-	return empty_cells
+	return GrabDropInteractionPolicyScript.get_target_interaction_cells(target)
 
 
 func _show_interaction_preview(
@@ -388,13 +360,6 @@ func _is_move_target_mode_active() -> bool:
 		and grid_selection.has_method("is_live_target_mode")
 		and bool(grid_selection.call("is_live_target_mode"))
 	)
-
-
-func _cells_overlap(a: Array[Vector2i], b: Array[Vector2i]) -> bool:
-	for cell in a:
-		if b.has(cell):
-			return true
-	return false
 
 
 func _has_command_modifier(event: InputEventKey) -> bool:
