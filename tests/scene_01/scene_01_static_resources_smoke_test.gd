@@ -2,7 +2,7 @@ extends SceneTree
 
 const MAIN_SCENE: PackedScene = preload("res://scenes/scene_01/scene_01_basic_packing.tscn")
 const SHOWCASE_SCENE: PackedScene = preload("res://scenes/scene_01/scene_01_vehicle_showcase.tscn")
-const FIELD_SCENE: PackedScene = preload("res://scenes/scene_01/components/scene_01_field_12x8.tscn")
+const FIELD_SCENE: PackedScene = preload("res://scenes/scene_01/components/scene_01_field_16x10.tscn")
 const ARM_SCENE: PackedScene = preload("res://scenes/scene_01/vehicles/arm_vehicle_placeholder.tscn")
 const TRANSPORT_SCENE: PackedScene = preload("res://scenes/scene_01/vehicles/transport_vehicle_placeholder.tscn")
 const CAMERA_SCENE: PackedScene = preload("res://scenes/scene_01/components/scene_01_camera_lighting.tscn")
@@ -37,6 +37,7 @@ func _run() -> void:
 func _test_main_scene_structure() -> void:
 	var scene: Node = MAIN_SCENE.instantiate()
 	_expect_node(scene, "SceneRoot/GridRoot/GridTileView", "Main scene should instance the static field.")
+	_expect_node(scene, "SceneRoot/GridRoot/VehicleGrabDropInputRouter", "Main scene should contain the early GrabDrop input router.")
 	_expect_node(scene, "SceneRoot/RobotRoot/Scene01VehicleManager/ArmVehicle", "Main scene should contain the static arm vehicle instance.")
 	_expect_node(scene, "SceneRoot/RobotRoot/Scene01VehicleManager/TransportVehicle", "Main scene should contain the static transport vehicle instance.")
 	_expect_node(scene, "SceneRoot/CameraRoot/Scene01CameraRig", "Main scene should instance static camera and lighting.")
@@ -47,12 +48,12 @@ func _test_main_scene_structure() -> void:
 func _test_static_field() -> void:
 	var field: Node = FIELD_SCENE.instantiate()
 	var tile_count: int = 0
-	for cell_y in range(8):
-		for cell_x in range(12):
+	for cell_y in range(10):
+		for cell_x in range(16):
 			var tile_path := "Tiles/Row_%d/Tile_%d" % [cell_y, cell_x]
 			if field.get_node_or_null(tile_path) != null:
 				tile_count += 1
-	_expect_equal(tile_count, 96, "Static field should expose all 96 editor-visible tiles.")
+	_expect_equal(tile_count, 160, "Static field should expose all 160 editor-visible tiles.")
 	_expect_node(field, "Tiles/GroundBody/GroundShape", "Static field should include ground collision.")
 	field.free()
 
@@ -61,23 +62,23 @@ func _test_dynamic_field_fallback() -> void:
 	var field: Node = FIELD_SCENE.instantiate()
 	var static_model := GRID_MODEL_SCRIPT.new()
 	_expect_true(
-		static_model.configure(12, 8, 1.0, Vector3.ZERO),
+		static_model.configure(16, 10, 1.0, Vector3.ZERO),
 		"Default static-grid model should configure."
 	)
 	field.call("draw", static_model)
-	_expect_true(bool(field.call("is_using_static_scene")), "A 12 x 8 model should use static tiles.")
-	_expect_equal(int(field.call("get_tile_count")), 96, "Static mode should expose 96 tiles.")
+	_expect_true(bool(field.call("is_using_static_scene")), "A 16 x 10 model should use static tiles.")
+	_expect_equal(int(field.call("get_tile_count")), 160, "Static mode should expose 160 tiles.")
 
 	var large_model := GRID_MODEL_SCRIPT.new()
 	_expect_true(
-		large_model.configure(13, 8, 1.0, Vector3.ZERO),
-		"A 13 x 8 model should configure for dynamic fallback."
+		large_model.configure(17, 10, 1.0, Vector3.ZERO),
+		"A 17 x 10 model should configure for dynamic fallback."
 	)
 	field.call("draw", large_model)
-	_expect_true(bool(field.call("is_using_dynamic_scene")), "A 13 x 8 model should use dynamic fallback.")
-	_expect_equal(int(field.call("get_tile_count")), 104, "Dynamic fallback should expose every large-grid tile.")
+	_expect_true(bool(field.call("is_using_dynamic_scene")), "A 17 x 10 model should use dynamic fallback.")
+	_expect_equal(int(field.call("get_tile_count")), 170, "Dynamic fallback should expose every large-grid tile.")
 	_expect_true(
-		field.call("get_tile_node", Vector2i(12, 7)) != null,
+		field.call("get_tile_node", Vector2i(16, 9)) != null,
 		"Dynamic fallback queries should resolve cells outside the static capacity."
 	)
 
@@ -91,7 +92,7 @@ func _test_dynamic_field_fallback() -> void:
 		_expect_equal(active_ground.collision_layer, 1, "Dynamic ground should own the active ground collision layer.")
 
 	field.call("draw", static_model)
-	_expect_true(bool(field.call("is_using_static_scene")), "Returning to 12 x 8 should reactivate static tiles.")
+	_expect_true(bool(field.call("is_using_static_scene")), "Returning to 16 x 10 should reactivate static tiles.")
 	_expect_true(static_tiles != null and static_tiles.visible, "Static tiles should become visible again.")
 	_expect_true(static_ground != null and static_ground.collision_layer == 1, "Static ground collision should be restored.")
 	_expect_true(field.call("get_ground_body") == static_ground, "Static queries should return the restored static ground body.")
