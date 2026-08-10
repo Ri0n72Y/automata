@@ -4,11 +4,14 @@ const VEHICLE_DEFINITION_SCRIPT := preload("res://scripts/vehicles/vehicle_defin
 const VEHICLE_RUNTIME_STATE_SCRIPT := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 const MOVE_COMMAND_SCRIPT := preload("res://scripts/vehicles/move_command.gd")
 const GRAB_DROP_COMMAND_SCRIPT := preload("res://scripts/vehicles/grab_drop_command.gd")
+const GRAB_DROP_INTERACTION_POLICY_SCRIPT := preload("res://scripts/vehicles/grab_drop_interaction_policy.gd")
 const GRAB_DROP_RESULT_SCRIPT := preload("res://scripts/vehicles/grab_drop_result.gd")
 const ITEM_TRANSFER_RESULT_SCRIPT := preload("res://scripts/objects/item_transfer_result.gd")
 const INFINITE_BLOCK_PILE_SCRIPT := preload("res://scripts/objects/infinite_block_pile.gd")
 const STANDARD_BOX_SCRIPT := preload("res://scripts/objects/standard_box.gd")
 const STANDARD_BLOCK_SCRIPT := preload("res://scripts/objects/standard_block.gd")
+const GROUND_BLOCK_FIELD_SCRIPT := preload("res://scripts/objects/ground_block_field.gd")
+const REJECTING_RECEIVER_SCRIPT := preload("res://tests/fixtures/rejecting_item_receiver.gd")
 
 var failures: int = 0
 
@@ -19,6 +22,7 @@ func _init() -> void:
 	_test_drop_failure_restores_arm_ownership()
 	_test_busy_and_capability_boundaries()
 	_test_cached_tray_respects_owner_motion_guard()
+	_test_spatial_target_revalidation()
 	_test_explicit_rejection_status_contract()
 	_test_reset_and_compatibility_state()
 	_test_no_target_contract()
@@ -38,6 +42,8 @@ func _test_infinite_pile_to_arm_to_tray_round_trip() -> void:
 		return
 	var pile := INFINITE_BLOCK_PILE_SCRIPT.new()
 	var command := GRAB_DROP_COMMAND_SCRIPT.new()
+	_bind_target_to_primary_front(arm, pile)
+	_refresh_tray_target_cells(arm, transport)
 	_expect_true(transport.tray_state.can_take_item(), "Transport tray must advertise take capability.")
 
 	var grab = command.execute(arm, pile)
@@ -78,6 +84,7 @@ func _test_infinite_pile_to_arm_to_tray_round_trip() -> void:
 	box.capacity = 8
 	box.initial_count = 0
 	box.reset()
+	_bind_target_to_primary_front(arm, box)
 	var box_drop = command.execute(arm, box)
 	_expect_equal(box_drop.status, GRAB_DROP_RESULT_SCRIPT.Status.ACCEPTED, "Box drop should succeed.")
 	if not box_drop.is_success() or box_drop.item == null:
@@ -85,7 +92,7 @@ func _test_infinite_pile_to_arm_to_tray_round_trip() -> void:
 		return
 	_expect_equal(box.get_current_count(), 1, "Box should contain the dropped block.")
 	_expect_true(box.contains_item(box_drop.item), "Box should own the exact round-trip block.")
-	_expect_equal(box_drop.item.get_block_id(), block_id, "Box transfer should preserve block identity.")
+	_expect_equal(box_drop.item.get_block_id(), block_id, "Box transfer should preserve StandardBlock identity.")
 
 
 func _test_standard_box_is_drop_only() -> void:
@@ -96,6 +103,7 @@ func _test_standard_box_is_drop_only() -> void:
 	box.capacity = 8
 	box.initial_count = 3
 	box.reset()
+	_bind_target_to_primary_front(arm, box)
 	var initial_count: int = box.get_current_count()
 	var command := GRAB_DROP_COMMAND_SCRIPT.new()
 
@@ -116,6 +124,7 @@ func _test_drop_failure_restores_arm_ownership() -> void:
 		return
 	var pile := INFINITE_BLOCK_PILE_SCRIPT.new()
 	var command := GRAB_DROP_COMMAND_SCRIPT.new()
+	_bind_target_to_primary_front(arm, pile)
 	var grab = command.execute(arm, pile)
 	if not grab.is_success() or arm.carried_item == null:
 		_expect_true(false, "Failure fixture requires one carried block.")
@@ -125,6 +134,7 @@ func _test_drop_failure_restores_arm_ownership() -> void:
 	full_box.capacity = 1
 	full_box.initial_count = 1
 	full_box.reset()
+	_bind_target_to_primary_front(arm, full_box)
 	var original_count := full_box.get_current_count()
 
 	var failed_drop = command.execute(arm, full_box)
@@ -185,6 +195,7 @@ func _test_cached_tray_respects_owner_motion_guard() -> void:
 		return
 	var command := GRAB_DROP_COMMAND_SCRIPT.new()
 	var cached_tray = transport.tray_state
+	_refresh_tray_target_cells(arm, transport)
 	var tray_block := STANDARD_BLOCK_SCRIPT.create()
 	_expect_true(cached_tray.put_item(tray_block).is_success(), "Cached-tray fixture should load one block while Waiting.")
 	_expect_equal(cached_tray.get_current_count(), 1, "Cached-tray fixture should start at 1/8.")
@@ -194,15 +205,22 @@ func _test_cached_tray_respects_owner_motion_guard() -> void:
 	var planning_grab = command.execute(arm, cached_tray)
 	_expect_equal(
 		planning_grab.status,
-		GRAB_DROP_RESULT_SCRIPT.Status.INVALID_TARGET,
-		"Shared command must reject a cached tray while its owner is Planning."
+		GRAB_DROP_RESULT_SCRIPT.Status.NO_TARGET,
+		"Shared command must reject a cached tray with cleared interaction cells while its owner is Planning."
 	)
 	_expect_equal(cached_tray.get_current_count(), 1, "Planning rejection must preserve cached tray inventory.")
 	_expect_true(tray_block.is_claimed_by(cached_tray), "Planning rejection must preserve tray ownership.")
 	_expect_false(arm.arm_has_item, "Planning target rejection must preserve empty arm.")
 
 	transport.clear_move_command()
-	_expect_true(cached_tray.can_take_item(), "Same cached tray should recover when owner returns to Waiting.")
+	var stale_waiting_grab = command.execute(arm, cached_tray)
+	_expect_equal(
+		stale_waiting_grab.status,
+		GRAB_DROP_RESULT_SCRIPT.Status.NO_TARGET,
+		"A stopped tray must remain non-interactable until its current cells are republished."
+	)
+	_refresh_tray_target_cells(arm, transport)
+	_expect_true(cached_tray.can_take_item(), "Republished cached tray should recover while owner is Waiting.")
 	var recovered_grab = command.execute(arm, cached_tray)
 	_expect_equal(recovered_grab.status, GRAB_DROP_RESULT_SCRIPT.Status.ACCEPTED, "Recovered cached tray should be grabbable.")
 	_expect_true(arm.carried_item == tray_block, "Recovered Grab should transfer the exact cached tray block.")
@@ -218,18 +236,87 @@ func _test_cached_tray_respects_owner_motion_guard() -> void:
 	var moving_drop = command.execute(arm, cached_tray)
 	_expect_equal(
 		moving_drop.status,
-		GRAB_DROP_RESULT_SCRIPT.Status.INVALID_TARGET,
-		"Shared command must reject Drop to a cached tray while its owner is Moving."
+		GRAB_DROP_RESULT_SCRIPT.Status.NO_TARGET,
+		"Shared command must reject Drop to a cached tray with cleared cells while its owner is Moving."
 	)
-	_expect_true(arm.carried_item == tray_block, "Moving target rejection must restore exact arm cargo.")
+	_expect_true(arm.carried_item == tray_block, "Moving target rejection must preserve exact arm cargo.")
 	_expect_true(tray_block.is_claimed_by(arm), "Moving target rejection must preserve arm ownership.")
 	_expect_equal(cached_tray.get_current_count(), 0, "Moving target rejection must preserve empty tray inventory.")
 
 	transport.clear_move_command()
+	var stale_waiting_drop = command.execute(arm, cached_tray)
+	_expect_equal(
+		stale_waiting_drop.status,
+		GRAB_DROP_RESULT_SCRIPT.Status.NO_TARGET,
+		"Stopped cached tray must not regain stale spatial reach without registry refresh."
+	)
+	_refresh_tray_target_cells(arm, transport)
 	var recovered_drop = command.execute(arm, cached_tray)
-	_expect_equal(recovered_drop.status, GRAB_DROP_RESULT_SCRIPT.Status.ACCEPTED, "Same cached tray should accept Drop after owner stops.")
+	_expect_equal(recovered_drop.status, GRAB_DROP_RESULT_SCRIPT.Status.ACCEPTED, "Republished cached tray should accept Drop after owner stops.")
 	_expect_true(cached_tray.contains_item(tray_block), "Recovered Drop should restore exact item to cached tray.")
 	_expect_false(arm.arm_has_item, "Recovered Drop should empty the arm.")
+
+
+func _test_spatial_target_revalidation() -> void:
+	var arm := _make_arm_runtime()
+	if arm == null:
+		return
+	var command := GRAB_DROP_COMMAND_SCRIPT.new()
+	var pile := INFINITE_BLOCK_PILE_SCRIPT.new()
+	_bind_target_to_primary_front(arm, pile)
+	var original_target_cell := GRAB_DROP_INTERACTION_POLICY_SCRIPT.get_primary_interaction_cell(arm)
+	arm.anchor_cell = Vector2i(5, 5)
+	var remote_grab = command.execute(arm, pile)
+	_expect_equal(
+		remote_grab.status,
+		GRAB_DROP_RESULT_SCRIPT.Status.NO_TARGET,
+		"Shared command must reject a cached source after the arm moves away."
+	)
+	_expect_equal(pile.get_produced_count(), 0, "Remote Grab rejection must not consume the source.")
+	_expect_false(arm.arm_has_item, "Remote Grab rejection must preserve empty arm state.")
+
+	_bind_target_to_primary_front(arm, pile)
+	var local_grab = command.execute(arm, pile)
+	_expect_equal(local_grab.status, GRAB_DROP_RESULT_SCRIPT.Status.ACCEPTED, "Retargeted source should become reachable again.")
+	if not local_grab.is_success() or arm.carried_item == null:
+		return
+	var carried = arm.carried_item
+	var box := STANDARD_BOX_SCRIPT.new()
+	box.capacity = 8
+	box.initial_count = 0
+	box.reset()
+	var stale_box_cells: Array[Vector2i] = [original_target_cell]
+	box.set_interaction_cells(stale_box_cells)
+	var remote_drop = command.execute(arm, box)
+	_expect_equal(
+		remote_drop.status,
+		GRAB_DROP_RESULT_SCRIPT.Status.NO_TARGET,
+		"Shared command must reject a receiver that is no longer on the current forward edge."
+	)
+	_expect_true(arm.carried_item == carried, "Remote Drop rejection must preserve exact cargo.")
+	_expect_true(carried.is_claimed_by(arm), "Remote Drop rejection must preserve arm ownership.")
+	_expect_equal(box.get_current_count(), 0, "Remote Drop rejection must not mutate receiver inventory.")
+
+	var field := GROUND_BLOCK_FIELD_SCRIPT.new()
+	var forward_cells := GRAB_DROP_INTERACTION_POLICY_SCRIPT.get_forward_interaction_cells(arm)
+	if forward_cells.size() < 2:
+		_expect_true(false, "Ground primary-socket fixture requires a 2-cell forward edge.")
+		return
+	var secondary_cell: Vector2i = forward_cells[1]
+	var valid_cells: Array[Vector2i] = [secondary_cell]
+	field.configure_valid_cells(valid_cells)
+	var secondary_ground = field.get_cell_interface(secondary_cell)
+	_expect_true(secondary_ground != null, "Ground primary-socket fixture requires a legal secondary ground interface.")
+	if secondary_ground == null:
+		return
+	var secondary_drop = command.execute(arm, secondary_ground)
+	_expect_equal(
+		secondary_drop.status,
+		GRAB_DROP_RESULT_SCRIPT.Status.NO_TARGET,
+		"Ground receiver must require the primary/front-left socket even when another forward cell overlaps."
+	)
+	_expect_true(arm.carried_item == carried, "Secondary ground rejection must preserve exact cargo.")
+	_expect_false(field.has_item(secondary_cell), "Secondary ground rejection must not place cargo.")
 
 
 func _test_explicit_rejection_status_contract() -> void:
@@ -238,6 +325,7 @@ func _test_explicit_rejection_status_contract() -> void:
 	if arm == null or transport == null or transport.tray_state == null:
 		return
 	var command := GRAB_DROP_COMMAND_SCRIPT.new()
+	_refresh_tray_target_cells(arm, transport)
 
 	var empty_grab = command.execute(arm, transport.tray_state)
 	_expect_equal(
@@ -248,21 +336,49 @@ func _test_explicit_rejection_status_contract() -> void:
 	_expect_false(arm.arm_has_item, "Source-empty rejection must preserve empty arm.")
 	_expect_equal(transport.tray_count, 0, "Source-empty rejection must preserve tray count.")
 
-	_expect_equal(
-		command._map_transfer_status(ITEM_TRANSFER_RESULT_SCRIPT.Status.TYPE_MISMATCH),
+	var carried := STANDARD_BLOCK_SCRIPT.create()
+	_expect_true(arm.claim_carried_item(carried), "Explicit rejection fixture requires one arm-owned block.")
+	_assert_rejecting_drop_status(
+		arm,
+		command,
+		ITEM_TRANSFER_RESULT_SCRIPT.Status.TYPE_MISMATCH,
 		GRAB_DROP_RESULT_SCRIPT.Status.TYPE_MISMATCH,
-		"GrabDropCommand should preserve type-mismatch result semantics."
+		"Type mismatch"
 	)
-	_expect_equal(
-		command._map_transfer_status(ITEM_TRANSFER_RESULT_SCRIPT.Status.ALREADY_CONTAINED),
+	_assert_rejecting_drop_status(
+		arm,
+		command,
+		ITEM_TRANSFER_RESULT_SCRIPT.Status.ALREADY_CONTAINED,
 		GRAB_DROP_RESULT_SCRIPT.Status.ALREADY_CONTAINED,
-		"GrabDropCommand should preserve duplicate-consumption result semantics."
+		"Duplicate consumption"
 	)
-	_expect_equal(
-		command._map_transfer_status(ITEM_TRANSFER_RESULT_SCRIPT.Status.OCCUPIED),
+	_assert_rejecting_drop_status(
+		arm,
+		command,
+		ITEM_TRANSFER_RESULT_SCRIPT.Status.OCCUPIED,
 		GRAB_DROP_RESULT_SCRIPT.Status.GROUND_OCCUPIED,
-		"GrabDropCommand should map occupied receiver state to ground-occupied semantics."
+		"Occupied receiver"
 	)
+
+
+func _assert_rejecting_drop_status(
+	arm: VEHICLE_RUNTIME_STATE_SCRIPT,
+	command: GRAB_DROP_COMMAND_SCRIPT,
+	transfer_status: int,
+	expected_status: int,
+	context: String
+) -> void:
+	var receiver := REJECTING_RECEIVER_SCRIPT.new()
+	var cells: Array[Vector2i] = [
+		GRAB_DROP_INTERACTION_POLICY_SCRIPT.get_primary_interaction_cell(arm),
+	]
+	_expect_true(receiver.configure_rejection(transfer_status, cells), "%s fixture should configure." % context)
+	var carried = arm.carried_item
+	var result = command.execute(arm, receiver)
+	_expect_equal(result.status, expected_status, "%s should preserve GrabDrop result semantics." % context)
+	_expect_equal(receiver.put_attempts, 1, "%s should execute exactly one receiver transaction." % context)
+	_expect_true(arm.carried_item == carried, "%s rejection must restore exact arm cargo." % context)
+	_expect_true(carried != null and carried.is_claimed_by(arm), "%s rejection must restore arm ownership." % context)
 
 
 func _test_reset_and_compatibility_state() -> void:
@@ -283,6 +399,7 @@ func _test_reset_and_compatibility_state() -> void:
 
 	var pile := INFINITE_BLOCK_PILE_SCRIPT.new()
 	var command := GRAB_DROP_COMMAND_SCRIPT.new()
+	_bind_target_to_primary_front(arm, pile)
 	var grab = command.execute(arm, pile)
 	if not grab.is_success() or arm.carried_item == null:
 		_expect_true(false, "Reset fixture requires one carried block.")
@@ -307,6 +424,27 @@ func _test_no_target_contract() -> void:
 	_expect_equal(loaded_arm.status, GRAB_DROP_RESULT_SCRIPT.Status.NO_TARGET, "Loaded arm should report no Drop target.")
 	_expect_equal(loaded_arm.action, GRAB_DROP_RESULT_SCRIPT.Action.DROP, "Loaded arm no-target action should be Drop.")
 	_expect_true(arm.arm_has_item, "No-target Drop rejection should preserve cargo.")
+
+
+func _bind_target_to_primary_front(runtime: VEHICLE_RUNTIME_STATE_SCRIPT, target: Object) -> void:
+	if runtime == null or target == null or not target.has_method("set_interaction_cells"):
+		return
+	var cells: Array[Vector2i] = [
+		GRAB_DROP_INTERACTION_POLICY_SCRIPT.get_primary_interaction_cell(runtime),
+	]
+	target.call("set_interaction_cells", cells)
+
+
+func _refresh_tray_target_cells(
+	arm: VEHICLE_RUNTIME_STATE_SCRIPT,
+	transport: VEHICLE_RUNTIME_STATE_SCRIPT
+) -> void:
+	if arm == null or transport == null:
+		return
+	var cells: Array[Vector2i] = [
+		GRAB_DROP_INTERACTION_POLICY_SCRIPT.get_primary_interaction_cell(arm),
+	]
+	transport.get_item_interaction_interfaces(cells)
 
 
 func _make_arm_runtime() -> VEHICLE_RUNTIME_STATE_SCRIPT:
