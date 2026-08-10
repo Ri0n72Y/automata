@@ -61,11 +61,13 @@ func _on_coordinates_pressed() -> void:
 	if debug_view == null or scene_controller == null:
 		_update_status("无法访问场地坐标调试视图")
 		return
-	debug_view.show_coordinates = not debug_view.show_coordinates
+	var coordinates_visible := bool(debug_view.get("show_coordinates"))
+	debug_view.set("show_coordinates", not coordinates_visible)
 	var grid_model: Variant = scene_controller.get("grid_model")
 	debug_view.call("draw", grid_model)
 	_sync_coordinates_button()
-	_update_status("场地坐标已%s" % ("显示" if debug_view.show_coordinates else "隐藏"))
+	var current_visibility := bool(debug_view.get("show_coordinates"))
+	_update_status("场地坐标已%s" % ("显示" if current_visibility else "隐藏"))
 
 
 func _on_rotate_left_pressed() -> void:
