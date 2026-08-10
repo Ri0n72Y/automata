@@ -143,22 +143,6 @@ func refresh_interaction_preview() -> void:
 	var all_interfaces := _collect_item_interaction_interfaces()
 	var target: Variant = _resolve_target_from_interfaces(vehicle, all_interfaces)
 	var cells := get_forward_interaction_cells(vehicle)
-	if target != null:
-		var target_cells := _get_interaction_cells(target)
-		var overlap: Array[Vector2i] = []
-		for cell in cells:
-			if target_cells.has(cell):
-				overlap.append(cell)
-		if not overlap.is_empty():
-			cells = overlap
-	else:
-		var ground_cell := get_primary_ground_interaction_cell(vehicle)
-		if (
-			ground_cell != Vector2i(-1, -1)
-			and object_manager != null
-			and object_manager.is_ground_cell_interactable(ground_cell)
-		):
-			cells = [ground_cell]
 	_preview_is_valid = target != null and _is_target_ready(vehicle.runtime_state, target)
 	_show_interaction_preview(vehicle, cells, _preview_is_valid)
 
@@ -203,22 +187,56 @@ func _resolve_target_from_interfaces(
 func _get_ground_candidate(vehicle: VehicleActorScript) -> ItemReceiverInterfaceScript:
 	if object_manager == null or vehicle == null or vehicle.runtime_state == null:
 		return null
-	var cell := get_primary_ground_interaction_cell(vehicle)
-	if cell == Vector2i(-1, -1):
+	if vehicle.runtime_state.arm_has_item:
+		for cell in _ordered_ground_cells(vehicle):
+			var receiver := _ground_interface_for_cell(cell)
+			if receiver == null:
+				continue
+			if not _is_action_compatible(vehicle.runtime_state, receiver):
+				continue
+			if not _is_target_ready(vehicle.runtime_state, receiver):
+				continue
+			if not GrabDropInteractionPolicyScript.is_target_in_range(
+				vehicle.runtime_state,
+				receiver
+			):
+				continue
+			return receiver
 		return null
-	var ground_interface := object_manager.get_ground_cell_interface(cell) as ItemReceiverInterfaceScript
-	if ground_interface == null:
+
+	var occupied_candidates: Array[Variant] = []
+	for cell in get_forward_interaction_cells(vehicle):
+		var source_receiver := _ground_interface_for_cell(cell)
+		if source_receiver == null or not source_receiver.can_take_item():
+			continue
+		if not _is_action_compatible(vehicle.runtime_state, source_receiver):
+			continue
+		if not GrabDropInteractionPolicyScript.is_target_in_range(
+			vehicle.runtime_state,
+			source_receiver
+		):
+			continue
+		occupied_candidates.append(source_receiver)
+	if occupied_candidates.size() != 1:
 		return null
-	if not vehicle.runtime_state.arm_has_item and not ground_interface.can_take_item():
+	return occupied_candidates[0] as ItemReceiverInterfaceScript
+
+
+func _ordered_ground_cells(vehicle: VehicleActorScript) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	var primary := get_primary_ground_interaction_cell(vehicle)
+	if primary != Vector2i(-1, -1):
+		result.append(primary)
+	for cell in get_forward_interaction_cells(vehicle):
+		if not result.has(cell):
+			result.append(cell)
+	return result
+
+
+func _ground_interface_for_cell(cell: Vector2i) -> ItemReceiverInterfaceScript:
+	if object_manager == null:
 		return null
-	if not _is_action_compatible(vehicle.runtime_state, ground_interface):
-		return null
-	if not GrabDropInteractionPolicyScript.is_target_in_range(
-		vehicle.runtime_state,
-		ground_interface
-	):
-		return null
-	return ground_interface
+	return object_manager.get_ground_cell_interface(cell) as ItemReceiverInterfaceScript
 
 
 func _collect_item_interaction_interfaces() -> Array[Variant]:
