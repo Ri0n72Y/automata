@@ -5,6 +5,7 @@ const LifecycleStateScript := preload("res://scripts/scene_01/scene_01_lifecycle
 var failures: int = 0
 var state_transitions: Array[Vector2i] = []
 var speed_transitions: Array[Vector2] = []
+var event_sequence: Array[Dictionary] = []
 
 
 func _init() -> void:
@@ -34,26 +35,73 @@ func _run() -> void:
 	_expect_false(lifecycle.set_simulation_speed(3.0), "Unsupported speed should be rejected.")
 	_expect_equal(lifecycle.get_simulation_speed(), 1.0, "Rejected speed should not mutate state.")
 
-	lifecycle.set_simulation_speed(4.0)
-	lifecycle.pause()
+	_expect_true(lifecycle.set_simulation_speed(4.0), "4x should be accepted before reset ordering test.")
+	_expect_true(lifecycle.pause(), "RUNNING should pause before reset ordering test.")
+	event_sequence.clear()
 	lifecycle.reset()
 	_expect_equal(lifecycle.get_state(), LifecycleStateScript.State.READY, "Reset should return READY.")
 	_expect_equal(lifecycle.get_simulation_speed(), 1.0, "Reset should restore 1x.")
+	_expect_equal(
+		event_sequence,
+		[
+			{"kind": "speed", "previous": 4.0, "current": 1.0},
+			{
+				"kind": "state",
+				"previous": LifecycleStateScript.State.PAUSED,
+				"current": LifecycleStateScript.State.READY,
+			},
+		],
+		"Reset should publish speed restoration before READY state transition."
+	)
 	lifecycle.reset()
 	_expect_equal(lifecycle.get_state(), LifecycleStateScript.State.READY, "Repeated reset should remain READY.")
 	_expect_equal(lifecycle.get_simulation_speed(), 1.0, "Repeated reset should remain 1x.")
+	_expect_equal(
+		event_sequence.size(),
+		2,
+		"Repeated reset in READY + 1x should not publish duplicate state or speed transitions."
+	)
 
-	_expect_true(state_transitions.size() >= 4, "Lifecycle should publish real state transitions.")
-	_expect_true(speed_transitions.size() >= 5, "Lifecycle should publish real speed transitions.")
+	var expected_state_transitions: Array[Vector2i] = [
+		Vector2i(LifecycleStateScript.State.READY, LifecycleStateScript.State.RUNNING),
+		Vector2i(LifecycleStateScript.State.RUNNING, LifecycleStateScript.State.PAUSED),
+		Vector2i(LifecycleStateScript.State.PAUSED, LifecycleStateScript.State.RUNNING),
+		Vector2i(LifecycleStateScript.State.RUNNING, LifecycleStateScript.State.PAUSED),
+		Vector2i(LifecycleStateScript.State.PAUSED, LifecycleStateScript.State.READY),
+	]
+	var expected_speed_transitions: Array[Vector2] = [
+		Vector2(1.0, 2.0),
+		Vector2(2.0, 4.0),
+		Vector2(4.0, 0.5),
+		Vector2(0.5, 1.0),
+		Vector2(1.0, 4.0),
+		Vector2(4.0, 1.0),
+	]
+	_expect_equal(
+		state_transitions,
+		expected_state_transitions,
+		"Lifecycle state transition payloads and order should remain stable."
+	)
+	_expect_equal(
+		speed_transitions,
+		expected_speed_transitions,
+		"Simulation speed transition payloads and order should remain stable."
+	)
 	_finish()
 
 
 func _on_state_changed(previous_state: int, current_state: int) -> void:
 	state_transitions.append(Vector2i(previous_state, current_state))
+	event_sequence.append(
+		{"kind": "state", "previous": previous_state, "current": current_state}
+	)
 
 
 func _on_speed_changed(previous_speed: float, current_speed: float) -> void:
 	speed_transitions.append(Vector2(previous_speed, current_speed))
+	event_sequence.append(
+		{"kind": "speed", "previous": previous_speed, "current": current_speed}
+	)
 
 
 func _finish() -> void:
