@@ -9,8 +9,10 @@ const VehicleSelectionScript := preload("res://scripts/input/vehicle_selection_c
 const GridSelectionScript := preload("res://scripts/input/grid_selection_controller.gd")
 const VehicleMoveScript := preload("res://scripts/input/vehicle_move_controller.gd")
 const GrabDropControllerScript := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
+const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.gd")
 
 var failures: int = 0
+var lifecycle_events: Array[Dictionary] = []
 
 
 func _init() -> void:
@@ -18,6 +20,7 @@ func _init() -> void:
 
 
 func _run() -> void:
+	var baseline_root_child_count: int = root.get_child_count()
 	var packed := load(SCENE_PATH) as PackedScene
 	_expect_true(packed != null, "Scene 01 should load for lifecycle smoke test.")
 	if packed == null:
@@ -31,6 +34,7 @@ func _run() -> void:
 		return
 	root.add_child(scene)
 	await process_frame
+	_bind_lifecycle_events(scene)
 
 	var lifecycle_ui := scene.get_node_or_null("LifecycleUIRoot") as LifecycleControlsScript
 	var run_pause_button := scene.get_node_or_null(
@@ -92,8 +96,10 @@ func _run() -> void:
 	_expect_equal(speed_button.text, "1×", "READY should show 1x.")
 
 	var arm := vehicle_manager.get_vehicle_by_id(&"arm_vehicle")
+	var transport := vehicle_manager.get_vehicle_by_id(&"transport_vehicle")
 	_expect_true(arm != null, "Arm vehicle should exist.")
-	if arm == null:
+	_expect_true(transport != null, "Transport vehicle should exist.")
+	if arm == null or transport == null:
 		scene.queue_free()
 		await process_frame
 		_finish()
@@ -155,10 +161,7 @@ func _run() -> void:
 	_expect_equal(speed_button.text, "1×", "Reset should restore 1x label.")
 	_expect_equal(arm.runtime_state.anchor_cell, Vector2i(2, 2), "Reset should restore arm anchor.")
 	_expect_false(arm.runtime_state.arm_has_item, "Reset should leave arm empty.")
-	var transport := vehicle_manager.get_vehicle_by_id(&"transport_vehicle")
-	_expect_true(transport != null, "Transport vehicle should exist.")
-	if transport != null:
-		_expect_equal(transport.runtime_state.tray_count, 0, "Reset should empty transport tray.")
+	_expect_equal(transport.runtime_state.tray_count, 0, "Reset should empty transport tray.")
 	_expect_equal(scene.box_count, 3, "Reset should restore standard box to 3/8.")
 
 	_expect_false(
@@ -174,7 +177,25 @@ func _run() -> void:
 		LifecycleStateScript.State.READY,
 		"Rejected commands without a selected vehicle should not start lifecycle."
 	)
-	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable again after Reset.")
+
+	_expect_true(vehicle_selection.select_vehicle(transport), "Transport should be selectable for invalid arm command coverage.")
+	_expect_false(
+		grab_drop_controller.rotate_selected_arm(1),
+		"Transport should reject arm rotation because it has no grab capability."
+	)
+	var transport_grab_result := grab_drop_controller.request_selected_grab_drop()
+	_expect_equal(
+		transport_grab_result.status,
+		GrabDropResultScript.Status.NO_CAPABILITY,
+		"Transport GrabDrop should reject with NO_CAPABILITY."
+	)
+	_expect_equal(
+		scene.get_lifecycle_state(),
+		LifecycleStateScript.State.READY,
+		"Rejected A/D/C commands on a non-arm vehicle must not start lifecycle."
+	)
+
+	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable again after invalid transport commands.")
 	_expect_true(
 		grab_drop_controller.rotate_selected_arm(1),
 		"First valid gameplay command from READY should auto-start the scene."
@@ -185,15 +206,110 @@ func _run() -> void:
 		"Valid READY gameplay command should enter RUNNING."
 	)
 
-	lifecycle_ui._on_reset_pressed()
-	lifecycle_ui._on_reset_pressed()
+	_expect_true(scene.set_simulation_speed(4.0), "4x should be accepted before reset event ordering test.")
+	scene.pause_scene()
+	lifecycle_events.clear()
+	scene.reset_scene()
+	_expect_equal(
+		lifecycle_events,
+		[
+			{"kind": "speed", "previous": 4.0, "current": 1.0},
+			{
+				"kind": "state",
+				"previous": LifecycleStateScript.State.PAUSED,
+				"current": LifecycleStateScript.State.READY,
+			},
+			{"kind": "reset"},
+		],
+		"Scene reset should publish speed, state, then reset-completed in a stable order."
+	)
+
+	lifecycle_events.clear()
+	scene.reset_scene()
+	scene.reset_scene()
 	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.READY, "Repeated reset should be idempotent.")
 	_expect_equal(scene.get_simulation_speed(), 1.0, "Repeated reset should preserve 1x.")
 	_expect_equal(arm.runtime_state.anchor_cell, Vector2i(2, 2), "Repeated reset should preserve arm anchor.")
+	_expect_equal(
+		lifecycle_events,
+		[
+			{"kind": "reset"},
+			{"kind": "reset"},
+		],
+		"Each explicit idempotent Reset should publish reset-completed without duplicate state/speed transitions."
+	)
 
+	var scene_instance_id: int = scene.get_instance_id()
+	var lifecycle_ui_instance_id: int = lifecycle_ui.get_instance_id()
 	scene.queue_free()
 	await process_frame
+	_expect_false(is_instance_id_valid(scene_instance_id), "Freed Scene 01 root should not remain alive.")
+	_expect_false(is_instance_id_valid(lifecycle_ui_instance_id), "Freed lifecycle UI should not remain alive.")
+	_expect_equal(
+		root.get_child_count(),
+		baseline_root_child_count,
+		"Leaving Scene 01 should restore the root child count without leaked scene nodes."
+	)
+
+	var reentered_scene := packed.instantiate() as LifecycleControllerScript
+	_expect_true(reentered_scene != null, "Scene 01 should instantiate again after leaving.")
+	if reentered_scene != null:
+		root.add_child(reentered_scene)
+		await process_frame
+		_expect_equal(
+			reentered_scene.get_lifecycle_state(),
+			LifecycleStateScript.State.READY,
+			"Re-entered Scene 01 should start READY."
+		)
+		_expect_equal(
+			reentered_scene.get_simulation_speed(),
+			1.0,
+			"Re-entered Scene 01 should start at 1x."
+		)
+		_expect_true(
+			reentered_scene.get_node_or_null("LifecycleUIRoot") != null,
+			"Re-entered Scene 01 should recreate exactly one lifecycle UI root at its canonical path."
+		)
+		_expect_true(
+			reentered_scene.get_node_or_null("SceneRoot/RobotRoot/Scene01VehicleManager") != null,
+			"Re-entered Scene 01 should recreate its vehicle manager."
+		)
+		_expect_equal(
+			root.get_child_count(),
+			baseline_root_child_count + 1,
+			"Re-entering Scene 01 should add exactly one scene root."
+		)
+		reentered_scene.queue_free()
+		await process_frame
+		_expect_equal(
+			root.get_child_count(),
+			baseline_root_child_count,
+			"Leaving the re-entered Scene 01 should again restore the root child count."
+		)
+
 	_finish()
+
+
+func _bind_lifecycle_events(scene: LifecycleControllerScript) -> void:
+	scene.lifecycle_state_changed.connect(_on_scene_lifecycle_state_changed)
+	scene.simulation_speed_changed.connect(_on_scene_simulation_speed_changed)
+	scene.lifecycle_reset_completed.connect(_on_scene_lifecycle_reset_completed)
+
+
+func _on_scene_lifecycle_state_changed(previous_state: int, current_state: int) -> void:
+	lifecycle_events.append(
+		{"kind": "state", "previous": previous_state, "current": current_state}
+	)
+
+
+func _on_scene_simulation_speed_changed(previous_speed: float, current_speed: float) -> void:
+	lifecycle_events.append(
+		{"kind": "speed", "previous": previous_speed, "current": current_speed}
+	)
+
+
+func _on_scene_lifecycle_reset_completed() -> void:
+	lifecycle_events.append({"kind": "reset"})
 
 
 func _finish() -> void:
