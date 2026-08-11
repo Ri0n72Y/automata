@@ -9,6 +9,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func request_selected_grab_drop() -> GrabDropResultScript:
+	if _get_selected_vehicle() == null:
+		return super.request_selected_grab_drop()
 	if _prepare_gameplay_command():
 		return super.request_selected_grab_drop()
 	var result := GrabDropResultScript.rejected(
@@ -24,6 +26,8 @@ func request_selected_grab_drop() -> GrabDropResultScript:
 
 
 func rotate_selected_arm(direction: int) -> bool:
+	if _get_selected_vehicle() == null:
+		return super.rotate_selected_arm(direction)
 	if not _prepare_gameplay_command():
 		return false
 	return super.rotate_selected_arm(direction)
