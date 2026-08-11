@@ -9,28 +9,35 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func request_selected_grab_drop() -> GrabDropResultScript:
-	if _get_selected_vehicle() == null:
-		return super.request_selected_grab_drop()
-	if _prepare_gameplay_command():
-		return super.request_selected_grab_drop()
-	var result := GrabDropResultScript.rejected(
-		GrabDropResultScript.Action.NONE,
-		GrabDropResultScript.Status.BUSY
-	)
-	var vehicle := _get_selected_vehicle()
-	var vehicle_id: StringName = &""
-	if vehicle != null:
-		vehicle_id = vehicle.get_vehicle_id()
-	grab_drop_completed.emit(vehicle_id, result.action, result.status)
+	if _is_lifecycle_paused():
+		var paused_result := GrabDropResultScript.rejected(
+			GrabDropResultScript.Action.NONE,
+			GrabDropResultScript.Status.BUSY
+		)
+		var paused_vehicle := _get_selected_vehicle()
+		var paused_vehicle_id: StringName = &""
+		if paused_vehicle != null:
+			paused_vehicle_id = paused_vehicle.get_vehicle_id()
+		grab_drop_completed.emit(
+			paused_vehicle_id,
+			paused_result.action,
+			paused_result.status
+		)
+		return paused_result
+
+	var result := super.request_selected_grab_drop()
+	if result.status == GrabDropResultScript.Status.ACCEPTED:
+		_prepare_gameplay_command()
 	return result
 
 
 func rotate_selected_arm(direction: int) -> bool:
-	if _get_selected_vehicle() == null:
-		return super.rotate_selected_arm(direction)
-	if not _prepare_gameplay_command():
+	if _is_lifecycle_paused():
 		return false
-	return super.rotate_selected_arm(direction)
+	var rotated := super.rotate_selected_arm(direction)
+	if rotated:
+		_prepare_gameplay_command()
+	return rotated
 
 
 func refresh_interaction_preview() -> void:
