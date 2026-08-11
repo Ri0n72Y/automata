@@ -1,0 +1,66 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_lifecycle_controls.gd" id="1_controls"]
+
+[node name="LifecycleUIRoot" type="CanvasLayer"]
+script = ExtResource("1_controls")
+
+[node name="RootControl" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="RootControl"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -122.0
+offset_top = 12.0
+offset_right = 122.0
+offset_bottom = 60.0
+grow_horizontal = 2
+mouse_filter = 0
+
+[node name="Margin" type="MarginContainer" parent="RootControl/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 7
+
+[node name="Controls" type="HBoxContainer" parent="RootControl/Panel/Margin"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 8
+
+[node name="RunPauseButton" type="Button" parent="RootControl/Panel/Margin/Controls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(54, 34)
+layout_mode = 2
+focus_mode = 0
+text = "▶"
+tooltip_text = "播放 / 继续"
+
+[node name="SpeedButton" type="Button" parent="RootControl/Panel/Margin/Controls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(70, 34)
+layout_mode = 2
+focus_mode = 0
+text = "1×"
+tooltip_text = "切换仿真倍速"
+
+[node name="ResetButton" type="Button" parent="RootControl/Panel/Margin/Controls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(54, 34)
+layout_mode = 2
+focus_mode = 0
+text = "↺"
+tooltip_text = "重置 Scene 01"
+
+[connection signal="pressed" from="RootControl/Panel/Margin/Controls/RunPauseButton" to="." method="_on_run_pause_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/Controls/SpeedButton" to="." method="_on_speed_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/Controls/ResetButton" to="." method="_on_reset_pressed"]
