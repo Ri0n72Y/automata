@@ -2,6 +2,13 @@ extends SceneTree
 
 const SCENE_PATH := "res://scenes/scene_01/scene_01_basic_packing.tscn"
 const LifecycleStateScript := preload("res://scripts/scene_01/scene_01_lifecycle_state.gd")
+const LifecycleControllerScript := preload("res://scripts/scene_01/scene_01_lifecycle_controller.gd")
+const LifecycleControlsScript := preload("res://scripts/scene_01/scene_01_lifecycle_controls.gd")
+const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
+const VehicleSelectionScript := preload("res://scripts/input/vehicle_selection_controller.gd")
+const GridSelectionScript := preload("res://scripts/input/grid_selection_controller.gd")
+const VehicleMoveScript := preload("res://scripts/input/vehicle_move_controller.gd")
+const GrabDropControllerScript := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
 
 var failures: int = 0
 
@@ -17,11 +24,15 @@ func _run() -> void:
 		_finish()
 		return
 
-	var scene := packed.instantiate()
+	var scene := packed.instantiate() as LifecycleControllerScript
+	_expect_true(scene != null, "Scene 01 root should use the lifecycle controller.")
+	if scene == null:
+		_finish()
+		return
 	root.add_child(scene)
 	await process_frame
 
-	var lifecycle_ui := scene.get_node_or_null("LifecycleUIRoot")
+	var lifecycle_ui := scene.get_node_or_null("LifecycleUIRoot") as LifecycleControlsScript
 	var run_pause_button := scene.get_node_or_null(
 		"LifecycleUIRoot/RootControl/Panel/Margin/Controls/RunPauseButton"
 	) as Button
@@ -31,22 +42,62 @@ func _run() -> void:
 	var reset_button := scene.get_node_or_null(
 		"LifecycleUIRoot/RootControl/Panel/Margin/Controls/ResetButton"
 	) as Button
-	var vehicle_manager := scene.get_node_or_null("SceneRoot/RobotRoot/Scene01VehicleManager")
-	var vehicle_selection := scene.get_node_or_null("SceneRoot/GridRoot/VehicleSelectionController")
-	var grid_selection := scene.get_node_or_null("SceneRoot/GridRoot/GridSelectionController")
-	var move_controller := scene.get_node_or_null("SceneRoot/GridRoot/VehicleMoveController")
-	var grab_drop_controller := scene.get_node_or_null("SceneRoot/GridRoot/VehicleGrabDropController")
+	var vehicle_manager := scene.get_node_or_null(
+		"SceneRoot/RobotRoot/Scene01VehicleManager"
+	) as VehicleManagerScript
+	var vehicle_selection := scene.get_node_or_null(
+		"SceneRoot/GridRoot/VehicleSelectionController"
+	) as VehicleSelectionScript
+	var grid_selection := scene.get_node_or_null(
+		"SceneRoot/GridRoot/GridSelectionController"
+	) as GridSelectionScript
+	var move_controller := scene.get_node_or_null(
+		"SceneRoot/GridRoot/VehicleMoveController"
+	) as VehicleMoveScript
+	var grab_drop_controller := scene.get_node_or_null(
+		"SceneRoot/GridRoot/VehicleGrabDropController"
+	) as GrabDropControllerScript
 
 	_expect_true(lifecycle_ui != null, "Scene 01 should contain top lifecycle controls.")
 	_expect_true(run_pause_button != null, "Lifecycle controls should have one run/pause button.")
 	_expect_true(speed_button != null, "Lifecycle controls should have a speed button.")
 	_expect_true(reset_button != null, "Lifecycle controls should have a reset button.")
+	_expect_true(
+		vehicle_manager != null
+		and vehicle_selection != null
+		and grid_selection != null
+		and move_controller != null
+		and grab_drop_controller != null,
+		"Lifecycle integration dependencies should exist."
+	)
+	if (
+		lifecycle_ui == null
+		or run_pause_button == null
+		or speed_button == null
+		or reset_button == null
+		or vehicle_manager == null
+		or vehicle_selection == null
+		or grid_selection == null
+		or move_controller == null
+		or grab_drop_controller == null
+	):
+		scene.queue_free()
+		await process_frame
+		_finish()
+		return
+
 	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.READY, "Scene should start READY.")
 	_expect_equal(scene.get_simulation_speed(), 1.0, "Scene should start at 1x.")
 	_expect_equal(run_pause_button.text, "▶", "READY should show play icon.")
 	_expect_equal(speed_button.text, "1×", "READY should show 1x.")
 
-	var arm = vehicle_manager.get_vehicle_by_id(&"arm_vehicle")
+	var arm := vehicle_manager.get_vehicle_by_id(&"arm_vehicle")
+	_expect_true(arm != null, "Arm vehicle should exist.")
+	if arm == null:
+		scene.queue_free()
+		await process_frame
+		_finish()
+		return
 	_expect_true(vehicle_selection.select_vehicle(arm), "Test should select arm vehicle.")
 
 	lifecycle_ui._on_run_pause_pressed()
@@ -104,8 +155,10 @@ func _run() -> void:
 	_expect_equal(speed_button.text, "1×", "Reset should restore 1x label.")
 	_expect_equal(arm.runtime_state.anchor_cell, Vector2i(2, 2), "Reset should restore arm anchor.")
 	_expect_false(arm.runtime_state.arm_has_item, "Reset should leave arm empty.")
-	var transport = vehicle_manager.get_vehicle_by_id(&"transport_vehicle")
-	_expect_equal(transport.runtime_state.tray_count, 0, "Reset should empty transport tray.")
+	var transport := vehicle_manager.get_vehicle_by_id(&"transport_vehicle")
+	_expect_true(transport != null, "Transport vehicle should exist.")
+	if transport != null:
+		_expect_equal(transport.runtime_state.tray_count, 0, "Reset should empty transport tray.")
 	_expect_equal(scene.box_count, 3, "Reset should restore standard box to 3/8.")
 
 	_expect_false(
