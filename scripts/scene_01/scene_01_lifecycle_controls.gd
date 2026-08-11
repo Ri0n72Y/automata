@@ -20,9 +20,9 @@ func refresh() -> void:
 	var controller := _get_scene_controller()
 	if controller == null:
 		return
-	var state := LifecycleStateScript.State.READY
+	var state: int = LifecycleStateScript.State.READY
 	if controller.has_method("get_lifecycle_state"):
-		state = int(controller.call("get_lifecycle_state")) as LifecycleStateScript.State
+		state = int(controller.call("get_lifecycle_state"))
 	if run_pause_button != null:
 		run_pause_button.text = "⏸" if state == LifecycleStateScript.State.RUNNING else "▶"
 		run_pause_button.tooltip_text = "暂停" if state == LifecycleStateScript.State.RUNNING else "播放 / 继续"
