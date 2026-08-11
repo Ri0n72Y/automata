@@ -97,14 +97,24 @@ func _run() -> void:
 	_expect_equal(transport.runtime_state.tray_count, 0, "Reset should empty transport tray.")
 	_expect_equal(scene.box_count, 3, "Reset should restore standard box to 3/8.")
 
+	_expect_false(
+		grab_drop_controller.rotate_selected_arm(1),
+		"Missing selection should not execute arm rotation."
+	)
+	_expect_equal(
+		scene.get_lifecycle_state(),
+		LifecycleStateScript.State.READY,
+		"Rejected command without a selected vehicle should not start lifecycle."
+	)
+	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable again after Reset.")
 	_expect_true(
 		grab_drop_controller.rotate_selected_arm(1),
-		"First gameplay command from READY should auto-start the scene."
+		"First valid gameplay command from READY should auto-start the scene."
 	)
 	_expect_equal(
 		scene.get_lifecycle_state(),
 		LifecycleStateScript.State.RUNNING,
-		"READY gameplay command should enter RUNNING."
+		"Valid READY gameplay command should enter RUNNING."
 	)
 
 	lifecycle_ui._on_reset_pressed()
