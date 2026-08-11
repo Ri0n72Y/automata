@@ -33,6 +33,7 @@ func _run() -> void:
 	) as Button
 	var vehicle_manager := scene.get_node_or_null("SceneRoot/RobotRoot/Scene01VehicleManager")
 	var vehicle_selection := scene.get_node_or_null("SceneRoot/GridRoot/VehicleSelectionController")
+	var grid_selection := scene.get_node_or_null("SceneRoot/GridRoot/GridSelectionController")
 	var move_controller := scene.get_node_or_null("SceneRoot/GridRoot/VehicleMoveController")
 	var grab_drop_controller := scene.get_node_or_null("SceneRoot/GridRoot/VehicleGrabDropController")
 
@@ -51,6 +52,20 @@ func _run() -> void:
 	lifecycle_ui._on_run_pause_pressed()
 	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.RUNNING, "Play should enter RUNNING.")
 	_expect_equal(run_pause_button.text, "⏸", "RUNNING should show pause icon.")
+
+	lifecycle_ui._on_run_pause_pressed()
+	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.PAUSED, "Idle pause should enter PAUSED.")
+	_expect_false(
+		grid_selection.activate_live_target_mode(),
+		"PAUSED should reject M-equivalent target mode even while vehicle is Waiting."
+	)
+	_expect_false(
+		grab_drop_controller.rotate_selected_arm(1),
+		"PAUSED should reject arm rotation even while vehicle is Waiting."
+	)
+	lifecycle_ui._on_run_pause_pressed()
+	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.RUNNING, "Idle resume should return RUNNING.")
+
 	_expect_true(
 		move_controller.request_selected_vehicle_move(Vector2i(4, 2)),
 		"RUNNING should accept a valid MoveTo."
@@ -69,10 +84,6 @@ func _run() -> void:
 	_expect_false(
 		move_controller.request_selected_vehicle_stop(),
 		"PAUSED should reject X-equivalent stop requests."
-	)
-	_expect_false(
-		grab_drop_controller.rotate_selected_arm(1),
-		"PAUSED should reject arm rotation commands."
 	)
 
 	lifecycle_ui._on_speed_pressed()
@@ -98,13 +109,17 @@ func _run() -> void:
 	_expect_equal(scene.box_count, 3, "Reset should restore standard box to 3/8.")
 
 	_expect_false(
+		grid_selection.toggle_live_target_mode(),
+		"Unavailable M-equivalent command should remain rejected without selection."
+	)
+	_expect_false(
 		grab_drop_controller.rotate_selected_arm(1),
 		"Missing selection should not execute arm rotation."
 	)
 	_expect_equal(
 		scene.get_lifecycle_state(),
 		LifecycleStateScript.State.READY,
-		"Rejected command without a selected vehicle should not start lifecycle."
+		"Rejected commands without a selected vehicle should not start lifecycle."
 	)
 	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable again after Reset.")
 	_expect_true(
