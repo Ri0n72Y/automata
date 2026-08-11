@@ -1,6 +1,10 @@
 extends SceneTree
 
 const SCENE_PATH := "res://scenes/scene_01/scene_01_basic_packing.tscn"
+const LifecycleControllerScript := preload("res://scripts/scene_01/scene_01_lifecycle_controller.gd")
+const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
+const VehicleMoveScript := preload("res://scripts/input/vehicle_move_controller.gd")
+const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
 const MoveCommandScript := preload("res://scripts/vehicles/move_command.gd")
 const RuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 
@@ -18,12 +22,20 @@ func _run() -> void:
 		_finish()
 		return
 
-	var scene := packed.instantiate()
+	var scene := packed.instantiate() as LifecycleControllerScript
+	_expect_true(scene != null, "Scene 01 root should use the lifecycle controller.")
+	if scene == null:
+		_finish()
+		return
 	root.add_child(scene)
 	await process_frame
 
-	var manager := scene.get_node_or_null("SceneRoot/RobotRoot/Scene01VehicleManager")
-	var move_controller := scene.get_node_or_null("SceneRoot/GridRoot/VehicleMoveController")
+	var manager := scene.get_node_or_null(
+		"SceneRoot/RobotRoot/Scene01VehicleManager"
+	) as VehicleManagerScript
+	var move_controller := scene.get_node_or_null(
+		"SceneRoot/GridRoot/VehicleMoveController"
+	) as VehicleMoveScript
 	_expect_true(manager != null and move_controller != null, "Speed collision test requires vehicle manager and move controller.")
 	if manager == null or move_controller == null:
 		scene.queue_free()
@@ -31,8 +43,8 @@ func _run() -> void:
 		_finish()
 		return
 
-	var arm = manager.get_vehicle_by_id(&"arm_vehicle")
-	var transport = manager.get_vehicle_by_id(&"transport_vehicle")
+	var arm := manager.get_vehicle_by_id(&"arm_vehicle")
+	var transport := manager.get_vehicle_by_id(&"transport_vehicle")
 	_expect_true(arm != null and transport != null, "Speed collision test requires both vehicles.")
 	if arm == null or transport == null:
 		scene.queue_free()
@@ -65,10 +77,13 @@ func _run() -> void:
 	_finish()
 
 
-func _prepare_static_collision(arm, transport) -> void:
+func _prepare_static_collision(
+	arm: VehicleActorScript,
+	transport: VehicleActorScript
+) -> void:
 	_place_vehicle(arm, Vector2i(1, 1))
 	_place_vehicle(transport, Vector2i(4, 1))
-	var command := _command(
+	var command: MoveCommandScript = _command(
 		Vector2i(5, 1),
 		[
 			Vector2i(1, 1),
@@ -83,14 +98,14 @@ func _prepare_static_collision(arm, transport) -> void:
 		_expect_true(arm.start_move(command), "Collision fixture arm task should start.")
 
 
-func _place_vehicle(vehicle, anchor: Vector2i) -> void:
+func _place_vehicle(vehicle: VehicleActorScript, anchor: Vector2i) -> void:
 	vehicle.reset_actor()
 	vehicle.runtime_state.anchor_cell = anchor
 	vehicle.sync_from_state()
 
 
-func _command(target: Vector2i, path: Array[Vector2i]):
-	var command := MoveCommandScript.new()
+func _command(target: Vector2i, path: Array[Vector2i]) -> MoveCommandScript:
+	var command: MoveCommandScript = MoveCommandScript.new()
 	if not command.configure(target, path):
 		return null
 	return command
