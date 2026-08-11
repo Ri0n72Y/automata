@@ -61,6 +61,18 @@ func _execute_grab(runtime: VehicleRuntimeStateScript, target: Variant) -> GrabD
 			GrabDropResultScript.Action.GRAB,
 			GrabDropResultScript.Status.OWNERSHIP_CONFLICT
 		)
+	var source := target as ItemSourceInterfaceScript
+	if source != null and not source.commit_prepared_take_item(block):
+		var released := runtime.release_carried_item()
+		source.rollback_prepared_take_item(block)
+		return GrabDropResultScript.rejected(
+			GrabDropResultScript.Action.GRAB,
+			(
+				GrabDropResultScript.Status.INVALID_TARGET
+				if released == block
+				else GrabDropResultScript.Status.OWNERSHIP_CONFLICT
+			)
+		)
 	return GrabDropResultScript.accepted(GrabDropResultScript.Action.GRAB, block)
 
 
@@ -94,7 +106,7 @@ func _execute_drop(runtime: VehicleRuntimeStateScript, target: Variant) -> GrabD
 func _take_from_target(target: Variant) -> ItemTransferResultScript:
 	var source := target as ItemSourceInterfaceScript
 	if source != null:
-		return source.take_item()
+		return source.prepare_take_item()
 	var receiver := target as ItemReceiverInterfaceScript
 	if receiver != null and receiver.can_take_item():
 		return receiver.take_item()
@@ -102,6 +114,10 @@ func _take_from_target(target: Variant) -> ItemTransferResultScript:
 
 
 func _rollback_grab_target(target: Variant, block: StandardBlockScript) -> void:
+	var source := target as ItemSourceInterfaceScript
+	if source != null:
+		source.rollback_prepared_take_item(block)
+		return
 	if block == null or block.is_claimed():
 		return
 	var receiver := target as ItemReceiverInterfaceScript
