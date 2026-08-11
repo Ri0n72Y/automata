@@ -15,6 +15,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
+	if _get_selected_vehicle() == null:
+		return super.request_selected_vehicle_move(target_anchor)
 	if not _prepare_gameplay_command():
 		return false
 	return super.request_selected_vehicle_move(target_anchor)
