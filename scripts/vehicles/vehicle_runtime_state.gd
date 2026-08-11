@@ -4,6 +4,7 @@ extends RefCounted
 const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
 const MoveCommandScript := preload("res://scripts/vehicles/move_command.gd")
 const TransportTrayStateScript := preload("res://scripts/vehicles/transport_tray_state.gd")
+const StandardBlockScript := preload("res://scripts/objects/standard_block.gd")
 
 enum Facing {
 	NORTH,
@@ -20,7 +21,7 @@ enum MotionState {
 }
 
 var _definition: VehicleDefinitionScript
-var _arm_has_item: bool = false
+var _carried_item: StandardBlockScript
 var _tray_state: TransportTrayStateScript
 var _active_move_command: MoveCommandScript
 
@@ -28,9 +29,13 @@ var definition: VehicleDefinitionScript:
 	get:
 		return _definition
 
+var carried_item: StandardBlockScript:
+	get:
+		return _carried_item
+
 var arm_has_item: bool:
 	get:
-		return _arm_has_item
+		return _carried_item != null
 
 var tray_state: TransportTrayStateScript:
 	get:
@@ -71,6 +76,9 @@ func configure(
 		if not new_tray_state.configure(p_definition.tray_capacity):
 			push_error("Vehicle runtime state could not configure transport tray state.")
 			return false
+		if not new_tray_state.configure_access_guard(self, &"is_tray_interaction_available"):
+			push_error("Vehicle runtime state could not bind transport tray access guard.")
+			return false
 
 	_definition = p_definition
 	_tray_state = new_tray_state
@@ -86,9 +94,10 @@ func reset() -> void:
 	motion_state = MotionState.WAITING
 	_active_move_command = null
 	command_queue.clear()
-	_arm_has_item = false
+	_clear_carried_item()
 	if _tray_state != null:
 		_tray_state.reset()
+	_clear_item_interaction_cells()
 
 
 func begin_move_planning() -> bool:
@@ -96,6 +105,7 @@ func begin_move_planning() -> bool:
 		return false
 	if motion_state == MotionState.PLANNING or motion_state == MotionState.MOVING:
 		return false
+	_clear_item_interaction_cells()
 	motion_state = MotionState.PLANNING
 	return true
 
@@ -110,6 +120,7 @@ func assign_move_command(command: MoveCommandScript) -> bool:
 		return false
 	if _active_move_command != null:
 		return false
+	_clear_item_interaction_cells()
 	_active_move_command = command
 	motion_state = MotionState.MOVING
 	return true
@@ -134,19 +145,65 @@ func clear_move_command() -> void:
 	motion_state = MotionState.WAITING
 
 
+func is_tray_interaction_available(tray: TransportTrayStateScript) -> bool:
+	return (
+		tray != null
+		and tray == _tray_state
+		and motion_state != MotionState.PLANNING
+		and motion_state != MotionState.MOVING
+	)
+
+
+func claim_carried_item(block: StandardBlockScript) -> bool:
+	if _definition == null or not _definition.has_capability(
+		VehicleDefinitionScript.CAPABILITY_CAN_GRAB
+	):
+		return false
+	if block == null or not block.is_valid() or _carried_item != null:
+		return false
+	if not block.try_claim(self):
+		return false
+	_carried_item = block
+	return true
+
+
+func release_carried_item() -> StandardBlockScript:
+	if _carried_item == null or not _carried_item.is_claimed_by(self):
+		return null
+	var block := _carried_item
+	if not block.release_claim(self):
+		return null
+	_carried_item = null
+	return block
+
+
 func set_arm_has_item(value: bool) -> bool:
 	if _definition == null or not _definition.has_capability(
 		VehicleDefinitionScript.CAPABILITY_CAN_GRAB
 	):
 		return false
-	_arm_has_item = value
-	return true
+	if value == arm_has_item:
+		return true
+	if value:
+		return claim_carried_item(StandardBlockScript.create())
+	return release_carried_item() != null
 
 
 func set_tray_count(value: int) -> bool:
 	if _tray_state == null:
 		return false
 	return _tray_state.replace_count_for_compatibility(value)
+
+
+func get_item_interaction_interfaces(interaction_cells: Array[Vector2i]) -> Array[Variant]:
+	var interfaces: Array[Variant] = []
+	if not is_tray_interaction_available(_tray_state):
+		_clear_item_interaction_cells()
+		return interfaces
+	if _tray_state != null:
+		_tray_state.set_interaction_cells(interaction_cells)
+		interfaces.append(_tray_state)
+	return interfaces
 
 
 func enqueue_command(command: Dictionary) -> void:
@@ -156,6 +213,19 @@ func enqueue_command(command: Dictionary) -> void:
 func get_effective_speed() -> float:
 	if _definition == null:
 		return 0.0
-	if _arm_has_item:
+	if arm_has_item:
 		return _definition.base_speed * _definition.carrying_speed_multiplier
 	return _definition.base_speed
+
+
+func _clear_item_interaction_cells() -> void:
+	if _tray_state == null:
+		return
+	var empty_cells: Array[Vector2i] = []
+	_tray_state.set_interaction_cells(empty_cells)
+
+
+func _clear_carried_item() -> void:
+	if _carried_item != null and _carried_item.is_claimed_by(self):
+		_carried_item.release_claim(self)
+	_carried_item = null

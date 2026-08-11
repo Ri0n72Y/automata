@@ -39,7 +39,6 @@ var automation_rate: float = 0.0
 var is_running: bool = false
 
 var _initial_grid_root_transform: Transform3D = Transform3D.IDENTITY
-var _preview_scale_enabled: bool = false
 var _preview_offset_enabled: bool = false
 
 
@@ -73,12 +72,21 @@ func initialize_grid() -> bool:
 		grid_cell_size,
 		grid_local_origin
 	):
+		if is_node_ready() and grid_model != null:
+			_restore_runtime_grid_geometry_exports()
 		push_error("Scene 01 grid configuration is invalid.")
 		return false
 
 	if not is_node_ready():
 		grid_model = model
 		return true
+
+	if grid_model != null and not _has_same_runtime_grid_geometry(grid_model, model):
+		_restore_runtime_grid_geometry_exports()
+		push_error(
+			"Scene 01 runtime grid geometry is immutable; rebuild with the existing width, height, cell size, and local origin."
+		)
+		return false
 
 	var previous_model := grid_model
 	grid_model = model
@@ -111,6 +119,7 @@ func initialize_grid() -> bool:
 		grid_selection_controller.clear_hover()
 		grid_selection_controller.cancel_selection()
 	_configure_grid_presentation()
+	_sync_ground_cell_policy()
 	return true
 
 
@@ -190,6 +199,7 @@ func set_grid_cell_type(cell: Vector2i, cell_type: int) -> bool:
 		return false
 	if is_node_ready() and grid_tile_view != null:
 		grid_tile_view.draw(grid_model)
+	_sync_ground_cell_policy()
 	return true
 
 
@@ -230,7 +240,6 @@ func reset_scene_state() -> void:
 	timer = 0.0
 	target_box_count = 8
 	automation_rate = 0.0
-	_preview_scale_enabled = false
 	_preview_offset_enabled = false
 	if grid_root != null:
 		grid_root.transform = _initial_grid_root_transform
@@ -261,14 +270,6 @@ func preview_rotate_grid(direction: int) -> void:
 	_sync_grid_transform_dependents()
 
 
-func preview_toggle_grid_scale() -> void:
-	if grid_root == null:
-		return
-	_preview_scale_enabled = not _preview_scale_enabled
-	grid_root.scale = Vector3(1.35, 1.0, 0.78) if _preview_scale_enabled else Vector3.ONE
-	_sync_grid_transform_dependents()
-
-
 func preview_toggle_grid_offset() -> void:
 	if grid_root == null:
 		return
@@ -284,7 +285,6 @@ func preview_toggle_grid_offset() -> void:
 func preview_restore_grid_transform() -> void:
 	if grid_root == null:
 		return
-	_preview_scale_enabled = false
 	_preview_offset_enabled = false
 	grid_root.transform = _initial_grid_root_transform
 	_sync_grid_transform_dependents()
@@ -311,6 +311,7 @@ func _configure_initial_grid_dependents() -> bool:
 	):
 		return false
 	_configure_grid_presentation()
+	_sync_ground_cell_policy()
 	return true
 
 
@@ -338,6 +339,34 @@ func _configure_grid_presentation() -> void:
 			grid_selection_controller,
 			scene_vehicle_manager
 		)
+
+
+func _sync_ground_cell_policy() -> void:
+	if scene_object_manager != null:
+		scene_object_manager.refresh_ground_cell_policy()
+
+
+func _has_same_runtime_grid_geometry(
+	current_model: GridModelScript,
+	candidate_model: GridModelScript
+) -> bool:
+	if current_model == null or candidate_model == null:
+		return false
+	return (
+		current_model.width == candidate_model.width
+		and current_model.height == candidate_model.height
+		and is_equal_approx(current_model.cell_size, candidate_model.cell_size)
+		and current_model.local_origin.is_equal_approx(candidate_model.local_origin)
+	)
+
+
+func _restore_runtime_grid_geometry_exports() -> void:
+	if grid_model == null:
+		return
+	grid_width = grid_model.width
+	grid_height = grid_model.height
+	grid_cell_size = grid_model.cell_size
+	grid_local_origin = grid_model.local_origin
 
 
 func _refresh_camera_for_grid() -> void:

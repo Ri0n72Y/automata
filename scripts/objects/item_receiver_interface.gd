@@ -23,6 +23,14 @@ func accepts_item_type(item_type: StringName) -> bool:
 	return get_accepted_item_types().has(item_type)
 
 
+func can_take_item() -> bool:
+	return false
+
+
+func uses_primary_interaction_cell() -> bool:
+	return false
+
+
 func get_current_count() -> int:
 	return 0
 

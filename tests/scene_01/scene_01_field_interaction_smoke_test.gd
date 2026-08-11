@@ -299,17 +299,16 @@ func _test_selection(
 
 	grid_root.position = Vector3(7.0, 0.0, -3.0)
 	grid_root.rotation.y = PI / 2.0
-	grid_root.scale = Vector3(1.5, 1.0, 2.0)
 	var transformed_cell := Vector2i(3, 3)
 	var transformed_world: Vector3 = scene.call("grid_cell_to_world", transformed_cell)
 	_expect_true(
 		selection.select_from_world_position(transformed_world),
-		"Selection should remain valid after GridRoot transforms."
+		"Selection should remain valid after GridRoot translation and rotation."
 	)
 	_expect_equal(
 		selection.selected_cell,
 		transformed_cell,
-		"Transformed GridRoot selection should preserve grid coordinates."
+		"Translated/rotated GridRoot selection should preserve grid coordinates."
 	)
 
 

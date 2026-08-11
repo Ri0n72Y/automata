@@ -1,0 +1,39 @@
+[gd_scene load_steps=5 format=3]
+
+[sub_resource type="BoxMesh" id="BoxMesh_slot_0"]
+resource_local_to_scene = true
+size = Vector3(0.86, 0.015, 0.86)
+
+[sub_resource type="BoxMesh" id="BoxMesh_slot_1"]
+resource_local_to_scene = true
+size = Vector3(0.86, 0.015, 0.86)
+
+[sub_resource type="StandardMaterial3D" id="Material_slot_0"]
+resource_local_to_scene = true
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.2, 0.92, 0.38, 0.28)
+
+[sub_resource type="StandardMaterial3D" id="Material_slot_1"]
+resource_local_to_scene = true
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.2, 0.92, 0.38, 0.28)
+
+[node name="GrabDropInteractionPreview" type="Node3D"]
+
+[node name="Slot0" type="MeshInstance3D" parent="."]
+unique_name_in_owner = true
+top_level = true
+visible = false
+cast_shadow = 0
+mesh = SubResource("BoxMesh_slot_0")
+material_override = SubResource("Material_slot_0")
+
+[node name="Slot1" type="MeshInstance3D" parent="."]
+unique_name_in_owner = true
+top_level = true
+visible = false
+cast_shadow = 0
+mesh = SubResource("BoxMesh_slot_1")
+material_override = SubResource("Material_slot_1")

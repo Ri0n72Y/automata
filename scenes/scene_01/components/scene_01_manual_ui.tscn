@@ -41,7 +41,7 @@ theme_override_constants/separation = 8
 [node name="Title" type="Label" parent="RootControl/Panel/Margin/VBox/HeaderRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Scene 01 · Debug Controls"
+text = "Scene 01 · 操作指南"
 theme_override_font_sizes/font_size = 18
 
 [node name="CollapseButton" type="Button" parent="RootControl/Panel/Margin/VBox/HeaderRow"]
@@ -54,79 +54,22 @@ text = "▶"
 [node name="Instructions" type="Label" parent="RootControl/Panel/Margin/VBox"]
 visible = false
 layout_mode = 2
-text = "Select vehicle → M: enter Move command\nMove mouse: predict target and path\nLeft click: execute · M/Esc/right click: exit command\nX: stop selected moving vehicle task\nEsc/right click again: clear vehicle selection\nEnter/Space do not execute movement or buttons\nQ/E: camera · Shift+Q/E: rotate GridRoot\nF/G: scale/offset · R: reset · Home: restore"
+text = "选择车辆：鼠标左键点击车辆\n移动车辆：按 M 进入目标模式，移动鼠标预览路径，左键确认\n退出移动模式：再次按 M，或按 Esc / 鼠标右键\n机械臂：A / D 调整朝向，C 抓取或放置\n停止车辆任务：X\n取消车辆选择：退出移动模式后按 Esc / 鼠标右键\n旋转相机：Q / E"
 autowrap_mode = 2
 
 [node name="ScopeNote" type="Label" parent="RootControl/Panel/Margin/VBox"]
 visible = false
 layout_mode = 2
-text = "No vehicle detail UI exists in this PR.\nM and X are Input Map actions and can be rebound later."
+text = "机械臂前方紧邻的两格都是工作区。\n绿色工作区表示当前存在可执行交互；红色表示当前不可执行。\n移动目标模式开启时，A / D / C 和机械臂工作区预览暂时停用。\n调试功能和场地坐标开关位于右上角独立 Debug 面板。"
 autowrap_mode = 2
 modulate = Color(0.72, 0.8, 0.9, 1)
-
-[node name="RotateRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
-visible = false
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="RotateLeft" type="Button" parent="RootControl/Panel/Margin/VBox/RotateRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-text = "Grid -90°"
-
-[node name="RotateRight" type="Button" parent="RootControl/Panel/Margin/VBox/RotateRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-text = "Grid +90°"
-
-[node name="TransformRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
-visible = false
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="Scale" type="Button" parent="RootControl/Panel/Margin/VBox/TransformRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-text = "Toggle Scale"
-
-[node name="Offset" type="Button" parent="RootControl/Panel/Margin/VBox/TransformRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-text = "Toggle Offset"
-
-[node name="ResetRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
-visible = false
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="Reset" type="Button" parent="RootControl/Panel/Margin/VBox/ResetRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-text = "Reset State"
-
-[node name="Restore" type="Button" parent="RootControl/Panel/Margin/VBox/ResetRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-text = "Restore Grid"
 
 [node name="StatusLabel" type="Label" parent="RootControl/Panel/Margin/VBox"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-text = "Select vehicle, press M, then left-click a target"
+text = "选择车辆后按 M 移动；机械臂可用 A/D 转向、C 抓取或放置"
 autowrap_mode = 2
 modulate = Color(0.55, 0.88, 0.72, 1)
 
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/HeaderRow/CollapseButton" to="." method="_on_collapse_pressed"]
-[connection signal="pressed" from="RootControl/Panel/Margin/VBox/RotateRow/RotateLeft" to="." method="_on_rotate_left_pressed"]
-[connection signal="pressed" from="RootControl/Panel/Margin/VBox/RotateRow/RotateRight" to="." method="_on_rotate_right_pressed"]
-[connection signal="pressed" from="RootControl/Panel/Margin/VBox/TransformRow/Scale" to="." method="_on_scale_pressed"]
-[connection signal="pressed" from="RootControl/Panel/Margin/VBox/TransformRow/Offset" to="." method="_on_offset_pressed"]
-[connection signal="pressed" from="RootControl/Panel/Margin/VBox/ResetRow/Reset" to="." method="_on_reset_pressed"]
-[connection signal="pressed" from="RootControl/Panel/Margin/VBox/ResetRow/Restore" to="." method="_on_restore_pressed"]

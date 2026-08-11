@@ -1,0 +1,134 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_debug_controls.gd" id="1_debug_controls"]
+
+[node name="DebugUIRoot" type="CanvasLayer"]
+script = ExtResource("1_debug_controls")
+
+[node name="RootControl" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="RootControl"]
+unique_name_in_owner = true
+layout_mode = 0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -266.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 68.0
+grow_horizontal = 0
+mouse_filter = 1
+
+[node name="Margin" type="MarginContainer" parent="RootControl/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="RootControl/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HeaderRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="RootControl/Panel/Margin/VBox/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Scene 01 · Debug"
+theme_override_font_sizes/font_size = 18
+
+[node name="CollapseButton" type="Button" parent="RootControl/Panel/Margin/VBox/HeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(36, 30)
+layout_mode = 2
+focus_mode = 0
+text = "▶"
+
+[node name="CoordinatesRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
+visible = false
+layout_mode = 2
+
+[node name="CoordinatesButton" type="Button" parent="RootControl/Panel/Margin/VBox/CoordinatesRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "显示场地坐标"
+
+[node name="RotateRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RotateLeft" type="Button" parent="RootControl/Panel/Margin/VBox/RotateRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "Grid -90°"
+
+[node name="RotateRight" type="Button" parent="RootControl/Panel/Margin/VBox/RotateRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "Grid +90°"
+
+[node name="TransformRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
+visible = false
+layout_mode = 2
+
+[node name="Offset" type="Button" parent="RootControl/Panel/Margin/VBox/TransformRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "切换 Grid 偏移"
+
+[node name="ResetRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Reset" type="Button" parent="RootControl/Panel/Margin/VBox/ResetRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "重置场景"
+
+[node name="Restore" type="Button" parent="RootControl/Panel/Margin/VBox/ResetRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "恢复 Grid"
+
+[node name="ShortcutNote" type="Label" parent="RootControl/Panel/Margin/VBox"]
+visible = false
+layout_mode = 2
+text = "快捷键：Shift+Q/E 旋转 GridRoot · G 切换偏移 · R 重置 · Home 恢复"
+autowrap_mode = 2
+modulate = Color(0.72, 0.8, 0.9, 1)
+
+[node name="StatusLabel" type="Label" parent="RootControl/Panel/Margin/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "调试面板已就绪"
+autowrap_mode = 2
+modulate = Color(0.55, 0.88, 0.72, 1)
+
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/HeaderRow/CollapseButton" to="." method="_on_collapse_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/CoordinatesRow/CoordinatesButton" to="." method="_on_coordinates_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/RotateRow/RotateLeft" to="." method="_on_rotate_left_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/RotateRow/RotateRight" to="." method="_on_rotate_right_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/TransformRow/Offset" to="." method="_on_offset_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/ResetRow/Reset" to="." method="_on_reset_pressed"]
+[connection signal="pressed" from="RootControl/Panel/Margin/VBox/ResetRow/Restore" to="." method="_on_restore_pressed"]

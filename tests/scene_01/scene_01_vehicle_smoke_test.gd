@@ -45,7 +45,7 @@ func _run() -> void:
 			_test_grid_transform_sync(scene, grid_root, arm)
 		_test_invalid_batch_commit_is_rejected(scene, manager)
 		_test_failed_grid_reinitialization_is_atomic(scene, manager)
-		_expect_true(bool(scene.call("initialize_grid")), "Reinitializing the grid should rebuild preset vehicles.")
+		_expect_true(bool(scene.call("initialize_grid")), "Reinitializing the grid with unchanged geometry should rebuild preset vehicles.")
 		await process_frame
 		_expect_equal(manager.get_vehicle_count(), 2, "Grid reinitialization should not duplicate preset vehicles.")
 		_expect_true(manager.get_node_or_null("ArmVehicle") != null, "Rebuilt arm vehicle should retain the stable static node name.")
@@ -161,10 +161,6 @@ func _test_grid_transform_sync(scene: Node, grid_root: Node3D, arm: VEHICLE_ACTO
 	_assert_actor_transform(scene, grid_root, arm, "Rotated GridRoot")
 	_assert_camera_center(scene, grid_root, camera_rig, "Rotated GridRoot")
 
-	scene.call("preview_toggle_grid_scale")
-	_assert_actor_transform(scene, grid_root, arm, "Scaled GridRoot")
-	_assert_camera_center(scene, grid_root, camera_rig, "Scaled GridRoot")
-
 	scene.call("preview_toggle_grid_offset")
 	_assert_actor_transform(scene, grid_root, arm, "Offset GridRoot")
 	_assert_camera_center(scene, grid_root, camera_rig, "Offset GridRoot")
@@ -210,7 +206,10 @@ func _assert_camera_center(
 
 
 func _test_failed_grid_reinitialization_is_atomic(scene: Node, manager: VEHICLE_MANAGER_SCRIPT) -> void:
-	var previous_model = scene.get("grid_model")
+	var previous_model := scene.get("grid_model") as GRID_MODEL_SCRIPT
+	_expect_true(previous_model != null, "Grid rejection fixture requires the current GridModel.")
+	if previous_model == null:
+		return
 	var previous_width: int = previous_model.width
 	var previous_height: int = previous_model.height
 	var previous_count := manager.get_vehicle_count()
@@ -233,8 +232,11 @@ func _test_failed_grid_reinitialization_is_atomic(scene: Node, manager: VEHICLE_
 	var initialized := bool(_call_with_expected_errors_suppressed(
 		Callable(scene, "initialize_grid")
 	))
-	_expect_false(initialized, "A grid that cannot contain preset starts should be rejected.")
-	var restored_model = scene.get("grid_model")
+	_expect_false(initialized, "Runtime grid geometry changes should be rejected atomically.")
+	var restored_model := scene.get("grid_model") as GRID_MODEL_SCRIPT
+	_expect_true(restored_model != null, "Rejected grid should preserve a valid GridModel.")
+	if restored_model == null:
+		return
 	var restored_arm := manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.ARM_VEHICLE_ID) as VEHICLE_ACTOR_SCRIPT
 	var restored_transport := manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.TRANSPORT_VEHICLE_ID) as VEHICLE_ACTOR_SCRIPT
 	_expect_true(restored_model == previous_model, "Rejected grid should preserve the GridModel instance.")

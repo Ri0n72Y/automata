@@ -2,11 +2,12 @@ extends SceneTree
 
 const MAIN_SCENE: PackedScene = preload("res://scenes/scene_01/scene_01_basic_packing.tscn")
 const SHOWCASE_SCENE: PackedScene = preload("res://scenes/scene_01/scene_01_vehicle_showcase.tscn")
-const FIELD_SCENE: PackedScene = preload("res://scenes/scene_01/components/scene_01_field_12x8.tscn")
+const FIELD_SCENE: PackedScene = preload("res://scenes/scene_01/components/scene_01_field_16x10.tscn")
 const ARM_SCENE: PackedScene = preload("res://scenes/scene_01/vehicles/arm_vehicle_placeholder.tscn")
 const TRANSPORT_SCENE: PackedScene = preload("res://scenes/scene_01/vehicles/transport_vehicle_placeholder.tscn")
 const CAMERA_SCENE: PackedScene = preload("res://scenes/scene_01/components/scene_01_camera_lighting.tscn")
 const UI_SCENE: PackedScene = preload("res://scenes/scene_01/components/scene_01_manual_ui.tscn")
+const DEBUG_UI_SCENE: PackedScene = preload("res://scenes/scene_01/components/scene_01_debug_ui.tscn")
 const GRID_MODEL_SCRIPT := preload("res://scripts/grid/grid_model.gd")
 const VEHICLE_MANAGER_SCRIPT := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 
@@ -37,22 +38,28 @@ func _run() -> void:
 func _test_main_scene_structure() -> void:
 	var scene: Node = MAIN_SCENE.instantiate()
 	_expect_node(scene, "SceneRoot/GridRoot/GridTileView", "Main scene should instance the static field.")
+	_expect_node(scene, "SceneRoot/GridRoot/VehicleGrabDropInputRouter", "Main scene should contain the early GrabDrop input router.")
 	_expect_node(scene, "SceneRoot/RobotRoot/Scene01VehicleManager/ArmVehicle", "Main scene should contain the static arm vehicle instance.")
 	_expect_node(scene, "SceneRoot/RobotRoot/Scene01VehicleManager/TransportVehicle", "Main scene should contain the static transport vehicle instance.")
 	_expect_node(scene, "SceneRoot/CameraRoot/Scene01CameraRig", "Main scene should instance static camera and lighting.")
-	_expect_node(scene, "UIRoot", "Main scene should instance the static manual UI.")
+	_expect_node(scene, "UIRoot", "Main scene should instance the player guide UI.")
+	_expect_node(scene, "DebugUIRoot", "Main scene should instance a separate debug UI.")
+	var debug_view := scene.get_node_or_null("SceneRoot/GridRoot/GridDebugView")
+	_expect_true(debug_view != null, "Main scene should contain GridDebugView.")
+	if debug_view != null:
+		_expect_false(bool(debug_view.get("show_coordinates")), "Grid coordinates should be hidden by default.")
 	scene.free()
 
 
 func _test_static_field() -> void:
 	var field: Node = FIELD_SCENE.instantiate()
 	var tile_count: int = 0
-	for cell_y in range(8):
-		for cell_x in range(12):
+	for cell_y in range(10):
+		for cell_x in range(16):
 			var tile_path := "Tiles/Row_%d/Tile_%d" % [cell_y, cell_x]
 			if field.get_node_or_null(tile_path) != null:
 				tile_count += 1
-	_expect_equal(tile_count, 96, "Static field should expose all 96 editor-visible tiles.")
+	_expect_equal(tile_count, 160, "Static field should expose all 160 editor-visible tiles.")
 	_expect_node(field, "Tiles/GroundBody/GroundShape", "Static field should include ground collision.")
 	field.free()
 
@@ -61,23 +68,23 @@ func _test_dynamic_field_fallback() -> void:
 	var field: Node = FIELD_SCENE.instantiate()
 	var static_model := GRID_MODEL_SCRIPT.new()
 	_expect_true(
-		static_model.configure(12, 8, 1.0, Vector3.ZERO),
+		static_model.configure(16, 10, 1.0, Vector3.ZERO),
 		"Default static-grid model should configure."
 	)
 	field.call("draw", static_model)
-	_expect_true(bool(field.call("is_using_static_scene")), "A 12 x 8 model should use static tiles.")
-	_expect_equal(int(field.call("get_tile_count")), 96, "Static mode should expose 96 tiles.")
+	_expect_true(bool(field.call("is_using_static_scene")), "A 16 x 10 model should use static tiles.")
+	_expect_equal(int(field.call("get_tile_count")), 160, "Static mode should expose 160 tiles.")
 
 	var large_model := GRID_MODEL_SCRIPT.new()
 	_expect_true(
-		large_model.configure(13, 8, 1.0, Vector3.ZERO),
-		"A 13 x 8 model should configure for dynamic fallback."
+		large_model.configure(17, 10, 1.0, Vector3.ZERO),
+		"A 17 x 10 model should configure for dynamic fallback."
 	)
 	field.call("draw", large_model)
-	_expect_true(bool(field.call("is_using_dynamic_scene")), "A 13 x 8 model should use dynamic fallback.")
-	_expect_equal(int(field.call("get_tile_count")), 104, "Dynamic fallback should expose every large-grid tile.")
+	_expect_true(bool(field.call("is_using_dynamic_scene")), "A 17 x 10 model should use dynamic fallback.")
+	_expect_equal(int(field.call("get_tile_count")), 170, "Dynamic fallback should expose every large-grid tile.")
 	_expect_true(
-		field.call("get_tile_node", Vector2i(12, 7)) != null,
+		field.call("get_tile_node", Vector2i(16, 9)) != null,
 		"Dynamic fallback queries should resolve cells outside the static capacity."
 	)
 
@@ -91,7 +98,7 @@ func _test_dynamic_field_fallback() -> void:
 		_expect_equal(active_ground.collision_layer, 1, "Dynamic ground should own the active ground collision layer.")
 
 	field.call("draw", static_model)
-	_expect_true(bool(field.call("is_using_static_scene")), "Returning to 12 x 8 should reactivate static tiles.")
+	_expect_true(bool(field.call("is_using_static_scene")), "Returning to 16 x 10 should reactivate static tiles.")
 	_expect_true(static_tiles != null and static_tiles.visible, "Static tiles should become visible again.")
 	_expect_true(static_ground != null and static_ground.collision_layer == 1, "Static ground collision should be restored.")
 	_expect_true(field.call("get_ground_body") == static_ground, "Static queries should return the restored static ground body.")
@@ -108,6 +115,28 @@ func _test_vehicle_resources() -> void:
 	_expect_node(arm, "VisualRoot/ArmBeam", "Arm vehicle should have an arm beam.")
 	_expect_node(arm, "VisualRoot/WorkHead", "Arm vehicle should have a work head.")
 	_expect_node(arm, "VisualRoot/DirectionMarker", "Arm vehicle should expose its facing marker.")
+
+	var arm_beam := arm.get_node_or_null("VisualRoot/ArmBeam") as MeshInstance3D
+	var arm_head := arm.get_node_or_null("VisualRoot/WorkHead") as MeshInstance3D
+	var direction_marker := arm.get_node_or_null("VisualRoot/DirectionMarker") as MeshInstance3D
+	_expect_true(
+		arm_beam != null and arm_beam.position.z < 0.0 and absf(arm_beam.position.x) < 0.01,
+		"Arm beam should extend toward local -Z, matching logical NORTH."
+	)
+	_expect_true(
+		arm_head != null and arm_beam != null and arm_head.position.z < arm_beam.position.z,
+		"Arm work head should sit in front of the beam."
+	)
+	_expect_true(
+		direction_marker != null and direction_marker.position.z < 0.0,
+		"Direction marker should point along the same local -Z side as the arm."
+	)
+	if arm_head != null:
+		var head_mesh := arm_head.mesh as BoxMesh
+		_expect_true(
+			head_mesh != null and head_mesh.size.x > 1.0,
+			"Arm work head should span the two-cell front edge visually."
+		)
 
 	_expect_node(transport, "VisualRoot/Body", "Transport vehicle should have a chassis.")
 	_expect_node(transport, "VisualRoot/WheelFrontLeft", "Transport vehicle should have visible wheels.")
@@ -153,11 +182,21 @@ func _test_camera_and_ui_resources() -> void:
 	_expect_node(camera_scene, "WorldEnvironment", "Static camera resource should include an environment.")
 	camera_scene.free()
 
-	var ui: Node = UI_SCENE.instantiate()
-	_expect_node(ui, "RootControl/Panel/Margin/VBox/RotateRow/RotateLeft", "Manual UI should expose rotation controls.")
-	_expect_node(ui, "RootControl/Panel/Margin/VBox/TransformRow/Scale", "Manual UI should expose scale controls.")
-	_expect_node(ui, "RootControl/Panel/Margin/VBox/ResetRow/Reset", "Manual UI should expose reset controls.")
-	ui.free()
+	var guide_ui: Node = UI_SCENE.instantiate()
+	_expect_node(guide_ui, "RootControl/Panel/Margin/VBox/Instructions", "Player guide should expose instructions.")
+	_expect_node(guide_ui, "RootControl/Panel/Margin/VBox/StatusLabel", "Player guide should expose gameplay feedback.")
+	_expect_true(
+		guide_ui.get_node_or_null("RootControl/Panel/Margin/VBox/RotateRow") == null,
+		"Player guide should not contain debug transform controls."
+	)
+	guide_ui.free()
+
+	var debug_ui: Node = DEBUG_UI_SCENE.instantiate()
+	_expect_node(debug_ui, "RootControl/Panel/Margin/VBox/CoordinatesRow/CoordinatesButton", "Debug UI should expose coordinate visibility control.")
+	_expect_node(debug_ui, "RootControl/Panel/Margin/VBox/RotateRow/RotateLeft", "Debug UI should expose rotation controls.")
+	_expect_node(debug_ui, "RootControl/Panel/Margin/VBox/TransformRow/Offset", "Debug UI should expose offset controls.")
+	_expect_node(debug_ui, "RootControl/Panel/Margin/VBox/ResetRow/Reset", "Debug UI should expose reset controls.")
+	debug_ui.free()
 
 
 func _test_showcase_scene() -> void:

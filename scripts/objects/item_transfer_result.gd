@@ -8,6 +8,7 @@ enum Status {
 	TYPE_MISMATCH,
 	INVALID_TARGET,
 	ALREADY_CONTAINED,
+	OCCUPIED,
 }
 
 var _status: int = Status.INVALID_TARGET

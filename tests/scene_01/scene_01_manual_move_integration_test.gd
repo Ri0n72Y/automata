@@ -64,30 +64,67 @@ func _run() -> void:
 
 
 func _test_debug_ui_contract(scene: Node) -> void:
-	var ui = scene.get_node_or_null("UIRoot")
-	var panel := scene.get_node_or_null("UIRoot/RootControl/Panel") as PanelContainer
-	var body_paths := [
+	var guide_ui := scene.get_node_or_null("UIRoot")
+	var guide_panel := scene.get_node_or_null("UIRoot/RootControl/Panel") as PanelContainer
+	var debug_ui := scene.get_node_or_null("DebugUIRoot")
+	var debug_panel := scene.get_node_or_null("DebugUIRoot/RootControl/Panel") as PanelContainer
+	var guide_body_paths := [
 		"UIRoot/RootControl/Panel/Margin/VBox/Instructions",
 		"UIRoot/RootControl/Panel/Margin/VBox/ScopeNote",
-		"UIRoot/RootControl/Panel/Margin/VBox/RotateRow",
-		"UIRoot/RootControl/Panel/Margin/VBox/TransformRow",
-		"UIRoot/RootControl/Panel/Margin/VBox/ResetRow",
 		"UIRoot/RootControl/Panel/Margin/VBox/StatusLabel",
 	]
-	test.expect_true(ui != null and panel != null, "Debug UI should expose its collapsible structure.")
+	var debug_body_paths := [
+		"DebugUIRoot/RootControl/Panel/Margin/VBox/CoordinatesRow",
+		"DebugUIRoot/RootControl/Panel/Margin/VBox/RotateRow",
+		"DebugUIRoot/RootControl/Panel/Margin/VBox/TransformRow",
+		"DebugUIRoot/RootControl/Panel/Margin/VBox/ResetRow",
+		"DebugUIRoot/RootControl/Panel/Margin/VBox/ShortcutNote",
+		"DebugUIRoot/RootControl/Panel/Margin/VBox/StatusLabel",
+	]
+	_assert_collapsible_ui(
+		scene,
+		guide_ui,
+		guide_panel,
+		guide_body_paths,
+		"Guide UI"
+	)
+	_assert_collapsible_ui(
+		scene,
+		debug_ui,
+		debug_panel,
+		debug_body_paths,
+		"Debug UI"
+	)
+
+
+func _assert_collapsible_ui(
+	scene: Node,
+	ui: Node,
+	panel: PanelContainer,
+	body_paths: Array,
+	context: String
+) -> void:
+	test.expect_true(ui != null and panel != null, "%s should expose its collapsible structure." % context)
 	if ui == null or panel == null:
 		return
 	for path in body_paths:
-		test.expect_true(scene.get_node_or_null(path) != null, "Debug UI should preserve stable path %s." % path)
-	test.expect_true(bool(ui.call("is_collapsed")), "Debug UI should start collapsed.")
-	_expect_body_visibility(scene, body_paths, false, "Collapsed debug UI")
+		test.expect_true(
+			scene.get_node_or_null(path) != null,
+			"%s should preserve stable path %s." % [context, path]
+		)
+	test.expect_true(bool(ui.call("is_collapsed")), "%s should start collapsed." % context)
+	_expect_body_visibility(scene, body_paths, false, "Collapsed %s" % context)
 	for node in panel.find_children("*", "Button", true, false):
 		var button := node as Button
-		test.expect_equal(button.focus_mode, Control.FOCUS_NONE, "%s must ignore Enter/Space focus activation." % button.name)
+		test.expect_equal(
+			button.focus_mode,
+			Control.FOCUS_NONE,
+			"%s %s must ignore Enter/Space focus activation." % [context, button.name]
+		)
 	ui.call("set_collapsed", false)
-	_expect_body_visibility(scene, body_paths, true, "Expanded debug UI")
+	_expect_body_visibility(scene, body_paths, true, "Expanded %s" % context)
 	ui.call("set_collapsed", true)
-	_expect_body_visibility(scene, body_paths, false, "Re-collapsed debug UI")
+	_expect_body_visibility(scene, body_paths, false, "Re-collapsed %s" % context)
 
 
 func _expect_body_visibility(scene: Node, paths: Array, expected: bool, context: String) -> void:
