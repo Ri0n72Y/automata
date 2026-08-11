@@ -9,13 +9,13 @@ func _physics_process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not _is_lifecycle_running():
+	if _is_lifecycle_paused():
 		return
 	super._unhandled_input(event)
 
 
 func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
-	if not _is_lifecycle_running():
+	if not _prepare_gameplay_command():
 		return false
 	return super.request_selected_vehicle_move(target_anchor)
 
@@ -32,7 +32,7 @@ func sync_lifecycle_state() -> void:
 
 func _sync_live_target_mode() -> void:
 	super._sync_live_target_mode()
-	if _is_lifecycle_running():
+	if not _is_lifecycle_paused():
 		return
 	if grid_selection_controller != null:
 		var footprint := Vector2i.ONE
@@ -43,10 +43,22 @@ func _sync_live_target_mode() -> void:
 	_hide_prediction()
 
 
+func _prepare_gameplay_command() -> bool:
+	if controller == null or not controller.has_method("prepare_gameplay_command"):
+		return true
+	return bool(controller.call("prepare_gameplay_command"))
+
+
 func _is_lifecycle_running() -> bool:
 	if controller == null or not controller.has_method("is_gameplay_running"):
 		return true
 	return bool(controller.call("is_gameplay_running"))
+
+
+func _is_lifecycle_paused() -> bool:
+	if controller == null or not controller.has_method("is_scene_paused"):
+		return false
+	return bool(controller.call("is_scene_paused"))
 
 
 func _get_lifecycle_speed() -> float:
