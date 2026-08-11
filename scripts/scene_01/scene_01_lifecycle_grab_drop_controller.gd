@@ -3,13 +3,13 @@ extends "res://scripts/input/vehicle_grab_drop_controller.gd"
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not _is_lifecycle_running():
+	if _is_lifecycle_paused():
 		return
 	super._unhandled_input(event)
 
 
 func request_selected_grab_drop() -> GrabDropResultScript:
-	if _is_lifecycle_running():
+	if _prepare_gameplay_command():
 		return super.request_selected_grab_drop()
 	var result := GrabDropResultScript.rejected(
 		GrabDropResultScript.Action.NONE,
@@ -24,13 +24,13 @@ func request_selected_grab_drop() -> GrabDropResultScript:
 
 
 func rotate_selected_arm(direction: int) -> bool:
-	if not _is_lifecycle_running():
+	if not _prepare_gameplay_command():
 		return false
 	return super.rotate_selected_arm(direction)
 
 
 func refresh_interaction_preview() -> void:
-	if not _is_lifecycle_running():
+	if _is_lifecycle_paused():
 		_hide_interaction_preview()
 		return
 	super.refresh_interaction_preview()
@@ -40,8 +40,15 @@ func sync_lifecycle_state() -> void:
 	refresh_interaction_preview()
 
 
-func _is_lifecycle_running() -> bool:
+func _prepare_gameplay_command() -> bool:
 	var scene_controller := get_node_or_null("../../..")
-	if scene_controller == null or not scene_controller.has_method("is_gameplay_running"):
+	if scene_controller == null or not scene_controller.has_method("prepare_gameplay_command"):
 		return true
-	return bool(scene_controller.call("is_gameplay_running"))
+	return bool(scene_controller.call("prepare_gameplay_command"))
+
+
+func _is_lifecycle_paused() -> bool:
+	var scene_controller := get_node_or_null("../../..")
+	if scene_controller == null or not scene_controller.has_method("is_scene_paused"):
+		return false
+	return bool(scene_controller.call("is_scene_paused"))
