@@ -21,13 +21,15 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func activate_live_target_mode() -> bool:
+	if not is_live_target_available():
+		return super.activate_live_target_mode()
 	if not _prepare_gameplay_command():
 		return false
 	return super.activate_live_target_mode()
 
 
 func toggle_live_target_mode() -> bool:
-	if is_live_target_mode():
+	if is_live_target_mode() or not is_live_target_available():
 		return super.toggle_live_target_mode()
 	if not _prepare_gameplay_command():
 		return false
