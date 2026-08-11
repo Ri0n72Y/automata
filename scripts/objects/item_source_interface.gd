@@ -31,5 +31,17 @@ func take_item() -> ItemTransferResult:
 	return ItemTransferResult.rejected(ItemTransferResult.Status.INVALID_TARGET)
 
 
+func prepare_take_item() -> ItemTransferResult:
+	return take_item()
+
+
+func commit_prepared_take_item(_item: StandardBlock) -> bool:
+	return true
+
+
+func rollback_prepared_take_item(_item: StandardBlock) -> bool:
+	return true
+
+
 func reset() -> void:
 	pass
