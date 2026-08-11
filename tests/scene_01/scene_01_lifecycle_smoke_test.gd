@@ -47,14 +47,6 @@ func _run() -> void:
 
 	var arm = vehicle_manager.get_vehicle_by_id(&"arm_vehicle")
 	_expect_true(vehicle_selection.select_vehicle(arm), "Test should select arm vehicle.")
-	_expect_false(
-		move_controller.request_selected_vehicle_move(Vector2i(4, 2)),
-		"READY should reject new MoveTo commands."
-	)
-	_expect_false(
-		grab_drop_controller.rotate_selected_arm(1),
-		"READY should reject arm rotation commands."
-	)
 
 	lifecycle_ui._on_run_pause_pressed()
 	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.RUNNING, "Play should enter RUNNING.")
@@ -77,6 +69,10 @@ func _run() -> void:
 	_expect_false(
 		move_controller.request_selected_vehicle_stop(),
 		"PAUSED should reject X-equivalent stop requests."
+	)
+	_expect_false(
+		grab_drop_controller.rotate_selected_arm(1),
+		"PAUSED should reject arm rotation commands."
 	)
 
 	lifecycle_ui._on_speed_pressed()
@@ -101,6 +97,17 @@ func _run() -> void:
 	_expect_equal(transport.runtime_state.tray_count, 0, "Reset should empty transport tray.")
 	_expect_equal(scene.box_count, 3, "Reset should restore standard box to 3/8.")
 
+	_expect_true(
+		grab_drop_controller.rotate_selected_arm(1),
+		"First gameplay command from READY should auto-start the scene."
+	)
+	_expect_equal(
+		scene.get_lifecycle_state(),
+		LifecycleStateScript.State.RUNNING,
+		"READY gameplay command should enter RUNNING."
+	)
+
+	lifecycle_ui._on_reset_pressed()
 	lifecycle_ui._on_reset_pressed()
 	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.READY, "Repeated reset should be idempotent.")
 	_expect_equal(scene.get_simulation_speed(), 1.0, "Repeated reset should preserve 1x.")
