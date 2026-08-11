@@ -3,7 +3,7 @@ extends "res://scripts/input/grid_selection_controller.gd"
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _is_lifecycle_running():
+	if not _is_lifecycle_paused():
 		super._unhandled_input(event)
 		return
 	if event is InputEventMouseMotion:
@@ -21,30 +21,38 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func activate_live_target_mode() -> bool:
-	if not _is_lifecycle_running():
+	if not _prepare_gameplay_command():
 		return false
 	return super.activate_live_target_mode()
 
 
 func toggle_live_target_mode() -> bool:
-	if not _is_lifecycle_running():
+	if is_live_target_mode():
+		return super.toggle_live_target_mode()
+	if not _prepare_gameplay_command():
 		return false
 	return super.toggle_live_target_mode()
 
 
 func confirm_selection() -> bool:
-	if not _is_lifecycle_running():
+	if _is_lifecycle_paused():
 		return false
 	return super.confirm_selection()
 
 
 func primary_action_from_screen_position(screen_position: Vector2) -> bool:
-	if not _is_lifecycle_running():
+	if _is_lifecycle_paused():
 		return false
 	return super.primary_action_from_screen_position(screen_position)
 
 
-func _is_lifecycle_running() -> bool:
-	if controller == null or not controller.has_method("is_gameplay_running"):
+func _prepare_gameplay_command() -> bool:
+	if controller == null or not controller.has_method("prepare_gameplay_command"):
 		return true
-	return bool(controller.call("is_gameplay_running"))
+	return bool(controller.call("prepare_gameplay_command"))
+
+
+func _is_lifecycle_paused() -> bool:
+	if controller == null or not controller.has_method("is_scene_paused"):
+		return false
+	return bool(controller.call("is_scene_paused"))
