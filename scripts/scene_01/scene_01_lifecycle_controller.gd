@@ -7,7 +7,7 @@ signal lifecycle_reset_completed()
 
 const LifecycleStateScript := preload("res://scripts/scene_01/scene_01_lifecycle_state.gd")
 
-var lifecycle_state := LifecycleStateScript.new()
+var _lifecycle_state := LifecycleStateScript.new()
 
 
 func _ready() -> void:
@@ -17,64 +17,64 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if lifecycle_state.is_running():
-		timer += maxf(delta, 0.0) * lifecycle_state.get_simulation_speed()
+	if _lifecycle_state.is_running():
+		timer += maxf(delta, 0.0) * _lifecycle_state.get_simulation_speed()
 
 
 func run_scene() -> void:
-	if lifecycle_state.is_ready():
-		lifecycle_state.start()
-	elif lifecycle_state.is_paused():
-		lifecycle_state.resume()
+	if _lifecycle_state.is_ready():
+		_lifecycle_state.start()
+	elif _lifecycle_state.is_paused():
+		_lifecycle_state.resume()
 
 
 func pause_scene() -> void:
-	lifecycle_state.pause()
+	_lifecycle_state.pause()
 
 
 func resume_scene() -> void:
-	lifecycle_state.resume()
+	_lifecycle_state.resume()
 
 
 func toggle_run_pause() -> void:
-	lifecycle_state.toggle_run_pause()
+	_lifecycle_state.toggle_run_pause()
 
 
 func prepare_gameplay_command() -> bool:
-	if lifecycle_state.is_paused():
+	if _lifecycle_state.is_paused():
 		return false
-	if lifecycle_state.is_ready():
-		lifecycle_state.start()
-	return lifecycle_state.is_running()
+	if _lifecycle_state.is_ready():
+		_lifecycle_state.start()
+	return _lifecycle_state.is_running()
 
 
 func cycle_simulation_speed() -> float:
-	return lifecycle_state.cycle_simulation_speed()
+	return _lifecycle_state.cycle_simulation_speed()
 
 
 func set_simulation_speed(speed: float) -> bool:
-	return lifecycle_state.set_simulation_speed(speed)
+	return _lifecycle_state.set_simulation_speed(speed)
 
 
 func get_lifecycle_state() -> int:
-	return int(lifecycle_state.get_state())
+	return int(_lifecycle_state.get_state())
 
 
 func is_gameplay_running() -> bool:
-	return lifecycle_state.is_running()
+	return _lifecycle_state.is_running()
 
 
 func is_scene_paused() -> bool:
-	return lifecycle_state.is_paused()
+	return _lifecycle_state.is_paused()
 
 
 func get_simulation_speed() -> float:
-	return lifecycle_state.get_simulation_speed()
+	return _lifecycle_state.get_simulation_speed()
 
 
 func reset_scene_state() -> void:
 	super.reset_scene_state()
-	lifecycle_state.reset()
+	_lifecycle_state.reset()
 	is_running = false
 	_sync_lifecycle_consumers()
 	lifecycle_reset_completed.emit()
@@ -82,15 +82,15 @@ func reset_scene_state() -> void:
 
 func _connect_lifecycle_signals() -> void:
 	var state_callable := Callable(self, "_on_lifecycle_state_changed")
-	if not lifecycle_state.state_changed.is_connected(state_callable):
-		lifecycle_state.state_changed.connect(state_callable)
+	if not _lifecycle_state.state_changed.is_connected(state_callable):
+		_lifecycle_state.state_changed.connect(state_callable)
 	var speed_callable := Callable(self, "_on_simulation_speed_changed")
-	if not lifecycle_state.simulation_speed_changed.is_connected(speed_callable):
-		lifecycle_state.simulation_speed_changed.connect(speed_callable)
+	if not _lifecycle_state.simulation_speed_changed.is_connected(speed_callable):
+		_lifecycle_state.simulation_speed_changed.connect(speed_callable)
 
 
 func _on_lifecycle_state_changed(previous_state: int, current_state: int) -> void:
-	is_running = lifecycle_state.is_running()
+	is_running = _lifecycle_state.is_running()
 	_sync_lifecycle_consumers()
 	lifecycle_state_changed.emit(previous_state, current_state)
 
