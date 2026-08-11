@@ -40,6 +40,14 @@ func toggle_run_pause() -> void:
 	lifecycle_state.toggle_run_pause()
 
 
+func prepare_gameplay_command() -> bool:
+	if lifecycle_state.is_paused():
+		return false
+	if lifecycle_state.is_ready():
+		lifecycle_state.start()
+	return lifecycle_state.is_running()
+
+
 func cycle_simulation_speed() -> float:
 	return lifecycle_state.cycle_simulation_speed()
 
