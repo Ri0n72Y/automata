@@ -1,6 +1,7 @@
 extends SceneTree
 
 const VEHICLE_DEFINITION_SCRIPT := preload("res://scripts/vehicles/vehicle_definition.gd")
+const VEHICLE_RUNTIME_STATE_SCRIPT := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 const GRAB_DROP_COMMAND_SCRIPT := preload("res://scripts/vehicles/grab_drop_command.gd")
 const GRAB_DROP_INTERACTION_POLICY_SCRIPT := preload("res://scripts/vehicles/grab_drop_interaction_policy.gd")
 const GRAB_DROP_RESULT_SCRIPT := preload("res://scripts/vehicles/grab_drop_result.gd")
@@ -57,14 +58,11 @@ func _test_prepared_pile_transaction() -> void:
 
 
 func _test_command_rolls_back_failed_source_claim() -> void:
-	var runtime := _make_rejecting_arm_runtime()
-	if runtime == null:
+	var rejecting_runtime := _make_rejecting_arm_runtime()
+	if rejecting_runtime == null:
 		return
 	var pile := INFINITE_BLOCK_PILE_SCRIPT.new()
-	var cells: Array[Vector2i] = [
-		GRAB_DROP_INTERACTION_POLICY_SCRIPT.get_primary_interaction_cell(runtime),
-	]
-	pile.set_interaction_cells(cells)
+	_bind_pile_to_runtime(pile, rejecting_runtime)
 	var transitions: Array[Vector2i] = []
 	pile.produced_count_changed.connect(
 		func(previous_count: int, current_count: int) -> void:
@@ -72,30 +70,51 @@ func _test_command_rolls_back_failed_source_claim() -> void:
 	)
 	var command := GRAB_DROP_COMMAND_SCRIPT.new()
 
-	var failed = command.execute(runtime, pile)
+	var failed = command.execute(rejecting_runtime, pile)
 	_expect_equal(
 		failed.status,
 		GRAB_DROP_RESULT_SCRIPT.Status.OWNERSHIP_CONFLICT,
 		"Rejected arm claim should surface ownership conflict."
 	)
-	_expect_false(runtime.arm_has_item, "Rejected source Grab must preserve empty arm state.")
+	_expect_false(rejecting_runtime.arm_has_item, "Rejected source Grab must preserve empty arm state.")
 	_expect_equal(pile.get_produced_count(), 0, "Rejected source Grab must roll back prepared pile production.")
 	_expect_equal(transitions.size(), 0, "Rejected source Grab must not emit a production transition.")
 
-	runtime.reject_carried_item_claims = false
-	var accepted = command.execute(runtime, pile)
+	var normal_runtime := _make_normal_arm_runtime()
+	if normal_runtime == null:
+		return
+	_bind_pile_to_runtime(pile, normal_runtime)
+	var accepted = command.execute(normal_runtime, pile)
 	_expect_equal(accepted.status, GRAB_DROP_RESULT_SCRIPT.Status.ACCEPTED, "Same pile should remain usable after rollback.")
-	_expect_true(runtime.arm_has_item, "Successful retry should leave arm carrying one block.")
-	_expect_true(runtime.carried_item == accepted.item, "Successful retry should expose the exact arm-owned block.")
+	_expect_true(normal_runtime.arm_has_item, "Successful retry should leave arm carrying one block.")
+	_expect_true(normal_runtime.carried_item == accepted.item, "Successful retry should expose the exact arm-owned block.")
 	_expect_equal(pile.get_produced_count(), 1, "Successful retry should commit one production.")
 	_expect_equal(transitions, [Vector2i(0, 1)], "Only successful retry should publish production.")
 
 
 func _make_rejecting_arm_runtime() -> REJECTING_RUNTIME_SCRIPT:
+	var definition := _make_arm_definition(&"rejecting_test_arm")
+	if definition == null:
+		return null
+	var runtime := REJECTING_RUNTIME_SCRIPT.new()
+	_expect_true(runtime.configure(definition, Vector2i(2, 2)), "Rejecting arm runtime should configure.")
+	return runtime
+
+
+func _make_normal_arm_runtime() -> VEHICLE_RUNTIME_STATE_SCRIPT:
+	var definition := _make_arm_definition(&"normal_test_arm")
+	if definition == null:
+		return null
+	var runtime := VEHICLE_RUNTIME_STATE_SCRIPT.new()
+	_expect_true(runtime.configure(definition, Vector2i(2, 2)), "Normal arm runtime should configure.")
+	return runtime
+
+
+func _make_arm_definition(assembly_id: StringName) -> VEHICLE_DEFINITION_SCRIPT:
 	var definition := VEHICLE_DEFINITION_SCRIPT.new()
 	var configured := definition.configure(
-		&"rejecting_test_arm",
-		"Rejecting Test Arm",
+		assembly_id,
+		"Source Transaction Test Arm",
 		VEHICLE_DEFINITION_SCRIPT.VehicleKind.ARM,
 		Vector2i(2, 2),
 		2.0,
@@ -109,12 +128,15 @@ func _make_rejecting_arm_runtime() -> REJECTING_RUNTIME_SCRIPT:
 		0.25,
 		0
 	)
-	_expect_true(configured, "Rejecting arm definition should configure.")
-	if not configured:
-		return null
-	var runtime := REJECTING_RUNTIME_SCRIPT.new()
-	_expect_true(runtime.configure(definition, Vector2i(2, 2)), "Rejecting arm runtime should configure.")
-	return runtime
+	_expect_true(configured, "Source transaction arm definition should configure.")
+	return definition if configured else null
+
+
+func _bind_pile_to_runtime(pile: INFINITE_BLOCK_PILE_SCRIPT, runtime: VEHICLE_RUNTIME_STATE_SCRIPT) -> void:
+	var cells: Array[Vector2i] = [
+		GRAB_DROP_INTERACTION_POLICY_SCRIPT.get_primary_interaction_cell(runtime),
+	]
+	pile.set_interaction_cells(cells)
 
 
 func _expect_equal(actual: Variant, expected: Variant, message: String) -> void:
