@@ -4,8 +4,11 @@ extends "res://scripts/scene_01/scene_01_controller.gd"
 signal lifecycle_state_changed(previous_state: int, current_state: int)
 signal simulation_speed_changed(previous_speed: float, current_speed: float)
 signal lifecycle_reset_completed()
+signal lifecycle_run_preparation_failed(reason: StringName)
 
 const LifecycleStateScript := preload("res://scripts/scene_01/scene_01_lifecycle_state.gd")
+
+@export var run_preparation_gate_path: NodePath = NodePath()
 
 var _lifecycle_state := LifecycleStateScript.new()
 
@@ -23,7 +26,7 @@ func _process(delta: float) -> void:
 
 func run_scene() -> void:
 	if _lifecycle_state.is_ready():
-		_lifecycle_state.start()
+		_request_start()
 	elif _lifecycle_state.is_paused():
 		_lifecycle_state.resume()
 
@@ -37,6 +40,9 @@ func resume_scene() -> void:
 
 
 func toggle_run_pause() -> void:
+	if _lifecycle_state.is_ready():
+		_request_start()
+		return
 	_lifecycle_state.toggle_run_pause()
 
 
@@ -44,7 +50,7 @@ func prepare_gameplay_command() -> bool:
 	if _lifecycle_state.is_paused():
 		return false
 	if _lifecycle_state.is_ready():
-		_lifecycle_state.start()
+		return _request_start()
 	return _lifecycle_state.is_running()
 
 
@@ -78,6 +84,30 @@ func reset_scene_state() -> void:
 	is_running = false
 	_sync_lifecycle_consumers()
 	lifecycle_reset_completed.emit()
+
+
+func _request_start() -> bool:
+	if not _lifecycle_state.is_ready():
+		return _lifecycle_state.is_running()
+	if not _prepare_scene_run():
+		return false
+	return _lifecycle_state.start()
+
+
+func _prepare_scene_run() -> bool:
+	if run_preparation_gate_path.is_empty():
+		return true
+	var gate := get_node_or_null(run_preparation_gate_path)
+	if gate == null:
+		lifecycle_run_preparation_failed.emit(&"missing_run_preparation_gate")
+		return false
+	if not gate.has_method("prepare_scene_run"):
+		lifecycle_run_preparation_failed.emit(&"invalid_run_preparation_gate")
+		return false
+	if not bool(gate.call("prepare_scene_run")):
+		lifecycle_run_preparation_failed.emit(&"run_preparation_rejected")
+		return false
+	return true
 
 
 func _connect_lifecycle_signals() -> void:
