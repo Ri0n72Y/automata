@@ -11,8 +11,19 @@ const VehicleMoveScript := preload("res://scripts/input/vehicle_move_controller.
 const GrabDropControllerScript := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
 const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.gd")
 
+class RejectingRunPreparationGate:
+	extends Node
+	var call_count: int = 0
+
+	func prepare_scene_run() -> bool:
+		call_count += 1
+		return false
+
+
 var failures: int = 0
 var lifecycle_events: Array[Dictionary] = []
+var first_command_events: Array[StringName] = []
+var run_preparation_failures: Array[StringName] = []
 
 
 func _init() -> void:
@@ -90,10 +101,31 @@ func _run() -> void:
 		_finish()
 		return
 
+	grab_drop_controller.facing_changed.connect(_on_first_command_facing_changed)
+
 	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.READY, "Scene should start READY.")
 	_expect_equal(scene.get_simulation_speed(), 1.0, "Scene should start at 1x.")
 	_expect_equal(run_pause_button.text, "▶", "READY should show play icon.")
 	_expect_equal(speed_button.text, "1×", "READY should show 1x.")
+
+	var rejecting_gate := RejectingRunPreparationGate.new()
+	rejecting_gate.name = "RejectingRunPreparationGate"
+	scene.add_child(rejecting_gate)
+	scene.run_preparation_gate_path = NodePath("RejectingRunPreparationGate")
+	lifecycle_ui._on_run_pause_pressed()
+	_expect_equal(
+		scene.get_lifecycle_state(),
+		LifecycleStateScript.State.READY,
+		"Rejected run preparation should keep the scene READY."
+	)
+	_expect_equal(rejecting_gate.call_count, 1, "Explicit Play should invoke the run preparation gate once.")
+	_expect_equal(
+		run_preparation_failures,
+		[&"run_preparation_rejected"],
+		"Rejected preparation should publish one stable failure reason."
+	)
+	_expect_equal(run_pause_button.text, "▶", "Rejected Play should keep the play icon.")
+	scene.run_preparation_gate_path = NodePath()
 
 	var arm := vehicle_manager.get_vehicle_by_id(&"arm_vehicle")
 	var transport := vehicle_manager.get_vehicle_by_id(&"transport_vehicle")
@@ -130,6 +162,12 @@ func _run() -> void:
 
 	move_controller._physics_process(0.20)
 	var position_before_pause: Vector3 = arm.global_position
+	var anchor_before_pause: Vector2i = arm.runtime_state.anchor_cell
+	var command_before_pause = arm.runtime_state.active_move_command
+	var path_index_before_pause: int = (
+		command_before_pause.path_index if command_before_pause != null else -1
+	)
+	var segment_progress_before_pause: float = arm.get_segment_progress()
 	var timer_before_pause: float = scene.timer
 	lifecycle_ui._on_run_pause_pressed()
 	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.PAUSED, "Pause should enter PAUSED.")
@@ -137,6 +175,22 @@ func _run() -> void:
 	move_controller._physics_process(1.0)
 	scene._process(1.0)
 	_expect_vector_approx(arm.global_position, position_before_pause, "Paused vehicle should not advance.")
+	_expect_equal(arm.runtime_state.anchor_cell, anchor_before_pause, "Pause should preserve the discrete anchor.")
+	_expect_true(
+		arm.runtime_state.active_move_command == command_before_pause,
+		"Pause should preserve active MoveCommand identity."
+	)
+	if command_before_pause != null:
+		_expect_equal(
+			arm.runtime_state.active_move_command.path_index,
+			path_index_before_pause,
+			"Pause should preserve MoveCommand path index."
+		)
+	_expect_float_approx(
+		arm.get_segment_progress(),
+		segment_progress_before_pause,
+		"Pause should preserve current segment progress."
+	)
 	_expect_float_approx(scene.timer, timer_before_pause, "Paused scene timer should not advance.")
 	_expect_false(
 		move_controller.request_selected_vehicle_stop(),
@@ -196,9 +250,34 @@ func _run() -> void:
 	)
 
 	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable again after invalid transport commands.")
+	var facing_before_rejected_start: int = arm.runtime_state.facing
+	scene.run_preparation_gate_path = NodePath("RejectingRunPreparationGate")
+	_expect_false(
+		grab_drop_controller.rotate_selected_arm(1),
+		"A valid arm command should be rejected when run preparation fails."
+	)
+	_expect_equal(
+		arm.runtime_state.facing,
+		facing_before_rejected_start,
+		"Run preparation failure must happen before arm state mutation."
+	)
+	_expect_equal(
+		scene.get_lifecycle_state(),
+		LifecycleStateScript.State.READY,
+		"Rejected automatic start should keep lifecycle READY."
+	)
+	_expect_equal(rejecting_gate.call_count, 2, "Gameplay auto-start should use the same preparation gate.")
+	scene.run_preparation_gate_path = NodePath()
+
+	first_command_events.clear()
 	_expect_true(
 		grab_drop_controller.rotate_selected_arm(1),
 		"First valid gameplay command from READY should auto-start the scene."
+	)
+	_expect_equal(
+		first_command_events,
+		[&"lifecycle_running", &"facing_changed"],
+		"READY auto-start should publish RUNNING before the first real arm mutation event."
 	)
 	_expect_equal(
 		scene.get_lifecycle_state(),
@@ -294,12 +373,18 @@ func _bind_lifecycle_events(scene: LifecycleControllerScript) -> void:
 	scene.lifecycle_state_changed.connect(_on_scene_lifecycle_state_changed)
 	scene.simulation_speed_changed.connect(_on_scene_simulation_speed_changed)
 	scene.lifecycle_reset_completed.connect(_on_scene_lifecycle_reset_completed)
+	scene.lifecycle_run_preparation_failed.connect(_on_scene_run_preparation_failed)
 
 
 func _on_scene_lifecycle_state_changed(previous_state: int, current_state: int) -> void:
 	lifecycle_events.append(
 		{"kind": "state", "previous": previous_state, "current": current_state}
 	)
+	if (
+		previous_state == LifecycleStateScript.State.READY
+		and current_state == LifecycleStateScript.State.RUNNING
+	):
+		first_command_events.append(&"lifecycle_running")
 
 
 func _on_scene_simulation_speed_changed(previous_speed: float, current_speed: float) -> void:
@@ -310,6 +395,14 @@ func _on_scene_simulation_speed_changed(previous_speed: float, current_speed: fl
 
 func _on_scene_lifecycle_reset_completed() -> void:
 	lifecycle_events.append({"kind": "reset"})
+
+
+func _on_scene_run_preparation_failed(reason: StringName) -> void:
+	run_preparation_failures.append(reason)
+
+
+func _on_first_command_facing_changed(_vehicle_id: StringName, _facing: int) -> void:
+	first_command_events.append(&"facing_changed")
 
 
 func _finish() -> void:
