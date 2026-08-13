@@ -36,7 +36,10 @@ var box_count: int = 3
 var target_box_count: int = 8
 var timer: float = 0.0
 var automation_rate: float = 0.0
-var is_running: bool = false
+var _legacy_is_running: bool = false
+var is_running: bool:
+	get:
+		return _legacy_is_running
 
 var _initial_grid_root_transform: Transform3D = Transform3D.IDENTITY
 var _preview_offset_enabled: bool = false
@@ -60,7 +63,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if is_running:
+	if _legacy_is_running:
 		timer += delta
 
 
@@ -224,11 +227,11 @@ func is_grid_footprint_walkable(
 
 
 func run_scene() -> void:
-	is_running = true
+	_set_legacy_running_state(true)
 
 
 func pause_scene() -> void:
-	is_running = false
+	_set_legacy_running_state(false)
 
 
 func reset_scene() -> void:
@@ -236,7 +239,7 @@ func reset_scene() -> void:
 
 
 func reset_scene_state() -> void:
-	is_running = false
+	_set_legacy_running_state(false)
 	timer = 0.0
 	target_box_count = 8
 	automation_rate = 0.0
@@ -260,6 +263,10 @@ func reset_scene_state() -> void:
 	else:
 		box_count = 3
 	_refresh_camera_for_grid()
+
+
+func _set_legacy_running_state(value: bool) -> void:
+	_legacy_is_running = value
 
 
 func preview_rotate_grid(direction: int) -> void:
