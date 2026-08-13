@@ -1,6 +1,8 @@
 class_name Scene01LifecycleGrabDropController
 extends "res://scripts/input/vehicle_grab_drop_controller.gd"
 
+const VALIDATION_PASSTHROUGH_TOKEN := -1
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _is_lifecycle_paused():
@@ -13,11 +15,14 @@ func request_selected_grab_drop() -> GrabDropResultScript:
 		return _reject_for_lifecycle_pause()
 	if _get_selected_vehicle() == null:
 		return super.request_selected_grab_drop()
-	if not _prepare_gameplay_command_validation():
+	var validation_token := _begin_gameplay_command_validation()
+	if validation_token == 0:
 		return _reject_for_run_preparation()
 	if not _can_execute_selected_grab_drop():
+		_cancel_gameplay_command_validation(validation_token)
 		return super.request_selected_grab_drop()
-	if not _commit_gameplay_command_start():
+	if not _commit_gameplay_command_validation(validation_token):
+		_cancel_gameplay_command_validation(validation_token)
 		return _reject_for_run_preparation()
 	return super.request_selected_grab_drop()
 
@@ -28,12 +33,15 @@ func rotate_selected_arm(direction: int) -> bool:
 	var step := clampi(direction, -1, 1)
 	if step == 0 or _get_selected_vehicle() == null:
 		return false
-	if not _prepare_gameplay_command_validation():
+	var validation_token := _begin_gameplay_command_validation()
+	if validation_token == 0:
 		return false
 	var vehicle := _get_selected_vehicle()
 	if not _can_rotate(vehicle):
+		_cancel_gameplay_command_validation(validation_token)
 		return false
-	if not _commit_gameplay_command_start():
+	if not _commit_gameplay_command_validation(validation_token):
+		_cancel_gameplay_command_validation(validation_token)
 		return false
 	return super.rotate_selected_arm(direction)
 
@@ -89,22 +97,31 @@ func _emit_lifecycle_rejection(status: int) -> GrabDropResultScript:
 	return result
 
 
-func _prepare_gameplay_command_validation() -> bool:
+func _begin_gameplay_command_validation() -> int:
 	var scene_controller := get_node_or_null("../../..")
 	if scene_controller == null or not scene_controller.has_method(
-		"prepare_gameplay_command_validation"
+		"begin_gameplay_command_validation"
 	):
-		return true
-	return bool(scene_controller.call("prepare_gameplay_command_validation"))
+		return VALIDATION_PASSTHROUGH_TOKEN
+	return int(scene_controller.call("begin_gameplay_command_validation"))
 
 
-func _commit_gameplay_command_start() -> bool:
+func _commit_gameplay_command_validation(token: int) -> bool:
 	var scene_controller := get_node_or_null("../../..")
 	if scene_controller == null or not scene_controller.has_method(
-		"commit_gameplay_command_start"
+		"commit_gameplay_command_validation"
 	):
 		return true
-	return bool(scene_controller.call("commit_gameplay_command_start"))
+	return bool(scene_controller.call("commit_gameplay_command_validation", token))
+
+
+func _cancel_gameplay_command_validation(token: int) -> void:
+	var scene_controller := get_node_or_null("../../..")
+	if scene_controller == null or not scene_controller.has_method(
+		"cancel_gameplay_command_validation"
+	):
+		return
+	scene_controller.call("cancel_gameplay_command_validation", token)
 
 
 func _is_lifecycle_paused() -> bool:
