@@ -141,11 +141,12 @@ func _run() -> void:
 	reset_observations.clear()
 	_scene.reset_scene()
 	_expect_equal(gate.call_count, 2, "Reset must not execute run preparation.")
-	_expect_true(
-		reset_observations.size() >= 1,
-		"Reset should publish at least one vehicle deselection observation."
+	_expect_equal(
+		reset_observations.size(),
+		1,
+		"Reset should publish exactly one vehicle deselection observation."
 	)
-	if not reset_observations.is_empty():
+	if reset_observations.size() == 1:
 		_expect_equal(
 			reset_observations[0],
 			{
