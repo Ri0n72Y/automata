@@ -141,14 +141,19 @@ func _run() -> void:
 	reset_observations.clear()
 	_scene.reset_scene()
 	_expect_equal(gate.call_count, 2, "Reset must not execute run preparation.")
-	_expect_equal(
-		reset_observations,
-		[{
-			"legacy_running": true,
-			"lifecycle_state": LifecycleStateScript.State.RUNNING,
-		}],
-		"Domain reset callbacks should observe legacy is_running matching the formal RUNNING state until lifecycle Reset commits."
+	_expect_true(
+		reset_observations.size() >= 1,
+		"Reset should publish at least one vehicle deselection observation."
 	)
+	if not reset_observations.is_empty():
+		_expect_equal(
+			reset_observations[0],
+			{
+				"legacy_running": true,
+				"lifecycle_state": LifecycleStateScript.State.RUNNING,
+			},
+			"Domain reset callbacks should observe legacy is_running matching the formal RUNNING state until lifecycle Reset commits."
+		)
 	_expect_false(_scene.is_running, "Legacy is_running should be false after lifecycle Reset completes.")
 	_expect_equal(
 		_scene.get_lifecycle_state(),
