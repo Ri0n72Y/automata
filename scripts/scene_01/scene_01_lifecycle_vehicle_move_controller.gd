@@ -2,6 +2,8 @@ class_name Scene01LifecycleVehicleMoveController
 extends "res://scripts/input/vehicle_move_controller.gd"
 
 const VALIDATION_PASSTHROUGH_TOKEN := -1
+const REJECTION_MOVE_BUSY := &"vehicle_busy"
+const REJECTION_MOVE_NO_PATH := &"no_path"
 const REJECTION_NO_MOVE_CAPABILITY := &"no_move_capability"
 
 
@@ -84,7 +86,7 @@ func _get_ready_move_preflight_rejection(
 	target_anchor: Vector2i
 ) -> StringName:
 	if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
-		return REJECTION_BUSY
+		return REJECTION_MOVE_BUSY
 	if not _vehicle_has_move_capability(vehicle):
 		return REJECTION_NO_MOVE_CAPABILITY
 	if (
@@ -92,13 +94,13 @@ func _get_ready_move_preflight_rejection(
 		or vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
 		or vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING
 	):
-		return REJECTION_BUSY
+		return REJECTION_MOVE_BUSY
 	var path := _find_path(vehicle, target_anchor)
 	if path.is_empty():
-		return REJECTION_NO_PATH
+		return REJECTION_MOVE_NO_PATH
 	var command := MoveCommandScript.new()
 	if not command.configure(target_anchor, path):
-		return REJECTION_NO_PATH
+		return REJECTION_MOVE_NO_PATH
 	return &""
 
 
