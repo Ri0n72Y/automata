@@ -54,6 +54,22 @@ func prepare_gameplay_command() -> bool:
 	return _lifecycle_state.is_running()
 
 
+func prepare_gameplay_command_validation() -> bool:
+	if _lifecycle_state.is_paused():
+		return false
+	if _lifecycle_state.is_ready():
+		return _prepare_scene_run()
+	return _lifecycle_state.is_running()
+
+
+func commit_gameplay_command_start() -> bool:
+	if _lifecycle_state.is_paused():
+		return false
+	if _lifecycle_state.is_ready():
+		return _lifecycle_state.start()
+	return _lifecycle_state.is_running()
+
+
 func cycle_simulation_speed() -> float:
 	return _lifecycle_state.cycle_simulation_speed()
 
@@ -81,7 +97,7 @@ func get_simulation_speed() -> float:
 func reset_scene_state() -> void:
 	super.reset_scene_state()
 	_lifecycle_state.reset()
-	is_running = false
+	_set_legacy_running_state(false)
 	_sync_lifecycle_consumers()
 	lifecycle_reset_completed.emit()
 
@@ -120,7 +136,7 @@ func _connect_lifecycle_signals() -> void:
 
 
 func _on_lifecycle_state_changed(previous_state: int, current_state: int) -> void:
-	is_running = _lifecycle_state.is_running()
+	_set_legacy_running_state(_lifecycle_state.is_running())
 	_sync_lifecycle_consumers()
 	lifecycle_state_changed.emit(previous_state, current_state)
 
