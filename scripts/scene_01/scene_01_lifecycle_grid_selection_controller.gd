@@ -1,6 +1,8 @@
 class_name Scene01LifecycleGridSelectionController
 extends "res://scripts/input/grid_selection_controller.gd"
 
+const VALIDATION_PASSTHROUGH_TOKEN := -1
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not _is_lifecycle_paused():
@@ -23,17 +25,13 @@ func _unhandled_input(event: InputEvent) -> void:
 func activate_live_target_mode() -> bool:
 	if not is_live_target_available():
 		return super.activate_live_target_mode()
-	if not _prepare_gameplay_command():
-		return false
-	return super.activate_live_target_mode()
+	return _activate_live_target_mode_with_lifecycle()
 
 
 func toggle_live_target_mode() -> bool:
 	if is_live_target_mode() or not is_live_target_available():
 		return super.toggle_live_target_mode()
-	if not _prepare_gameplay_command():
-		return false
-	return super.toggle_live_target_mode()
+	return _activate_live_target_mode_with_lifecycle()
 
 
 func confirm_selection() -> bool:
@@ -48,10 +46,44 @@ func primary_action_from_screen_position(screen_position: Vector2) -> bool:
 	return super.primary_action_from_screen_position(screen_position)
 
 
-func _prepare_gameplay_command() -> bool:
-	if controller == null or not controller.has_method("prepare_gameplay_command"):
+func _activate_live_target_mode_with_lifecycle() -> bool:
+	var validation_token := _begin_gameplay_command_validation()
+	if validation_token == 0:
+		return false
+	if not _can_selected_vehicle_move_after_preparation():
+		_cancel_gameplay_command_validation(validation_token)
+		return false
+	if not _commit_gameplay_command_validation(validation_token):
+		_cancel_gameplay_command_validation(validation_token)
+		return false
+	return super.activate_live_target_mode()
+
+
+func _can_selected_vehicle_move_after_preparation() -> bool:
+	var move_controller := get_node_or_null("../VehicleMoveController")
+	if move_controller == null or not move_controller.has_method(
+		"can_selected_vehicle_move_after_preparation"
+	):
 		return true
-	return bool(controller.call("prepare_gameplay_command"))
+	return bool(move_controller.call("can_selected_vehicle_move_after_preparation"))
+
+
+func _begin_gameplay_command_validation() -> int:
+	if controller == null or not controller.has_method("begin_gameplay_command_validation"):
+		return VALIDATION_PASSTHROUGH_TOKEN
+	return int(controller.call("begin_gameplay_command_validation"))
+
+
+func _commit_gameplay_command_validation(token: int) -> bool:
+	if controller == null or not controller.has_method("commit_gameplay_command_validation"):
+		return true
+	return bool(controller.call("commit_gameplay_command_validation", token))
+
+
+func _cancel_gameplay_command_validation(token: int) -> void:
+	if controller == null or not controller.has_method("cancel_gameplay_command_validation"):
+		return
+	controller.call("cancel_gameplay_command_validation", token)
 
 
 func _is_lifecycle_paused() -> bool:
