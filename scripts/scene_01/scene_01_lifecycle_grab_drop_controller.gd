@@ -11,9 +11,13 @@ func _unhandled_input(event: InputEvent) -> void:
 func request_selected_grab_drop() -> GrabDropResultScript:
 	if _is_lifecycle_paused():
 		return _reject_for_lifecycle_pause()
+	if _get_selected_vehicle() == null:
+		return super.request_selected_grab_drop()
+	if not _prepare_gameplay_command_validation():
+		return _reject_for_run_preparation()
 	if not _can_execute_selected_grab_drop():
 		return super.request_selected_grab_drop()
-	if not _prepare_gameplay_command():
+	if not _commit_gameplay_command_start():
 		return _reject_for_run_preparation()
 	return super.request_selected_grab_drop()
 
@@ -21,11 +25,15 @@ func request_selected_grab_drop() -> GrabDropResultScript:
 func rotate_selected_arm(direction: int) -> bool:
 	if _is_lifecycle_paused():
 		return false
-	var vehicle := _get_selected_vehicle()
 	var step := clampi(direction, -1, 1)
-	if step == 0 or not _can_rotate(vehicle):
+	if step == 0 or _get_selected_vehicle() == null:
 		return false
-	if not _prepare_gameplay_command():
+	if not _prepare_gameplay_command_validation():
+		return false
+	var vehicle := _get_selected_vehicle()
+	if not _can_rotate(vehicle):
+		return false
+	if not _commit_gameplay_command_start():
 		return false
 	return super.rotate_selected_arm(direction)
 
@@ -81,11 +89,22 @@ func _emit_lifecycle_rejection(status: int) -> GrabDropResultScript:
 	return result
 
 
-func _prepare_gameplay_command() -> bool:
+func _prepare_gameplay_command_validation() -> bool:
 	var scene_controller := get_node_or_null("../../..")
-	if scene_controller == null or not scene_controller.has_method("prepare_gameplay_command"):
+	if scene_controller == null or not scene_controller.has_method(
+		"prepare_gameplay_command_validation"
+	):
 		return true
-	return bool(scene_controller.call("prepare_gameplay_command"))
+	return bool(scene_controller.call("prepare_gameplay_command_validation"))
+
+
+func _commit_gameplay_command_start() -> bool:
+	var scene_controller := get_node_or_null("../../..")
+	if scene_controller == null or not scene_controller.has_method(
+		"commit_gameplay_command_start"
+	):
+		return true
+	return bool(scene_controller.call("commit_gameplay_command_start"))
 
 
 func _is_lifecycle_paused() -> bool:
