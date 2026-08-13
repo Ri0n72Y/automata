@@ -68,7 +68,7 @@ func _run() -> void:
 		or move_controller == null
 		or grid_selection == null
 	):
-		_cleanup_and_finish()
+		await _cleanup_and_finish()
 		return
 
 	var gate := CountingAcceptingGate.new()
@@ -79,7 +79,7 @@ func _run() -> void:
 	var arm := vehicle_manager.get_vehicle_by_id(&"arm_vehicle")
 	_expect_true(arm != null, "Arm vehicle should exist.")
 	if arm == null:
-		_cleanup_and_finish()
+		await _cleanup_and_finish()
 		return
 	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable.")
 	vehicle_selection.selection_changed.connect(_on_vehicle_selection_changed_during_reset)
@@ -165,7 +165,7 @@ func _run() -> void:
 		"Prepared explicit Run after Reset should enter RUNNING."
 	)
 
-	_cleanup_and_finish()
+	await _cleanup_and_finish()
 
 
 func _on_vehicle_selection_changed_during_reset(
