@@ -7,10 +7,14 @@ signal lifecycle_reset_completed()
 signal lifecycle_run_preparation_failed(reason: StringName)
 
 const LifecycleStateScript := preload("res://scripts/scene_01/scene_01_lifecycle_state.gd")
+const RUNNING_VALIDATION_TOKEN := -1
 
 @export var run_preparation_gate_path: NodePath = NodePath()
 
 var _lifecycle_state := LifecycleStateScript.new()
+var _next_gameplay_validation_token: int = 1
+var _pending_gameplay_validation_token: int = 0
+var _suppress_legacy_running_reset: bool = false
 
 
 func _ready() -> void:
@@ -54,20 +58,39 @@ func prepare_gameplay_command() -> bool:
 	return _lifecycle_state.is_running()
 
 
-func prepare_gameplay_command_validation() -> bool:
+func begin_gameplay_command_validation() -> int:
 	if _lifecycle_state.is_paused():
-		return false
-	if _lifecycle_state.is_ready():
-		return _prepare_scene_run()
-	return _lifecycle_state.is_running()
+		return 0
+	if _lifecycle_state.is_running():
+		return RUNNING_VALIDATION_TOKEN
+	if not _lifecycle_state.is_ready() or not _prepare_scene_run():
+		return 0
+	var token := _next_gameplay_validation_token
+	_next_gameplay_validation_token += 1
+	if _next_gameplay_validation_token <= 0:
+		_next_gameplay_validation_token = 1
+	_pending_gameplay_validation_token = token
+	return token
 
 
-func commit_gameplay_command_start() -> bool:
+func commit_gameplay_command_validation(token: int) -> bool:
 	if _lifecycle_state.is_paused():
 		return false
-	if _lifecycle_state.is_ready():
-		return _lifecycle_state.start()
-	return _lifecycle_state.is_running()
+	if _lifecycle_state.is_running():
+		return token == RUNNING_VALIDATION_TOKEN
+	if (
+		not _lifecycle_state.is_ready()
+		or token <= 0
+		or token != _pending_gameplay_validation_token
+	):
+		return false
+	_pending_gameplay_validation_token = 0
+	return _lifecycle_state.start()
+
+
+func cancel_gameplay_command_validation(token: int) -> void:
+	if token > 0 and token == _pending_gameplay_validation_token:
+		_pending_gameplay_validation_token = 0
 
 
 func cycle_simulation_speed() -> float:
@@ -95,11 +118,20 @@ func get_simulation_speed() -> float:
 
 
 func reset_scene_state() -> void:
+	_pending_gameplay_validation_token = 0
+	_suppress_legacy_running_reset = true
 	super.reset_scene_state()
+	_suppress_legacy_running_reset = false
 	_lifecycle_state.reset()
-	_set_legacy_running_state(false)
+	super._set_legacy_running_state(_lifecycle_state.is_running())
 	_sync_lifecycle_consumers()
 	lifecycle_reset_completed.emit()
+
+
+func _set_legacy_running_state(value: bool) -> void:
+	if _suppress_legacy_running_reset:
+		return
+	super._set_legacy_running_state(value)
 
 
 func _request_start() -> bool:
@@ -136,7 +168,8 @@ func _connect_lifecycle_signals() -> void:
 
 
 func _on_lifecycle_state_changed(previous_state: int, current_state: int) -> void:
-	_set_legacy_running_state(_lifecycle_state.is_running())
+	_pending_gameplay_validation_token = 0
+	super._set_legacy_running_state(_lifecycle_state.is_running())
 	_sync_lifecycle_consumers()
 	lifecycle_state_changed.emit(previous_state, current_state)
 
