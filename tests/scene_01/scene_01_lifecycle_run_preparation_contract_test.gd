@@ -106,6 +106,16 @@ func _run() -> void:
 		"Rejected GrabDrop after preparation must keep lifecycle READY."
 	)
 
+	_expect_false(
+		scene.commit_gameplay_command_validation(424242),
+		"A fabricated validation token should not start lifecycle."
+	)
+	_expect_equal(
+		scene.get_lifecycle_state(),
+		LifecycleStateScript.State.READY,
+		"Fabricated validation token should keep lifecycle READY."
+	)
+
 	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable.")
 	_expect_true(
 		grab_drop_controller.rotate_selected_arm(1),
