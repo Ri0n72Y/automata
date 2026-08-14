@@ -25,11 +25,22 @@ func _run() -> void:
 	var pile := scene.get_node_or_null("SceneRoot/ObjectRoot/Scene01ObjectManager/InfiniteBlockPile") as Node3D
 	var box := scene.get_node_or_null("SceneRoot/ObjectRoot/Scene01ObjectManager/StandardBox") as Node3D
 	var input_router := scene.get_node_or_null("SceneRoot/GridRoot/VehicleGrabDropInputRouter")
+	var guide_root := scene.get_node_or_null("UIRoot/RootControl") as Control
 
 	_expect_true(model != null, "Manual-test layout requires GridModel.")
 	_expect_true(pile != null, "Manual-test layout requires the pile visual.")
 	_expect_true(box != null, "Manual-test layout requires the box visual.")
 	_expect_true(input_router != null, "Manual-test layout requires the early A/D/C input router.")
+	_expect_true(guide_root != null, "Manual-test layout requires the player guide root.")
+	if guide_root != null:
+		var guide_theme: Theme = guide_root.theme
+		_expect_true(guide_theme != null, "Player guide should provide an explicit UI theme.")
+		if guide_theme != null:
+			var guide_font: Font = guide_theme.default_font
+			_expect_true(
+				guide_font != null and guide_font.get_class() == "SystemFont",
+				"Player guide should use a SystemFont so Chinese glyphs can resolve from the host OS."
+			)
 	if model != null:
 		_expect_equal(Vector2i(model.width, model.height), Vector2i(16, 10), "Manual-test field should be 16 x 10.")
 	if pile != null:
