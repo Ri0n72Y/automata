@@ -1,6 +1,13 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_manual_controls.gd" id="1_controls"]
+
+[sub_resource type="SystemFont" id="SystemFont_ui"]
+font_names = PackedStringArray("Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", "Noto Sans SC", "WenQuanYi Micro Hei")
+allow_system_fallback = true
+
+[sub_resource type="Theme" id="Theme_ui"]
+default_font = SubResource("SystemFont_ui")
 
 [node name="UIRoot" type="CanvasLayer"]
 script = ExtResource("1_controls")
@@ -13,6 +20,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme = SubResource("Theme_ui")
 
 [node name="Panel" type="PanelContainer" parent="RootControl"]
 unique_name_in_owner = true
