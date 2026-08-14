@@ -42,7 +42,7 @@ func can_take_item() -> bool:
 
 
 func uses_primary_interaction_cell() -> bool:
-	return false
+	return true
 
 
 func get_current_count() -> int:
