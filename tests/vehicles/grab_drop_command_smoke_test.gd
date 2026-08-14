@@ -77,7 +77,7 @@ func _test_infinite_pile_to_arm_to_tray_round_trip() -> void:
 		return
 	_expect_equal(transport.tray_count, 0, "Tray re-grab should remove one real item.")
 	_expect_true(arm.carried_item == regrab.item, "Re-grab should return the same block to arm.")
-	_expect_equal(regrab.item.get_block_id(), block_id, "Tray round trip should preserve block identity.")
+	_expect_equal(regrab.item.get_block_id(), block_id, "Tray round trip should preserve StandardBlock identity.")
 	_expect_true(regrab.item.is_claimed_by(arm), "Re-grabbed block should be arm-owned.")
 
 	var box := STANDARD_BOX_SCRIPT.new()
@@ -300,23 +300,24 @@ func _test_spatial_target_revalidation() -> void:
 	var field := GROUND_BLOCK_FIELD_SCRIPT.new()
 	var forward_cells := GRAB_DROP_INTERACTION_POLICY_SCRIPT.get_forward_interaction_cells(arm)
 	if forward_cells.size() < 2:
-		_expect_true(false, "Ground primary-socket fixture requires a 2-cell forward edge.")
+		_expect_true(false, "Ground secondary-socket fixture requires a 2-cell forward edge.")
 		return
 	var secondary_cell: Vector2i = forward_cells[1]
 	var valid_cells: Array[Vector2i] = [secondary_cell]
 	field.configure_valid_cells(valid_cells)
 	var secondary_ground = field.get_cell_interface(secondary_cell)
-	_expect_true(secondary_ground != null, "Ground primary-socket fixture requires a legal secondary ground interface.")
+	_expect_true(secondary_ground != null, "Ground secondary-socket fixture requires a legal secondary ground interface.")
 	if secondary_ground == null:
 		return
 	var secondary_drop = command.execute(arm, secondary_ground)
 	_expect_equal(
 		secondary_drop.status,
-		GRAB_DROP_RESULT_SCRIPT.Status.NO_TARGET,
-		"Ground receiver must require the primary/front-left socket even when another forward cell overlaps."
+		GRAB_DROP_RESULT_SCRIPT.Status.ACCEPTED,
+		"An explicitly resolved secondary ground interface on the forward edge should accept Drop."
 	)
-	_expect_true(arm.carried_item == carried, "Secondary ground rejection must preserve exact cargo.")
-	_expect_false(field.has_item(secondary_cell), "Secondary ground rejection must not place cargo.")
+	_expect_false(arm.arm_has_item, "Secondary ground Drop should transfer cargo out of the arm.")
+	_expect_true(field.get_item(secondary_cell) == carried, "Secondary ground Drop should place the exact carried block.")
+	_expect_true(carried.is_claimed_by(field), "Secondary ground Drop should transfer ownership to the ground field.")
 
 
 func _test_explicit_rejection_status_contract() -> void:
