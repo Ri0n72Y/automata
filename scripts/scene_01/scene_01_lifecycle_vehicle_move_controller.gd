@@ -117,6 +117,8 @@ func _reject_move_preflight(
 	target_anchor: Vector2i,
 	reason: StringName
 ) -> bool:
+	# The lifecycle preflight runs before the base controller enters PLANNING.
+	# Rejections must leave the selected vehicle's runtime motion state untouched.
 	var vehicle_id: StringName = &""
 	if vehicle != null:
 		vehicle_id = vehicle.get_vehicle_id()

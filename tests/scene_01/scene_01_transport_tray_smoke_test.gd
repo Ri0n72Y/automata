@@ -7,6 +7,7 @@ const VEHICLE_MOVE_SCRIPT := preload("res://scripts/input/vehicle_move_controlle
 const VEHICLE_SELECTION_SCRIPT := preload("res://scripts/input/vehicle_selection_controller.gd")
 const MOVE_COMMAND_SCRIPT := preload("res://scripts/vehicles/move_command.gd")
 const VEHICLE_RUNTIME_STATE_SCRIPT := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
+const LIFECYCLE_CONTROLLER_SCRIPT := preload("res://scripts/scene_01/scene_01_lifecycle_controller.gd")
 
 const SCENE_PATH := "res://scenes/scene_01/scene_01_basic_packing.tscn"
 const VEHICLE_MANAGER_PATH := "SceneRoot/RobotRoot/Scene01VehicleManager"
@@ -29,6 +30,14 @@ func _run() -> void:
 		return
 
 	var scene := packed.instantiate()
+	var lifecycle_controller := scene as LIFECYCLE_CONTROLLER_SCRIPT
+	_expect_true(
+		lifecycle_controller != null,
+		"Scene 01 should provide the lifecycle controller for scripted movement."
+	)
+	if lifecycle_controller == null:
+		_finish()
+		return
 	root.add_child(scene)
 	await process_frame
 	await physics_frame
@@ -88,7 +97,12 @@ func _run() -> void:
 		_expect_equal(visual.get_visible_tray_slot_count(), 0, "Reset should clear tray visual slots.")
 		_expect_equal(visual.get_tray_count_label_text(), "0/8", "Reset should clear tray visual label.")
 
-	var collision_block: Variant = _test_collision_preserves_inventory(move_controller, arm, transport)
+	var collision_block: Variant = _test_collision_preserves_inventory(
+		lifecycle_controller,
+		move_controller,
+		arm,
+		transport
+	)
 	scene.call("reset_scene")
 	await process_frame
 	if collision_block != null:
@@ -139,7 +153,12 @@ func _test_move_and_stop_preserve_inventory(
 	_expect_true(block.is_claimed_by(transport.runtime_state.tray_state), "Manual stop should preserve tray ownership.")
 
 
-func _test_collision_preserves_inventory(move_controller, arm, transport) -> Variant:
+func _test_collision_preserves_inventory(
+	lifecycle_controller: LIFECYCLE_CONTROLLER_SCRIPT,
+	move_controller,
+	arm,
+	transport
+) -> Variant:
 	_place_vehicle(arm, Vector2i(3, 3))
 	_place_vehicle(transport, Vector2i(6, 3))
 	var block := STANDARD_BLOCK_SCRIPT.create()
@@ -150,11 +169,11 @@ func _test_collision_preserves_inventory(move_controller, arm, transport) -> Var
 	var transport_command = _command(Vector2i(5, 3), [Vector2i(6, 3), Vector2i(5, 3)])
 	if arm_command == null or transport_command == null:
 		return block
-	if not arm.start_move(arm_command):
-		_expect_true(false, "Arm collision task should start.")
+	if not lifecycle_controller.submit_programmatic_vehicle_move(arm, arm_command):
+		_expect_true(false, "Arm collision task should start through the lifecycle API.")
 		return block
-	if not transport.start_move(transport_command):
-		_expect_true(false, "Transport collision task should start with tray cargo.")
+	if not lifecycle_controller.submit_programmatic_vehicle_move(transport, transport_command):
+		_expect_true(false, "Transport collision task should start through the lifecycle API.")
 		arm.reset_actor()
 		return block
 	move_controller._physics_process(0.5)

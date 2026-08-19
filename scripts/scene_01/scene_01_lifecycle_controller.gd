@@ -7,6 +7,9 @@ signal lifecycle_reset_completed()
 signal lifecycle_run_preparation_failed(reason: StringName)
 
 const LifecycleStateScript := preload("res://scripts/scene_01/scene_01_lifecycle_state.gd")
+const MoveCommandScript := preload("res://scripts/vehicles/move_command.gd")
+const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
+const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 const RUNNING_VALIDATION_TOKEN := -1
 
 @export var run_preparation_gate_path: NodePath = NodePath()
@@ -56,6 +59,25 @@ func prepare_gameplay_command() -> bool:
 	if _lifecycle_state.is_ready():
 		return _request_start()
 	return _lifecycle_state.is_running()
+
+
+## Submits an already-constructed move from non-input systems through the
+## lifecycle boundary.  This keeps scripted tasks subject to the same run
+## preparation and pause semantics as player-issued MoveTo commands.
+func submit_programmatic_vehicle_move(
+	vehicle: VehicleActorScript,
+	command: MoveCommandScript
+) -> bool:
+	var validation_token := begin_gameplay_command_validation()
+	if validation_token == 0:
+		return false
+	if not _can_submit_programmatic_vehicle_move(vehicle, command):
+		cancel_gameplay_command_validation(validation_token)
+		return false
+	if not commit_gameplay_command_validation(validation_token):
+		cancel_gameplay_command_validation(validation_token)
+		return false
+	return vehicle.start_move(command)
 
 
 func begin_gameplay_command_validation() -> int:
@@ -140,6 +162,30 @@ func _request_start() -> bool:
 	if not _prepare_scene_run():
 		return false
 	return _lifecycle_state.start()
+
+
+func _can_submit_programmatic_vehicle_move(
+	vehicle: VehicleActorScript,
+	command: MoveCommandScript
+) -> bool:
+	if (
+		vehicle == null
+		or not is_instance_valid(vehicle)
+		or vehicle.definition == null
+		or vehicle.runtime_state == null
+		or vehicle.controller == null
+		or not vehicle.definition.can_move()
+		or command == null
+		or command.state != MoveCommandScript.State.MOVING
+		or command.path.is_empty()
+		or command.path.front() != vehicle.runtime_state.anchor_cell
+	):
+		return false
+	return (
+		vehicle.runtime_state.active_move_command == null
+		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
+		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
+	)
 
 
 func _prepare_scene_run() -> bool:

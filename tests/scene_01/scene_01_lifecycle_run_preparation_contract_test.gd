@@ -7,6 +7,8 @@ const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_m
 const VehicleSelectionScript := preload("res://scripts/input/vehicle_selection_controller.gd")
 const GrabDropControllerScript := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
 const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.gd")
+const MoveCommandScript := preload("res://scripts/vehicles/move_command.gd")
+const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
 
 
 class CountingAcceptingGate:
@@ -15,6 +17,19 @@ class CountingAcceptingGate:
 
 	func prepare_scene_run() -> bool:
 		call_count += 1
+		return true
+
+
+class RetargetingRunPreparationGate:
+	extends Node
+	var vehicle: VehicleActorScript
+	var call_count: int = 0
+
+	func prepare_scene_run() -> bool:
+		call_count += 1
+		if vehicle != null and vehicle.runtime_state != null:
+			vehicle.runtime_state.anchor_cell += Vector2i.RIGHT
+			vehicle.sync_from_state()
 		return true
 
 
@@ -59,11 +74,6 @@ func _run() -> void:
 		_finish()
 		return
 
-	var gate := CountingAcceptingGate.new()
-	gate.name = "CountingAcceptingGate"
-	scene.add_child(gate)
-	scene.run_preparation_gate_path = NodePath("CountingAcceptingGate")
-
 	var transport := vehicle_manager.get_vehicle_by_id(&"transport_vehicle")
 	var arm := vehicle_manager.get_vehicle_by_id(&"arm_vehicle")
 	_expect_true(transport != null and arm != null, "Run preparation contract test requires both vehicles.")
@@ -72,6 +82,44 @@ func _run() -> void:
 		await process_frame
 		_finish()
 		return
+
+	var initial_arm_anchor: Vector2i = arm.runtime_state.anchor_cell
+	var programmatic_command := MoveCommandScript.new()
+	_expect_true(
+		programmatic_command.configure(
+			initial_arm_anchor + Vector2i.RIGHT,
+			[initial_arm_anchor, initial_arm_anchor + Vector2i.RIGHT]
+		),
+		"Programmatic move fixture should configure."
+	)
+	var retargeting_gate := RetargetingRunPreparationGate.new()
+	retargeting_gate.name = "RetargetingRunPreparationGate"
+	retargeting_gate.vehicle = arm
+	scene.add_child(retargeting_gate)
+	scene.run_preparation_gate_path = NodePath("RetargetingRunPreparationGate")
+	_expect_false(
+		scene.submit_programmatic_vehicle_move(arm, programmatic_command),
+		"Programmatic move must be rejected when run preparation invalidates its command."
+	)
+	_expect_equal(retargeting_gate.call_count, 1, "Programmatic move should execute the run gate once.")
+	_expect_equal(
+		scene.get_lifecycle_state(),
+		LifecycleStateScript.State.READY,
+		"Invalidated programmatic move must keep lifecycle READY."
+	)
+	_expect_true(
+		arm.runtime_state.active_move_command == null,
+		"Invalidated programmatic move must not assign an active MoveCommand."
+	)
+	arm.runtime_state.anchor_cell = initial_arm_anchor
+	arm.sync_from_state()
+	scene.run_preparation_gate_path = NodePath()
+	retargeting_gate.queue_free()
+
+	var gate := CountingAcceptingGate.new()
+	gate.name = "CountingAcceptingGate"
+	scene.add_child(gate)
+	scene.run_preparation_gate_path = NodePath("CountingAcceptingGate")
 
 	_expect_true(vehicle_selection.select_vehicle(transport), "Transport should be selectable.")
 	_expect_false(
