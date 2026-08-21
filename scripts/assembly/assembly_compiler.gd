@@ -1,6 +1,7 @@
 class_name AssemblyCompiler
 extends RefCounted
 
+const DIAGNOSTIC_COMPILE_REQUEST_REQUIRED: StringName = &"compile_request_required"
 const DIAGNOSTIC_ASSEMBLY_ID_REQUIRED: StringName = &"assembly_id_required"
 const DIAGNOSTIC_REVISION_INVALID: StringName = &"revision_invalid"
 const DIAGNOSTIC_ASSEMBLY_EMPTY: StringName = &"assembly_empty"
@@ -19,18 +20,18 @@ const DIAGNOSTIC_INTERFACE_CELLS_EMPTY: StringName = &"interface_cells_empty"
 var _cache: Dictionary = {}
 
 
-func compile(definition: AssemblyDefinition) -> AssemblyCompileResult:
-	if definition == null:
+func compile(request: AssemblyCompileRequest) -> AssemblyCompileResult:
+	if request == null or not request.has_definition():
 		return _failed_result(
-			&"",
-			-1,
-			[AssemblyCompileDiagnostic.new(DIAGNOSTIC_ASSEMBLY_ID_REQUIRED, "Assembly definition is required.")]
+			AssemblyRevision.new(),
+			[AssemblyCompileDiagnostic.new(DIAGNOSTIC_COMPILE_REQUEST_REQUIRED, "Assembly compile request is required.")]
 		)
-	var key := definition.cache_key()
-	if _can_cache(definition) and _cache.has(key):
+	var revision := request.get_revision()
+	var key := request.cache_key()
+	if request.is_cacheable() and _cache.has(key):
 		return _cache[key]
-	var result := _compile_uncached(definition)
-	if _can_cache(definition):
+	var result := _compile_uncached(request.get_definition(), revision)
+	if request.is_cacheable():
 		_cache[key] = result
 	return result
 
@@ -50,7 +51,10 @@ func get_cache_size() -> int:
 	return _cache.size()
 
 
-func _compile_uncached(definition: AssemblyDefinition) -> AssemblyCompileResult:
+func _compile_uncached(
+	definition: AssemblyDefinition,
+	revision: AssemblyRevision
+) -> AssemblyCompileResult:
 	var diagnostics: Array[AssemblyCompileDiagnostic] = []
 	if definition.assembly_id == &"":
 		diagnostics.append(AssemblyCompileDiagnostic.new(DIAGNOSTIC_ASSEMBLY_ID_REQUIRED, "Assembly id is required."))
@@ -128,14 +132,13 @@ func _compile_uncached(definition: AssemblyDefinition) -> AssemblyCompileResult:
 		total_mass += component.mass
 
 	if _has_errors(diagnostics):
-		return _failed_result(definition.assembly_id, definition.revision, diagnostics)
+		return _failed_result(revision, diagnostics)
 
 	var capability_names: Array[StringName] = []
 	for capability in capability_lookup.keys():
 		capability_names.append(capability)
 	return AssemblyCompileResult.new(
-		definition.assembly_id,
-		definition.revision,
+		revision,
 		true,
 		AssemblyCapabilitySet.new(capability_names),
 		interfaces,
@@ -198,13 +201,8 @@ func _validate_component_basics(
 		))
 
 
-func _failed_result(
-	assembly_id: StringName,
-	revision: int,
-	diagnostics: Array
-) -> AssemblyCompileResult:
+func _failed_result(revision: AssemblyRevision, diagnostics: Array) -> AssemblyCompileResult:
 	return AssemblyCompileResult.new(
-		assembly_id,
 		revision,
 		false,
 		AssemblyCapabilitySet.new(),
@@ -213,10 +211,6 @@ func _failed_result(
 		AssemblyMetrics.new(),
 		diagnostics
 	)
-
-
-func _can_cache(definition: AssemblyDefinition) -> bool:
-	return definition.assembly_id != &"" and definition.revision >= 0
 
 
 func _has_errors(diagnostics: Array[AssemblyCompileDiagnostic]) -> bool:

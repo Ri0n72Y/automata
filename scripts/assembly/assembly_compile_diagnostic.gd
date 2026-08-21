@@ -6,7 +6,7 @@ enum Severity {
 	ERROR,
 }
 
-var severity: Severity = Severity.ERROR
+var severity: int = Severity.ERROR
 var code: StringName = &""
 var message: String = ""
 var component_id: StringName = &""
@@ -15,7 +15,7 @@ var component_id: StringName = &""
 func _init(
 	diagnostic_code: StringName = &"",
 	diagnostic_message: String = "",
-	diagnostic_severity: Severity = Severity.ERROR,
+	diagnostic_severity: int = Severity.ERROR,
 	diagnostic_component_id: StringName = &""
 ) -> void:
 	code = diagnostic_code

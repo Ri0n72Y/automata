@@ -1,19 +1,18 @@
 class_name AssemblyCompileResult
 extends RefCounted
 
-var assembly_id: StringName = &""
-var revision: int = -1
-var success: bool = false
-var capabilities: AssemblyCapabilitySet
-var simulation_envelope: AssemblySimulationEnvelope
-var metrics: AssemblyMetrics
+var _assembly_id: StringName = &""
+var _revision: AssemblyRevision = AssemblyRevision.new()
+var _success: bool = false
+var _capabilities: AssemblyCapabilitySet = AssemblyCapabilitySet.new()
+var _simulation_envelope: AssemblySimulationEnvelope = AssemblySimulationEnvelope.new()
+var _metrics: AssemblyMetrics = AssemblyMetrics.new()
 var _interaction_interfaces: Array[AssemblyInteractionInterface] = []
 var _diagnostics: Array[AssemblyCompileDiagnostic] = []
 
 
 func _init(
-	result_assembly_id: StringName = &"",
-	result_revision: int = -1,
+	result_revision: AssemblyRevision = null,
 	result_success: bool = false,
 	result_capabilities: AssemblyCapabilitySet = null,
 	result_interfaces: Array = [],
@@ -21,12 +20,12 @@ func _init(
 	result_metrics: AssemblyMetrics = null,
 	result_diagnostics: Array = []
 ) -> void:
-	assembly_id = result_assembly_id
-	revision = result_revision
-	success = result_success
-	capabilities = result_capabilities if result_capabilities != null else AssemblyCapabilitySet.new()
-	simulation_envelope = result_envelope if result_envelope != null else AssemblySimulationEnvelope.new()
-	metrics = result_metrics if result_metrics != null else AssemblyMetrics.new()
+	_revision = result_revision.duplicate_revision() if result_revision != null else AssemblyRevision.new()
+	_assembly_id = _revision.get_assembly_id()
+	_success = result_success
+	_capabilities = result_capabilities if result_capabilities != null else AssemblyCapabilitySet.new()
+	_simulation_envelope = result_envelope if result_envelope != null else AssemblySimulationEnvelope.new()
+	_metrics = result_metrics.duplicate_metrics() if result_metrics != null else AssemblyMetrics.new()
 	_interaction_interfaces = []
 	for interface_value in result_interfaces:
 		if interface_value is AssemblyInteractionInterface:
@@ -37,8 +36,32 @@ func _init(
 			_diagnostics.append(diagnostic.duplicate_diagnostic())
 
 
+func is_success() -> bool:
+	return _success
+
+
+func get_assembly_id() -> StringName:
+	return _assembly_id
+
+
+func get_revision() -> AssemblyRevision:
+	return _revision.duplicate_revision()
+
+
 func has_capability(capability: StringName) -> bool:
-	return capabilities.has(capability)
+	return _capabilities.has(capability)
+
+
+func get_capabilities() -> Array[StringName]:
+	return _capabilities.to_array()
+
+
+func get_simulation_envelope() -> AssemblySimulationEnvelope:
+	return AssemblySimulationEnvelope.new(_simulation_envelope.get_occupied_cells())
+
+
+func get_metrics() -> AssemblyMetrics:
+	return _metrics.duplicate_metrics()
 
 
 func get_interaction_interfaces() -> Array[AssemblyInteractionInterface]:

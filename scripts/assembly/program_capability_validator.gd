@@ -10,7 +10,7 @@ func validate(
 	required_capabilities: Array[StringName]
 ) -> Array[AssemblyCompileDiagnostic]:
 	var diagnostics: Array[AssemblyCompileDiagnostic] = []
-	if compile_result == null or not compile_result.success:
+	if compile_result == null or not compile_result.is_success():
 		diagnostics.append(AssemblyCompileDiagnostic.new(
 			DIAGNOSTIC_COMPILE_RESULT_REQUIRED,
 			"A successful assembly compile result is required."

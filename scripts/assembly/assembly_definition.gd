@@ -22,5 +22,9 @@ func get_components() -> Array[AssemblyComponentDefinition]:
 	return result
 
 
-func cache_key() -> String:
-	return "%s@%d" % [String(assembly_id), revision]
+func get_revision() -> AssemblyRevision:
+	return AssemblyRevision.new(assembly_id, revision)
+
+
+func snapshot() -> AssemblyDefinition:
+	return AssemblyDefinition.new(assembly_id, revision, _components)
