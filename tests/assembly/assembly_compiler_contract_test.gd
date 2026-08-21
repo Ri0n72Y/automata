@@ -35,11 +35,12 @@ func _test_compile_runtime_description() -> void:
 	var metrics := result.get_metrics()
 	test.expect_equal(metrics.get_cost(), 35, "Assembly cost should aggregate component costs.")
 	test.expect_equal(metrics.get_mass(), 7.5, "Assembly mass should aggregate component mass.")
-	var interfaces := result.get_interaction_interfaces()
-	test.expect_equal(interfaces.size(), 1, "Arm module should publish one interaction interface.")
+	var interface_set := result.get_interaction_interface_set()
+	test.expect_equal(interface_set.size(), 1, "Arm module should publish one interaction interface.")
+	var interfaces := interface_set.get_by_kind(&"grab_drop")
+	test.expect_equal(interfaces.size(), 1, "Compiled interaction set should support kind queries.")
 	if interfaces.size() == 1:
 		test.expect_equal(interfaces[0].owner_component_id, &"arm", "Compiled interface should retain its owner component.")
-		test.expect_equal(interfaces[0].kind, &"grab_drop", "Compiled interface should retain its kind.")
 		test.expect_equal(interfaces[0].cells, [Vector2i(0, 2)], "Component orientation should rotate interface cells before translation.")
 
 
