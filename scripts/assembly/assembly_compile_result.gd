@@ -23,17 +23,15 @@ func _init(
 	_revision = result_revision.duplicate_revision() if result_revision != null else AssemblyRevision.new()
 	_assembly_id = _revision.get_assembly_id()
 	_success = result_success
-	_capabilities = (
-		AssemblyCapabilitySet.new(result_capabilities.to_array())
-		if result_capabilities != null
-		else AssemblyCapabilitySet.new()
-	)
+	if result_capabilities != null:
+		_capabilities = AssemblyCapabilitySet.new(result_capabilities.to_array())
+	else:
+		_capabilities = AssemblyCapabilitySet.new()
 	_interaction_interfaces = AssemblyInteractionInterfaceSet.new(result_interfaces)
-	_simulation_envelope = (
-		AssemblySimulationEnvelope.new(result_envelope.get_occupied_cells())
-		if result_envelope != null
-		else AssemblySimulationEnvelope.new()
-	)
+	if result_envelope != null:
+		_simulation_envelope = AssemblySimulationEnvelope.new(result_envelope.get_occupied_cells())
+	else:
+		_simulation_envelope = AssemblySimulationEnvelope.new()
 	_metrics = result_metrics.duplicate_metrics() if result_metrics != null else AssemblyMetrics.new()
 	_diagnostics = []
 	for diagnostic in result_diagnostics:
