@@ -19,6 +19,8 @@ var test := CONTRACT_TEST_SCRIPT.new()
 func _init() -> void:
 	_test_successful_prepare_publishes_all_results_and_reuses_cache()
 	_test_capability_failure_publishes_no_partial_runtime_state()
+	_test_missing_required_vehicle_rejects_and_clears_publication()
+	_test_invalidate_vehicle_clears_published_batch_but_preserves_other_cache()
 	_test_same_revision_changed_structure_is_rejected_until_invalidated()
 	test.finish(self, "Scene 01 assembly compile gate contract tests")
 
@@ -69,6 +71,48 @@ func _test_capability_failure_publishes_no_partial_runtime_state() -> void:
 	test.expect_true(gate.prepare_scene_run(), "Removing unsupported program requirement should allow preparation.")
 	test.expect_true(gate.get_compile_result(&"arm_vehicle") != null, "Successful retry should publish the full batch.")
 	test.expect_true(gate.get_compile_result(&"transport_vehicle") != null, "Successful retry should publish transport result.")
+
+
+func _test_missing_required_vehicle_rejects_and_clears_publication() -> void:
+	var manager := FakeVehicleManager.new()
+	manager.vehicles = [
+		_make_actor(_make_arm_definition()),
+		_make_actor(_make_transport_definition()),
+	]
+	var gate := GATE_SCRIPT.new()
+	gate.configure(manager)
+	test.expect_true(gate.prepare_scene_run(), "Initial valid batch should publish runtime results.")
+	gate.set_required_capabilities(
+		&"missing_vehicle",
+		[ASSEMBLY_CAPABILITIES_SCRIPT.CAN_MOVE]
+	)
+	test.expect_false(gate.prepare_scene_run(), "Program requirements for a non-participating vehicle should reject run preparation.")
+	test.expect_equal(gate.get_last_failed_vehicle_id(), &"missing_vehicle", "Missing required vehicle should be identified by id.")
+	test.expect_true(_has_diagnostic(gate.get_last_diagnostics(), GATE_SCRIPT.DIAGNOSTIC_REQUIRED_VEHICLE_MISSING), "Missing required vehicle should surface an explicit diagnostic.")
+	test.expect_true(gate.get_compile_result(&"arm_vehicle") == null, "Requirement failure should clear the previously published arm result.")
+	test.expect_true(gate.get_compile_result(&"transport_vehicle") == null, "Requirement failure should clear the previously published transport result.")
+
+
+func _test_invalidate_vehicle_clears_published_batch_but_preserves_other_cache() -> void:
+	var manager := FakeVehicleManager.new()
+	manager.vehicles = [
+		_make_actor(_make_arm_definition()),
+		_make_actor(_make_transport_definition()),
+	]
+	var gate := GATE_SCRIPT.new()
+	gate.configure(manager)
+	test.expect_true(gate.prepare_scene_run(), "Initial batch should compile before invalidation.")
+	var first_transport_result = gate.get_compile_result(&"transport_vehicle")
+	test.expect_equal(gate.get_compile_cache_size(), 2, "Initial batch should create two cache entries.")
+
+	gate.invalidate_vehicle(&"arm_vehicle")
+	test.expect_true(gate.get_compile_result(&"arm_vehicle") == null, "Invalidating one vehicle should invalidate the published batch.")
+	test.expect_true(gate.get_compile_result(&"transport_vehicle") == null, "Published results must remain atomic after one vehicle is invalidated.")
+	test.expect_equal(gate.get_compile_cache_size(), 1, "Only the invalidated vehicle cache entry should be removed.")
+
+	test.expect_true(gate.prepare_scene_run(), "Next preparation should rebuild the invalidated vehicle and republish the batch.")
+	test.expect_equal(gate.get_compile_cache_size(), 2, "Repreparation should restore the invalidated cache entry.")
+	test.expect_true(gate.get_compile_result(&"transport_vehicle") == first_transport_result, "Unchanged transport vehicle should reuse its preserved cache result.")
 
 
 func _test_same_revision_changed_structure_is_rejected_until_invalidated() -> void:
