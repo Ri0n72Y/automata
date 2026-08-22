@@ -2,6 +2,7 @@ class_name AssemblyCompiler
 extends RefCounted
 
 const DIAGNOSTIC_COMPILE_REQUEST_REQUIRED: StringName = &"compile_request_required"
+const DIAGNOSTIC_REVISION_CONTENT_MISMATCH: StringName = &"revision_content_mismatch"
 const DIAGNOSTIC_ASSEMBLY_ID_REQUIRED: StringName = &"assembly_id_required"
 const DIAGNOSTIC_REVISION_INVALID: StringName = &"revision_invalid"
 const DIAGNOSTIC_ASSEMBLY_EMPTY: StringName = &"assembly_empty"
@@ -16,7 +17,9 @@ const DIAGNOSTIC_COST_INVALID: StringName = &"cost_invalid"
 const DIAGNOSTIC_MASS_INVALID: StringName = &"mass_invalid"
 const DIAGNOSTIC_INTERFACE_KIND_REQUIRED: StringName = &"interface_kind_required"
 const DIAGNOSTIC_INTERFACE_CELLS_EMPTY: StringName = &"interface_cells_empty"
+const DIAGNOSTIC_INTERFACE_COORDINATE_SPACE_INVALID: StringName = &"interface_coordinate_space_invalid"
 
+# assembly_id -> revision -> { fingerprint, result }
 var _cache: Dictionary = {}
 
 
@@ -27,13 +30,29 @@ func compile(request: AssemblyCompileRequest) -> AssemblyCompileResult:
 			[AssemblyCompileDiagnostic.new(DIAGNOSTIC_COMPILE_REQUEST_REQUIRED, "Assembly compile request is required.")]
 		)
 	var revision := request.get_revision()
-	var key := request.cache_key()
-	if request.is_cacheable() and _cache.has(key):
-		return _cache[key]
-	var result := _compile_uncached(request.get_definition(), revision)
 	if request.is_cacheable():
-		_cache[key] = result
-	return result
+		var assembly_id := revision.get_assembly_id()
+		var revision_value := revision.get_value()
+		var revisions: Dictionary = _cache.get(assembly_id, {})
+		if revisions.has(revision_value):
+			var cached_entry: Dictionary = revisions[revision_value]
+			if int(cached_entry.get("fingerprint", 0)) != request.get_structure_fingerprint():
+				return _failed_result(
+					revision,
+					[AssemblyCompileDiagnostic.new(
+						DIAGNOSTIC_REVISION_CONTENT_MISMATCH,
+						"Assembly structure changed without advancing its revision."
+					)]
+				)
+			return cached_entry["result"]
+		var result := _compile_uncached(request.get_definition(), revision)
+		revisions[revision_value] = {
+			"fingerprint": request.get_structure_fingerprint(),
+			"result": result,
+		}
+		_cache[assembly_id] = revisions
+		return result
+	return _compile_uncached(request.get_definition(), revision)
 
 
 func clear_cache() -> void:
@@ -41,14 +60,16 @@ func clear_cache() -> void:
 
 
 func invalidate(assembly_id: StringName) -> void:
-	var prefix := "%s@" % String(assembly_id)
-	for key in _cache.keys():
-		if String(key).begins_with(prefix):
-			_cache.erase(key)
+	_cache.erase(assembly_id)
 
 
 func get_cache_size() -> int:
-	return _cache.size()
+	var total := 0
+	for revisions_value in _cache.values():
+		if revisions_value is Dictionary:
+			var revisions: Dictionary = revisions_value
+			total += revisions.size()
+	return total
 
 
 func _compile_uncached(
@@ -102,6 +123,14 @@ func _compile_uncached(
 				capability_lookup[capability] = true
 
 		for interface_value in component.interaction_interfaces:
+			if not interface_value.is_component_local():
+				diagnostics.append(AssemblyCompileDiagnostic.new(
+					DIAGNOSTIC_INTERFACE_COORDINATE_SPACE_INVALID,
+					"Compile input interaction cells must use component-local coordinates.",
+					AssemblyCompileDiagnostic.Severity.ERROR,
+					component.component_id
+				))
+				continue
 			if interface_value.kind == &"":
 				diagnostics.append(AssemblyCompileDiagnostic.new(
 					DIAGNOSTIC_INTERFACE_KIND_REQUIRED,
@@ -125,7 +154,8 @@ func _compile_uncached(
 				interface_value.kind,
 				compiled_cells,
 				interface_value.metadata,
-				component.component_id
+				component.component_id,
+				AssemblyInteractionInterface.CoordinateSpace.ASSEMBLY_LOCAL
 			))
 
 		total_cost += component.cost
