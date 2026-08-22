@@ -15,7 +15,10 @@ func _init() -> void:
 	_test_compile_runtime_description()
 	_test_overlap_fails_without_partial_runtime_state()
 	_test_same_revision_reuses_cached_result()
+	_test_same_revision_rejects_changed_structure()
 	_test_revision_change_invalidates_cache_key()
+	_test_invalidation_isolated_by_assembly_id()
+	_test_interface_coordinate_space_contract()
 	_test_result_collections_are_snapshots()
 	_test_request_captures_revision_snapshot()
 	test.finish(self, "Assembly compiler contract tests")
@@ -41,6 +44,7 @@ func _test_compile_runtime_description() -> void:
 	test.expect_equal(interfaces.size(), 1, "Compiled interaction set should support kind queries.")
 	if interfaces.size() == 1:
 		test.expect_equal(interfaces[0].owner_component_id, &"arm", "Compiled interface should retain its owner component.")
+		test.expect_true(interfaces[0].is_assembly_local(), "Compiled interface cells should be explicitly assembly-local.")
 		test.expect_equal(interfaces[0].cells, [Vector2i(0, 2)], "Component orientation should rotate interface cells before translation.")
 
 
@@ -65,8 +69,29 @@ func _test_same_revision_reuses_cached_result() -> void:
 	var request := REQUEST_SCRIPT.new(_make_full_assembly(7))
 	var first := compiler.compile(request)
 	var second := compiler.compile(request)
-	test.expect_true(first == second, "The same assembly revision should reuse the cached result instance.")
+	test.expect_true(first == second, "The same assembly revision and structure should reuse the cached result instance.")
 	test.expect_equal(compiler.get_cache_size(), 1, "One revision should occupy one cache entry.")
+
+
+func _test_same_revision_rejects_changed_structure() -> void:
+	var compiler := COMPILER_SCRIPT.new()
+	var original_request := REQUEST_SCRIPT.new(_make_drive_only_assembly(&"revision_guard", 5, 10))
+	var original := compiler.compile(original_request)
+	test.expect_true(original.is_success(), "Initial revision should compile before mismatch validation.")
+	var changed := _compile(
+		compiler,
+		_make_drive_only_assembly(&"revision_guard", 5, 11)
+	)
+	test.expect_false(changed.is_success(), "Changing structure without advancing revision should be rejected.")
+	test.expect_true(
+		_has_diagnostic(changed, COMPILER_SCRIPT.DIAGNOSTIC_REVISION_CONTENT_MISMATCH),
+		"Revision/content mismatch should have a stable diagnostic code."
+	)
+	test.expect_equal(compiler.get_cache_size(), 1, "Revision mismatch should not overwrite the existing cache entry.")
+	test.expect_true(
+		compiler.compile(original_request) == original,
+		"The original revision snapshot should remain reusable after a mismatch attempt."
+	)
 
 
 func _test_revision_change_invalidates_cache_key() -> void:
@@ -78,6 +103,47 @@ func _test_revision_change_invalidates_cache_key() -> void:
 	test.expect_equal(compiler.get_cache_size(), 2, "Distinct revisions should use distinct cache entries.")
 	compiler.invalidate(&"scene01_vehicle")
 	test.expect_equal(compiler.get_cache_size(), 0, "Explicit assembly invalidation should remove all revisions for that assembly.")
+
+
+func _test_invalidation_isolated_by_assembly_id() -> void:
+	var compiler := COMPILER_SCRIPT.new()
+	var first_request := REQUEST_SCRIPT.new(_make_drive_only_assembly(&"foo", 1, 10))
+	var nested_request := REQUEST_SCRIPT.new(_make_drive_only_assembly(&"foo@bar", 1, 10))
+	compiler.compile(first_request)
+	var nested_result := compiler.compile(nested_request)
+	test.expect_equal(compiler.get_cache_size(), 2, "Two assembly ids should occupy two cache entries.")
+	compiler.invalidate(&"foo")
+	test.expect_equal(compiler.get_cache_size(), 1, "Invalidation should only remove the exact assembly id.")
+	test.expect_true(
+		compiler.compile(nested_request) == nested_result,
+		"Assembly ids containing separators should remain independently cacheable."
+	)
+
+
+func _test_interface_coordinate_space_contract() -> void:
+	var compiler := COMPILER_SCRIPT.new()
+	var invalid_interface := INTERFACE_SCRIPT.new(
+		&"grab_drop",
+		[Vector2i.RIGHT],
+		{},
+		&"",
+		INTERFACE_SCRIPT.CoordinateSpace.ASSEMBLY_LOCAL
+	)
+	var component := COMPONENT_SCRIPT.new(
+		&"arm",
+		&"arm_module",
+		Vector2i.ZERO,
+		0,
+		[Vector2i.ZERO],
+		[CAPABILITIES_SCRIPT.GRAB_DROP],
+		[invalid_interface]
+	)
+	var result := _compile(compiler, DEFINITION_SCRIPT.new(&"bad_interface_space", 1, [component]))
+	test.expect_false(result.is_success(), "Compile inputs should reject already-transformed interaction cells.")
+	test.expect_true(
+		_has_diagnostic(result, COMPILER_SCRIPT.DIAGNOSTIC_INTERFACE_COORDINATE_SPACE_INVALID),
+		"Invalid interface coordinate space should have a stable diagnostic code."
+	)
 
 
 func _test_result_collections_are_snapshots() -> void:
@@ -104,6 +170,21 @@ func _test_request_captures_revision_snapshot() -> void:
 
 func _compile(compiler, definition):
 	return compiler.compile(REQUEST_SCRIPT.new(definition))
+
+
+func _make_drive_only_assembly(assembly_id: StringName, revision: int, cost: int):
+	var drive := COMPONENT_SCRIPT.new(
+		&"drive",
+		&"drive_module",
+		Vector2i.ZERO,
+		0,
+		[Vector2i.ZERO],
+		[CAPABILITIES_SCRIPT.CAN_MOVE],
+		[],
+		cost,
+		4.0
+	)
+	return DEFINITION_SCRIPT.new(assembly_id, revision, [drive])
 
 
 func _make_full_assembly(revision: int):
