@@ -19,7 +19,7 @@ const DIAGNOSTIC_INTERFACE_KIND_REQUIRED: StringName = &"interface_kind_required
 const DIAGNOSTIC_INTERFACE_CELLS_EMPTY: StringName = &"interface_cells_empty"
 const DIAGNOSTIC_INTERFACE_COORDINATE_SPACE_INVALID: StringName = &"interface_coordinate_space_invalid"
 
-# assembly_id -> revision -> { fingerprint, result }
+# assembly_id -> revision -> { structure_signature, result }
 var _cache: Dictionary = {}
 
 
@@ -36,7 +36,7 @@ func compile(request: AssemblyCompileRequest) -> AssemblyCompileResult:
 		var revisions: Dictionary = _cache.get(assembly_id, {})
 		if revisions.has(revision_value):
 			var cached_entry: Dictionary = revisions[revision_value]
-			if int(cached_entry.get("fingerprint", 0)) != request.get_structure_fingerprint():
+			if cached_entry.get("structure_signature", []) != request.get_structure_signature():
 				return _failed_result(
 					revision,
 					[AssemblyCompileDiagnostic.new(
@@ -47,7 +47,7 @@ func compile(request: AssemblyCompileRequest) -> AssemblyCompileResult:
 			return cached_entry["result"]
 		var result := _compile_uncached(request.get_definition(), revision)
 		revisions[revision_value] = {
-			"fingerprint": request.get_structure_fingerprint(),
+			"structure_signature": request.get_structure_signature(),
 			"result": result,
 		}
 		_cache[assembly_id] = revisions
