@@ -11,6 +11,7 @@ const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definit
 const PRESET_REVISION := 1
 const ROOT_COMPONENT_ID: StringName = &"vehicle"
 const GRAB_DROP_INTERFACE_KIND: StringName = &"grab_drop"
+const TRAY_INTERFACE_KIND: StringName = &"tray"
 
 
 func build_definition(vehicle: VehicleActorScript) -> AssemblyDefinitionScript:
@@ -43,6 +44,13 @@ func build_definition(vehicle: VehicleActorScript) -> AssemblyDefinitionScript:
 				"orientation_mode": "vehicle_facing",
 				"template_facing": "east",
 			},
+			ROOT_COMPONENT_ID
+		))
+	if vehicle_definition.has_capability(VehicleDefinitionScript.CAPABILITY_HAS_TRAY):
+		interfaces.append(AssemblyInteractionInterfaceScript.new(
+			TRAY_INTERFACE_KIND,
+			occupied_cells,
+			{"capacity": vehicle_definition.tray_capacity},
 			ROOT_COMPONENT_ID
 		))
 
