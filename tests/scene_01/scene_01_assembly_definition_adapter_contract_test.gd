@@ -57,7 +57,7 @@ func _test_transport_preset_maps_without_grab_drop() -> void:
 	test.expect_equal(component.interaction_interfaces.size(), 0, "Transport preset should not publish a GrabDrop interface.")
 
 
-func _make_actor(definition) -> Node3D:
+func _make_actor(definition):
 	var actor := VEHICLE_ACTOR_SCRIPT.new()
 	actor.definition = definition
 	return actor
