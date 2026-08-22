@@ -22,9 +22,5 @@ func is_cacheable() -> bool:
 	return _assembly_id != &"" and _value >= 0
 
 
-func cache_key() -> String:
-	return "%s@%d" % [String(_assembly_id), _value]
-
-
 func duplicate_revision() -> AssemblyRevision:
 	return AssemblyRevision.new(_assembly_id, _value)
