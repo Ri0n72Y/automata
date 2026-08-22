@@ -97,7 +97,7 @@ func _has_diagnostic(diagnostics: Array, code: StringName) -> bool:
 	return false
 
 
-func _make_actor(definition) -> Node3D:
+func _make_actor(definition):
 	var actor := VEHICLE_ACTOR_SCRIPT.new()
 	actor.definition = definition
 	return actor
