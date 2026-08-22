@@ -1,7 +1,6 @@
 extends SceneTree
 
 const ASSEMBLY_CAPABILITIES_SCRIPT := preload("res://scripts/assembly/assembly_capabilities.gd")
-const ASSEMBLY_INTERFACE_SCRIPT := preload("res://scripts/assembly/assembly_interaction_interface.gd")
 const ADAPTER_SCRIPT := preload("res://scripts/scene_01/scene_01_assembly_definition_adapter.gd")
 const VEHICLE_ACTOR_SCRIPT := preload("res://scripts/vehicles/vehicle_actor.gd")
 const VEHICLE_DEFINITION_SCRIPT := preload("res://scripts/vehicles/vehicle_definition.gd")
@@ -12,7 +11,7 @@ var test := CONTRACT_TEST_SCRIPT.new()
 
 func _init() -> void:
 	_test_arm_preset_maps_to_compile_input()
-	_test_transport_preset_maps_without_grab_drop()
+	_test_transport_preset_maps_tray_interface_without_grab_drop()
 	test.finish(self, "Scene 01 assembly definition adapter contract tests")
 
 
@@ -41,7 +40,7 @@ func _test_arm_preset_maps_to_compile_input() -> void:
 		test.expect_equal(interface_value.metadata.get("orientation_mode"), "vehicle_facing", "Arm interface template should declare runtime facing rotation.")
 
 
-func _test_transport_preset_maps_without_grab_drop() -> void:
+func _test_transport_preset_maps_tray_interface_without_grab_drop() -> void:
 	var actor := _make_actor(_make_transport_definition())
 	var definition := ADAPTER_SCRIPT.new().build_definition(actor)
 	test.expect_true(definition != null, "Configured transport preset should adapt to an assembly definition.")
@@ -54,7 +53,17 @@ func _test_transport_preset_maps_without_grab_drop() -> void:
 	var component = components[0]
 	test.expect_true(component.capabilities.has(ASSEMBLY_CAPABILITIES_SCRIPT.CAN_MOVE), "Transport preset should publish move capability.")
 	test.expect_false(component.capabilities.has(ASSEMBLY_CAPABILITIES_SCRIPT.GRAB_DROP), "Transport preset should not invent GrabDrop capability.")
-	test.expect_equal(component.interaction_interfaces.size(), 0, "Transport preset should not publish a GrabDrop interface.")
+	test.expect_equal(component.interaction_interfaces.size(), 1, "Transport preset should publish its tray interaction interface.")
+	if component.interaction_interfaces.size() == 1:
+		var interface_value = component.interaction_interfaces[0]
+		test.expect_equal(interface_value.kind, ADAPTER_SCRIPT.TRAY_INTERFACE_KIND, "Transport interface should identify the tray interaction kind.")
+		test.expect_true(interface_value.is_component_local(), "Tray interface cells should be component-local compile input.")
+		test.expect_equal(
+			interface_value.cells,
+			[Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1)],
+			"Tray interaction should cover the transport footprint."
+		)
+		test.expect_equal(interface_value.metadata.get("capacity"), 8, "Tray interface should preserve preset capacity.")
 
 
 func _make_actor(definition):
