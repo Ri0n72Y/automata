@@ -6,7 +6,6 @@ signal assembly_compile_failed(vehicle_id: StringName, diagnostics: Array)
 
 const AssemblyCompileDiagnosticScript := preload("res://scripts/assembly/assembly_compile_diagnostic.gd")
 const AssemblyCompileRequestScript := preload("res://scripts/assembly/assembly_compile_request.gd")
-const AssemblyCompileResultScript := preload("res://scripts/assembly/assembly_compile_result.gd")
 const AssemblyCompilerScript := preload("res://scripts/assembly/assembly_compiler.gd")
 const ProgramCapabilityValidatorScript := preload("res://scripts/assembly/program_capability_validator.gd")
 const Scene01AssemblyDefinitionAdapterScript := preload("res://scripts/scene_01/scene_01_assembly_definition_adapter.gd")
@@ -25,7 +24,7 @@ var _compiler := AssemblyCompilerScript.new()
 var _capability_validator := ProgramCapabilityValidatorScript.new()
 var _required_capabilities: Dictionary = {}
 var _compiled_results: Dictionary = {}
-var _last_diagnostics: Array[AssemblyCompileDiagnosticScript] = []
+var _last_diagnostics: Array = []
 var _last_failed_vehicle_id: StringName = &""
 
 
@@ -90,7 +89,7 @@ func prepare_scene_run() -> bool:
 					"Vehicle definition cannot be adapted for assembly compilation."
 				)
 			])
-		var compile_result: AssemblyCompileResultScript = _compiler.compile(
+		var compile_result = _compiler.compile(
 			AssemblyCompileRequestScript.new(assembly_definition)
 		)
 		if not compile_result.is_success():
@@ -126,20 +125,20 @@ func clear_required_capabilities() -> void:
 	_required_capabilities.clear()
 
 
-func get_compile_result(vehicle_id: StringName) -> AssemblyCompileResultScript:
-	var result: Variant = _compiled_results.get(vehicle_id)
-	return result as AssemblyCompileResultScript
+func get_compile_result(vehicle_id: StringName):
+	return _compiled_results.get(vehicle_id)
 
 
 func has_vehicle_capability(vehicle_id: StringName, capability: StringName) -> bool:
-	var result := get_compile_result(vehicle_id)
+	var result = get_compile_result(vehicle_id)
 	return result != null and result.is_success() and result.has_capability(capability)
 
 
-func get_last_diagnostics() -> Array[AssemblyCompileDiagnosticScript]:
-	var result: Array[AssemblyCompileDiagnosticScript] = []
+func get_last_diagnostics() -> Array:
+	var result: Array = []
 	for diagnostic in _last_diagnostics:
-		result.append(diagnostic.duplicate_diagnostic())
+		if diagnostic != null and diagnostic.has_method("duplicate_diagnostic"):
+			result.append(diagnostic.duplicate_diagnostic())
 	return result
 
 
@@ -176,7 +175,7 @@ func _fail(vehicle_id: StringName, diagnostics: Array) -> bool:
 	_last_failed_vehicle_id = vehicle_id
 	_last_diagnostics.clear()
 	for diagnostic in diagnostics:
-		if diagnostic is AssemblyCompileDiagnosticScript:
+		if diagnostic != null and diagnostic.has_method("duplicate_diagnostic"):
 			_last_diagnostics.append(diagnostic.duplicate_diagnostic())
 	assembly_compile_failed.emit(vehicle_id, get_last_diagnostics())
 	return false
