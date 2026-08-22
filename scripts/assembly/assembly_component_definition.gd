@@ -1,6 +1,10 @@
 class_name AssemblyComponentDefinition
 extends RefCounted
 
+## Resolved compile input for #45-A. Occupancy, capabilities, interfaces, and metrics
+## are already-resolved contributions. Editable/save data should keep its own source fields
+## and build this snapshot before compilation.
+
 var component_id: StringName = &""
 var component_type: StringName = &""
 var origin: Vector2i = Vector2i.ZERO
