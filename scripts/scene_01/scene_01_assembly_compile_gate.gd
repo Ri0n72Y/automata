@@ -15,6 +15,7 @@ const DIAGNOSTIC_VEHICLE_MANAGER_REQUIRED: StringName = &"vehicle_manager_requir
 const DIAGNOSTIC_VEHICLES_REQUIRED: StringName = &"vehicles_required"
 const DIAGNOSTIC_VEHICLE_DEFINITION_INVALID: StringName = &"vehicle_definition_invalid"
 const DIAGNOSTIC_DUPLICATE_VEHICLE_ID: StringName = &"duplicate_vehicle_id"
+const DIAGNOSTIC_REQUIRED_VEHICLE_MISSING: StringName = &"required_vehicle_missing"
 
 @export var vehicle_manager_path: NodePath = NodePath()
 
@@ -104,6 +105,19 @@ func prepare_scene_run() -> bool:
 			return _fail(vehicle_id, capability_diagnostics)
 		candidate_results[vehicle_id] = compile_result
 
+	for required_vehicle_value in _required_capabilities.keys():
+		var required_vehicle_id := StringName(required_vehicle_value)
+		if candidate_results.has(required_vehicle_id):
+			continue
+		if _requirements_for(required_vehicle_id).is_empty():
+			continue
+		return _fail(required_vehicle_id, [
+			AssemblyCompileDiagnosticScript.new(
+				DIAGNOSTIC_REQUIRED_VEHICLE_MISSING,
+				"Program requirements reference a vehicle that is not participating in Scene 01."
+			)
+		])
+
 	_compiled_results = candidate_results
 	_last_diagnostics.clear()
 	_last_failed_vehicle_id = &""
@@ -152,7 +166,7 @@ func get_compile_cache_size() -> int:
 
 func invalidate_vehicle(vehicle_id: StringName) -> void:
 	_compiler.invalidate(vehicle_id)
-	_compiled_results.erase(vehicle_id)
+	_compiled_results.clear()
 
 
 func clear_runtime_results() -> void:
