@@ -1,8 +1,6 @@
 class_name Scene01LifecycleGrabDropController
 extends "res://scripts/input/vehicle_grab_drop_controller.gd"
 
-const VALIDATION_PASSTHROUGH_TOKEN := -1
-
 @export var scene_controller_path: NodePath = NodePath("../../..")
 
 var _scene_controller: Node
