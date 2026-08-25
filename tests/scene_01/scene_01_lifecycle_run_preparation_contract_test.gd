@@ -49,6 +49,23 @@ func _run() -> void:
 	root.add_child(scene)
 	await process_frame
 
+	_expect_true(
+		scene.has_method("try_start_gameplay_command"),
+		"Lifecycle controller should expose one synchronous gameplay-start boundary."
+	)
+	_expect_false(
+		scene.has_method("begin_gameplay_command_validation"),
+		"Lifecycle controller should not expose token begin validation."
+	)
+	_expect_false(
+		scene.has_method("commit_gameplay_command_validation"),
+		"Lifecycle controller should not expose token commit validation."
+	)
+	_expect_false(
+		scene.has_method("cancel_gameplay_command_validation"),
+		"Lifecycle controller should not expose token cancel validation."
+	)
+
 	var vehicle_manager := scene.get_node_or_null(
 		"SceneRoot/RobotRoot/Scene01VehicleManager"
 	) as VehicleManagerScript
@@ -104,16 +121,6 @@ func _run() -> void:
 		scene.get_lifecycle_state(),
 		LifecycleStateScript.State.READY,
 		"Rejected GrabDrop after preparation must keep lifecycle READY."
-	)
-
-	_expect_false(
-		scene.commit_gameplay_command_validation(424242),
-		"A fabricated validation token should not start lifecycle."
-	)
-	_expect_equal(
-		scene.get_lifecycle_state(),
-		LifecycleStateScript.State.READY,
-		"Fabricated validation token should keep lifecycle READY."
 	)
 
 	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable.")

@@ -109,17 +109,6 @@ func _run() -> void:
 		"Invalid MoveTo should preserve the existing no_path rejection reason."
 	)
 
-	_expect_false(
-		_scene.commit_gameplay_command_validation(999999),
-		"A fabricated validation token must not bypass run preparation."
-	)
-	_expect_equal(
-		_scene.get_lifecycle_state(),
-		LifecycleStateScript.State.READY,
-		"Fabricated commit token must keep lifecycle READY."
-	)
-	_expect_equal(gate.call_count, 1, "Fabricated commit token must not invoke or bypass the gate.")
-
 	_expect_true(
 		grid_selection.activate_live_target_mode(),
 		"M-equivalent target mode should start after preparation and post-compile move validation."

@@ -5,6 +5,9 @@ const REJECTION_MOVE_BUSY := &"vehicle_busy"
 const REJECTION_MOVE_NO_PATH := &"no_path"
 const REJECTION_NO_MOVE_CAPABILITY := &"no_move_capability"
 
+const GAMEPLAY_START_ACCEPTED := &"accepted"
+const GAMEPLAY_START_PREFLIGHT_REJECTED := &"command_preflight_rejected"
+
 
 func _physics_process(delta: float) -> void:
 	if not _is_lifecycle_running():
@@ -27,21 +30,21 @@ func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
 			return _reject_move_preflight(vehicle, target_anchor, REJECTION_NO_MOVE_CAPABILITY)
 		return super.request_selected_vehicle_move(target_anchor)
 
-	var validation_token := _begin_gameplay_command_validation()
-	if validation_token == 0:
+	var start_result := _try_start_gameplay_command(
+		Callable(self, "_can_selected_vehicle_move_to_after_preparation").bind(target_anchor)
+	)
+	if start_result == GAMEPLAY_START_ACCEPTED:
+		return super.request_selected_vehicle_move(target_anchor)
+	if start_result != GAMEPLAY_START_PREFLIGHT_REJECTED:
 		return false
+
 	vehicle = _get_selected_vehicle()
 	if vehicle == null:
-		_cancel_gameplay_command_validation(validation_token)
 		return super.request_selected_vehicle_move(target_anchor)
 	var rejection_reason := _get_ready_move_preflight_rejection(vehicle, target_anchor)
-	if rejection_reason != &"":
-		_cancel_gameplay_command_validation(validation_token)
-		return _reject_move_preflight(vehicle, target_anchor, rejection_reason)
-	if not _commit_gameplay_command_validation(validation_token):
-		_cancel_gameplay_command_validation(validation_token)
+	if rejection_reason == &"":
 		return false
-	return super.request_selected_vehicle_move(target_anchor)
+	return _reject_move_preflight(vehicle, target_anchor, rejection_reason)
 
 
 func request_selected_vehicle_stop() -> bool:
@@ -78,6 +81,13 @@ func _sync_live_target_mode() -> void:
 			footprint = vehicle.definition.footprint
 		grid_selection_controller.set_live_target_mode(false, footprint)
 	_hide_prediction()
+
+
+func _can_selected_vehicle_move_to_after_preparation(target_anchor: Vector2i) -> bool:
+	var vehicle := _get_selected_vehicle()
+	if vehicle == null:
+		return false
+	return _get_ready_move_preflight_rejection(vehicle, target_anchor) == &""
 
 
 func _get_ready_move_preflight_rejection(
@@ -128,22 +138,10 @@ func _reject_move_preflight(
 	return false
 
 
-func _begin_gameplay_command_validation() -> int:
-	if controller == null or not controller.has_method("begin_gameplay_command_validation"):
-		return 0
-	return int(controller.call("begin_gameplay_command_validation"))
-
-
-func _commit_gameplay_command_validation(token: int) -> bool:
-	if controller == null or not controller.has_method("commit_gameplay_command_validation"):
-		return false
-	return bool(controller.call("commit_gameplay_command_validation", token))
-
-
-func _cancel_gameplay_command_validation(token: int) -> void:
-	if controller == null or not controller.has_method("cancel_gameplay_command_validation"):
-		return
-	controller.call("cancel_gameplay_command_validation", token)
+func _try_start_gameplay_command(preflight: Callable) -> StringName:
+	if controller == null or not controller.has_method("try_start_gameplay_command"):
+		return &"invalid_gameplay_start"
+	return StringName(controller.call("try_start_gameplay_command", preflight))
 
 
 func _is_lifecycle_running() -> bool:

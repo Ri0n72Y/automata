@@ -7,13 +7,16 @@ signal lifecycle_reset_completed()
 signal lifecycle_run_preparation_failed(reason: StringName)
 
 const LifecycleStateScript := preload("res://scripts/scene_01/scene_01_lifecycle_state.gd")
-const RUNNING_VALIDATION_TOKEN := -1
+
+const GAMEPLAY_START_ACCEPTED := &"accepted"
+const GAMEPLAY_START_PAUSED := &"paused"
+const GAMEPLAY_START_PREPARATION_FAILED := &"run_preparation_failed"
+const GAMEPLAY_START_PREFLIGHT_REJECTED := &"command_preflight_rejected"
+const GAMEPLAY_START_INVALID := &"invalid_gameplay_start"
 
 @export var run_preparation_gate_path: NodePath = NodePath()
 
 var _lifecycle_state := LifecycleStateScript.new()
-var _next_gameplay_validation_token: int = 1
-var _pending_gameplay_validation_token: int = 0
 var _suppress_legacy_running_reset: bool = false
 
 
@@ -50,39 +53,31 @@ func toggle_run_pause() -> void:
 	_lifecycle_state.toggle_run_pause()
 
 
-func begin_gameplay_command_validation() -> int:
+func try_start_gameplay_command(preflight: Callable) -> StringName:
 	if _lifecycle_state.is_paused():
-		return 0
-	if _lifecycle_state.is_running():
-		return RUNNING_VALIDATION_TOKEN
-	if not _lifecycle_state.is_ready() or not _prepare_scene_run():
-		return 0
-	var token := _next_gameplay_validation_token
-	_next_gameplay_validation_token += 1
-	if _next_gameplay_validation_token <= 0:
-		_next_gameplay_validation_token = 1
-	_pending_gameplay_validation_token = token
-	return token
+		return GAMEPLAY_START_PAUSED
+	if not preflight.is_valid():
+		push_error("Scene01LifecycleController requires a valid gameplay preflight callable.")
+		return GAMEPLAY_START_INVALID
 
+	if _lifecycle_state.is_ready():
+		if not _prepare_scene_run():
+			return GAMEPLAY_START_PREPARATION_FAILED
+	elif not _lifecycle_state.is_running():
+		return GAMEPLAY_START_INVALID
 
-func commit_gameplay_command_validation(token: int) -> bool:
-	if _lifecycle_state.is_paused():
-		return false
-	if _lifecycle_state.is_running():
-		return token == RUNNING_VALIDATION_TOKEN
-	if (
-		not _lifecycle_state.is_ready()
-		or token <= 0
-		or token != _pending_gameplay_validation_token
-	):
-		return false
-	_pending_gameplay_validation_token = 0
-	return _lifecycle_state.start()
+	if not bool(preflight.call()):
+		return GAMEPLAY_START_PREFLIGHT_REJECTED
 
+	if _lifecycle_state.is_ready():
+		if not _lifecycle_state.start():
+			return GAMEPLAY_START_INVALID
+		# State-change subscribers run synchronously in Godot. If one of them
+		# pauses or resets the scene, the command must not mutate afterward.
+		if not _lifecycle_state.is_running():
+			return GAMEPLAY_START_INVALID
 
-func cancel_gameplay_command_validation(token: int) -> void:
-	if token > 0 and token == _pending_gameplay_validation_token:
-		_pending_gameplay_validation_token = 0
+	return GAMEPLAY_START_ACCEPTED
 
 
 func cycle_simulation_speed() -> float:
@@ -110,7 +105,6 @@ func get_simulation_speed() -> float:
 
 
 func reset_scene_state() -> void:
-	_pending_gameplay_validation_token = 0
 	_suppress_legacy_running_reset = true
 	super.reset_scene_state()
 	_suppress_legacy_running_reset = false
@@ -160,7 +154,6 @@ func _connect_lifecycle_signals() -> void:
 
 
 func _on_lifecycle_state_changed(previous_state: int, current_state: int) -> void:
-	_pending_gameplay_validation_token = 0
 	super._set_legacy_running_state(_lifecycle_state.is_running())
 	_sync_lifecycle_consumers()
 	lifecycle_state_changed.emit(previous_state, current_state)

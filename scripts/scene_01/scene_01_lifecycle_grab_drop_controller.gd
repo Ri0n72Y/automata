@@ -1,6 +1,9 @@
 class_name Scene01LifecycleGrabDropController
 extends "res://scripts/input/vehicle_grab_drop_controller.gd"
 
+const GAMEPLAY_START_ACCEPTED := &"accepted"
+const GAMEPLAY_START_PREFLIGHT_REJECTED := &"command_preflight_rejected"
+
 @export var scene_controller_path: NodePath = NodePath("../../..")
 
 var _scene_controller: Node
@@ -30,16 +33,15 @@ func request_selected_grab_drop() -> GrabDropResultScript:
 		return _reject_for_lifecycle_pause()
 	if _get_selected_vehicle() == null:
 		return super.request_selected_grab_drop()
-	var validation_token := _begin_gameplay_command_validation()
-	if validation_token == 0:
-		return _reject_for_run_preparation()
-	if not _can_execute_selected_grab_drop():
-		_cancel_gameplay_command_validation(validation_token)
+
+	var start_result := _try_start_gameplay_command(
+		Callable(self, "_can_execute_selected_grab_drop")
+	)
+	if start_result == GAMEPLAY_START_ACCEPTED:
 		return super.request_selected_grab_drop()
-	if not _commit_gameplay_command_validation(validation_token):
-		_cancel_gameplay_command_validation(validation_token)
-		return _reject_for_run_preparation()
-	return super.request_selected_grab_drop()
+	if start_result == GAMEPLAY_START_PREFLIGHT_REJECTED:
+		return super.request_selected_grab_drop()
+	return _reject_for_run_preparation()
 
 
 func rotate_selected_arm(direction: int) -> bool:
@@ -48,15 +50,11 @@ func rotate_selected_arm(direction: int) -> bool:
 	var step := clampi(direction, -1, 1)
 	if step == 0 or _get_selected_vehicle() == null:
 		return false
-	var validation_token := _begin_gameplay_command_validation()
-	if validation_token == 0:
-		return false
-	var vehicle := _get_selected_vehicle()
-	if not _can_rotate(vehicle):
-		_cancel_gameplay_command_validation(validation_token)
-		return false
-	if not _commit_gameplay_command_validation(validation_token):
-		_cancel_gameplay_command_validation(validation_token)
+
+	var start_result := _try_start_gameplay_command(
+		Callable(self, "_can_rotate_selected_arm_after_preparation")
+	)
+	if start_result != GAMEPLAY_START_ACCEPTED:
 		return false
 	return super.rotate_selected_arm(direction)
 
@@ -70,6 +68,11 @@ func refresh_interaction_preview() -> void:
 
 func sync_lifecycle_state() -> void:
 	refresh_interaction_preview()
+
+
+func _can_rotate_selected_arm_after_preparation() -> bool:
+	var vehicle := _get_selected_vehicle()
+	return vehicle != null and _can_rotate(vehicle)
 
 
 func _can_execute_selected_grab_drop() -> bool:
@@ -112,22 +115,10 @@ func _emit_lifecycle_rejection(status: int) -> GrabDropResultScript:
 	return result
 
 
-func _begin_gameplay_command_validation() -> int:
+func _try_start_gameplay_command(preflight: Callable) -> StringName:
 	if not _has_lifecycle_contract():
-		return 0
-	return int(_scene_controller.call("begin_gameplay_command_validation"))
-
-
-func _commit_gameplay_command_validation(token: int) -> bool:
-	if not _has_lifecycle_contract():
-		return false
-	return bool(_scene_controller.call("commit_gameplay_command_validation", token))
-
-
-func _cancel_gameplay_command_validation(token: int) -> void:
-	if not _has_lifecycle_contract():
-		return
-	_scene_controller.call("cancel_gameplay_command_validation", token)
+		return &"invalid_gameplay_start"
+	return StringName(_scene_controller.call("try_start_gameplay_command", preflight))
 
 
 func _is_lifecycle_paused() -> bool:
@@ -140,8 +131,6 @@ func _has_lifecycle_contract() -> bool:
 	return (
 		_scene_controller != null
 		and is_instance_valid(_scene_controller)
-		and _scene_controller.has_method("begin_gameplay_command_validation")
-		and _scene_controller.has_method("commit_gameplay_command_validation")
-		and _scene_controller.has_method("cancel_gameplay_command_validation")
+		and _scene_controller.has_method("try_start_gameplay_command")
 		and _scene_controller.has_method("is_scene_paused")
 	)
