@@ -1,7 +1,6 @@
 class_name Scene01LifecycleVehicleMoveController
 extends "res://scripts/input/vehicle_move_controller.gd"
 
-const VALIDATION_PASSTHROUGH_TOKEN := -1
 const REJECTION_MOVE_BUSY := &"vehicle_busy"
 const REJECTION_MOVE_NO_PATH := &"no_path"
 const REJECTION_NO_MOVE_CAPABILITY := &"no_move_capability"
@@ -131,13 +130,13 @@ func _reject_move_preflight(
 
 func _begin_gameplay_command_validation() -> int:
 	if controller == null or not controller.has_method("begin_gameplay_command_validation"):
-		return VALIDATION_PASSTHROUGH_TOKEN
+		return 0
 	return int(controller.call("begin_gameplay_command_validation"))
 
 
 func _commit_gameplay_command_validation(token: int) -> bool:
 	if controller == null or not controller.has_method("commit_gameplay_command_validation"):
-		return true
+		return false
 	return bool(controller.call("commit_gameplay_command_validation", token))
 
 
@@ -149,17 +148,17 @@ func _cancel_gameplay_command_validation(token: int) -> void:
 
 func _is_lifecycle_running() -> bool:
 	if controller == null or not controller.has_method("is_gameplay_running"):
-		return true
+		return false
 	return bool(controller.call("is_gameplay_running"))
 
 
 func _is_lifecycle_paused() -> bool:
 	if controller == null or not controller.has_method("is_scene_paused"):
-		return false
+		return true
 	return bool(controller.call("is_scene_paused"))
 
 
 func _get_lifecycle_speed() -> float:
 	if controller == null or not controller.has_method("get_simulation_speed"):
-		return 1.0
+		return 0.0
 	return maxf(float(controller.call("get_simulation_speed")), 0.0)

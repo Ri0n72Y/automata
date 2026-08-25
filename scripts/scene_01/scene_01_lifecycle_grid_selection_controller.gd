@@ -1,8 +1,6 @@
 class_name Scene01LifecycleGridSelectionController
 extends "res://scripts/input/grid_selection_controller.gd"
 
-const VALIDATION_PASSTHROUGH_TOKEN := -1
-
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not _is_lifecycle_paused():
@@ -64,19 +62,19 @@ func _can_selected_vehicle_move_after_preparation() -> bool:
 	if move_controller == null or not move_controller.has_method(
 		"can_selected_vehicle_move_after_preparation"
 	):
-		return true
+		return false
 	return bool(move_controller.call("can_selected_vehicle_move_after_preparation"))
 
 
 func _begin_gameplay_command_validation() -> int:
 	if controller == null or not controller.has_method("begin_gameplay_command_validation"):
-		return VALIDATION_PASSTHROUGH_TOKEN
+		return 0
 	return int(controller.call("begin_gameplay_command_validation"))
 
 
 func _commit_gameplay_command_validation(token: int) -> bool:
 	if controller == null or not controller.has_method("commit_gameplay_command_validation"):
-		return true
+		return false
 	return bool(controller.call("commit_gameplay_command_validation", token))
 
 
@@ -88,5 +86,5 @@ func _cancel_gameplay_command_validation(token: int) -> void:
 
 func _is_lifecycle_paused() -> bool:
 	if controller == null or not controller.has_method("is_scene_paused"):
-		return false
+		return true
 	return bool(controller.call("is_scene_paused"))

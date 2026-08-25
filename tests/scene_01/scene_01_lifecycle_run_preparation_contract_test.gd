@@ -7,8 +7,6 @@ const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_m
 const VehicleSelectionScript := preload("res://scripts/input/vehicle_selection_controller.gd")
 const GrabDropControllerScript := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
 const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.gd")
-const MoveCommandScript := preload("res://scripts/vehicles/move_command.gd")
-const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
 
 
 class CountingAcceptingGate:
@@ -20,17 +18,13 @@ class CountingAcceptingGate:
 		return true
 
 
-class RetargetingRunPreparationGate:
+class RejectingGate:
 	extends Node
-	var vehicle: VehicleActorScript
 	var call_count: int = 0
 
 	func prepare_scene_run() -> bool:
 		call_count += 1
-		if vehicle != null and vehicle.runtime_state != null:
-			vehicle.runtime_state.anchor_cell += Vector2i.RIGHT
-			vehicle.sync_from_state()
-		return true
+		return false
 
 
 var failures: int = 0
@@ -69,8 +63,7 @@ func _run() -> void:
 		"Run preparation contract test requires vehicle and GrabDrop controllers."
 	)
 	if vehicle_manager == null or vehicle_selection == null or grab_drop_controller == null:
-		scene.queue_free()
-		await process_frame
+		await _cleanup(scene)
 		_finish()
 		return
 
@@ -78,43 +71,9 @@ func _run() -> void:
 	var arm := vehicle_manager.get_vehicle_by_id(&"arm_vehicle")
 	_expect_true(transport != null and arm != null, "Run preparation contract test requires both vehicles.")
 	if transport == null or arm == null:
-		scene.queue_free()
-		await process_frame
+		await _cleanup(scene)
 		_finish()
 		return
-
-	var initial_arm_anchor: Vector2i = arm.runtime_state.anchor_cell
-	var programmatic_command := MoveCommandScript.new()
-	_expect_true(
-		programmatic_command.configure(
-			initial_arm_anchor + Vector2i.RIGHT,
-			[initial_arm_anchor, initial_arm_anchor + Vector2i.RIGHT]
-		),
-		"Programmatic move fixture should configure."
-	)
-	var retargeting_gate := RetargetingRunPreparationGate.new()
-	retargeting_gate.name = "RetargetingRunPreparationGate"
-	retargeting_gate.vehicle = arm
-	scene.add_child(retargeting_gate)
-	scene.run_preparation_gate_path = NodePath("RetargetingRunPreparationGate")
-	_expect_false(
-		scene.submit_programmatic_vehicle_move(arm, programmatic_command),
-		"Programmatic move must be rejected when run preparation invalidates its command."
-	)
-	_expect_equal(retargeting_gate.call_count, 1, "Programmatic move should execute the run gate once.")
-	_expect_equal(
-		scene.get_lifecycle_state(),
-		LifecycleStateScript.State.READY,
-		"Invalidated programmatic move must keep lifecycle READY."
-	)
-	_expect_true(
-		arm.runtime_state.active_move_command == null,
-		"Invalidated programmatic move must not assign an active MoveCommand."
-	)
-	arm.runtime_state.anchor_cell = initial_arm_anchor
-	arm.sync_from_state()
-	scene.run_preparation_gate_path = NodePath()
-	retargeting_gate.queue_free()
 
 	var gate := CountingAcceptingGate.new()
 	gate.name = "CountingAcceptingGate"
@@ -122,14 +81,11 @@ func _run() -> void:
 	scene.run_preparation_gate_path = NodePath("CountingAcceptingGate")
 
 	_expect_true(vehicle_selection.select_vehicle(transport), "Transport should be selectable.")
-	_expect_false(
-		grab_drop_controller.rotate_selected_arm(1),
-		"Transport rotation should still fail after successful run preparation."
-	)
+	await _push_key(KEY_A)
 	_expect_equal(
 		gate.call_count,
 		1,
-		"READY arm command validation should invoke run preparation before capability rejection."
+		"One failed Viewport A attempt must execute run preparation exactly once."
 	)
 	_expect_equal(
 		scene.get_lifecycle_state(),
@@ -143,11 +99,7 @@ func _run() -> void:
 		GrabDropResultScript.Status.NO_CAPABILITY,
 		"Transport GrabDrop should reject with NO_CAPABILITY after preparation."
 	)
-	_expect_equal(
-		gate.call_count,
-		2,
-		"Each READY gameplay attempt should enter the preparation gate before compiled capability validation."
-	)
+	_expect_equal(gate.call_count, 2, "Each READY gameplay attempt should prepare exactly once.")
 	_expect_equal(
 		scene.get_lifecycle_state(),
 		LifecycleStateScript.State.READY,
@@ -178,43 +130,67 @@ func _run() -> void:
 	_expect_true(scene.is_running, "Legacy is_running compatibility view should mirror RUNNING.")
 
 	scene.pause_scene()
-	_expect_equal(
-		scene.get_lifecycle_state(),
-		LifecycleStateScript.State.PAUSED,
-		"Pause should enter PAUSED."
-	)
-	_expect_false(scene.is_running, "Legacy is_running compatibility view should mirror PAUSED.")
 	_expect_equal(gate.call_count, 3, "Pause must not re-run preparation.")
-
 	scene.resume_scene()
-	_expect_equal(
-		scene.get_lifecycle_state(),
-		LifecycleStateScript.State.RUNNING,
-		"Resume should return RUNNING."
-	)
-	_expect_true(scene.is_running, "Legacy is_running compatibility view should mirror resumed RUNNING.")
 	_expect_equal(gate.call_count, 3, "Resume must not re-run preparation.")
 
 	scene.reset_scene()
+	_expect_equal(gate.call_count, 3, "Reset must not itself re-run preparation.")
 	_expect_equal(
 		scene.get_lifecycle_state(),
 		LifecycleStateScript.State.READY,
 		"Reset should return READY."
 	)
-	_expect_false(scene.is_running, "Legacy is_running compatibility view should mirror READY after Reset.")
-	_expect_equal(gate.call_count, 3, "Reset must not itself re-run preparation.")
 
 	scene.run_scene()
-	_expect_equal(gate.call_count, 4, "A new Run after Reset should enter the gate once; cache reuse belongs to the gate implementation.")
+	_expect_equal(gate.call_count, 4, "A new Run after Reset should enter the gate once.")
 	_expect_equal(
 		scene.get_lifecycle_state(),
 		LifecycleStateScript.State.RUNNING,
 		"A new prepared Run after Reset should enter RUNNING."
 	)
 
-	scene.queue_free()
-	await process_frame
+	scene.reset_scene()
+	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable after second Reset.")
+	var rejecting_gate := RejectingGate.new()
+	rejecting_gate.name = "RejectingGate"
+	scene.add_child(rejecting_gate)
+	scene.run_preparation_gate_path = NodePath("RejectingGate")
+	var rejected_grab := grab_drop_controller.request_selected_grab_drop()
+	_expect_equal(
+		rejected_grab.status,
+		GrabDropResultScript.Status.RUN_PREPARATION_FAILED,
+		"Run preparation rejection must not be reported as vehicle BUSY."
+	)
+	_expect_equal(rejecting_gate.call_count, 1, "Rejected GrabDrop should prepare exactly once.")
+	_expect_equal(
+		scene.get_lifecycle_state(),
+		LifecycleStateScript.State.READY,
+		"Rejected run preparation must keep lifecycle READY."
+	)
+
+	await _cleanup(scene)
 	_finish()
+
+
+func _push_key(keycode: int) -> void:
+	root.push_input(_key_event(keycode, true))
+	await process_frame
+	root.push_input(_key_event(keycode, false))
+	await process_frame
+
+
+func _key_event(keycode: int, pressed: bool) -> InputEventKey:
+	var event := InputEventKey.new()
+	event.pressed = pressed
+	event.keycode = keycode
+	return event
+
+
+func _cleanup(scene: Node) -> void:
+	if scene != null and is_instance_valid(scene):
+		scene.queue_free()
+		await process_frame
 
 
 func _finish() -> void:

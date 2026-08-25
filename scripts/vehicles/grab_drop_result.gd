@@ -21,6 +21,7 @@ enum Status {
 	GROUND_OCCUPIED,
 	OWNERSHIP_CONFLICT,
 	INVALID_TARGET,
+	RUN_PREPARATION_FAILED,
 }
 
 var _action: int = Action.NONE
