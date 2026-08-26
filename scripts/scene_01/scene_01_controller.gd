@@ -240,7 +240,9 @@ func _initialize_scene_state() -> bool:
 
 
 func _restore_base_scene_state() -> bool:
-	if scene_object_manager != null and not scene_object_manager.reset_objects():
+	# Validate the object domain before mutating runtime state, then preserve the
+	# gameplay Reset order: cancel modes/tasks first, restore world objects after.
+	if scene_object_manager != null and not scene_object_manager.initialize_objects():
 		return false
 
 	_base_is_running = false
@@ -261,6 +263,8 @@ func _restore_base_scene_state() -> bool:
 		scene_vehicle_manager.reset_vehicles()
 		scene_vehicle_manager.sync_vehicles_from_state()
 	if scene_object_manager != null:
+		if not scene_object_manager.reset_objects():
+			return false
 		var standard_box := scene_object_manager.get_standard_box()
 		box_count = standard_box.get_current_count() if standard_box != null else 3
 	else:
