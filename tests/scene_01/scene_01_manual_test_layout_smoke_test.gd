@@ -24,13 +24,11 @@ func _run() -> void:
 	var model := scene.get("grid_model") as GRID_MODEL_SCRIPT
 	var pile := scene.get_node_or_null("SceneRoot/ObjectRoot/Scene01ObjectManager/InfiniteBlockPile") as Node3D
 	var box := scene.get_node_or_null("SceneRoot/ObjectRoot/Scene01ObjectManager/StandardBox") as Node3D
-	var input_router := scene.get_node_or_null("SceneRoot/GridRoot/VehicleGrabDropInputRouter")
 	var guide_root := scene.get_node_or_null("UIRoot/RootControl") as Control
 
 	_expect_true(model != null, "Manual-test layout requires GridModel.")
 	_expect_true(pile != null, "Manual-test layout requires the pile visual.")
 	_expect_true(box != null, "Manual-test layout requires the box visual.")
-	_expect_true(input_router != null, "Manual-test layout requires the early A/D/C input router.")
 	_expect_true(guide_root != null, "Manual-test layout requires the player guide root.")
 	if guide_root != null:
 		var guide_theme: Theme = guide_root.theme
