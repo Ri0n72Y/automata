@@ -88,12 +88,13 @@ func refresh_ground_cell_policy() -> void:
 	ground_block_field.configure_valid_cells(valid_cells)
 
 
-func reset_objects() -> void:
+func reset_objects() -> bool:
 	if not initialize_objects():
-		return
+		return false
 	ground_block_field.reset()
 	get_block_pile().reset()
 	get_standard_box().reset()
+	return true
 
 
 func get_item_interaction_interfaces() -> Array[Variant]:

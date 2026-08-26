@@ -36,10 +36,10 @@ var box_count: int = 3
 var target_box_count: int = 8
 var timer: float = 0.0
 var automation_rate: float = 0.0
-var _legacy_is_running: bool = false
+var _base_is_running: bool = false
 var is_running: bool:
 	get:
-		return _legacy_is_running
+		return _is_scene_running()
 
 var _initial_grid_root_transform: Transform3D = Transform3D.IDENTITY
 var _preview_offset_enabled: bool = false
@@ -55,15 +55,19 @@ func _enter_tree() -> void:
 func _ready() -> void:
 	if grid_root != null:
 		_initial_grid_root_transform = grid_root.transform
-	if grid_model != null and not _configure_initial_grid_dependents():
+	if grid_model == null or not _configure_initial_grid_dependents():
 		push_error("Scene 01 grid dependents failed to initialize.")
+		return
 	if scene_object_manager != null:
-		scene_object_manager.box_count_changed.connect(_on_object_box_count_changed)
-	reset_scene_state()
+		var box_callable := Callable(self, "_on_object_box_count_changed")
+		if not scene_object_manager.box_count_changed.is_connected(box_callable):
+			scene_object_manager.box_count_changed.connect(box_callable)
+	if not _initialize_scene_state():
+		push_error("Scene 01 initial state failed to initialize.")
 
 
 func _process(delta: float) -> void:
-	if _legacy_is_running:
+	if _is_scene_running():
 		timer += delta
 
 
@@ -227,19 +231,30 @@ func is_grid_footprint_walkable(
 
 
 func run_scene() -> void:
-	_set_legacy_running_state(true)
+	_base_is_running = true
 
 
 func pause_scene() -> void:
-	_set_legacy_running_state(false)
+	_base_is_running = false
 
 
-func reset_scene() -> void:
-	reset_scene_state()
+func reset_scene() -> bool:
+	return reset_scene_state()
 
 
-func reset_scene_state() -> void:
-	_set_legacy_running_state(false)
+func reset_scene_state() -> bool:
+	return _restore_base_scene_state()
+
+
+func _initialize_scene_state() -> bool:
+	return _restore_base_scene_state()
+
+
+func _restore_base_scene_state() -> bool:
+	if scene_object_manager != null and not scene_object_manager.reset_objects():
+		return false
+
+	_base_is_running = false
 	timer = 0.0
 	target_box_count = 8
 	automation_rate = 0.0
@@ -257,16 +272,16 @@ func reset_scene_state() -> void:
 		scene_vehicle_manager.reset_vehicles()
 		scene_vehicle_manager.sync_vehicles_from_state()
 	if scene_object_manager != null:
-		scene_object_manager.reset_objects()
 		var standard_box := scene_object_manager.get_standard_box()
 		box_count = standard_box.get_current_count() if standard_box != null else 3
 	else:
 		box_count = 3
 	_refresh_camera_for_grid()
+	return true
 
 
-func _set_legacy_running_state(value: bool) -> void:
-	_legacy_is_running = value
+func _is_scene_running() -> bool:
+	return _base_is_running
 
 
 func preview_rotate_grid(direction: int) -> void:

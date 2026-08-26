@@ -8,16 +8,9 @@ signal lifecycle_run_preparation_failed(reason: StringName)
 
 const LifecycleStateScript := preload("res://scripts/scene_01/scene_01_lifecycle_state.gd")
 
-const GAMEPLAY_START_ACCEPTED := &"accepted"
-const GAMEPLAY_START_PAUSED := &"paused"
-const GAMEPLAY_START_PREPARATION_FAILED := &"run_preparation_failed"
-const GAMEPLAY_START_PREFLIGHT_REJECTED := &"command_preflight_rejected"
-const GAMEPLAY_START_INVALID := &"invalid_gameplay_start"
-
 @export var run_preparation_gate_path: NodePath = NodePath()
 
 var _lifecycle_state := LifecycleStateScript.new()
-var _suppress_legacy_running_reset: bool = false
 
 
 func _ready() -> void:
@@ -53,31 +46,14 @@ func toggle_run_pause() -> void:
 	_lifecycle_state.toggle_run_pause()
 
 
-func try_start_gameplay_command(preflight: Callable) -> StringName:
+func ensure_gameplay_running() -> bool:
 	if _lifecycle_state.is_paused():
-		return GAMEPLAY_START_PAUSED
-	if not preflight.is_valid():
-		push_error("Scene01LifecycleController requires a valid gameplay preflight callable.")
-		return GAMEPLAY_START_INVALID
-
-	if _lifecycle_state.is_ready():
-		if not _prepare_scene_run():
-			return GAMEPLAY_START_PREPARATION_FAILED
-	elif not _lifecycle_state.is_running():
-		return GAMEPLAY_START_INVALID
-
-	if not bool(preflight.call()):
-		return GAMEPLAY_START_PREFLIGHT_REJECTED
-
-	if _lifecycle_state.is_ready():
-		if not _lifecycle_state.start():
-			return GAMEPLAY_START_INVALID
-		# State-change subscribers run synchronously in Godot. If one of them
-		# pauses or resets the scene, the command must not mutate afterward.
-		if not _lifecycle_state.is_running():
-			return GAMEPLAY_START_INVALID
-
-	return GAMEPLAY_START_ACCEPTED
+		return false
+	if _lifecycle_state.is_running():
+		return true
+	if not _lifecycle_state.is_ready():
+		return false
+	return _request_start()
 
 
 func cycle_simulation_speed() -> float:
@@ -104,20 +80,17 @@ func get_simulation_speed() -> float:
 	return _lifecycle_state.get_simulation_speed()
 
 
-func reset_scene_state() -> void:
-	_suppress_legacy_running_reset = true
-	super.reset_scene_state()
-	_suppress_legacy_running_reset = false
+func reset_scene_state() -> bool:
+	if not super.reset_scene_state():
+		return false
 	_lifecycle_state.reset()
-	super._set_legacy_running_state(_lifecycle_state.is_running())
 	_sync_lifecycle_consumers()
 	lifecycle_reset_completed.emit()
+	return true
 
 
-func _set_legacy_running_state(value: bool) -> void:
-	if _suppress_legacy_running_reset:
-		return
-	super._set_legacy_running_state(value)
+func _is_scene_running() -> bool:
+	return _lifecycle_state.is_running()
 
 
 func _request_start() -> bool:
@@ -154,7 +127,6 @@ func _connect_lifecycle_signals() -> void:
 
 
 func _on_lifecycle_state_changed(previous_state: int, current_state: int) -> void:
-	super._set_legacy_running_state(_lifecycle_state.is_running())
 	_sync_lifecycle_consumers()
 	lifecycle_state_changed.emit(previous_state, current_state)
 

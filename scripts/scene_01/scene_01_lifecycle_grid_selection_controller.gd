@@ -1,8 +1,6 @@
 class_name Scene01LifecycleGridSelectionController
 extends "res://scripts/input/grid_selection_controller.gd"
 
-const GAMEPLAY_START_ACCEPTED := &"accepted"
-
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not _is_lifecycle_paused():
@@ -23,15 +21,17 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func activate_live_target_mode() -> bool:
-	if not is_live_target_available():
-		return super.activate_live_target_mode()
-	return _activate_live_target_mode_with_lifecycle()
+	if _is_lifecycle_paused() or not _ensure_gameplay_running():
+		return false
+	return super.activate_live_target_mode()
 
 
 func toggle_live_target_mode() -> bool:
-	if is_live_target_mode() or not is_live_target_available():
+	if is_live_target_mode():
 		return super.toggle_live_target_mode()
-	return _activate_live_target_mode_with_lifecycle()
+	if _is_lifecycle_paused() or not _ensure_gameplay_running():
+		return false
+	return super.toggle_live_target_mode()
 
 
 func confirm_selection() -> bool:
@@ -46,28 +46,10 @@ func primary_action_from_screen_position(screen_position: Vector2) -> bool:
 	return super.primary_action_from_screen_position(screen_position)
 
 
-func _activate_live_target_mode_with_lifecycle() -> bool:
-	var start_result := _try_start_gameplay_command(
-		Callable(self, "_can_selected_vehicle_move_after_preparation")
-	)
-	if start_result != GAMEPLAY_START_ACCEPTED:
+func _ensure_gameplay_running() -> bool:
+	if controller == null or not controller.has_method("ensure_gameplay_running"):
 		return false
-	return super.activate_live_target_mode()
-
-
-func _can_selected_vehicle_move_after_preparation() -> bool:
-	var move_controller := get_node_or_null("../VehicleMoveController")
-	if move_controller == null or not move_controller.has_method(
-		"can_selected_vehicle_move_after_preparation"
-	):
-		return false
-	return bool(move_controller.call("can_selected_vehicle_move_after_preparation"))
-
-
-func _try_start_gameplay_command(preflight: Callable) -> StringName:
-	if controller == null or not controller.has_method("try_start_gameplay_command"):
-		return &"invalid_gameplay_start"
-	return StringName(controller.call("try_start_gameplay_command", preflight))
+	return bool(controller.call("ensure_gameplay_running"))
 
 
 func _is_lifecycle_paused() -> bool:

@@ -147,8 +147,6 @@ func _grab_drop_status_text(status: int) -> String:
 			return "地面位置已被占用"
 		GrabDropResultScript.Status.OWNERSHIP_CONFLICT:
 			return "物品当前由其它容器持有"
-		GrabDropResultScript.Status.RUN_PREPARATION_FAILED:
-			return "运行准备失败"
 		_:
 			return "目标无效"
 
