@@ -97,25 +97,14 @@ func initialize_grid() -> bool:
 
 	var previous_model := grid_model
 	grid_model = model
-	var preparation: Scene01VehicleManagerScript.VehicleBatchPreparation
-	if scene_vehicle_manager != null:
-		preparation = scene_vehicle_manager.prepare_vehicle_batch(
-			self,
-			model.cell_size
-		)
-		if preparation == null:
-			grid_model = previous_model
-			push_error(
-				"Scene 01 grid initialization failed because vehicles rejected the candidate grid."
-			)
-			return false
-
-	if scene_vehicle_manager != null and not scene_vehicle_manager.commit_vehicle_batch(
+	if scene_vehicle_manager != null and not scene_vehicle_manager.rebuild_vehicles(
 		self,
-		preparation
+		model.cell_size
 	):
 		grid_model = previous_model
-		push_error("Scene 01 grid initialization failed because vehicle commit was rejected.")
+		push_error(
+			"Scene 01 grid initialization failed because vehicles rejected the candidate grid."
+		)
 		return false
 
 	if vehicle_move_controller != null:

@@ -11,21 +11,11 @@ const ARM_VEHICLE_ID := &"arm_vehicle"
 const TRANSPORT_VEHICLE_ID := &"transport_vehicle"
 const REQUIRED_VEHICLE_COUNT := 2
 
-class VehicleBatchPreparation extends RefCounted:
-	func _init(creation_key: Object) -> void:
-		assert(creation_key != null)
-
 @export var arm_start_cell: Vector2i = Vector2i(2, 2)
 @export var transport_start_cell: Vector2i = Vector2i(7, 4)
 
 var controller: Node
 var _vehicles: Array[Node3D] = []
-var _active_preparation: VehicleBatchPreparation
-var _prepared_vehicle_batch: Array[Node3D] = []
-
-
-func _exit_tree() -> void:
-	_discard_active_preparation()
 
 
 func configure(p_controller: Node, p_cell_size: float) -> bool:
@@ -34,87 +24,19 @@ func configure(p_controller: Node, p_cell_size: float) -> bool:
 			push_error("Scene 01 static vehicle presets are incomplete or invalid.")
 			return false
 		return true
-	var preparation := prepare_vehicle_batch(p_controller, p_cell_size)
-	if preparation == null:
-		return false
-	return commit_vehicle_batch(p_controller, preparation)
+	return rebuild_vehicles(p_controller, p_cell_size)
 
 
-func prepare_vehicle_batch(
-	p_controller: Node,
-	p_cell_size: float
-) -> VehicleBatchPreparation:
-	_discard_active_preparation()
-	if p_controller == null:
-		push_error("Scene 01 vehicle manager requires a controller.")
-		return null
-
-	var vehicle_batch: Array[Node3D] = []
-	var arm_definition: VehicleDefinitionScript = _create_arm_definition()
-	var transport_definition: VehicleDefinitionScript = _create_transport_definition()
-	if arm_definition == null or transport_definition == null:
-		return null
-	if not _is_start_footprint_valid(p_controller, arm_definition, arm_start_cell):
-		return null
-	if not _is_start_footprint_valid(
-		p_controller,
-		transport_definition,
-		transport_start_cell
-	):
-		return null
-
-	var arm_actor: VehicleActorScript = _build_vehicle(
-		p_controller,
-		arm_definition,
-		arm_start_cell,
-		VehicleRuntimeStateScript.Facing.EAST,
-		p_cell_size
-	)
-	if arm_actor == null:
-		_free_vehicle_batch(vehicle_batch)
-		return null
-	vehicle_batch.append(arm_actor)
-
-	var transport_actor: VehicleActorScript = _build_vehicle(
-		p_controller,
-		transport_definition,
-		transport_start_cell,
-		VehicleRuntimeStateScript.Facing.WEST,
-		p_cell_size
-	)
-	if transport_actor == null:
-		_free_vehicle_batch(vehicle_batch)
-		return null
-	vehicle_batch.append(transport_actor)
-
-	_active_preparation = VehicleBatchPreparation.new(self)
-	_prepared_vehicle_batch = vehicle_batch
-	return _active_preparation
-
-
-func commit_vehicle_batch(
-	p_controller: Node,
-	preparation: VehicleBatchPreparation
-) -> bool:
-	var vehicle_batch: Array[Node3D] = _take_prepared_batch(preparation)
+func rebuild_vehicles(p_controller: Node, p_cell_size: float) -> bool:
+	var vehicle_batch := _build_vehicle_batch(p_controller, p_cell_size)
 	if vehicle_batch.is_empty():
-		push_error("Vehicle batch commit rejected an invalid, expired, or consumed preparation.")
 		return false
-	if p_controller == null or not _is_complete_vehicle_batch(vehicle_batch):
+	if not _is_complete_vehicle_batch(vehicle_batch):
 		_free_vehicle_batch(vehicle_batch)
-		push_error("Vehicle batch commit requires a controller and one complete preset batch.")
+		push_error("Scene 01 vehicle rebuild produced an incomplete preset batch.")
 		return false
-
 	_replace_vehicle_batch(vehicle_batch)
 	controller = p_controller
-	return true
-
-
-func discard_vehicle_batch(preparation: VehicleBatchPreparation) -> bool:
-	var vehicle_batch: Array[Node3D] = _take_prepared_batch(preparation)
-	if vehicle_batch.is_empty():
-		return false
-	_free_vehicle_batch(vehicle_batch)
 	return true
 
 
@@ -148,14 +70,51 @@ func get_vehicles() -> Array[Node3D]:
 	return _vehicles.duplicate()
 
 
-func has_pending_vehicle_batch() -> bool:
-	return _active_preparation != null and not _prepared_vehicle_batch.is_empty()
+func _build_vehicle_batch(
+	p_controller: Node,
+	p_cell_size: float
+) -> Array[Node3D]:
+	var vehicle_batch: Array[Node3D] = []
+	if p_controller == null:
+		push_error("Scene 01 vehicle manager requires a controller.")
+		return vehicle_batch
 
+	var arm_definition: VehicleDefinitionScript = _create_arm_definition()
+	var transport_definition: VehicleDefinitionScript = _create_transport_definition()
+	if arm_definition == null or transport_definition == null:
+		return vehicle_batch
+	if not _is_start_footprint_valid(p_controller, arm_definition, arm_start_cell):
+		return vehicle_batch
+	if not _is_start_footprint_valid(
+		p_controller,
+		transport_definition,
+		transport_start_cell
+	):
+		return vehicle_batch
 
-func is_vehicle_batch_preparation_active(
-	preparation: VehicleBatchPreparation
-) -> bool:
-	return preparation != null and preparation == _active_preparation
+	var arm_actor: VehicleActorScript = _build_vehicle(
+		p_controller,
+		arm_definition,
+		arm_start_cell,
+		VehicleRuntimeStateScript.Facing.EAST,
+		p_cell_size
+	)
+	if arm_actor == null:
+		return vehicle_batch
+	vehicle_batch.append(arm_actor)
+
+	var transport_actor: VehicleActorScript = _build_vehicle(
+		p_controller,
+		transport_definition,
+		transport_start_cell,
+		VehicleRuntimeStateScript.Facing.WEST,
+		p_cell_size
+	)
+	if transport_actor == null:
+		_free_vehicle_batch(vehicle_batch)
+		return vehicle_batch
+	vehicle_batch.append(transport_actor)
+	return vehicle_batch
 
 
 func _has_any_static_scene_child() -> bool:
@@ -221,24 +180,6 @@ func _configure_existing_actor(
 	if not runtime_state.configure(definition, anchor_cell, facing):
 		return false
 	return actor.configure(definition, runtime_state, p_controller, p_cell_size)
-
-
-func _take_prepared_batch(preparation: VehicleBatchPreparation) -> Array[Node3D]:
-	var empty_batch: Array[Node3D] = []
-	if preparation == null or preparation != _active_preparation:
-		return empty_batch
-
-	var vehicle_batch: Array[Node3D] = _prepared_vehicle_batch
-	_active_preparation = null
-	_prepared_vehicle_batch = []
-	return vehicle_batch
-
-
-func _discard_active_preparation() -> void:
-	_active_preparation = null
-	if not _prepared_vehicle_batch.is_empty():
-		_free_vehicle_batch(_prepared_vehicle_batch)
-	_prepared_vehicle_batch = []
 
 
 func _is_complete_vehicle_batch(vehicle_batch: Array[Node3D]) -> bool:
