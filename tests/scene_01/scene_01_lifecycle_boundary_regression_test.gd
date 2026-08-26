@@ -12,6 +12,7 @@ const GrabDropControllerScript := preload("res://scripts/input/vehicle_grab_drop
 var failures: int = 0
 var _scene: LifecycleControllerScript
 var _reentrant_action: StringName = &""
+var _nested_gameplay_result: bool = true
 var _lifecycle_event_log: Array[String] = []
 var _run_preparation_failures: Array[StringName] = []
 var _grab_drop_completion_count: int = 0
@@ -63,6 +64,14 @@ func _run() -> void:
 
 	_expect_true(_scene.is_scene_initialized(), "A valid Scene 01 should report successful initialization.")
 	_test_shared_ui_theme()
+
+	_lifecycle_event_log.clear()
+	_nested_gameplay_result = true
+	_reentrant_action = &"nested_gameplay"
+	_scene.run_scene()
+	_expect_false(_nested_gameplay_result, "Gameplay commands must fail closed while a lifecycle state signal is still publishing.")
+	_expect_equal(_scene.get_lifecycle_state(), LifecycleStateScript.State.RUNNING, "Nested gameplay rejection should not alter the successful Run transition.")
+	_expect_true(_scene.reset_scene(), "Reset should recover after nested gameplay coverage.")
 
 	_expect_true(selection.select_vehicle(arm), "Arm should be selectable for reentrant Pause coverage.")
 	_lifecycle_event_log.clear()
@@ -202,6 +211,8 @@ func _on_lifecycle_state_changed(previous_state: int, current_state: int) -> voi
 	var action := _reentrant_action
 	_reentrant_action = &""
 	match action:
+		&"nested_gameplay":
+			_nested_gameplay_result = _scene.ensure_gameplay_running()
 		&"pause":
 			_scene.pause_scene()
 		&"reset":

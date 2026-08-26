@@ -55,6 +55,8 @@ func toggle_run_pause() -> void:
 
 
 func ensure_gameplay_running() -> bool:
+	if _publishing_lifecycle_state_change or _reset_requested_after_state_change or _reset_in_progress:
+		return false
 	if _lifecycle_state.is_paused():
 		return false
 	if _lifecycle_state.is_running():
