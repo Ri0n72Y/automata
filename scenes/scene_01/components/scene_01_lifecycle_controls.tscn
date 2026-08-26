@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_lifecycle_controls.gd" id="1_controls"]
+[ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
 
 [node name="LifecycleUIRoot" type="CanvasLayer"]
 script = ExtResource("1_controls")
@@ -13,6 +14,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme = ExtResource("2_theme")
 
 [node name="Panel" type="PanelContainer" parent="RootControl"]
 layout_mode = 0

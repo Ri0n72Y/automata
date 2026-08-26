@@ -17,11 +17,13 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
-	var vehicle := _get_selected_vehicle()
-	if vehicle == null:
+	if _get_selected_vehicle() == null:
 		return super.request_selected_vehicle_move(target_anchor)
 	if not _ensure_gameplay_running():
 		return false
+	var vehicle := _get_selected_vehicle()
+	if vehicle == null:
+		return super.request_selected_vehicle_move(target_anchor)
 	if not _vehicle_has_move_capability(vehicle):
 		return _reject_no_move_capability(vehicle, target_anchor)
 	return super.request_selected_vehicle_move(target_anchor)
