@@ -63,7 +63,7 @@ func _run() -> void:
 		return
 
 	_expect_true(_scene.is_scene_initialized(), "A valid Scene 01 should report successful initialization.")
-	_test_shared_ui_theme()
+	_test_ui_font_fallbacks()
 
 	_lifecycle_event_log.clear()
 	_nested_gameplay_result = true
@@ -188,7 +188,7 @@ func _run() -> void:
 	_finish()
 
 
-func _test_shared_ui_theme() -> void:
+func _test_ui_font_fallbacks() -> void:
 	var guide_root := _scene.get_node_or_null("UIRoot/RootControl") as Control
 	var lifecycle_root := _scene.get_node_or_null("LifecycleUIRoot/RootControl") as Control
 	_expect_true(guide_root != null and lifecycle_root != null, "Both Scene 01 UI roots should exist.")
@@ -197,10 +197,13 @@ func _test_shared_ui_theme() -> void:
 	_expect_true(guide_root.theme != null and lifecycle_root.theme != null, "Both Scene 01 UI roots should have an explicit theme.")
 	if guide_root.theme == null or lifecycle_root.theme == null:
 		return
-	_expect_true(guide_root.theme == lifecycle_root.theme, "Manual and lifecycle UI should share one Scene 01 theme resource.")
 	_expect_true(
 		guide_root.theme.default_font != null and guide_root.theme.default_font.get_class() == "SystemFont",
-		"Shared Scene 01 UI theme should use a SystemFont fallback for Chinese text and control symbols."
+		"Manual UI should use a SystemFont fallback for Chinese text."
+	)
+	_expect_true(
+		lifecycle_root.theme.default_font != null and lifecycle_root.theme.default_font.get_class() == "SystemFont",
+		"Lifecycle UI should use a SystemFont fallback for Chinese tooltips and control symbols."
 	)
 
 
