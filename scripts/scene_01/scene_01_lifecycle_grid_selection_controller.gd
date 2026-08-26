@@ -21,7 +21,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func activate_live_target_mode() -> bool:
-	if _is_lifecycle_paused() or not _ensure_gameplay_running():
+	if _is_lifecycle_paused():
+		return false
+	if not _has_selected_vehicle():
+		return super.activate_live_target_mode()
+	if not _ensure_gameplay_running():
 		return false
 	return super.activate_live_target_mode()
 
@@ -29,7 +33,11 @@ func activate_live_target_mode() -> bool:
 func toggle_live_target_mode() -> bool:
 	if is_live_target_mode():
 		return super.toggle_live_target_mode()
-	if _is_lifecycle_paused() or not _ensure_gameplay_running():
+	if _is_lifecycle_paused():
+		return false
+	if not _has_selected_vehicle():
+		return super.toggle_live_target_mode()
+	if not _ensure_gameplay_running():
 		return false
 	return super.toggle_live_target_mode()
 

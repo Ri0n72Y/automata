@@ -21,13 +21,22 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func request_selected_grab_drop() -> GrabDropResultScript:
-	if _is_lifecycle_paused() or not _ensure_gameplay_running():
+	if _is_lifecycle_paused():
+		return null
+	if _get_selected_vehicle() == null:
+		return super.request_selected_grab_drop()
+	if not _ensure_gameplay_running():
 		return null
 	return super.request_selected_grab_drop()
 
 
 func rotate_selected_arm(direction: int) -> bool:
-	if _is_lifecycle_paused() or not _ensure_gameplay_running():
+	if _is_lifecycle_paused():
+		return false
+	var step := clampi(direction, -1, 1)
+	if step == 0 or _get_selected_vehicle() == null:
+		return false
+	if not _ensure_gameplay_running():
 		return false
 	return super.rotate_selected_arm(direction)
 

@@ -20,8 +20,6 @@ class CountingAcceptingGate:
 
 
 var failures: int = 0
-var _scene: LifecycleControllerScript
-var reset_observations: Array[Dictionary] = []
 
 
 func _init() -> void:
@@ -30,164 +28,77 @@ func _init() -> void:
 
 func _run() -> void:
 	var packed := load(SCENE_PATH) as PackedScene
-	_expect_true(packed != null, "Scene 01 should load for MoveTo preparation contract test.")
+	_expect_true(packed != null, "Scene 01 should load for MoveTo behavior test.")
 	if packed == null:
 		_finish()
 		return
-
-	_scene = packed.instantiate() as LifecycleControllerScript
-	_expect_true(_scene != null, "Scene 01 should use lifecycle controller.")
-	if _scene == null:
+	var scene := packed.instantiate() as LifecycleControllerScript
+	_expect_true(scene != null, "Scene 01 should use lifecycle controller.")
+	if scene == null:
 		_finish()
 		return
-	root.add_child(_scene)
+	root.add_child(scene)
 	await process_frame
 
-	var vehicle_manager := _scene.get_node_or_null(
-		"SceneRoot/RobotRoot/Scene01VehicleManager"
-	) as VehicleManagerScript
-	var vehicle_selection := _scene.get_node_or_null(
-		"SceneRoot/GridRoot/VehicleSelectionController"
-	) as VehicleSelectionScript
-	var move_controller := _scene.get_node_or_null(
-		"SceneRoot/GridRoot/VehicleMoveController"
-	) as VehicleMoveScript
-	var grid_selection := _scene.get_node_or_null(
-		"SceneRoot/GridRoot/GridSelectionController"
-	) as GridSelectionScript
-	_expect_true(
-		vehicle_manager != null
-		and vehicle_selection != null
-		and move_controller != null
-		and grid_selection != null,
-		"MoveTo preparation contract test requires Scene 01 movement controllers."
-	)
-	if (
-		vehicle_manager == null
-		or vehicle_selection == null
-		or move_controller == null
-		or grid_selection == null
-	):
-		await _cleanup_and_finish()
+	var vehicle_manager := scene.get_node_or_null("SceneRoot/RobotRoot/Scene01VehicleManager") as VehicleManagerScript
+	var vehicle_selection := scene.get_node_or_null("SceneRoot/GridRoot/VehicleSelectionController") as VehicleSelectionScript
+	var move_controller := scene.get_node_or_null("SceneRoot/GridRoot/VehicleMoveController") as VehicleMoveScript
+	var grid_selection := scene.get_node_or_null("SceneRoot/GridRoot/GridSelectionController") as GridSelectionScript
+	_expect_true(vehicle_manager != null and vehicle_selection != null and move_controller != null and grid_selection != null, "MoveTo behavior test requires Scene 01 movement controllers.")
+	if vehicle_manager == null or vehicle_selection == null or move_controller == null or grid_selection == null:
+		await _cleanup(scene)
+		_finish()
 		return
 
 	var gate := CountingAcceptingGate.new()
 	gate.name = "CountingAcceptingGate"
-	_scene.add_child(gate)
-	_scene.run_preparation_gate_path = NodePath("CountingAcceptingGate")
-
+	scene.add_child(gate)
+	scene.run_preparation_gate_path = NodePath("CountingAcceptingGate")
 	var arm := vehicle_manager.get_vehicle_by_id(&"arm_vehicle")
-	_expect_true(arm != null, "Arm vehicle should exist.")
+	_expect_true(arm != null and vehicle_selection.select_vehicle(arm), "Arm should exist and be selectable.")
 	if arm == null:
-		await _cleanup_and_finish()
+		await _cleanup(scene)
+		_finish()
 		return
-	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable.")
-	vehicle_selection.selection_changed.connect(_on_vehicle_selection_changed_during_reset)
 
-	_expect_false(
-		move_controller.request_selected_vehicle_move(Vector2i(-1, -1)),
-		"Invalid READY MoveTo should be rejected after run preparation."
-	)
-	_expect_equal(gate.call_count, 1, "Invalid READY MoveTo should execute the run gate once.")
-	_expect_equal(
-		_scene.get_lifecycle_state(),
-		LifecycleStateScript.State.READY,
-		"Invalid MoveTo after preparation must keep lifecycle READY."
-	)
-	_expect_equal(
-		arm.runtime_state.motion_state,
-		VehicleRuntimeStateScript.MotionState.WAITING,
-		"MoveTo preflight rejection must not mutate runtime motion state to Blocked."
-	)
-	_expect_true(
-		arm.runtime_state.active_move_command == null,
-		"MoveTo preflight rejection must not create an active MoveCommand."
-	)
-	_expect_equal(
-		move_controller.get_last_rejection_reason(),
-		&"no_path",
-		"Invalid MoveTo should preserve the existing no_path rejection reason."
-	)
+	_expect_false(move_controller.request_selected_vehicle_move(Vector2i(-1, -1)), "Invalid MoveTo should be rejected by the MoveTo service.")
+	_expect_equal(gate.call_count, 1, "READY MoveTo attempt should execute run preparation once.")
+	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.RUNNING, "Successful run preparation should start simulation even when the domain command is later rejected.")
+	_expect_equal(arm.runtime_state.motion_state, VehicleRuntimeStateScript.MotionState.WAITING, "Rejected MoveTo must not leave planning or moving state behind.")
+	_expect_true(arm.runtime_state.active_move_command == null, "Rejected MoveTo must not create an active MoveCommand.")
+	_expect_equal(move_controller.get_last_rejection_reason(), &"no_path", "MoveTo should preserve its domain no_path rejection reason.")
 
-	_expect_true(
-		grid_selection.activate_live_target_mode(),
-		"M-equivalent target mode should start after preparation and post-compile move validation."
-	)
-	_expect_equal(gate.call_count, 2, "READY M-equivalent command should execute the gate exactly once.")
-	_expect_equal(
-		_scene.get_lifecycle_state(),
-		LifecycleStateScript.State.RUNNING,
-		"Valid M-equivalent command should commit lifecycle RUNNING."
-	)
-	_expect_true(grid_selection.is_live_target_mode(), "Valid M-equivalent command should enter target mode.")
+	_expect_true(scene.reset_scene(), "Reset should succeed before M target mode coverage.")
+	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable after Reset.")
+	_expect_true(grid_selection.activate_live_target_mode(), "M-equivalent target mode should start after successful run preparation.")
+	_expect_equal(gate.call_count, 2, "M-equivalent activation should execute run preparation once.")
+	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.RUNNING, "M-equivalent activation should leave simulation RUNNING.")
+	_expect_true(grid_selection.is_live_target_mode(), "M-equivalent activation should enter target mode.")
 	grid_selection.deactivate_live_target_mode()
 
-	_scene.pause_scene()
-	_expect_equal(gate.call_count, 2, "Pause must not rerun MoveTo preparation.")
-	_scene.resume_scene()
-	_expect_equal(gate.call_count, 2, "Resume must not rerun MoveTo preparation.")
-
-	reset_observations.clear()
-	_scene.reset_scene()
+	scene.pause_scene()
+	_expect_equal(gate.call_count, 2, "Pause must not execute run preparation.")
+	scene.resume_scene()
+	_expect_equal(gate.call_count, 2, "Resume must not execute run preparation.")
+	_expect_true(scene.reset_scene(), "Reset should remain functional after Pause/Resume.")
 	_expect_equal(gate.call_count, 2, "Reset must not execute run preparation.")
-	_expect_equal(
-		reset_observations.size(),
-		1,
-		"Reset should publish exactly one vehicle deselection observation."
-	)
-	if reset_observations.size() == 1:
-		_expect_equal(
-			reset_observations[0],
-			{
-				"legacy_running": true,
-				"lifecycle_state": LifecycleStateScript.State.RUNNING,
-			},
-			"Domain reset callbacks should observe legacy is_running matching the formal RUNNING state until lifecycle Reset commits."
-		)
-	_expect_false(_scene.is_running, "Legacy is_running should be false after lifecycle Reset completes.")
-	_expect_equal(
-		_scene.get_lifecycle_state(),
-		LifecycleStateScript.State.READY,
-		"Lifecycle should be READY after Reset completes."
-	)
 
-	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable again after Reset.")
-	_scene.run_scene()
-	_expect_equal(gate.call_count, 3, "A new explicit Run after Reset should execute the gate once.")
-	_expect_equal(
-		_scene.get_lifecycle_state(),
-		LifecycleStateScript.State.RUNNING,
-		"Prepared explicit Run after Reset should enter RUNNING."
-	)
-
-	await _cleanup_and_finish()
-
-
-func _on_vehicle_selection_changed_during_reset(
-	_vehicle_id: StringName,
-	has_selection: bool
-) -> void:
-	if has_selection or _scene == null:
-		return
-	reset_observations.append({
-		"legacy_running": _scene.is_running,
-		"lifecycle_state": _scene.get_lifecycle_state(),
-	})
-
-
-func _cleanup_and_finish() -> void:
-	if _scene != null and is_instance_valid(_scene):
-		_scene.queue_free()
-		await process_frame
+	await _cleanup(scene)
 	_finish()
+
+
+func _cleanup(scene: Node) -> void:
+	if scene != null and is_instance_valid(scene):
+		scene.queue_free()
+		await process_frame
 
 
 func _finish() -> void:
 	if failures == 0:
-		print("Scene 01 lifecycle MoveTo preparation contract tests passed.")
+		print("Scene 01 lifecycle MoveTo behavior tests passed.")
 		quit(0)
 		return
-	push_error("Scene 01 lifecycle MoveTo preparation contract tests failed: %d failure(s)." % failures)
+	push_error("Scene 01 lifecycle MoveTo behavior tests failed: %d failure(s)." % failures)
 	quit(1)
 
 

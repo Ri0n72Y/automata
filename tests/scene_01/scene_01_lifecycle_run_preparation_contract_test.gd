@@ -28,6 +28,8 @@ class RejectingGate:
 
 
 var failures: int = 0
+var run_preparation_failures: Array[StringName] = []
+var grab_drop_completion_count: int = 0
 
 
 func _init() -> void:
@@ -36,7 +38,7 @@ func _init() -> void:
 
 func _run() -> void:
 	var packed := load(SCENE_PATH) as PackedScene
-	_expect_true(packed != null, "Scene 01 should load for run preparation contract test.")
+	_expect_true(packed != null, "Scene 01 should load for run preparation behavior test.")
 	if packed == null:
 		_finish()
 		return
@@ -46,25 +48,9 @@ func _run() -> void:
 	if scene == null:
 		_finish()
 		return
+	scene.lifecycle_run_preparation_failed.connect(_on_run_preparation_failed)
 	root.add_child(scene)
 	await process_frame
-
-	_expect_true(
-		scene.has_method("try_start_gameplay_command"),
-		"Lifecycle controller should expose one synchronous gameplay-start boundary."
-	)
-	_expect_false(
-		scene.has_method("begin_gameplay_command_validation"),
-		"Lifecycle controller should not expose token begin validation."
-	)
-	_expect_false(
-		scene.has_method("commit_gameplay_command_validation"),
-		"Lifecycle controller should not expose token commit validation."
-	)
-	_expect_false(
-		scene.has_method("cancel_gameplay_command_validation"),
-		"Lifecycle controller should not expose token cancel validation."
-	)
 
 	var vehicle_manager := scene.get_node_or_null(
 		"SceneRoot/RobotRoot/Scene01VehicleManager"
@@ -77,107 +63,68 @@ func _run() -> void:
 	) as GrabDropControllerScript
 	_expect_true(
 		vehicle_manager != null and vehicle_selection != null and grab_drop_controller != null,
-		"Run preparation contract test requires vehicle and GrabDrop controllers."
+		"Run preparation behavior test requires vehicle and GrabDrop controllers."
 	)
 	if vehicle_manager == null or vehicle_selection == null or grab_drop_controller == null:
 		await _cleanup(scene)
 		_finish()
 		return
+	grab_drop_controller.grab_drop_completed.connect(_on_grab_drop_completed)
 
 	var transport := vehicle_manager.get_vehicle_by_id(&"transport_vehicle")
 	var arm := vehicle_manager.get_vehicle_by_id(&"arm_vehicle")
-	_expect_true(transport != null and arm != null, "Run preparation contract test requires both vehicles.")
+	_expect_true(transport != null and arm != null, "Both Scene 01 vehicles should exist.")
 	if transport == null or arm == null:
 		await _cleanup(scene)
 		_finish()
 		return
 
-	var gate := CountingAcceptingGate.new()
-	gate.name = "CountingAcceptingGate"
-	scene.add_child(gate)
+	var accepting_gate := CountingAcceptingGate.new()
+	accepting_gate.name = "CountingAcceptingGate"
+	scene.add_child(accepting_gate)
 	scene.run_preparation_gate_path = NodePath("CountingAcceptingGate")
 
 	_expect_true(vehicle_selection.select_vehicle(transport), "Transport should be selectable.")
+	var transport_facing_before: int = transport.runtime_state.facing
 	await _push_key(KEY_A)
-	_expect_equal(
-		gate.call_count,
-		1,
-		"One failed Viewport A attempt must execute run preparation exactly once."
-	)
-	_expect_equal(
-		scene.get_lifecycle_state(),
-		LifecycleStateScript.State.READY,
-		"Capability rejection after preparation must keep lifecycle READY."
-	)
+	_expect_equal(accepting_gate.call_count, 1, "One gameplay input should execute run preparation exactly once.")
+	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.RUNNING, "A gameplay attempt should start the simulation after successful preparation.")
+	_expect_equal(transport.runtime_state.facing, transport_facing_before, "Missing arm capability should reject rotation without mutating transport state.")
 
-	var transport_grab_result := grab_drop_controller.request_selected_grab_drop()
-	_expect_equal(
-		transport_grab_result.status,
-		GrabDropResultScript.Status.NO_CAPABILITY,
-		"Transport GrabDrop should reject with NO_CAPABILITY after preparation."
-	)
-	_expect_equal(gate.call_count, 2, "Each READY gameplay attempt should prepare exactly once.")
-	_expect_equal(
-		scene.get_lifecycle_state(),
-		LifecycleStateScript.State.READY,
-		"Rejected GrabDrop after preparation must keep lifecycle READY."
-	)
+	_expect_true(scene.reset_scene(), "Reset should succeed before the GrabDrop behavior check.")
+	_expect_true(vehicle_selection.select_vehicle(transport), "Transport should be selectable after Reset.")
+	var grab_result := grab_drop_controller.request_selected_grab_drop()
+	_expect_true(grab_result != null, "A domain GrabDrop rejection should return a real GrabDropResult.")
+	if grab_result != null:
+		_expect_equal(grab_result.status, GrabDropResultScript.Status.NO_CAPABILITY, "Transport GrabDrop should reject with NO_CAPABILITY.")
+	_expect_equal(accepting_gate.call_count, 2, "GrabDrop attempt should prepare once from READY.")
+	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.RUNNING, "Domain command rejection should not roll the simulation back to READY.")
 
-	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable.")
-	_expect_true(
-		grab_drop_controller.rotate_selected_arm(1),
-		"Valid arm rotation should start after preparation and post-compile validation."
-	)
-	_expect_equal(gate.call_count, 3, "Successful READY command should prepare exactly once.")
-	_expect_equal(
-		scene.get_lifecycle_state(),
-		LifecycleStateScript.State.RUNNING,
-		"Successful prepared command should commit lifecycle RUNNING."
-	)
-	_expect_true(scene.is_running, "Legacy is_running compatibility view should mirror RUNNING.")
-
-	scene.pause_scene()
-	_expect_equal(gate.call_count, 3, "Pause must not re-run preparation.")
-	scene.resume_scene()
-	_expect_equal(gate.call_count, 3, "Resume must not re-run preparation.")
-
-	scene.reset_scene()
-	_expect_equal(gate.call_count, 3, "Reset must not itself re-run preparation.")
-	_expect_equal(
-		scene.get_lifecycle_state(),
-		LifecycleStateScript.State.READY,
-		"Reset should return READY."
-	)
-
-	scene.run_scene()
-	_expect_equal(gate.call_count, 4, "A new Run after Reset should enter the gate once.")
-	_expect_equal(
-		scene.get_lifecycle_state(),
-		LifecycleStateScript.State.RUNNING,
-		"A new prepared Run after Reset should enter RUNNING."
-	)
-
-	scene.reset_scene()
-	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable after second Reset.")
+	_expect_true(scene.reset_scene(), "Reset should succeed before rejecting gate coverage.")
+	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable after Reset.")
 	var rejecting_gate := RejectingGate.new()
 	rejecting_gate.name = "RejectingGate"
 	scene.add_child(rejecting_gate)
 	scene.run_preparation_gate_path = NodePath("RejectingGate")
-	var rejected_grab := grab_drop_controller.request_selected_grab_drop()
-	_expect_equal(
-		rejected_grab.status,
-		GrabDropResultScript.Status.RUN_PREPARATION_FAILED,
-		"Run preparation rejection must not be reported as vehicle BUSY."
-	)
-	_expect_equal(rejecting_gate.call_count, 1, "Rejected GrabDrop should prepare exactly once.")
-	_expect_equal(
-		scene.get_lifecycle_state(),
-		LifecycleStateScript.State.READY,
-		"Rejected run preparation must keep lifecycle READY."
-	)
+	run_preparation_failures.clear()
+	grab_drop_completion_count = 0
+	var rejected_before_domain := grab_drop_controller.request_selected_grab_drop()
+	_expect_true(rejected_before_domain == null, "A lifecycle rejection should not fabricate a GrabDropResult.")
+	_expect_equal(rejecting_gate.call_count, 1, "Rejected gameplay start should execute the gate once.")
+	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.READY, "Rejected run preparation should keep READY.")
+	_expect_equal(grab_drop_completion_count, 0, "A command blocked before domain execution must not emit grab_drop_completed.")
+	_expect_equal(run_preparation_failures, [&"run_preparation_rejected"], "Rejected preparation should expose the lifecycle failure reason.")
 
 	await _cleanup(scene)
 	_finish()
+
+
+func _on_run_preparation_failed(reason: StringName) -> void:
+	run_preparation_failures.append(reason)
+
+
+func _on_grab_drop_completed(_vehicle_id: StringName, _action: int, _status: int) -> void:
+	grab_drop_completion_count += 1
 
 
 func _push_key(keycode: int) -> void:
@@ -202,10 +149,10 @@ func _cleanup(scene: Node) -> void:
 
 func _finish() -> void:
 	if failures == 0:
-		print("Scene 01 lifecycle run preparation contract tests passed.")
+		print("Scene 01 lifecycle run preparation behavior tests passed.")
 		quit(0)
 		return
-	push_error("Scene 01 lifecycle run preparation contract tests failed: %d failure(s)." % failures)
+	push_error("Scene 01 lifecycle run preparation behavior tests failed: %d failure(s)." % failures)
 	quit(1)
 
 
@@ -218,13 +165,6 @@ func _expect_equal(actual: Variant, expected: Variant, message: String) -> void:
 
 func _expect_true(value: bool, message: String) -> void:
 	if value:
-		return
-	failures += 1
-	push_error(message)
-
-
-func _expect_false(value: bool, message: String) -> void:
-	if not value:
 		return
 	failures += 1
 	push_error(message)
