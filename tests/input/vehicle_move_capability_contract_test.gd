@@ -77,7 +77,6 @@ func _run() -> void:
 	arm.sync_from_state()
 
 	_expect_true(selection.select_vehicle(arm), "No-move vehicle should remain selectable as a simulation object.")
-	move._sync_live_target_mode()
 	_expect_false(
 		grid_selection.is_live_target_available(),
 		"A vehicle without can_move must not advertise M / MoveTo target mode."
