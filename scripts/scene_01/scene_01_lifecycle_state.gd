@@ -15,9 +15,6 @@ const SUPPORTED_SIMULATION_SPEEDS: Array[float] = [0.5, 1.0, 2.0, 4.0]
 
 var _state: State = State.READY
 var _simulation_speed: float = DEFAULT_SIMULATION_SPEED
-var _state_transition_in_progress: bool = false
-var _queued_state: State = State.READY
-var _has_queued_state: bool = false
 
 
 func get_state() -> State:
@@ -43,28 +40,19 @@ func get_simulation_speed() -> float:
 func start() -> bool:
 	if _state != State.READY:
 		return false
-	var was_transitioning := _state_transition_in_progress
-	if not _request_state(State.RUNNING):
-		return false
-	return was_transitioning or _state == State.RUNNING
+	return _set_state(State.RUNNING)
 
 
 func pause() -> bool:
 	if _state != State.RUNNING:
 		return false
-	var was_transitioning := _state_transition_in_progress
-	if not _request_state(State.PAUSED):
-		return false
-	return was_transitioning or _state == State.PAUSED
+	return _set_state(State.PAUSED)
 
 
 func resume() -> bool:
 	if _state != State.PAUSED:
 		return false
-	var was_transitioning := _state_transition_in_progress
-	if not _request_state(State.RUNNING):
-		return false
-	return was_transitioning or _state == State.RUNNING
+	return _set_state(State.RUNNING)
 
 
 func toggle_run_pause() -> bool:
@@ -100,29 +88,15 @@ func cycle_simulation_speed() -> float:
 
 func reset() -> void:
 	set_simulation_speed(DEFAULT_SIMULATION_SPEED)
-	_request_state(State.READY)
+	_set_state(State.READY)
 
 
-func _request_state(next_state: State) -> bool:
+func _set_state(next_state: State) -> bool:
 	if _state == next_state:
 		return false
-	if _state_transition_in_progress:
-		_queued_state = next_state
-		_has_queued_state = true
-		return true
-
-	var target_state: State = next_state
-	while true:
-		if _state != target_state:
-			var previous := _state
-			_state = target_state
-			_state_transition_in_progress = true
-			state_changed.emit(previous, _state)
-			_state_transition_in_progress = false
-		if not _has_queued_state:
-			break
-		target_state = _queued_state
-		_has_queued_state = false
+	var previous := _state
+	_state = next_state
+	state_changed.emit(previous, _state)
 	return true
 
 

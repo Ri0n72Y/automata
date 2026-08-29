@@ -16,6 +16,7 @@ const Scene01VehicleManagerScript := preload("res://scripts/scene_01/scene_01_ve
 
 const STOP_TASK_ACTION := &"vehicle_stop_task"
 const REJECTION_NO_VEHICLE := &"no_vehicle_selected"
+const REJECTION_NO_MOVE_CAPABILITY := &"no_move_capability"
 const REJECTION_BUSY := &"vehicle_busy"
 const REJECTION_NO_PATH := &"no_path"
 const REJECTION_START_FAILED := &"start_failed"
@@ -113,6 +114,10 @@ func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
 	move_requested.emit(vehicle_id, target_anchor)
 	if vehicle == null:
 		_reject(vehicle_id, target_anchor, REJECTION_NO_VEHICLE)
+		return false
+	if not _vehicle_has_move_capability(vehicle):
+		_reject(vehicle_id, target_anchor, REJECTION_NO_MOVE_CAPABILITY)
+		_sync_live_target_mode()
 		return false
 	if vehicle.runtime_state == null or not vehicle.runtime_state.begin_move_planning():
 		_reject(vehicle_id, target_anchor, REJECTION_BUSY)
@@ -316,6 +321,7 @@ func _sync_live_target_mode() -> void:
 	var interaction_enabled := (
 		vehicle != null
 		and not _vehicle_ui_open
+		and _vehicle_has_move_capability(vehicle)
 		and vehicle.runtime_state != null
 		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
 		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
@@ -331,7 +337,7 @@ func _sync_live_target_mode() -> void:
 
 
 func _can_show_prediction(vehicle: VehicleActorScript) -> bool:
-	if vehicle == null or _vehicle_ui_open:
+	if vehicle == null or _vehicle_ui_open or not _vehicle_has_move_capability(vehicle):
 		return false
 	if vehicle.definition == null or vehicle.runtime_state == null:
 		return false
@@ -379,6 +385,14 @@ func _get_selected_vehicle() -> VehicleActorScript:
 	if vehicle_selection_controller == null:
 		return null
 	return vehicle_selection_controller.get_selected_vehicle()
+
+
+func _vehicle_has_move_capability(vehicle: VehicleActorScript) -> bool:
+	return (
+		vehicle != null
+		and vehicle.definition != null
+		and vehicle.definition.can_move()
+	)
 
 
 func _advance_managed_vehicles(delta: float) -> void:

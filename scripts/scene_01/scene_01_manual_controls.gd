@@ -155,7 +155,9 @@ func _call_scene_action(method_name: StringName, args: Array = []) -> bool:
 	var scene_controller := _get_scene_controller()
 	if scene_controller == null or not scene_controller.has_method(method_name):
 		return false
-	scene_controller.callv(method_name, args)
+	var result: Variant = scene_controller.callv(method_name, args)
+	if result is bool:
+		return bool(result)
 	return true
 
 

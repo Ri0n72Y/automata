@@ -20,6 +20,7 @@ signal ground_block_changed(cell: Vector2i, has_item: bool)
 
 var _ground_visuals: Dictionary = {}
 var _static_item_interaction_interfaces: Array[Variant] = []
+var _initialized: bool = false
 
 
 func _ready() -> void:
@@ -28,16 +29,9 @@ func _ready() -> void:
 
 
 func initialize_objects() -> bool:
-	if (
-		_block_pile_node == null
-		or _standard_box_node == null
-		or _ground_visual_root == null
-		or ground_block_field == null
-		or _get_scene_controller() == null
-		or _get_vehicle_manager() == null
-	):
-		return false
-	if not _block_pile_node.is_configured() or not _standard_box_node.is_configured():
+	if _initialized:
+		return is_initialized()
+	if not _has_required_dependencies():
 		return false
 	var block_pile := _block_pile_node.get_source_interface() as InfiniteBlockPile
 	var standard_box := _standard_box_node.get_receiver_interface() as StandardBox
@@ -56,7 +50,12 @@ func initialize_objects() -> bool:
 	var ground_changed_callable := Callable(self, "_on_ground_cell_changed")
 	if not ground_block_field.cell_changed.is_connected(ground_changed_callable):
 		ground_block_field.cell_changed.connect(ground_changed_callable)
+	_initialized = true
 	return true
+
+
+func is_initialized() -> bool:
+	return _initialized and _has_required_dependencies() and ground_block_field.is_configured()
 
 
 func refresh_ground_cell_policy() -> void:
@@ -89,11 +88,15 @@ func refresh_ground_cell_policy() -> void:
 
 
 func reset_objects() -> bool:
-	if not initialize_objects():
+	if not is_initialized():
+		return false
+	var block_pile := get_block_pile()
+	var standard_box := get_standard_box()
+	if block_pile == null or standard_box == null:
 		return false
 	ground_block_field.reset()
-	get_block_pile().reset()
-	get_standard_box().reset()
+	block_pile.reset()
+	standard_box.reset()
 	return true
 
 
@@ -168,6 +171,27 @@ func get_block_pile_node() -> Scene01ItemSourceNode:
 
 func get_standard_box_node() -> Scene01ItemReceiverNode:
 	return _standard_box_node
+
+
+func _has_required_dependencies() -> bool:
+	if (
+		_block_pile_node == null
+		or not is_instance_valid(_block_pile_node)
+		or _standard_box_node == null
+		or not is_instance_valid(_standard_box_node)
+		or _ground_visual_root == null
+		or not is_instance_valid(_ground_visual_root)
+		or ground_block_field == null
+		or _get_scene_controller() == null
+		or _get_vehicle_manager() == null
+	):
+		return false
+	if not _block_pile_node.is_configured() or not _standard_box_node.is_configured():
+		return false
+	return (
+		_block_pile_node.get_source_interface() is InfiniteBlockPile
+		and _standard_box_node.get_receiver_interface() is StandardBox
+	)
 
 
 func _cache_static_item_interaction_interfaces() -> void:

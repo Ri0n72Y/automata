@@ -50,8 +50,10 @@ func _on_speed_pressed() -> void:
 
 func _on_reset_pressed() -> void:
 	var controller := _get_scene_controller()
-	if controller != null and controller.has_method("reset_scene"):
-		controller.call("reset_scene")
+	if controller == null or not controller.has_method("reset_scene"):
+		return
+	if not bool(controller.call("reset_scene")):
+		return
 	refresh()
 
 

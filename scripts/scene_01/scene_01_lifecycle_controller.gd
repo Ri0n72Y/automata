@@ -12,9 +12,7 @@ const LifecycleStateScript := preload("res://scripts/scene_01/scene_01_lifecycle
 
 var _lifecycle_state := LifecycleStateScript.new()
 var _scene_initialized: bool = false
-var _publishing_lifecycle_state_change: bool = false
-var _reset_requested_after_state_change: bool = false
-var _reset_in_progress: bool = false
+var _lifecycle_mutation_in_progress: bool = false
 
 
 func _ready() -> void:
@@ -29,33 +27,47 @@ func _process(delta: float) -> void:
 
 
 func run_scene() -> void:
-	if _lifecycle_state.is_ready():
-		_request_start()
-	elif _lifecycle_state.is_paused():
-		_lifecycle_state.resume()
-		_flush_pending_reset()
-
-
-func pause_scene() -> void:
-	_lifecycle_state.pause()
-	_flush_pending_reset()
-
-
-func resume_scene() -> void:
-	_lifecycle_state.resume()
-	_flush_pending_reset()
-
-
-func toggle_run_pause() -> void:
+	if _lifecycle_mutation_in_progress:
+		return
 	if _lifecycle_state.is_ready():
 		_request_start()
 		return
+	if not _lifecycle_state.is_paused():
+		return
+	_lifecycle_mutation_in_progress = true
+	_lifecycle_state.resume()
+	_lifecycle_mutation_in_progress = false
+
+
+func pause_scene() -> void:
+	if _lifecycle_mutation_in_progress:
+		return
+	_lifecycle_mutation_in_progress = true
+	_lifecycle_state.pause()
+	_lifecycle_mutation_in_progress = false
+
+
+func resume_scene() -> void:
+	if _lifecycle_mutation_in_progress:
+		return
+	_lifecycle_mutation_in_progress = true
+	_lifecycle_state.resume()
+	_lifecycle_mutation_in_progress = false
+
+
+func toggle_run_pause() -> void:
+	if _lifecycle_mutation_in_progress:
+		return
+	if _lifecycle_state.is_ready():
+		_request_start()
+		return
+	_lifecycle_mutation_in_progress = true
 	_lifecycle_state.toggle_run_pause()
-	_flush_pending_reset()
+	_lifecycle_mutation_in_progress = false
 
 
 func ensure_gameplay_running() -> bool:
-	if _publishing_lifecycle_state_change or _reset_requested_after_state_change or _reset_in_progress:
+	if _lifecycle_mutation_in_progress:
 		return false
 	if _lifecycle_state.is_paused():
 		return false
@@ -67,11 +79,21 @@ func ensure_gameplay_running() -> bool:
 
 
 func cycle_simulation_speed() -> float:
-	return _lifecycle_state.cycle_simulation_speed()
+	if _lifecycle_mutation_in_progress:
+		return _lifecycle_state.get_simulation_speed()
+	_lifecycle_mutation_in_progress = true
+	var speed := _lifecycle_state.cycle_simulation_speed()
+	_lifecycle_mutation_in_progress = false
+	return speed
 
 
 func set_simulation_speed(speed: float) -> bool:
-	return _lifecycle_state.set_simulation_speed(speed)
+	if _lifecycle_mutation_in_progress:
+		return false
+	_lifecycle_mutation_in_progress = true
+	var accepted := _lifecycle_state.set_simulation_speed(speed)
+	_lifecycle_mutation_in_progress = false
+	return accepted
 
 
 func get_lifecycle_state() -> int:
@@ -95,12 +117,16 @@ func get_simulation_speed() -> float:
 
 
 func reset_scene_state() -> bool:
-	if _reset_in_progress:
-		return true
-	if _publishing_lifecycle_state_change:
-		_reset_requested_after_state_change = true
-		return true
-	return _perform_reset_scene_state()
+	if _lifecycle_mutation_in_progress or not _scene_initialized:
+		return false
+	_lifecycle_mutation_in_progress = true
+	var restored := super.reset_scene_state()
+	if restored:
+		_lifecycle_state.reset()
+		_sync_lifecycle_consumers()
+		lifecycle_reset_completed.emit()
+	_lifecycle_mutation_in_progress = false
+	return restored
 
 
 func _initialize_scene_state() -> bool:
@@ -113,15 +139,17 @@ func _is_scene_running() -> bool:
 
 
 func _request_start() -> bool:
+	if _lifecycle_mutation_in_progress:
+		return false
 	if not _lifecycle_state.is_ready():
 		return _lifecycle_state.is_running()
+	_lifecycle_mutation_in_progress = true
+	var started := false
 	if not _scene_initialized:
 		lifecycle_run_preparation_failed.emit(&"scene_not_initialized")
-		return false
-	if not _prepare_scene_run():
-		return false
-	var started := _lifecycle_state.start()
-	_flush_pending_reset()
+	elif _prepare_scene_run():
+		started = _lifecycle_state.start()
+	_lifecycle_mutation_in_progress = false
 	return started and _lifecycle_state.is_running()
 
 
@@ -141,29 +169,6 @@ func _prepare_scene_run() -> bool:
 	return true
 
 
-func _perform_reset_scene_state() -> bool:
-	_reset_in_progress = true
-	var restored := super.reset_scene_state()
-	if not restored:
-		_reset_in_progress = false
-		return false
-	_lifecycle_state.reset()
-	_sync_lifecycle_consumers()
-	lifecycle_reset_completed.emit()
-	_reset_in_progress = false
-	return true
-
-
-func _flush_pending_reset() -> void:
-	if not _reset_requested_after_state_change:
-		return
-	if _publishing_lifecycle_state_change or _reset_in_progress:
-		return
-	_reset_requested_after_state_change = false
-	if not _perform_reset_scene_state():
-		push_error("Scene 01 deferred lifecycle Reset failed.")
-
-
 func _connect_lifecycle_signals() -> void:
 	var state_callable := Callable(self, "_on_lifecycle_state_changed")
 	if not _lifecycle_state.state_changed.is_connected(state_callable):
@@ -175,9 +180,7 @@ func _connect_lifecycle_signals() -> void:
 
 func _on_lifecycle_state_changed(previous_state: int, current_state: int) -> void:
 	_sync_lifecycle_consumers()
-	_publishing_lifecycle_state_change = true
 	lifecycle_state_changed.emit(previous_state, current_state)
-	_publishing_lifecycle_state_change = false
 
 
 func _on_simulation_speed_changed(previous_speed: float, current_speed: float) -> void:

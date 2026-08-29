@@ -1,8 +1,6 @@
 class_name Scene01LifecycleVehicleMoveController
 extends "res://scripts/input/vehicle_move_controller.gd"
 
-const REJECTION_NO_MOVE_CAPABILITY := &"no_move_capability"
-
 
 func _physics_process(delta: float) -> void:
 	if not _is_lifecycle_running():
@@ -21,11 +19,6 @@ func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
 		return super.request_selected_vehicle_move(target_anchor)
 	if not _ensure_gameplay_running():
 		return false
-	var vehicle := _get_selected_vehicle()
-	if vehicle == null:
-		return super.request_selected_vehicle_move(target_anchor)
-	if not _vehicle_has_move_capability(vehicle):
-		return _reject_no_move_capability(vehicle, target_anchor)
 	return super.request_selected_vehicle_move(target_anchor)
 
 
@@ -41,39 +34,14 @@ func sync_lifecycle_state() -> void:
 
 func _sync_live_target_mode() -> void:
 	super._sync_live_target_mode()
-	if grid_selection_controller == null:
+	if grid_selection_controller == null or not _is_lifecycle_paused():
 		return
 	var vehicle := _get_selected_vehicle()
-	if vehicle != null and not _vehicle_has_move_capability(vehicle):
-		grid_selection_controller.set_live_target_mode(false, Vector2i.ONE)
-		_hide_prediction()
-		return
-	if not _is_lifecycle_paused():
-		return
 	var footprint := Vector2i.ONE
 	if vehicle != null and vehicle.definition != null:
 		footprint = vehicle.definition.footprint
 	grid_selection_controller.set_live_target_mode(false, footprint)
 	_hide_prediction()
-
-
-func _vehicle_has_move_capability(vehicle: VehicleActorScript) -> bool:
-	return (
-		vehicle != null
-		and vehicle.definition != null
-		and vehicle.definition.can_move()
-	)
-
-
-func _reject_no_move_capability(
-	vehicle: VehicleActorScript,
-	target_anchor: Vector2i
-) -> bool:
-	var vehicle_id: StringName = vehicle.get_vehicle_id() if vehicle != null else &""
-	move_requested.emit(vehicle_id, target_anchor)
-	_reject(vehicle_id, target_anchor, REJECTION_NO_MOVE_CAPABILITY)
-	_hide_prediction()
-	return false
 
 
 func _ensure_gameplay_running() -> bool:
