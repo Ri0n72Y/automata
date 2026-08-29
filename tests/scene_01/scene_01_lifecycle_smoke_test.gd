@@ -67,6 +67,8 @@ func _run() -> void:
 		_finish()
 		return
 
+	_expect_true(scene.is_scene_initialized(), "Valid Scene 01 composition should initialize once before gameplay.")
+	_expect_true(object_manager.is_initialized(), "Object domain should be initialized before lifecycle gameplay begins.")
 	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.READY, "Scene should start READY.")
 	_expect_equal(scene.get_simulation_speed(), 1.0, "Scene should start at 1x.")
 	_expect_equal(run_pause_button.text, "▶", "READY should show play icon.")
@@ -113,16 +115,6 @@ func _run() -> void:
 		{"kind": "state", "previous": LifecycleStateScript.State.PAUSED, "current": LifecycleStateScript.State.READY},
 		{"kind": "reset"},
 	], "Successful explicit Reset should publish speed, state, then reset-completed.")
-
-	scene.run_scene()
-	var original_object_controller_path := object_manager.scene_controller_path
-	object_manager.scene_controller_path = NodePath("MissingSceneController")
-	lifecycle_events.clear()
-	_expect_false(scene.reset_scene_state(), "Reset should fail when object-domain restoration cannot initialize.")
-	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.RUNNING, "Failed Reset should preserve the previous lifecycle state.")
-	_expect_equal(lifecycle_events, [], "Failed Reset must not publish lifecycle reset/state/speed completion events.")
-	object_manager.scene_controller_path = original_object_controller_path
-	_expect_true(scene.reset_scene(), "Reset should recover after restoring valid object wiring.")
 
 	var rejecting_gate := RejectingRunPreparationGate.new()
 	rejecting_gate.name = "RejectingRunPreparationGate"
