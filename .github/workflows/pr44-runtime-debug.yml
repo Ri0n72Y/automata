@@ -1,0 +1,68 @@
+name: PR44 Runtime Debug
+
+on:
+  push:
+    branches:
+      - debug/pr44-runtime-20260903
+
+jobs:
+  godot-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Godot 4.7.1
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.1
+          use-dotnet: false
+
+      - name: Show Godot version
+        run: godot --version
+
+      - name: Import project
+        run: godot --headless --path . --editor --quit
+
+      - name: Run Scene 01 lifecycle state
+        run: godot --headless --path . --script res://tests/scene_01/scene_01_lifecycle_state_smoke_test.gd
+
+      - name: Run Scene 01 lifecycle integration
+        run: godot --headless --path . --script res://tests/scene_01/scene_01_lifecycle_smoke_test.gd
+
+      - name: Run lifecycle speed collision
+        run: godot --headless --path . --script res://tests/scene_01/scene_01_lifecycle_speed_collision_smoke_test.gd
+
+      - name: Run lifecycle preparation contract
+        run: godot --headless --path . --script res://tests/scene_01/scene_01_lifecycle_run_preparation_contract_test.gd
+
+      - name: Run lifecycle MoveTo preparation contract
+        run: godot --headless --path . --script res://tests/scene_01/scene_01_lifecycle_move_preparation_contract_test.gd
+
+      - name: Run lifecycle boundary regression
+        run: godot --headless --path . --script res://tests/scene_01/scene_01_lifecycle_boundary_regression_test.gd
+
+      - name: Run shared MoveTo capability contract
+        run: godot --headless --path . --script res://tests/input/vehicle_move_capability_contract_test.gd
+
+      - name: Run vehicle rebuild smoke
+        run: godot --headless --path . --script res://tests/scene_01/scene_01_vehicle_rebuild_smoke_test.gd
+
+      - name: Run manual layout smoke
+        run: godot --headless --path . --script res://tests/scene_01/scene_01_manual_test_layout_smoke_test.gd
+
+      - name: Regression - Move controller
+        run: godot --headless --path . --script res://tests/input/vehicle_move_controller_contract_test.gd
+
+      - name: Regression - GrabDrop input
+        run: godot --headless --path . --script res://tests/input/vehicle_grab_drop_input_test.gd
+
+      - name: Regression - GrabDrop scene
+        run: godot --headless --path . --script res://tests/scene_01/scene_01_grab_drop_smoke_test.gd
+
+      - name: Regression - GrabDrop isolation
+        run: godot --headless --path . --script res://tests/scene_01/scene_01_grab_drop_isolation_smoke_test.gd
+
+      - name: Regression - camera mapping
+        run: godot --headless --path . --script res://tests/scene_01/scene_01_camera_rotation_mapping_smoke_test.gd
