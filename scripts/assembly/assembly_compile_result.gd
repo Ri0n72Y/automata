@@ -1,0 +1,79 @@
+class_name AssemblyCompileResult
+extends RefCounted
+
+var _assembly_id: StringName = &""
+var _revision: AssemblyRevision = AssemblyRevision.new()
+var _success: bool = false
+var _capabilities: Array[StringName] = []
+var _interaction_interfaces: Array[AssemblyInteractionInterface] = []
+var _simulation_envelope: AssemblySimulationEnvelope = AssemblySimulationEnvelope.new()
+var _metrics: AssemblyMetrics = AssemblyMetrics.new()
+var _diagnostics: Array[AssemblyCompileDiagnostic] = []
+
+
+func _init(
+	result_revision: AssemblyRevision = null,
+	result_success: bool = false,
+	result_capabilities: Array[StringName] = [],
+	result_interfaces: Array[AssemblyInteractionInterface] = [],
+	result_envelope: AssemblySimulationEnvelope = null,
+	result_metrics: AssemblyMetrics = null,
+	result_diagnostics: Array[AssemblyCompileDiagnostic] = []
+) -> void:
+	_revision = result_revision.duplicate_revision() if result_revision != null else AssemblyRevision.new()
+	_assembly_id = _revision.get_assembly_id()
+	_success = result_success
+	_capabilities = result_capabilities.duplicate()
+	_interaction_interfaces = []
+	for interface_value in result_interfaces:
+		_interaction_interfaces.append(interface_value.duplicate_descriptor())
+	if result_envelope != null:
+		_simulation_envelope = AssemblySimulationEnvelope.new(result_envelope.get_occupied_cells())
+	else:
+		_simulation_envelope = AssemblySimulationEnvelope.new()
+	_metrics = result_metrics.duplicate_metrics() if result_metrics != null else AssemblyMetrics.new()
+	_diagnostics = []
+	for diagnostic in result_diagnostics:
+		_diagnostics.append(diagnostic.duplicate_diagnostic())
+
+
+func is_success() -> bool:
+	return _success
+
+
+func get_assembly_id() -> StringName:
+	return _assembly_id
+
+
+func get_revision() -> AssemblyRevision:
+	return _revision.duplicate_revision()
+
+
+func has_capability(capability: StringName) -> bool:
+	return _capabilities.has(capability)
+
+
+func get_capabilities() -> Array[StringName]:
+	return _capabilities.duplicate()
+
+
+func get_interaction_interfaces() -> Array[AssemblyInteractionInterface]:
+	var result: Array[AssemblyInteractionInterface] = []
+	for interface_value in _interaction_interfaces:
+		result.append(interface_value.duplicate_descriptor())
+	return result
+
+
+func get_simulation_envelope() -> AssemblySimulationEnvelope:
+	return AssemblySimulationEnvelope.new(_simulation_envelope.get_occupied_cells())
+
+
+func get_metrics() -> AssemblyMetrics:
+	return _metrics.duplicate_metrics()
+
+
+func get_diagnostics() -> Array[AssemblyCompileDiagnostic]:
+	var result: Array[AssemblyCompileDiagnostic] = []
+	for diagnostic in _diagnostics:
+		result.append(diagnostic.duplicate_diagnostic())
+	return result

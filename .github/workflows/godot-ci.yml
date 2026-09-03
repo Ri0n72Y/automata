@@ -54,6 +54,10 @@ jobs:
             res://tests/scene_01/scene_01_grab_drop_smoke_test.gd
             res://tests/scene_01/scene_01_grab_drop_isolation_smoke_test.gd
             res://tests/scene_01/scene_01_camera_rotation_mapping_smoke_test.gd
+            res://tests/assembly/assembly_compiler_contract_test.gd
+            res://tests/assembly/program_capability_validator_contract_test.gd
+            res://tests/scene_01/scene_01_assembly_definition_adapter_contract_test.gd
+            res://tests/scene_01/scene_01_assembly_compile_gate_contract_test.gd
           )
 
           failed=0
