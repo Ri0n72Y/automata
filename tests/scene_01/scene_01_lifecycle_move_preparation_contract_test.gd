@@ -64,7 +64,7 @@ func _run() -> void:
 	_expect_false(move_controller.request_selected_vehicle_move(Vector2i(-1, -1)), "Invalid MoveTo should be rejected by the MoveTo service.")
 	_expect_equal(gate.call_count, 1, "READY MoveTo attempt should execute run preparation once.")
 	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.RUNNING, "Successful run preparation should start simulation even when the domain command is later rejected.")
-	_expect_equal(arm.runtime_state.motion_state, VehicleRuntimeStateScript.MotionState.WAITING, "Rejected MoveTo must not leave planning or moving state behind.")
+	_expect_equal(arm.runtime_state.motion_state, VehicleRuntimeStateScript.MotionState.BLOCKED, "Rejected no-path MoveTo should leave the vehicle Blocked without an active command.")
 	_expect_true(arm.runtime_state.active_move_command == null, "Rejected MoveTo must not create an active MoveCommand.")
 	_expect_equal(move_controller.get_last_rejection_reason(), &"no_path", "MoveTo should preserve its domain no_path rejection reason.")
 
