@@ -5,7 +5,7 @@ const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.g
 const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 
 const COLLAPSED_SIZE := Vector2(306.0, 52.0)
-const EXPANDED_SIZE := Vector2(468.0, 330.0)
+const EXPANDED_SIZE := Vector2(468.0, 382.0)
 const BODY_PATHS := [
 	NodePath("RootControl/Panel/Margin/VBox/Instructions"),
 	NodePath("RootControl/Panel/Margin/VBox/ScopeNote"),
@@ -28,7 +28,7 @@ var _collapsed: bool = true
 func _ready() -> void:
 	_disable_button_focus(panel)
 	set_collapsed(start_collapsed)
-	_update_status("选择车辆后按 M 移动；机械臂可用 A/D 转向、C 抓取或放置")
+	_update_status("点击顶部 ▶ 开始；选择车辆后按 M 移动，机械臂可用 A/D 转向、C 抓取或放置")
 	call_deferred("_connect_grab_drop_feedback")
 
 
@@ -155,7 +155,9 @@ func _call_scene_action(method_name: StringName, args: Array = []) -> bool:
 	var scene_controller := _get_scene_controller()
 	if scene_controller == null or not scene_controller.has_method(method_name):
 		return false
-	scene_controller.callv(method_name, args)
+	var result: Variant = scene_controller.callv(method_name, args)
+	if result is bool:
+		return bool(result)
 	return true
 
 

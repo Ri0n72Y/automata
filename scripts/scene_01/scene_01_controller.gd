@@ -36,7 +36,10 @@ var box_count: int = 3
 var target_box_count: int = 8
 var timer: float = 0.0
 var automation_rate: float = 0.0
-var is_running: bool = false
+var _base_is_running: bool = false
+var is_running: bool:
+	get:
+		return _is_scene_running()
 
 var _initial_grid_root_transform: Transform3D = Transform3D.IDENTITY
 var _preview_offset_enabled: bool = false
@@ -52,15 +55,19 @@ func _enter_tree() -> void:
 func _ready() -> void:
 	if grid_root != null:
 		_initial_grid_root_transform = grid_root.transform
-	if grid_model != null and not _configure_initial_grid_dependents():
+	if grid_model == null or not _configure_initial_grid_dependents():
 		push_error("Scene 01 grid dependents failed to initialize.")
+		return
 	if scene_object_manager != null:
-		scene_object_manager.box_count_changed.connect(_on_object_box_count_changed)
-	reset_scene_state()
+		var box_callable := Callable(self, "_on_object_box_count_changed")
+		if not scene_object_manager.box_count_changed.is_connected(box_callable):
+			scene_object_manager.box_count_changed.connect(box_callable)
+	if not _initialize_scene_state():
+		push_error("Scene 01 initial state failed to initialize.")
 
 
 func _process(delta: float) -> void:
-	if is_running:
+	if _is_scene_running():
 		timer += delta
 
 
@@ -90,25 +97,14 @@ func initialize_grid() -> bool:
 
 	var previous_model := grid_model
 	grid_model = model
-	var preparation: Scene01VehicleManagerScript.VehicleBatchPreparation
-	if scene_vehicle_manager != null:
-		preparation = scene_vehicle_manager.prepare_vehicle_batch(
-			self,
-			model.cell_size
-		)
-		if preparation == null:
-			grid_model = previous_model
-			push_error(
-				"Scene 01 grid initialization failed because vehicles rejected the candidate grid."
-			)
-			return false
-
-	if scene_vehicle_manager != null and not scene_vehicle_manager.commit_vehicle_batch(
+	if scene_vehicle_manager != null and not scene_vehicle_manager.rebuild_vehicles(
 		self,
-		preparation
+		model.cell_size
 	):
 		grid_model = previous_model
-		push_error("Scene 01 grid initialization failed because vehicle commit was rejected.")
+		push_error(
+			"Scene 01 grid initialization failed because vehicles rejected the candidate grid."
+		)
 		return false
 
 	if vehicle_move_controller != null:
@@ -224,42 +220,88 @@ func is_grid_footprint_walkable(
 
 
 func run_scene() -> void:
-	is_running = true
+	_base_is_running = true
 
 
 func pause_scene() -> void:
-	is_running = false
+	_base_is_running = false
 
 
-func reset_scene() -> void:
-	reset_scene_state()
+func reset_scene() -> bool:
+	return reset_scene_state()
 
 
-func reset_scene_state() -> void:
-	is_running = false
+func reset_scene_state() -> bool:
+	return _restore_base_scene_state()
+
+
+func _initialize_scene_state() -> bool:
+	if not _initialize_scene_composition():
+		return false
+	return _restore_base_scene_state()
+
+
+func _restore_base_scene_state() -> bool:
+	if not _is_scene_composition_ready():
+		return false
+
+	_base_is_running = false
 	timer = 0.0
 	target_box_count = 8
 	automation_rate = 0.0
 	_preview_offset_enabled = false
-	if grid_root != null:
-		grid_root.transform = _initial_grid_root_transform
-	if vehicle_move_controller != null:
-		vehicle_move_controller.reset_controller_state()
-	if vehicle_selection_controller != null:
-		vehicle_selection_controller.cancel_selection()
-	if grid_selection_controller != null:
-		grid_selection_controller.clear_hover()
-		grid_selection_controller.cancel_selection()
-	if scene_vehicle_manager != null:
-		scene_vehicle_manager.reset_vehicles()
-		scene_vehicle_manager.sync_vehicles_from_state()
-	if scene_object_manager != null:
-		scene_object_manager.reset_objects()
-		var standard_box := scene_object_manager.get_standard_box()
-		box_count = standard_box.get_current_count() if standard_box != null else 3
-	else:
-		box_count = 3
+	grid_root.transform = _initial_grid_root_transform
+	vehicle_move_controller.reset_controller_state()
+	vehicle_selection_controller.cancel_selection()
+	grid_selection_controller.clear_hover()
+	grid_selection_controller.cancel_selection()
+	scene_vehicle_manager.reset_vehicles()
+	scene_vehicle_manager.sync_vehicles_from_state()
+	if not scene_object_manager.reset_objects():
+		return false
+	var standard_box := scene_object_manager.get_standard_box()
+	if standard_box == null:
+		return false
+	box_count = standard_box.get_current_count()
 	_refresh_camera_for_grid()
+	return true
+
+
+func _is_scene_running() -> bool:
+	return _base_is_running
+
+
+func _initialize_scene_composition() -> bool:
+	if not _has_required_scene_nodes():
+		return false
+	if scene_vehicle_manager.get_vehicle_count() != Scene01VehicleManagerScript.REQUIRED_VEHICLE_COUNT:
+		return false
+	if not scene_object_manager.is_initialized() and not scene_object_manager.initialize_objects():
+		return false
+	return scene_object_manager.is_initialized()
+
+
+func _is_scene_composition_ready() -> bool:
+	return (
+		_has_required_scene_nodes()
+		and scene_vehicle_manager.get_vehicle_count() == Scene01VehicleManagerScript.REQUIRED_VEHICLE_COUNT
+		and scene_object_manager.is_initialized()
+	)
+
+
+func _has_required_scene_nodes() -> bool:
+	return (
+		grid_root != null
+		and grid_model != null
+		and robot_root != null
+		and object_root != null
+		and vehicle_selection_controller != null
+		and vehicle_move_controller != null
+		and grid_selection_controller != null
+		and scene_vehicle_manager != null
+		and scene_object_manager != null
+		and get_node_or_null("SceneRoot/GridRoot/VehicleGrabDropController") != null
+	)
 
 
 func preview_rotate_grid(direction: int) -> void:

@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_manual_controls.gd" id="1_controls"]
+[ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
 
 [node name="UIRoot" type="CanvasLayer"]
 script = ExtResource("1_controls")
@@ -13,6 +14,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme = ExtResource("2_theme")
 
 [node name="Panel" type="PanelContainer" parent="RootControl"]
 unique_name_in_owner = true
@@ -54,13 +56,13 @@ text = "▶"
 [node name="Instructions" type="Label" parent="RootControl/Panel/Margin/VBox"]
 visible = false
 layout_mode = 2
-text = "选择车辆：鼠标左键点击车辆\n移动车辆：按 M 进入目标模式，移动鼠标预览路径，左键确认\n退出移动模式：再次按 M，或按 Esc / 鼠标右键\n机械臂：A / D 调整朝向，C 抓取或放置\n停止车辆任务：X\n取消车辆选择：退出移动模式后按 Esc / 鼠标右键\n旋转相机：Q / E"
+text = "顶部控制：▶/⏸ 播放或暂停，倍速按钮循环 0.5× / 1× / 2× / 4×，↺ 重置\n选择车辆：鼠标左键点击车辆\n移动车辆：按 M 进入目标模式，移动鼠标预览路径，左键确认\n退出移动模式：再次按 M，或按 Esc / 鼠标右键\n机械臂：A / D 调整朝向，C 抓取或放置\n停止车辆任务：X\n取消车辆选择：退出移动模式后按 Esc / 鼠标右键\n旋转相机：Q / E"
 autowrap_mode = 2
 
 [node name="ScopeNote" type="Label" parent="RootControl/Panel/Margin/VBox"]
 visible = false
 layout_mode = 2
-text = "机械臂前方紧邻的两格都是工作区。\n绿色工作区表示当前存在可执行交互；红色表示当前不可执行。\n移动目标模式开启时，A / D / C 和机械臂工作区预览暂时停用。\n调试功能和场地坐标开关位于右上角独立 Debug 面板。"
+text = "暂停时车辆运动、场景计时和 M/X/A/D/C 玩法命令被冻结，相机仍可观察。\n机械臂前方紧邻的两格都是工作区。\n绿色工作区表示当前存在可执行交互；红色表示当前不可执行。\n移动目标模式开启时，A / D / C 和机械臂工作区预览暂时停用。\n调试功能和场地坐标开关位于右上角独立 Debug 面板。"
 autowrap_mode = 2
 modulate = Color(0.72, 0.8, 0.9, 1)
 
@@ -68,7 +70,7 @@ modulate = Color(0.72, 0.8, 0.9, 1)
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-text = "选择车辆后按 M 移动；机械臂可用 A/D 转向、C 抓取或放置"
+text = "点击顶部 ▶ 开始；选择车辆后按 M 移动，机械臂可用 A/D 转向、C 抓取或放置"
 autowrap_mode = 2
 modulate = Color(0.55, 0.88, 0.72, 1)
 
