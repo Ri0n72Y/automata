@@ -58,6 +58,9 @@ jobs:
             res://tests/assembly/program_capability_validator_contract_test.gd
             res://tests/scene_01/scene_01_assembly_definition_adapter_contract_test.gd
             res://tests/scene_01/scene_01_assembly_compile_gate_contract_test.gd
+            res://tests/scene_01/scene_01_transport_tray_smoke_test.gd
+            res://tests/scene_01/scene_01_production_compile_gate_smoke_test.gd
+            res://tests/scene_01/e2e_scene01_post_merge_test.gd
           )
 
           failed=0
