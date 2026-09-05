@@ -32,6 +32,10 @@ func _run() -> void:
 	root.add_child(scene)
 	await process_frame
 	await physics_frame
+	# Post-#44 the move controller is lifecycle-gated: movement only advances
+	# while the scene is RUNNING. Start the simulation so this pre-lifecycle
+	# suite exercises identical motion at 1x.
+	scene.call("run_scene")
 
 	var manager := scene.get_node_or_null(VEHICLE_MANAGER_PATH) as VEHICLE_MANAGER_SCRIPT
 	var move_controller := scene.get_node_or_null(VEHICLE_MOVE_PATH) as VEHICLE_MOVE_SCRIPT
@@ -87,6 +91,7 @@ func _run() -> void:
 		visual.refresh_visual(true)
 		_expect_equal(visual.get_visible_tray_slot_count(), 0, "Reset should clear tray visual slots.")
 		_expect_equal(visual.get_tray_count_label_text(), "0/8", "Reset should clear tray visual label.")
+	scene.call("run_scene")
 
 	var collision_block: Variant = _test_collision_preserves_inventory(move_controller, arm, transport)
 	scene.call("reset_scene")
