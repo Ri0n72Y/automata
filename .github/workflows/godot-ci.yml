@@ -40,6 +40,13 @@ jobs:
         run: |
           set -euo pipefail
           tests=(
+            res://tests/grid/grid_model_smoke_test.gd
+            res://tests/vehicles/vehicle_model_smoke_test.gd
+            res://tests/vehicles/transport_tray_state_smoke_test.gd
+            res://tests/objects/object_domain_smoke_test.gd
+            res://tests/scene_01/scene_01_grid_smoke_test.gd
+            res://tests/scene_01/scene_01_object_domain_smoke_test.gd
+            res://tests/scene_01/scene_01_gameplay_visual_smoke_test.gd
             res://tests/scene_01/scene_01_lifecycle_state_smoke_test.gd
             res://tests/scene_01/scene_01_lifecycle_smoke_test.gd
             res://tests/scene_01/scene_01_lifecycle_speed_collision_smoke_test.gd
