@@ -52,7 +52,6 @@ var active_move_command: MoveCommandScript:
 var anchor_cell: Vector2i = Vector2i.ZERO
 var facing: int = Facing.NORTH
 var motion_state: int = MotionState.WAITING
-var command_queue: Array[Dictionary] = []
 
 var _initial_anchor_cell: Vector2i = Vector2i.ZERO
 var _initial_facing: int = Facing.NORTH
@@ -93,7 +92,6 @@ func reset() -> void:
 	facing = _initial_facing
 	motion_state = MotionState.WAITING
 	_active_move_command = null
-	command_queue.clear()
 	_clear_carried_item()
 	if _tray_state != null:
 		_tray_state.reset()
@@ -177,24 +175,6 @@ func release_carried_item() -> StandardBlockScript:
 	return block
 
 
-func set_arm_has_item(value: bool) -> bool:
-	if _definition == null or not _definition.has_capability(
-		VehicleDefinitionScript.CAPABILITY_CAN_GRAB
-	):
-		return false
-	if value == arm_has_item:
-		return true
-	if value:
-		return claim_carried_item(StandardBlockScript.create())
-	return release_carried_item() != null
-
-
-func set_tray_count(value: int) -> bool:
-	if _tray_state == null:
-		return false
-	return _tray_state.replace_count_for_compatibility(value)
-
-
 func get_item_interaction_interfaces(interaction_cells: Array[Vector2i]) -> Array[Variant]:
 	var interfaces: Array[Variant] = []
 	if not is_tray_interaction_available(_tray_state):
@@ -204,10 +184,6 @@ func get_item_interaction_interfaces(interaction_cells: Array[Vector2i]) -> Arra
 		_tray_state.set_interaction_cells(interaction_cells)
 		interfaces.append(_tray_state)
 	return interfaces
-
-
-func enqueue_command(command: Dictionary) -> void:
-	command_queue.append(command.duplicate(true))
 
 
 func get_effective_speed() -> float:

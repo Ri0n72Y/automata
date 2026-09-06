@@ -2,6 +2,7 @@ extends SceneTree
 
 const GridTransformFollowerScript := preload("res://scripts/scene_01/grid_transform_follower.gd")
 const VehicleStateVisualScript := preload("res://scripts/vehicles/vehicle_state_visual.gd")
+const StandardBlockScript := preload("res://scripts/objects/standard_block.gd")
 
 const SCENE_PATH := "res://scenes/scene_01/scene_01_basic_packing.tscn"
 const BLOCK_SCENE_PATH := "res://scenes/scene_01/objects/standard_block_placeholder.tscn"
@@ -21,7 +22,6 @@ func _init() -> void:
 
 func _run() -> void:
 	_test_standard_block_scene()
-
 	var packed: PackedScene = load(SCENE_PATH) as PackedScene
 	_expect_true(packed != null, "Scene 01 should load for visual verification.")
 	if packed == null:
@@ -33,14 +33,10 @@ func _run() -> void:
 	await process_frame
 
 	var grid_root: Node3D = scene.get_node_or_null(GRID_ROOT_PATH) as Node3D
-	var object_root: GridTransformFollowerScript = scene.get_node_or_null(
-		OBJECT_ROOT_PATH
-	) as GridTransformFollowerScript
+	var object_root: GridTransformFollowerScript = scene.get_node_or_null(OBJECT_ROOT_PATH) as GridTransformFollowerScript
 	var pile_node: Scene01ItemSourceNode = scene.get_node_or_null(PILE_PATH) as Scene01ItemSourceNode
 	var box_node: Scene01ItemReceiverNode = scene.get_node_or_null(BOX_PATH) as Scene01ItemReceiverNode
-	var vehicle_manager: Scene01VehicleManager = scene.get_node_or_null(
-		VEHICLE_MANAGER_PATH
-	) as Scene01VehicleManager
+	var vehicle_manager: Scene01VehicleManager = scene.get_node_or_null(VEHICLE_MANAGER_PATH) as Scene01VehicleManager
 	_expect_true(grid_root != null, "Scene should contain GridRoot.")
 	_expect_true(object_root != null, "ObjectRoot should use the grid transform follower.")
 	_expect_true(pile_node != null, "Scene should contain the pile visual scene.")
@@ -48,10 +44,7 @@ func _run() -> void:
 	_expect_true(vehicle_manager != null, "Scene should contain the vehicle manager.")
 
 	if pile_node != null:
-		_expect_true(
-			pile_node.get_node_or_null("VisualRoot/Base") is MeshInstance3D,
-			"Pile should contain a static base mesh."
-		)
+		_expect_true(pile_node.get_node_or_null("VisualRoot/Base") is MeshInstance3D, "Pile should contain a static base mesh.")
 		var source_label: Label3D = pile_node.get_node_or_null("VisualRoot/SourceLabel") as Label3D
 		_expect_true(source_label != null, "Pile should expose a source label.")
 		if source_label != null:
@@ -78,11 +71,7 @@ func _run() -> void:
 	if grid_root != null and object_root != null:
 		scene.call("preview_rotate_grid", 1)
 		await process_frame
-		_expect_equal(
-			object_root.global_transform,
-			grid_root.global_transform,
-			"ObjectRoot should follow the complete GridRoot transform."
-		)
+		_expect_equal(object_root.global_transform, grid_root.global_transform, "ObjectRoot should follow the complete GridRoot transform.")
 
 	scene.call("reset_scene")
 	await process_frame
@@ -92,11 +81,7 @@ func _run() -> void:
 	if vehicle_manager != null:
 		_assert_reset_vehicle_visuals(vehicle_manager)
 	if grid_root != null and object_root != null:
-		_expect_equal(
-			object_root.global_transform,
-			grid_root.global_transform,
-			"Reset should keep object and grid transforms aligned."
-		)
+		_expect_equal(object_root.global_transform, grid_root.global_transform, "Reset should keep object and grid transforms aligned.")
 
 	scene.queue_free()
 	await process_frame
@@ -117,15 +102,13 @@ func _test_standard_block_scene() -> void:
 func _test_vehicle_state_visuals(vehicle_manager: Scene01VehicleManager) -> void:
 	var arm_actor: VehicleActor = vehicle_manager.get_vehicle_by_id(&"arm_vehicle")
 	var transport_actor: VehicleActor = vehicle_manager.get_vehicle_by_id(&"transport_vehicle")
-	_expect_true(arm_actor != null, "Arm vehicle should exist for state visual testing.")
-	_expect_true(transport_actor != null, "Transport vehicle should exist for state visual testing.")
+	_expect_true(arm_actor != null and transport_actor != null, "Both vehicle presets should exist for visual testing.")
 	if arm_actor == null or transport_actor == null:
 		return
 
 	var arm_visual: VehicleStateVisualScript = arm_actor.get_node_or_null("VisualRoot") as VehicleStateVisualScript
 	var transport_visual: VehicleStateVisualScript = transport_actor.get_node_or_null("VisualRoot") as VehicleStateVisualScript
-	_expect_true(arm_visual != null, "Arm VisualRoot should use the state presenter.")
-	_expect_true(transport_visual != null, "Transport VisualRoot should use the state presenter.")
+	_expect_true(arm_visual != null and transport_visual != null, "Both vehicles should expose state presenters.")
 	if arm_visual == null or transport_visual == null:
 		return
 	if arm_actor.runtime_state == null or transport_actor.runtime_state == null:
@@ -138,8 +121,15 @@ func _test_vehicle_state_visuals(vehicle_manager: Scene01VehicleManager) -> void
 	_expect_equal(transport_visual.get_visible_tray_slot_count(), 0, "Tray should start empty.")
 	_expect_equal(transport_visual.get_tray_count_label_text(), "0/8", "Tray should start at 0/8.")
 
-	_expect_true(arm_actor.runtime_state.set_arm_has_item(true), "Arm state should accept carrying preview.")
-	_expect_true(transport_actor.runtime_state.set_tray_count(5), "Transport state should accept tray preview.")
+	_expect_true(
+		arm_actor.runtime_state.claim_carried_item(StandardBlockScript.create()),
+		"Arm state should accept one real carried block."
+	)
+	for _index in range(5):
+		_expect_true(
+			transport_actor.runtime_state.tray_state.put_item(StandardBlockScript.create()).is_success(),
+			"Transport tray should accept real preview cargo."
+		)
 	arm_visual.refresh_visual(true)
 	transport_visual.refresh_visual(true)
 	_expect_true(arm_visual.is_carry_warning_visible(), "Carrying state should show yellow warning.")
