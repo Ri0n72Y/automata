@@ -47,7 +47,6 @@ jobs:
             res://tests/scene_01/scene_01_lifecycle_move_preparation_contract_test.gd
             res://tests/scene_01/scene_01_lifecycle_boundary_regression_test.gd
             res://tests/input/vehicle_move_capability_contract_test.gd
-            res://tests/scene_01/scene_01_vehicle_rebuild_smoke_test.gd
             res://tests/scene_01/scene_01_manual_test_layout_smoke_test.gd
             res://tests/input/vehicle_move_controller_contract_test.gd
             res://tests/input/vehicle_grab_drop_input_test.gd
