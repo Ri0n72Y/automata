@@ -6,8 +6,6 @@ const StandardBlockScene := preload("res://scenes/scene_01/objects/standard_bloc
 const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
 const Scene01VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 
-signal box_count_changed(previous_count: int, current_count: int)
-signal pile_produced_count_changed(previous_count: int, current_count: int)
 signal ground_block_changed(cell: Vector2i, has_item: bool)
 
 @export var ground_block_field: GroundBlockFieldScript
@@ -43,10 +41,6 @@ func initialize_objects() -> bool:
 	refresh_ground_cell_policy()
 	if not ground_block_field.is_configured():
 		return false
-	if not block_pile.produced_count_changed.is_connected(_on_pile_produced_count_changed):
-		block_pile.produced_count_changed.connect(_on_pile_produced_count_changed)
-	if not standard_box.count_changed.is_connected(_on_box_count_changed):
-		standard_box.count_changed.connect(_on_box_count_changed)
 	var ground_changed_callable := Callable(self, "_on_ground_cell_changed")
 	if not ground_block_field.cell_changed.is_connected(ground_changed_callable):
 		ground_block_field.cell_changed.connect(ground_changed_callable)
@@ -202,7 +196,7 @@ func _cache_static_item_interaction_interfaces() -> void:
 			_static_item_interaction_interfaces.append(source)
 	if _standard_box_node != null:
 		var receiver := _standard_box_node.get_receiver_interface()
-		if receiver != null and not _static_item_interaction_interfaces.has(receiver):
+		if receiver != null:
 			_static_item_interaction_interfaces.append(receiver)
 
 
@@ -264,11 +258,3 @@ func _get_vehicle_manager() -> Scene01VehicleManagerScript:
 	if vehicle_manager_path.is_empty():
 		return null
 	return get_node_or_null(vehicle_manager_path) as Scene01VehicleManagerScript
-
-
-func _on_box_count_changed(previous_count: int, current_count: int) -> void:
-	box_count_changed.emit(previous_count, current_count)
-
-
-func _on_pile_produced_count_changed(previous_count: int, current_count: int) -> void:
-	pile_produced_count_changed.emit(previous_count, current_count)
