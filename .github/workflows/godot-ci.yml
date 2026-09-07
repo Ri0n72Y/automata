@@ -50,14 +50,20 @@ jobs:
           failed=0
           for test_path in "${tests[@]}"; do
             test="res://$test_path"
+            log="$(mktemp)"
             echo "=== RUN  $test ==="
-            if godot --headless --path . --script "$test"; then
-              echo "=== PASS $test ==="
+            if godot --headless --path . --script "$test" 2>&1 | tee "$log"; then
+              rc=0
             else
               rc=$?
+            fi
+            if (( rc != 0 )) || grep -q 'SCRIPT ERROR:' "$log"; then
               echo "=== FAIL $test (exit=$rc) ==="
               failed=1
+            else
+              echo "=== PASS $test ==="
             fi
+            rm -f "$log"
           done
 
           exit "$failed"
