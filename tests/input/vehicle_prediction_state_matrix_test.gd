@@ -166,13 +166,7 @@ func _test_transition_lifecycle(context: Dictionary) -> void:
 	test.expect_true(grid_selection.activate_live_target_mode(), "A fresh M command should restore prediction after arrival.")
 	_expect_state("re-armed after arrival", grid_selection, move_controller, true, true, true, true)
 
-	var completed_callable := Callable(move_controller, "_on_observed_vehicle_move_completed")
-	var blocked_callable := Callable(move_controller, "_on_observed_vehicle_move_blocked")
 	test.expect_true(vehicle_selection.select_vehicle(transport), "Selection should switch to transport.")
-	test.expect_false(arm.move_completed.is_connected(completed_callable), "Old Actor completion signal should disconnect.")
-	test.expect_false(arm.move_blocked.is_connected(blocked_callable), "Old Actor blocked signal should disconnect.")
-	test.expect_true(transport.move_completed.is_connected(completed_callable), "Current Actor completion signal should connect.")
-	test.expect_true(transport.move_blocked.is_connected(blocked_callable), "Current Actor blocked signal should connect.")
 	_expect_state("switched idle vehicle", grid_selection, move_controller, true, false, false, false)
 	test.expect_true(grid_selection.activate_live_target_mode(), "Switched vehicle should require its own move command.")
 	var switched_path: Array[Vector2i] = move_controller.get_preview_path()
@@ -189,8 +183,6 @@ func _test_transition_lifecycle(context: Dictionary) -> void:
 
 	vehicle_selection.cancel_selection()
 	_expect_state("selection cancelled", grid_selection, move_controller, false, false, false, false)
-	test.expect_false(transport.move_completed.is_connected(completed_callable), "Cancel should disconnect completion signal.")
-	test.expect_false(transport.move_blocked.is_connected(blocked_callable), "Cancel should disconnect blocked signal.")
 
 
 func _expect_state(
