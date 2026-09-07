@@ -101,18 +101,20 @@ func _test_selection_contract(scene: Node, selection, manager, camera_rig) -> vo
 	scene.call("reset_scene")
 	_expect_cleared(selection, "scene reset")
 
-	test.expect_true(selection.select_vehicle(arm), "Arm should be selectable before Actor replacement.")
-	var old_arm_id: int = arm.get_instance_id()
-	test.expect_true(bool(scene.call("initialize_grid")), "Grid rebuild should succeed.")
+	var original_arm = manager.get_vehicle_by_id(VEHICLE_MANAGER.ARM_VEHICLE_ID)
+	var original_transport = manager.get_vehicle_by_id(VEHICLE_MANAGER.TRANSPORT_VEHICLE_ID)
+	test.expect_true(selection.select_vehicle(original_arm), "Arm should be selectable before same-grid validation.")
+	test.expect_true(bool(scene.call("initialize_grid")), "Unchanged runtime grid geometry should remain valid.")
 	await process_frame
-	await physics_frame
-	_expect_cleared(selection, "Actor replacement")
-	var replacement_arm = manager.get_vehicle_by_id(VEHICLE_MANAGER.ARM_VEHICLE_ID)
-	test.expect_true(replacement_arm != null, "Grid rebuild should expose a replacement arm Actor.")
-	if replacement_arm != null:
-		test.expect_true(replacement_arm.get_instance_id() != old_arm_id, "Grid rebuild should replace the old Actor instance.")
-		test.expect_true(selection.select_vehicle(replacement_arm), "Replacement Actor should be selectable.")
-		_expect_selected(selection, VEHICLE_MANAGER.ARM_VEHICLE_ID, "replacement Actor")
+	test.expect_true(
+		manager.get_vehicle_by_id(VEHICLE_MANAGER.ARM_VEHICLE_ID) == original_arm,
+		"Same-grid validation must keep the static arm Actor."
+	)
+	test.expect_true(
+		manager.get_vehicle_by_id(VEHICLE_MANAGER.TRANSPORT_VEHICLE_ID) == original_transport,
+		"Same-grid validation must keep the static transport Actor."
+	)
+	_expect_selected(selection, VEHICLE_MANAGER.ARM_VEHICLE_ID, "same-grid validation")
 
 
 func _expect_selected(selection, expected_id: StringName, context: String) -> void:
