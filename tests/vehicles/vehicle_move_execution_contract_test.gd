@@ -4,6 +4,7 @@ const DEFINITION := preload("res://scripts/vehicles/vehicle_definition.gd")
 const RUNTIME := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 const ACTOR := preload("res://scripts/vehicles/vehicle_actor.gd")
 const COMMAND := preload("res://scripts/vehicles/move_command.gd")
+const STANDARD_BLOCK := preload("res://scripts/objects/standard_block.gd")
 const CONTRACT := preload("res://tests/support/contract_test.gd")
 
 var test := CONTRACT.new()
@@ -132,7 +133,8 @@ func _test_speed_modes(fixture: Dictionary) -> void:
 	_reset(fixture)
 	var actor = fixture["actor"]
 	var runtime = fixture["runtime"]
-	test.expect_true(runtime.set_arm_has_item(true), "Arm state should accept a carried item.")
+	var cargo := STANDARD_BLOCK.create()
+	test.expect_true(runtime.claim_carried_item(cargo), "Arm state should accept real carried cargo.")
 	test.expect_true(actor.start_move(_command(Vector2i(2, 1), [Vector2i(1, 1), Vector2i(2, 1)])), "Carrying command should start.")
 	actor.advance_move(1.0)
 	test.expect_float_approx(actor.get_segment_progress(), 0.5, "Quarter-speed carrying advances half a cell in one second.")

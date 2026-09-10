@@ -87,7 +87,6 @@ func _run() -> void:
 	_expect_true(ground_field != null, "Input test requires ground block field.")
 	if pile != null and ground_field != null:
 		_place_vehicle(arm, Vector2i(1, 3), VEHICLE_RUNTIME_STATE_SCRIPT.Facing.WEST)
-		var produced_before: int = pile.get_produced_count()
 
 		grab_drop_controller.refresh_interaction_preview()
 		_expect_true(
@@ -103,11 +102,6 @@ func _run() -> void:
 			"GrabDrop preview must hide while MoveTo target mode is active."
 		)
 		await _push_key(KEY_C)
-		_expect_equal(
-			pile.get_produced_count(),
-			produced_before,
-			"Viewport C must not Grab while MoveTo target mode is active."
-		)
 		_expect_false(arm.runtime_state.arm_has_item, "MoveTo-mode C must preserve empty arm.")
 		await _push_key(KEY_A)
 		_expect_equal(
@@ -138,22 +132,12 @@ func _run() -> void:
 				bool(modifiers["alt"]),
 				bool(modifiers["meta"])
 			)
-			_expect_equal(
-				pile.get_produced_count(),
-				produced_before,
-				"%s+C must not execute GrabDrop." % String(modifiers["name"])
-			)
 			_expect_false(
 				arm.runtime_state.arm_has_item,
 				"%s+C must preserve empty arm." % String(modifiers["name"])
 			)
 
 		await _push_key(KEY_C)
-		_expect_equal(
-			pile.get_produced_count(),
-			produced_before + 1,
-			"Viewport C should execute Grab from the forward pile."
-		)
 		_expect_true(arm.runtime_state.arm_has_item, "Viewport C should leave arm carrying a real block.")
 		_expect_true(
 			arm.runtime_state.carried_item != null

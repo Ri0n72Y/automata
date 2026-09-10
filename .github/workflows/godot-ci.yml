@@ -17,7 +17,7 @@ concurrency:
 jobs:
   runtime:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 5
 
     steps:
       - name: Checkout
@@ -39,40 +39,31 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tests=(
-            res://tests/scene_01/scene_01_lifecycle_state_smoke_test.gd
-            res://tests/scene_01/scene_01_lifecycle_smoke_test.gd
-            res://tests/scene_01/scene_01_lifecycle_speed_collision_smoke_test.gd
-            res://tests/scene_01/scene_01_lifecycle_run_preparation_contract_test.gd
-            res://tests/scene_01/scene_01_lifecycle_move_preparation_contract_test.gd
-            res://tests/scene_01/scene_01_lifecycle_boundary_regression_test.gd
-            res://tests/input/vehicle_move_capability_contract_test.gd
-            res://tests/scene_01/scene_01_vehicle_rebuild_smoke_test.gd
-            res://tests/scene_01/scene_01_manual_test_layout_smoke_test.gd
-            res://tests/input/vehicle_move_controller_contract_test.gd
-            res://tests/input/vehicle_grab_drop_input_test.gd
-            res://tests/scene_01/scene_01_grab_drop_smoke_test.gd
-            res://tests/scene_01/scene_01_grab_drop_isolation_smoke_test.gd
-            res://tests/scene_01/scene_01_camera_rotation_mapping_smoke_test.gd
-            res://tests/assembly/assembly_compiler_contract_test.gd
-            res://tests/assembly/program_capability_validator_contract_test.gd
-            res://tests/scene_01/scene_01_assembly_definition_adapter_contract_test.gd
-            res://tests/scene_01/scene_01_assembly_compile_gate_contract_test.gd
-            res://tests/scene_01/scene_01_transport_tray_smoke_test.gd
-            res://tests/scene_01/scene_01_production_compile_gate_smoke_test.gd
-            res://tests/scene_01/e2e_scene01_post_merge_test.gd
+          mapfile -t tests < <(
+            find tests -type f \
+              \( -name '*_test.gd' -o -name '*_smoke_test.gd' \) \
+              ! -path 'tests/fixtures/*' \
+              ! -path 'tests/support/*' \
+              -print | sort
           )
 
           failed=0
-          for test in "${tests[@]}"; do
+          for test_path in "${tests[@]}"; do
+            test="res://$test_path"
+            log="$(mktemp)"
             echo "=== RUN  $test ==="
-            if godot --headless --path . --script "$test"; then
-              echo "=== PASS $test ==="
+            if godot --headless --path . --script "$test" 2>&1 | tee "$log"; then
+              rc=0
             else
               rc=$?
+            fi
+            if (( rc != 0 )) || grep -q 'SCRIPT ERROR:' "$log"; then
               echo "=== FAIL $test (exit=$rc) ==="
               failed=1
+            else
+              echo "=== PASS $test ==="
             fi
+            rm -f "$log"
           done
 
           exit "$failed"

@@ -109,7 +109,7 @@ func _run() -> void:
 	_expect_equal(arm.runtime_state.anchor_cell, Vector2i(2, 2), "Reset should restore arm anchor.")
 	_expect_false(arm.runtime_state.arm_has_item, "Reset should leave arm empty.")
 	_expect_equal(transport.runtime_state.tray_count, 0, "Reset should empty transport tray.")
-	_expect_equal(scene.box_count, 3, "Reset should restore standard box to 3/8.")
+	_expect_equal(object_manager.get_standard_box().get_current_count(), 3, "Reset should restore standard box to 3/8.")
 	_expect_equal(lifecycle_events, [
 		{"kind": "speed", "previous": 4.0, "current": 1.0},
 		{"kind": "state", "previous": LifecycleStateScript.State.PAUSED, "current": LifecycleStateScript.State.READY},

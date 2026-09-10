@@ -114,27 +114,6 @@ func reset() -> void:
 		count_changed.emit(previous_count, 0)
 
 
-func replace_count_for_compatibility(value: int) -> bool:
-	if not _configured or value < 0 or value > _capacity:
-		return false
-	if value == get_current_count():
-		return true
-
-	var replacement: Array[StandardBlock] = []
-	for _index in range(value):
-		var block := StandardBlock.create()
-		if not _claim_item(block):
-			_release_items(replacement)
-			return false
-		replacement.append(block)
-
-	var previous_count := get_current_count()
-	_release_all_items()
-	_items = replacement
-	count_changed.emit(previous_count, get_current_count())
-	return true
-
-
 func _is_interaction_available() -> bool:
 	if not _has_access_guard:
 		return true
