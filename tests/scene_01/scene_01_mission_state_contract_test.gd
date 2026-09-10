@@ -1,9 +1,10 @@
 extends SceneTree
 
+const ContractTestScript := preload("res://tests/support/contract_test.gd")
 const LifecycleStateScript := preload("res://scripts/scene_01/scene_01_lifecycle_state.gd")
 const MissionStateScript := preload("res://scripts/scene_01/scene_01_mission_state.gd")
 
-var failures: int = 0
+var test := ContractTestScript.new()
 var state_transitions: Array[Vector2i] = []
 var completion_times: Array[float] = []
 
@@ -18,66 +19,66 @@ func _run() -> void:
 	mission.state_changed.connect(_on_state_changed)
 	mission.completed.connect(_on_completed)
 
-	_expect_equal(
+	test.expect_equal(
 		mission.get_state(lifecycle.get_state()),
 		MissionStateScript.State.READY,
 		"Mission should project lifecycle READY."
 	)
-	_expect_false(
+	test.expect_false(
 		mission.try_complete(8, 8, 0.0, lifecycle.get_state()),
 		"Mission must not complete while lifecycle is READY."
 	)
 
 	var previous_lifecycle := lifecycle.get_state()
-	_expect_true(lifecycle.start(), "Lifecycle should enter RUNNING for mission contract test.")
+	test.expect_true(lifecycle.start(), "Lifecycle should enter RUNNING for mission contract test.")
 	mission.handle_lifecycle_state_changed(previous_lifecycle, lifecycle.get_state())
-	_expect_equal(
+	test.expect_equal(
 		mission.get_state(lifecycle.get_state()),
 		MissionStateScript.State.RUNNING,
 		"Mission should project lifecycle RUNNING."
 	)
 
 	previous_lifecycle = lifecycle.get_state()
-	_expect_true(lifecycle.pause(), "Lifecycle should pause.")
+	test.expect_true(lifecycle.pause(), "Lifecycle should pause.")
 	mission.handle_lifecycle_state_changed(previous_lifecycle, lifecycle.get_state())
-	_expect_equal(
+	test.expect_equal(
 		mission.get_state(lifecycle.get_state()),
 		MissionStateScript.State.PAUSED,
 		"Mission should project lifecycle PAUSED."
 	)
 
 	previous_lifecycle = lifecycle.get_state()
-	_expect_true(lifecycle.resume(), "Lifecycle should resume.")
+	test.expect_true(lifecycle.resume(), "Lifecycle should resume.")
 	mission.handle_lifecycle_state_changed(previous_lifecycle, lifecycle.get_state())
-	_expect_false(
+	test.expect_false(
 		mission.try_complete(7, 8, 2.0, lifecycle.get_state()),
 		"Mission should stay incomplete below target."
 	)
-	_expect_true(
+	test.expect_true(
 		mission.try_complete(8, 8, 2.5, lifecycle.get_state()),
 		"Mission should complete when target is first reached while RUNNING."
 	)
-	_expect_true(mission.is_completed(), "Completion latch should be set.")
-	_expect_equal(
+	test.expect_true(mission.is_completed(), "Completion latch should be set.")
+	test.expect_equal(
 		mission.get_state(lifecycle.get_state()),
 		MissionStateScript.State.COMPLETED,
 		"Completed mission should override lifecycle projection."
 	)
-	_expect_float_approx(
+	test.expect_float_approx(
 		mission.get_elapsed_time(99.0),
 		2.5,
 		"Completed mission should freeze elapsed time at completion."
 	)
-	_expect_false(
+	test.expect_false(
 		mission.try_complete(9, 8, 4.0, lifecycle.get_state()),
 		"Completion should latch exactly once."
 	)
-	_expect_equal(completion_times.size(), 1, "Completion signal should emit exactly once.")
+	test.expect_equal(completion_times.size(), 1, "Completion signal should emit exactly once.")
 
 	previous_lifecycle = lifecycle.get_state()
-	_expect_true(lifecycle.pause(), "Lifecycle may still pause after mission completion.")
+	test.expect_true(lifecycle.pause(), "Lifecycle may still pause after mission completion.")
 	mission.handle_lifecycle_state_changed(previous_lifecycle, lifecycle.get_state())
-	_expect_equal(
+	test.expect_equal(
 		mission.get_state(lifecycle.get_state()),
 		MissionStateScript.State.COMPLETED,
 		"Lifecycle changes after completion must not clear mission completion."
@@ -87,15 +88,15 @@ func _run() -> void:
 	lifecycle.reset()
 	mission.handle_lifecycle_state_changed(previous_lifecycle, lifecycle.get_state())
 	mission.reset(lifecycle.get_state())
-	_expect_false(mission.is_completed(), "Reset should clear completion latch.")
-	_expect_equal(
+	test.expect_false(mission.is_completed(), "Reset should clear completion latch.")
+	test.expect_equal(
 		mission.get_state(lifecycle.get_state()),
 		MissionStateScript.State.READY,
 		"Reset mission should project lifecycle READY."
 	)
-	_expect_float_approx(mission.get_elapsed_time(0.0), 0.0, "Reset should clear completion time.")
+	test.expect_float_approx(mission.get_elapsed_time(0.0), 0.0, "Reset should clear completion time.")
 
-	_expect_equal(
+	test.expect_equal(
 		state_transitions,
 		[
 			Vector2i(MissionStateScript.State.READY, MissionStateScript.State.RUNNING),
@@ -106,7 +107,7 @@ func _run() -> void:
 		],
 		"Mission should publish only projected lifecycle transitions plus completion/reset."
 	)
-	_finish()
+	test.finish(self, "Scene 01 mission state contract tests")
 
 
 func _on_state_changed(previous_state: int, current_state: int) -> void:
@@ -115,40 +116,3 @@ func _on_state_changed(previous_state: int, current_state: int) -> void:
 
 func _on_completed(elapsed_time: float) -> void:
 	completion_times.append(elapsed_time)
-
-
-func _expect_equal(actual: Variant, expected: Variant, message: String) -> void:
-	if actual == expected:
-		return
-	failures += 1
-	push_error("%s Expected %s, got %s." % [message, str(expected), str(actual)])
-
-
-func _expect_true(value: bool, message: String) -> void:
-	if value:
-		return
-	failures += 1
-	push_error(message)
-
-
-func _expect_false(value: bool, message: String) -> void:
-	if not value:
-		return
-	failures += 1
-	push_error(message)
-
-
-func _expect_float_approx(actual: float, expected: float, message: String) -> void:
-	if is_equal_approx(actual, expected):
-		return
-	failures += 1
-	push_error("%s Expected %f, got %f." % [message, expected, actual])
-
-
-func _finish() -> void:
-	if failures == 0:
-		print("Scene 01 mission state contract tests passed.")
-		quit(0)
-		return
-	push_error("Scene 01 mission state contract tests failed: %d failure(s)." % failures)
-	quit(1)
