@@ -3,7 +3,6 @@ extends "res://scripts/scene_01/scene_01_lifecycle_controller.gd"
 
 signal mission_state_changed(previous_state: int, current_state: int)
 signal mission_completed(elapsed_time: float)
-signal mission_reset_completed()
 
 const MissionStateScript := preload("res://scripts/scene_01/scene_01_mission_state.gd")
 const StandardBoxScript := preload("res://scripts/objects/standard_box.gd")
@@ -19,15 +18,6 @@ func _ready() -> void:
 	_evaluate_mission_completion()
 
 
-func reset_scene_state() -> bool:
-	var restored := super.reset_scene_state()
-	if not restored:
-		return false
-	_mission_state.reset(get_lifecycle_state())
-	mission_reset_completed.emit()
-	return true
-
-
 func get_mission_state() -> int:
 	return int(_mission_state.get_state(get_lifecycle_state()))
 
@@ -37,7 +27,7 @@ func is_mission_completed() -> bool:
 
 
 func get_mission_target_count() -> int:
-	return _standard_box.get_capacity() if _standard_box != null else StandardBoxScript.DEFAULT_CAPACITY
+	return _standard_box.get_capacity() if _standard_box != null else 0
 
 
 func get_mission_elapsed_time() -> float:
@@ -45,11 +35,12 @@ func get_mission_elapsed_time() -> float:
 
 
 func _on_lifecycle_state_changed(previous_state: int, current_state: int) -> void:
-	super._on_lifecycle_state_changed(previous_state, current_state)
 	if current_state == LifecycleStateScript.State.READY and _mission_state.is_completed():
 		_mission_state.reset(current_state)
-		return
+	super._on_lifecycle_state_changed(previous_state, current_state)
 	_mission_state.handle_lifecycle_state_changed(previous_state, current_state)
+	if current_state == LifecycleStateScript.State.RUNNING:
+		_evaluate_mission_completion()
 
 
 func _bind_standard_box() -> void:
