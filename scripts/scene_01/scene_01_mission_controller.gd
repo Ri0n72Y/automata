@@ -37,6 +37,8 @@ func get_mission_elapsed_time() -> float:
 func _on_lifecycle_state_changed(previous_state: int, current_state: int) -> void:
 	if current_state == LifecycleStateScript.State.READY and _mission_state.is_completed():
 		_mission_state.reset(current_state)
+		super._on_lifecycle_state_changed(previous_state, current_state)
+		return
 	super._on_lifecycle_state_changed(previous_state, current_state)
 	_mission_state.handle_lifecycle_state_changed(previous_state, current_state)
 	if current_state == LifecycleStateScript.State.RUNNING:
