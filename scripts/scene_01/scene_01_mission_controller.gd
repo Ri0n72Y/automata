@@ -5,7 +5,6 @@ signal mission_state_changed(previous_state: int, current_state: int)
 signal mission_completed(elapsed_time: float)
 signal mission_reset_completed()
 
-const LifecycleStateScript := preload("res://scripts/scene_01/scene_01_lifecycle_state.gd")
 const MissionStateScript := preload("res://scripts/scene_01/scene_01_mission_state.gd")
 const StandardBoxScript := preload("res://scripts/objects/standard_box.gd")
 
