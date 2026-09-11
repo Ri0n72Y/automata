@@ -133,10 +133,10 @@ func _test_real_pile_to_box_flow() -> void:
 	)
 
 	_check(
-		bool(_move_controller.call("request_selected_vehicle_move", Vector2i(9, 3))),
+		bool(_move_controller.call("request_selected_vehicle_move", Vector2i(13, 3))),
 		"Loaded arm can MoveTo the box station."
 	)
-	await _wait_arrival(Vector2i(9, 3))
+	await _wait_arrival(Vector2i(13, 3))
 	_face(RuntimeStateScript.Facing.EAST)
 	var box = _object_manager.get_standard_box()
 	var before: int = box.get_current_count()
