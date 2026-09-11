@@ -13,8 +13,6 @@ const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runti
 const StandardBoxScript := preload("res://scripts/objects/standard_box.gd")
 const TransportTrayStateScript := preload("res://scripts/vehicles/transport_tray_state.gd")
 
-var _vehicle_manager: VehicleManagerScript
-var _object_manager: ObjectManagerScript
 var _mission_controller: Node
 var _arm_runtime: VehicleRuntimeStateScript
 var _transport_runtime: VehicleRuntimeStateScript
@@ -29,11 +27,7 @@ func configure(
 	mission_controller: Node
 ) -> bool:
 	if _configured:
-		return (
-			vehicle_manager == _vehicle_manager
-			and object_manager == _object_manager
-			and mission_controller == _mission_controller
-		)
+		return true
 	if vehicle_manager == null or object_manager == null or mission_controller == null:
 		return false
 	if not mission_controller.has_method("get_mission_state"):
@@ -51,8 +45,6 @@ func configure(
 	if standard_box == null or transport.runtime_state.tray_state == null:
 		return false
 
-	_vehicle_manager = vehicle_manager
-	_object_manager = object_manager
 	_mission_controller = mission_controller
 	_arm_runtime = arm.runtime_state
 	_transport_runtime = transport.runtime_state
