@@ -17,13 +17,13 @@ var _standard_box: StandardBoxScript
 func _ready() -> void:
 	_mission_state.completed.connect(_on_mission_completed)
 	super._ready()
-	_bind_standard_box()
 	if _observable_state == null or not _observable_state.configure(
 		scene_vehicle_manager,
 		scene_object_manager,
 		self
 	):
 		push_error("Scene 01 observable state failed to initialize.")
+	_bind_standard_box()
 	_evaluate_mission_completion()
 
 
