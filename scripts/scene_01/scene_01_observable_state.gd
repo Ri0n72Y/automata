@@ -18,7 +18,6 @@ var _arm_runtime: VehicleRuntimeStateScript
 var _transport_runtime: VehicleRuntimeStateScript
 var _tray_state: TransportTrayStateScript
 var _standard_box: StandardBoxScript
-var _configured: bool = false
 
 
 func configure(
@@ -26,7 +25,7 @@ func configure(
 	object_manager: ObjectManagerScript,
 	mission_controller: Node
 ) -> bool:
-	if _configured:
+	if is_configured():
 		return true
 	if vehicle_manager == null or object_manager == null or mission_controller == null:
 		return false
@@ -61,13 +60,17 @@ func configure(
 	_tray_state.count_changed.connect(_on_tray_count_changed)
 	_standard_box.count_changed.connect(_on_standard_box_count_changed)
 	_mission_controller.connect("mission_state_changed", _on_mission_state_changed)
-
-	_configured = true
 	return true
 
 
 func is_configured() -> bool:
-	return _configured
+	return (
+		_mission_controller != null
+		and _arm_runtime != null
+		and _transport_runtime != null
+		and _tray_state != null
+		and _standard_box != null
+	)
 
 
 func get_vehicle_state(vehicle_id: StringName) -> int:
