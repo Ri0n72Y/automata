@@ -64,10 +64,6 @@ func refresh_ground_cell_policy() -> void:
 		return
 	if _static_item_interaction_interfaces.is_empty():
 		_cache_static_item_interaction_interfaces()
-	var static_blocked_cells: Dictionary = {}
-	for interaction_interface in _static_item_interaction_interfaces:
-		for interaction_cell in _get_interaction_cells(interaction_interface):
-			static_blocked_cells[interaction_cell] = true
 	var grid_size: Vector2i = scene_controller.call("get_grid_size")
 	var valid_cells: Array[Vector2i] = []
 	for y in range(grid_size.y):
@@ -75,7 +71,7 @@ func refresh_ground_cell_policy() -> void:
 			var cell := Vector2i(x, y)
 			if (
 				bool(scene_controller.call("is_grid_cell_walkable", cell))
-				and not static_blocked_cells.has(cell)
+				and not is_static_item_cell_occupied(cell)
 			):
 				valid_cells.append(cell)
 	ground_block_field.configure_valid_cells(valid_cells)
@@ -98,6 +94,13 @@ func get_item_interaction_interfaces() -> Array[Variant]:
 	return _static_item_interaction_interfaces.duplicate()
 
 
+func is_static_item_cell_occupied(cell: Vector2i) -> bool:
+	for interaction_interface in _static_item_interaction_interfaces:
+		if _get_interaction_cells(interaction_interface).has(cell):
+			return true
+	return false
+
+
 func get_ground_block_field() -> GroundBlockFieldScript:
 	return ground_block_field
 
@@ -105,9 +108,8 @@ func get_ground_block_field() -> GroundBlockFieldScript:
 func is_ground_cell_interactable(cell: Vector2i) -> bool:
 	if ground_block_field == null or not ground_block_field.is_cell_allowed(cell):
 		return false
-	for interaction_interface in _static_item_interaction_interfaces:
-		if _get_interaction_cells(interaction_interface).has(cell):
-			return false
+	if is_static_item_cell_occupied(cell):
+		return false
 	var vehicle_manager := _get_vehicle_manager()
 	if vehicle_manager == null:
 		return false

@@ -120,7 +120,7 @@ func _test_pile_tray_box(controller, selection, arm, transport, objects) -> void
 	_expect_equal(transport.runtime_state.tray_count, 0, "Tray returns to 0/8.")
 	_expect_true(arm.runtime_state.carried_item == block, "Tray roundtrip preserves block identity.")
 
-	_place_vehicle(arm, Vector2i(9, 3), RuntimeStateScript.Facing.EAST)
+	_place_vehicle(arm, Vector2i(13, 3), RuntimeStateScript.Facing.EAST)
 	var drop_to_box = controller.request_selected_grab_drop()
 	_expect_true(drop_to_box != null and drop_to_box.is_success(), "Arm drops into StandardBox.")
 	_expect_equal(box.get_current_count(), initial_box_count + 1, "Box increments exactly once.")
