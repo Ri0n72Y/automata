@@ -14,6 +14,7 @@ var arm_item_events: Array[Array] = []
 var tray_events: Array[Vector2i] = []
 var box_events: Array[Vector2i] = []
 var mission_events: Array[Vector2i] = []
+var publication_order: Array[StringName] = []
 
 
 func _init() -> void:
@@ -76,10 +77,12 @@ func _bind_events(observable: ObservableStateScript) -> void:
 	observable.standard_box_count_changed.connect(
 		func(previous_count: int, current_count: int) -> void:
 			box_events.append(Vector2i(previous_count, current_count))
+			publication_order.append(&"box")
 	)
 	observable.mission_state_changed.connect(
 		func(previous_state: int, current_state: int) -> void:
 			mission_events.append(Vector2i(previous_state, current_state))
+			publication_order.append(&"mission")
 	)
 
 
@@ -135,6 +138,14 @@ func _test_mission_notification(observable: ObservableStateScript, scene: Node) 
 	scene.call("run_scene")
 	test.expect_equal(observable.get_mission_state(), MissionStateScript.State.RUNNING, "Observable mission state should read Mission owner state.")
 	test.expect_equal(mission_events, [Vector2i(MissionStateScript.State.READY, MissionStateScript.State.RUNNING)], "Mission transition should be forwarded once.")
+
+	var box = scene.get_node("SceneRoot/ObjectRoot/Scene01ObjectManager").get_standard_box()
+	while box.get_current_count() < 7:
+		test.expect_true(box.put_item(StandardBlockScript.create()).is_success(), "Completion fixture should fill box to 7/8.")
+	publication_order.clear()
+	test.expect_true(box.put_item(StandardBlockScript.create()).is_success(), "Completion fixture should fill box to 8/8.")
+	test.expect_equal(publication_order, [&"box", &"mission"], "Observable should publish the box fact before derived Mission completion.")
+	test.expect_equal(observable.get_mission_state(), MissionStateScript.State.COMPLETED, "Observable mission state should expose completion from Mission owner.")
 
 
 func _test_reset_reads(observable: ObservableStateScript, scene: Node) -> void:
