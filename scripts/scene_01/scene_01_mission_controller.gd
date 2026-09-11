@@ -6,6 +6,9 @@ signal mission_completed(elapsed_time: float)
 
 const MissionStateScript := preload("res://scripts/scene_01/scene_01_mission_state.gd")
 const StandardBoxScript := preload("res://scripts/objects/standard_box.gd")
+const ObservableStateScript := preload("res://scripts/scene_01/scene_01_observable_state.gd")
+
+@onready var _observable_state: ObservableStateScript = %Scene01ObservableState
 
 var _mission_state := MissionStateScript.new()
 var _standard_box: StandardBoxScript
@@ -15,6 +18,12 @@ func _ready() -> void:
 	_mission_state.completed.connect(_on_mission_completed)
 	super._ready()
 	_bind_standard_box()
+	if _observable_state == null or not _observable_state.configure(
+		scene_vehicle_manager,
+		scene_object_manager,
+		self
+	):
+		push_error("Scene 01 observable state failed to initialize.")
 	_evaluate_mission_completion()
 
 
