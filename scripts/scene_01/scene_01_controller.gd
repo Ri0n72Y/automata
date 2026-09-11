@@ -152,7 +152,10 @@ func is_grid_footprint_walkable(anchor_cell: Vector2i, footprint: Vector2i) -> b
 		return false
 	for offset_y in range(footprint.y):
 		for offset_x in range(footprint.x):
-			if not grid_model.is_cell_walkable(anchor_cell + Vector2i(offset_x, offset_y)):
+			var cell := anchor_cell + Vector2i(offset_x, offset_y)
+			if not grid_model.is_cell_walkable(cell):
+				return false
+			if scene_object_manager != null and scene_object_manager.is_static_item_cell_occupied(cell):
 				return false
 	return true
 
