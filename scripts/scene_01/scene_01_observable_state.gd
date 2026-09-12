@@ -1,6 +1,7 @@
 class_name Scene01ObservableState
 extends Node
 
+signal configured()
 signal vehicle_state_changed(vehicle_id: StringName, previous_state: int, current_state: int)
 signal arm_has_item_changed(previous_value: bool, current_value: bool)
 signal tray_count_changed(previous_count: int, current_count: int)
@@ -25,7 +26,7 @@ func configure(
 	object_manager: ObjectManagerScript,
 	mission_controller: Node
 ) -> bool:
-	if _mission_controller != null:
+	if is_configured():
 		return true
 	if vehicle_manager == null or object_manager == null or mission_controller == null:
 		return false
@@ -60,15 +61,17 @@ func configure(
 	_tray_state.count_changed.connect(_on_tray_count_changed)
 	_standard_box.count_changed.connect(_on_standard_box_count_changed)
 	_mission_controller.connect("mission_state_changed", _on_mission_state_changed)
+	configured.emit()
 	return true
+
+
+func is_configured() -> bool:
+	return _mission_controller != null
 
 
 func get_vehicle_state(vehicle_id: StringName) -> int:
 	var runtime := _get_vehicle_runtime(vehicle_id)
-	if runtime == null:
-		push_error("Scene 01 observable state does not expose vehicle %s." % String(vehicle_id))
-		return -1
-	return runtime.motion_state
+	return runtime.motion_state if runtime != null else -1
 
 
 func get_arm_has_item() -> bool:
