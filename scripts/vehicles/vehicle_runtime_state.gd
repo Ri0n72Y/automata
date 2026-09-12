@@ -1,6 +1,9 @@
 class_name VehicleRuntimeState
 extends RefCounted
 
+signal motion_state_changed(previous_state: int, current_state: int)
+signal arm_has_item_changed(previous_value: bool, current_value: bool)
+
 const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
 const MoveCommandScript := preload("res://scripts/vehicles/move_command.gd")
 const TransportTrayStateScript := preload("res://scripts/vehicles/transport_tray_state.gd")
@@ -24,6 +27,7 @@ var _definition: VehicleDefinitionScript
 var _carried_item: StandardBlockScript
 var _tray_state: TransportTrayStateScript
 var _active_move_command: MoveCommandScript
+var _motion_state: int = MotionState.WAITING
 
 var definition: VehicleDefinitionScript:
 	get:
@@ -49,9 +53,18 @@ var active_move_command: MoveCommandScript:
 	get:
 		return _active_move_command
 
+var motion_state: int:
+	get:
+		return _motion_state
+	set(value):
+		if _motion_state == value:
+			return
+		var previous_state := _motion_state
+		_motion_state = value
+		motion_state_changed.emit(previous_state, _motion_state)
+
 var anchor_cell: Vector2i = Vector2i.ZERO
 var facing: int = Facing.NORTH
-var motion_state: int = MotionState.WAITING
 
 var _initial_anchor_cell: Vector2i = Vector2i.ZERO
 var _initial_facing: int = Facing.NORTH
@@ -161,7 +174,9 @@ func claim_carried_item(block: StandardBlockScript) -> bool:
 		return false
 	if not block.try_claim(self):
 		return false
+	var previous_value := arm_has_item
 	_carried_item = block
+	_emit_arm_has_item_changed(previous_value)
 	return true
 
 
@@ -171,7 +186,9 @@ func release_carried_item() -> StandardBlockScript:
 	var block := _carried_item
 	if not block.release_claim(self):
 		return null
+	var previous_value := arm_has_item
 	_carried_item = null
+	_emit_arm_has_item_changed(previous_value)
 	return block
 
 
@@ -202,6 +219,14 @@ func _clear_item_interaction_cells() -> void:
 
 
 func _clear_carried_item() -> void:
+	var previous_value := arm_has_item
 	if _carried_item != null and _carried_item.is_claimed_by(self):
 		_carried_item.release_claim(self)
 	_carried_item = null
+	_emit_arm_has_item_changed(previous_value)
+
+
+func _emit_arm_has_item_changed(previous_value: bool) -> void:
+	var current_value := arm_has_item
+	if previous_value != current_value:
+		arm_has_item_changed.emit(previous_value, current_value)
