@@ -9,6 +9,7 @@ const MissionStateScript := preload("res://scripts/scene_01/scene_01_mission_sta
 const StandardBlockScript := preload("res://scripts/objects/standard_block.gd")
 
 var test := ContractTestScript.new()
+var configured_events: int = 0
 var vehicle_events: Array[Array] = []
 var arm_item_events: Array[Array] = []
 var tray_events: Array[Vector2i] = []
@@ -29,12 +30,17 @@ func _run() -> void:
 		return
 
 	var scene := packed.instantiate()
+	var observable := scene.get_node_or_null("SceneRoot/Scene01ObservableState") as ObservableStateScript
+	test.expect_true(observable != null, "Production Scene 01 should expose observable state.")
+	if observable != null:
+		test.expect_false(observable.is_configured(), "Observable state should not report configured before Scene ready.")
+		observable.configured.connect(_on_observable_configured)
 	root.add_child(scene)
 	await process_frame
 
-	var observable := scene.get_node_or_null("SceneRoot/Scene01ObservableState") as ObservableStateScript
 	var manager := scene.get_node_or_null("SceneRoot/RobotRoot/Scene01VehicleManager") as VehicleManagerScript
-	test.expect_true(observable != null, "Production Scene 01 should expose observable state.")
+	test.expect_true(observable != null and observable.is_configured(), "Observable state should configure during production Scene ready.")
+	test.expect_equal(configured_events, 1, "Observable state should publish configured exactly once.")
 	test.expect_true(manager != null, "Observable state test requires vehicle manager.")
 	if observable == null or manager == null:
 		await _cleanup(scene)
@@ -59,6 +65,10 @@ func _run() -> void:
 
 	await _cleanup(scene)
 	test.finish(self, "Scene 01 observable state tests")
+
+
+func _on_observable_configured() -> void:
+	configured_events += 1
 
 
 func _bind_events(observable: ObservableStateScript) -> void:
@@ -97,6 +107,7 @@ func _test_initial_reads(observable: ObservableStateScript) -> void:
 		RuntimeStateScript.MotionState.WAITING,
 		"Transport observable state should start WAITING."
 	)
+	test.expect_equal(observable.get_vehicle_state(&"unsupported"), -1, "Unsupported vehicle id should fail with the invalid state sentinel.")
 	test.expect_false(observable.get_arm_has_item(), "Arm observable cargo should start empty.")
 	test.expect_equal(observable.get_tray_count(), 0, "Tray observable count should start at zero.")
 	test.expect_equal(observable.get_standard_box_count(), 3, "Box observable count should start at 3.")
@@ -151,10 +162,13 @@ func _test_mission_notification(observable: ObservableStateScript, scene: Node) 
 func _test_reset_reads(observable: ObservableStateScript, scene: Node) -> void:
 	test.expect_true(bool(scene.call("reset_scene")), "Scene Reset should succeed.")
 	await process_frame
+	test.expect_equal(tray_events.back(), Vector2i(1, 0), "Reset should publish tray 1 -> 0.")
+	test.expect_equal(box_events.back(), Vector2i(8, 3), "Reset should publish box 8 -> 3.")
+	test.expect_equal(mission_events.back(), Vector2i(MissionStateScript.State.COMPLETED, MissionStateScript.State.READY), "Reset should publish Mission COMPLETED -> READY.")
 	test.expect_equal(observable.get_vehicle_state(VehicleManagerScript.ARM_VEHICLE_ID), RuntimeStateScript.MotionState.WAITING, "Reset should leave arm observable state WAITING.")
 	test.expect_false(observable.get_arm_has_item(), "Reset should leave arm observable cargo empty.")
-	test.expect_equal(observable.get_tray_count(), 0, "Reset should publish and expose cleared tray count.")
-	test.expect_equal(observable.get_standard_box_count(), 3, "Reset should publish and expose restored box count.")
+	test.expect_equal(observable.get_tray_count(), 0, "Reset should expose cleared tray count.")
+	test.expect_equal(observable.get_standard_box_count(), 3, "Reset should expose restored box count.")
 	test.expect_equal(observable.get_mission_state(), MissionStateScript.State.READY, "Reset should expose Mission READY.")
 
 
