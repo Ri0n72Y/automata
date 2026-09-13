@@ -254,9 +254,9 @@ func _complete_execution() -> void:
 	var vehicle_id := _program.vehicle_id if _program != null else &""
 	_state = STATE_COMPLETED
 	_waiting_for_move = false
+	_last_error = &""
 	set_process(false)
 	_unbind_vehicle()
-	_clear_requirements()
 	execution_completed.emit(vehicle_id)
 
 
@@ -276,7 +276,6 @@ func _fail_execution(node_id: int, reason: StringName) -> void:
 	_waiting_for_move = false
 	set_process(false)
 	_unbind_vehicle()
-	_clear_requirements()
 	execution_failed.emit(node_id, reason)
 
 
