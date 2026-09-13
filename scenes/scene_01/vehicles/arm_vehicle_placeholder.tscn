@@ -40,16 +40,16 @@ height = 0.12
 radial_segments = 20
 
 [sub_resource type="BoxMesh" id="ColumnMesh"]
-size = Vector3(0.22, 0.92, 0.22)
+size = Vector3(0.18, 0.92, 0.18)
 
 [sub_resource type="BoxMesh" id="BeamMesh"]
-size = Vector3(0.18, 0.18, 0.54)
+size = Vector3(0.14, 0.14, 0.5)
 
 [sub_resource type="BoxMesh" id="HeadMesh"]
-size = Vector3(0.67, 0.32, 0.22)
+size = Vector3(0.46, 0.26, 0.18)
 
 [sub_resource type="BoxMesh" id="MarkerMesh"]
-size = Vector3(0.23, 0.12, 0.11)
+size = Vector3(0.18, 0.1, 0.09)
 
 [sub_resource type="BoxShape3D" id="SelectionShape"]
 size = Vector3(0.91, 1.7, 0.91)
