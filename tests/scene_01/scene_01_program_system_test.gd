@@ -4,6 +4,7 @@ const SCENE_PATH := "res://scenes/scene_01/scene_01_basic_packing.tscn"
 const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
 const ValidatorScript := preload("res://scripts/scene_01/scene_01_program_validator.gd")
 const ProgramRunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
+const CompileGateScript := preload("res://scripts/scene_01/scene_01_assembly_compile_gate.gd")
 
 var failures := 0
 
@@ -51,10 +52,14 @@ func _test_production_runner() -> void:
 	await physics_frame
 
 	var runner := scene.get_node_or_null("SceneRoot/Scene01ProgramRunner") as ProgramRunnerScript
+	var compile_gate := scene.get_node_or_null("SceneRoot/Scene01AssemblyCompileGate") as CompileGateScript
 	var manager := scene.get_node_or_null("SceneRoot/RobotRoot/Scene01VehicleManager") as Scene01VehicleManager
 	var object_manager := scene.get_node_or_null("SceneRoot/ObjectRoot/Scene01ObjectManager") as Scene01ObjectManager
-	_expect_true(runner != null and manager != null and object_manager != null, "Production scene should expose program runner dependencies.")
-	if runner == null or manager == null or object_manager == null:
+	_expect_true(
+		runner != null and compile_gate != null and manager != null and object_manager != null,
+		"Production scene should expose program runner dependencies."
+	)
+	if runner == null or compile_gate == null or manager == null or object_manager == null:
 		scene.queue_free()
 		await process_frame
 		return
@@ -77,6 +82,10 @@ func _test_production_runner() -> void:
 	var program := _build_cycle_program(&"arm_vehicle")
 	_expect_true(runner.start_program(program), "Valid Arm program should pass compile/capability preflight and start.")
 	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_RUNNING, "Runner should enter RUNNING without creating a second lifecycle state.")
+	var active_node := runner.get_current_node_id()
+	_expect_false(runner.start_program(program), "A second Start must not replace the active runtime snapshot.")
+	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_RUNNING, "Rejected reentry must leave the active program running.")
+	_expect_equal(runner.get_current_node_id(), active_node, "Rejected reentry must preserve the program counter.")
 
 	var paused_node := runner.get_current_node_id()
 	scene.call("pause_scene")
@@ -92,11 +101,19 @@ func _test_production_runner() -> void:
 	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Repeat program should complete through shared commands.")
 	_expect_equal(box.get_current_count(), 8, "Program should move five blocks and fill StandardBox to 8/8.")
 	_expect_true(bool(scene.call("is_mission_completed")), "Program completion should flow through the existing Mission owner.")
+	_expect_true(
+		compile_gate.get_compile_result(&"arm_vehicle") != null,
+		"Completed program should retain the formal compile publication for downstream scoring."
+	)
 
 	_expect_true(bool(scene.call("reset_scene_state")), "Lifecycle Reset should remain the single scene reset path.")
 	await process_frame
 	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_IDLE, "Reset should cancel program execution and return runner to IDLE.")
 	_expect_equal(box.get_current_count(), 3, "Reset should restore StandardBox through the existing object owner.")
+	_expect_true(
+		compile_gate.get_compile_result(&"arm_vehicle") == null,
+		"Reset should end the previous program compile publication lifetime."
+	)
 
 	var transport_program := ProgramScript.new()
 	transport_program.reset()
