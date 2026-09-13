@@ -2,8 +2,14 @@ class_name Scene01Hud
 extends CanvasLayer
 
 const ObservableStateScript := preload("res://scripts/scene_01/scene_01_observable_state.gd")
+const MissionControllerScript := preload("res://scripts/scene_01/scene_01_mission_controller.gd")
 const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
+const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
+const VehicleSelectionControllerScript := preload("res://scripts/input/vehicle_selection_controller.gd")
+const GridSelectionControllerScript := preload("res://scripts/input/grid_selection_controller.gd")
+const VehicleMoveControllerScript := preload("res://scripts/input/vehicle_move_controller.gd")
+const VehicleGrabDropControllerScript := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
 const MissionStateScript := preload("res://scripts/scene_01/scene_01_mission_state.gd")
 const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.gd")
 
@@ -17,54 +23,59 @@ const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.g
 @onready var completion_panel: PanelContainer = %CompletionPanel
 @onready var completion_summary_label: Label = %CompletionSummaryLabel
 
-var _scene_controller: Node
+var _scene_controller: MissionControllerScript
 var _observable: ObservableStateScript
 var _vehicle_manager: VehicleManagerScript
-var _vehicle_selection: Node
-var _grid_selection: Node
-var _move_controller: Node
-var _grab_drop_controller: Node
+var _vehicle_selection: VehicleSelectionControllerScript
+var _grid_selection: GridSelectionControllerScript
+var _move_controller: VehicleMoveControllerScript
+var _grab_drop_controller: VehicleGrabDropControllerScript
 
 
 func _ready() -> void:
-	_scene_controller = get_parent()
-	_observable = _scene_node("SceneRoot/Scene01ObservableState") as ObservableStateScript
-	_vehicle_manager = _scene_node("SceneRoot/RobotRoot/Scene01VehicleManager") as VehicleManagerScript
-	_vehicle_selection = _scene_node("SceneRoot/GridRoot/VehicleSelectionController")
-	_grid_selection = _scene_node("SceneRoot/GridRoot/GridSelectionController")
-	_move_controller = _scene_node("SceneRoot/GridRoot/VehicleMoveController")
-	_grab_drop_controller = _scene_node("SceneRoot/GridRoot/VehicleGrabDropController")
+	_scene_controller = get_parent() as MissionControllerScript
+	_observable = _scene_controller.get_node("SceneRoot/Scene01ObservableState") as ObservableStateScript
+	_vehicle_manager = _scene_controller.get_node(
+		"SceneRoot/RobotRoot/Scene01VehicleManager"
+	) as VehicleManagerScript
+	_vehicle_selection = _scene_controller.get_node(
+		"SceneRoot/GridRoot/VehicleSelectionController"
+	) as VehicleSelectionControllerScript
+	_grid_selection = _scene_controller.get_node(
+		"SceneRoot/GridRoot/GridSelectionController"
+	) as GridSelectionControllerScript
+	_move_controller = _scene_controller.get_node(
+		"SceneRoot/GridRoot/VehicleMoveController"
+	) as VehicleMoveControllerScript
+	_grab_drop_controller = _scene_controller.get_node(
+		"SceneRoot/GridRoot/VehicleGrabDropController"
+	) as VehicleGrabDropControllerScript
 	_bind_signals()
 	_refresh()
 	call_deferred("_refresh")
 
 
 func _bind_signals() -> void:
-	if _observable != null:
-		_connect_once(_observable, &"configured", _refresh)
-		_connect_once(_observable, &"vehicle_state_changed", _on_observable_changed)
-		_connect_once(_observable, &"arm_has_item_changed", _on_observable_changed)
-		_connect_once(_observable, &"tray_count_changed", _on_observable_changed)
-		_connect_once(_observable, &"standard_box_count_changed", _on_observable_changed)
-		_connect_once(_observable, &"mission_state_changed", _on_observable_changed)
-	if _vehicle_selection != null:
-		_connect_once(_vehicle_selection, &"selection_changed", _on_selection_changed)
-	if _grid_selection != null:
-		_connect_once(_grid_selection, &"live_target_mode_changed", _on_target_mode_changed)
-	if _move_controller != null:
-		_connect_once(_move_controller, &"move_accepted", _on_move_accepted)
-		_connect_once(_move_controller, &"move_rejected", _on_move_rejected)
-		_connect_once(_move_controller, &"move_stopped", _on_move_stopped)
-	if _grab_drop_controller != null:
-		_connect_once(_grab_drop_controller, &"grab_drop_completed", _on_grab_drop_completed)
-	if _scene_controller != null:
-		_connect_once(_scene_controller, &"lifecycle_state_changed", _on_lifecycle_changed)
-		_connect_once(_scene_controller, &"lifecycle_reset_completed", _on_reset_completed)
+	_observable.configured.connect(_refresh)
+	_observable.vehicle_state_changed.connect(_on_observable_changed)
+	_observable.arm_has_item_changed.connect(_on_observable_changed)
+	_observable.tray_count_changed.connect(_on_observable_changed)
+	_observable.standard_box_count_changed.connect(_on_observable_changed)
+	_observable.mission_state_changed.connect(_on_observable_changed)
+	_vehicle_selection.selection_changed.connect(_on_selection_changed)
+	_grid_selection.live_target_mode_changed.connect(_on_target_mode_changed)
+	_move_controller.move_accepted.connect(_on_move_accepted)
+	_move_controller.move_rejected.connect(_on_move_rejected)
+	_move_controller.move_stopped.connect(_on_move_stopped)
+	_grab_drop_controller.grab_drop_completed.connect(_on_grab_drop_completed)
+	_grab_drop_controller.facing_changed.connect(_on_arm_facing_changed)
+	_scene_controller.lifecycle_state_changed.connect(_on_lifecycle_changed)
+	_scene_controller.lifecycle_reset_completed.connect(_on_reset_completed)
 
 
 func _refresh() -> void:
-	var observable_ready := _observable != null and _observable.is_configured()
-	var selected_id := _selected_vehicle_id()
+	var observable_ready := _observable.is_configured()
+	var selected_id := _vehicle_selection.get_selected_vehicle_id()
 	var has_selection := selected_id != &""
 	selected_label.text = "选中：%s" % _selected_vehicle_name(selected_id)
 
@@ -74,7 +85,7 @@ func _refresh() -> void:
 	vehicle_state_label.text = "状态：%s" % _motion_state_text(motion_state)
 
 	if observable_ready:
-		var target_count := _mission_target_count()
+		var target_count := _scene_controller.get_mission_target_count()
 		var box_text := str(_observable.get_standard_box_count())
 		if target_count > 0:
 			box_text = "%d/%d" % [_observable.get_standard_box_count(), target_count]
@@ -93,73 +104,69 @@ func _refresh() -> void:
 		mission_label.text = "任务：初始化中"
 		completion_panel.visible = false
 
-	pause_label.visible = _is_paused()
-	commands_label.text = _command_availability_text(motion_state, has_selection)
+	pause_label.visible = _scene_controller.is_scene_paused()
+	commands_label.text = _command_availability_text(motion_state, selected_id)
 
 
-func _command_availability_text(motion_state: int, has_selection: bool) -> String:
-	if not has_selection:
-		return "命令：M 移动 —   X 停止 —   C 抓放 —"
-	var paused := _is_paused()
+func _command_availability_text(motion_state: int, selected_id: StringName) -> String:
+	if selected_id == &"":
+		return "命令：M 移动 未选择车辆   X 停止 未选择车辆   C 抓放 未选择车辆"
+	if _scene_controller.is_scene_paused():
+		return "命令：M 移动 暂停   X 停止 暂停   C 抓放 暂停"
+
+	var vehicle = _vehicle_manager.get_vehicle_by_id(selected_id)
+	var definition = vehicle.definition if vehicle != null else null
 	var busy := (
 		motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
 		or motion_state == VehicleRuntimeStateScript.MotionState.MOVING
 	)
-	var move_available := (
-		not paused
-		and not busy
-		and _grid_selection != null
-		and _grid_selection.has_method("is_live_target_available")
-		and bool(_grid_selection.call("is_live_target_available"))
+	var can_move := (
+		definition != null
+		and definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_MOVE)
 	)
-	var move_text := "可用" if move_available else "不可用"
-	if _grid_selection != null and _grid_selection.has_method("is_live_target_mode"):
-		if bool(_grid_selection.call("is_live_target_mode")):
-			move_text = "选择目标中"
-	var stop_available := not paused and motion_state == VehicleRuntimeStateScript.MotionState.MOVING
-	var grab_available := (
-		not paused
-		and not busy
-		and _grab_drop_controller != null
-		and _grab_drop_controller.has_method("is_interaction_preview_valid")
-		and bool(_grab_drop_controller.call("is_interaction_preview_valid"))
+	var can_grab := (
+		definition != null
+		and definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_GRAB)
 	)
+
+	var move_text := "可用"
+	if not can_move:
+		move_text = "车辆无移动能力"
+	elif busy:
+		move_text = "车辆忙碌"
+	elif _grid_selection.is_live_target_mode():
+		move_text = "选择目标中"
+
+	var stop_text := (
+		"可用"
+		if motion_state == VehicleRuntimeStateScript.MotionState.MOVING
+		else "车辆未移动"
+	)
+
+	var grab_text := "无有效交互目标"
+	if not can_grab:
+		grab_text = "车辆无机械臂"
+	elif busy:
+		grab_text = "车辆忙碌"
+	elif _grid_selection.is_live_target_mode():
+		grab_text = "移动选点中"
+	elif _grab_drop_controller.is_interaction_preview_valid():
+		grab_text = "可用"
+
 	return "命令：M 移动 %s   X 停止 %s   C 抓放 %s" % [
 		move_text,
-		"可用" if stop_available else "不可用",
-		"可用" if grab_available else "不可用",
+		stop_text,
+		grab_text,
 	]
-
-
-func _selected_vehicle_id() -> StringName:
-	if _vehicle_selection == null or not _vehicle_selection.has_method("get_selected_vehicle_id"):
-		return &""
-	return StringName(_vehicle_selection.call("get_selected_vehicle_id"))
 
 
 func _selected_vehicle_name(vehicle_id: StringName) -> String:
 	if vehicle_id == &"":
 		return "未选择"
-	if _vehicle_manager == null:
-		return String(vehicle_id)
 	var vehicle = _vehicle_manager.get_vehicle_by_id(vehicle_id)
 	if vehicle == null or vehicle.definition == null:
 		return String(vehicle_id)
 	return vehicle.definition.display_name
-
-
-func _mission_target_count() -> int:
-	if _scene_controller == null or not _scene_controller.has_method("get_mission_target_count"):
-		return 0
-	return int(_scene_controller.call("get_mission_target_count"))
-
-
-func _is_paused() -> bool:
-	return (
-		_scene_controller != null
-		and _scene_controller.has_method("is_scene_paused")
-		and bool(_scene_controller.call("is_scene_paused"))
-	)
 
 
 func _motion_state_text(state: int) -> String:
@@ -195,10 +202,15 @@ func _on_observable_changed(_a = null, _b = null, _c = null) -> void:
 
 
 func _on_selection_changed(_vehicle_id: StringName, _has_selection: bool) -> void:
+	_grab_drop_controller.refresh_interaction_preview()
 	_refresh()
 
 
 func _on_target_mode_changed(_active: bool) -> void:
+	_refresh()
+
+
+func _on_arm_facing_changed(_vehicle_id: StringName, _facing: int) -> void:
 	_refresh()
 
 
@@ -280,16 +292,3 @@ func _grab_drop_status_text(status: int) -> String:
 			return "物品所有权冲突"
 		_:
 			return "目标无效"
-
-
-func _connect_once(source: Object, signal_name: StringName, callable: Callable) -> void:
-	if source == null or not source.has_signal(signal_name):
-		return
-	if not source.is_connected(signal_name, callable):
-		source.connect(signal_name, callable)
-
-
-func _scene_node(path: String) -> Node:
-	if _scene_controller == null:
-		return null
-	return _scene_controller.get_node_or_null(NodePath(path))
