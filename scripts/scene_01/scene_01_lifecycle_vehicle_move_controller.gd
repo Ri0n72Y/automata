@@ -1,8 +1,6 @@
 class_name Scene01LifecycleVehicleMoveController
 extends "res://scripts/input/vehicle_move_controller.gd"
 
-const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
-
 
 func _physics_process(delta: float) -> void:
 	if not _is_lifecycle_running():
