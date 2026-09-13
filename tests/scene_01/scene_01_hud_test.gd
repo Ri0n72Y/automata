@@ -27,6 +27,7 @@ func _run() -> void:
 
 	var hud := scene.get_node_or_null("HUDRoot")
 	var selection := scene.get_node_or_null("SceneRoot/GridRoot/VehicleSelectionController")
+	var grid_selection := scene.get_node_or_null("SceneRoot/GridRoot/GridSelectionController")
 	var move_controller := scene.get_node_or_null("SceneRoot/GridRoot/VehicleMoveController")
 	var grab_drop_controller := scene.get_node_or_null(
 		"SceneRoot/GridRoot/VehicleGrabDropController"
@@ -35,13 +36,14 @@ func _run() -> void:
 	var object_manager := scene.get_node_or_null("SceneRoot/ObjectRoot/Scene01ObjectManager")
 	test.expect_true(hud != null, "Production Scene 01 should expose HUDRoot.")
 	test.expect_true(
-		selection != null and move_controller != null and grab_drop_controller != null,
+		selection != null and grid_selection != null and move_controller != null and grab_drop_controller != null,
 		"HUD test requires command controllers."
 	)
 	test.expect_true(manager != null and object_manager != null, "HUD test requires domain owners.")
 	if (
 		hud == null
 		or selection == null
+		or grid_selection == null
 		or move_controller == null
 		or grab_drop_controller == null
 		or manager == null
@@ -88,6 +90,20 @@ func _run() -> void:
 	test.expect_true(commands_label.text.find("M 移动 可用") >= 0, "Waiting movable vehicle should expose Move as available.")
 	test.expect_true(commands_label.text.find("X 停止 车辆未移动") >= 0, "Waiting vehicle should explain why Stop is unavailable.")
 	test.expect_true(commands_label.text.find("C 抓放 可用") >= 0, "Arm facing the pile should expose GrabDrop as available.")
+
+	test.expect_true(
+		bool(grid_selection.call("activate_live_target_mode")),
+		"Move target mode should activate for HUD availability transition."
+	)
+	test.expect_true(
+		commands_label.text.find("C 抓放 移动选点中") >= 0,
+		"Move target mode should disable GrabDrop in HUD."
+	)
+	grid_selection.call("deactivate_live_target_mode")
+	test.expect_true(
+		commands_label.text.find("C 抓放 可用") >= 0,
+		"Leaving Move target mode should restore current GrabDrop availability."
+	)
 
 	test.expect_true(grab_drop_controller.rotate_selected_arm(1), "Arm should rotate away from the pile.")
 	test.expect_true(
