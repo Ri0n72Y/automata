@@ -36,6 +36,7 @@ func _ready() -> void:
 	_grab_drop_controller = _scene_node("SceneRoot/GridRoot/VehicleGrabDropController")
 	_bind_signals()
 	_refresh()
+	call_deferred("_refresh")
 
 
 func _bind_signals() -> void:
