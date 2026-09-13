@@ -105,6 +105,7 @@ func _refresh() -> void:
 		completion_panel.visible = false
 
 	pause_label.visible = _scene_controller.is_scene_paused()
+	_grab_drop_controller.refresh_interaction_preview()
 	commands_label.text = _command_availability_text(motion_state, selected_id)
 
 
@@ -202,7 +203,6 @@ func _on_observable_changed(_a = null, _b = null, _c = null) -> void:
 
 
 func _on_selection_changed(_vehicle_id: StringName, _has_selection: bool) -> void:
-	_grab_drop_controller.refresh_interaction_preview()
 	_refresh()
 
 
