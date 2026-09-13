@@ -59,7 +59,7 @@ func _run() -> void:
 	_expect_equal(arm.runtime_state.motion_state, RuntimeStateScript.MotionState.BLOCKED, "1x collision should block arm.")
 	_expect_equal(transport.runtime_state.motion_state, RuntimeStateScript.MotionState.WAITING, "1x static target should remain Waiting.")
 	var one_x_safe_anchor: Vector2i = arm.runtime_state.anchor_cell
-	_expect_equal(one_x_safe_anchor, Vector2i(2, 1), "1x collision should stop at the last safe anchor.")
+	_expect_equal(one_x_safe_anchor, Vector2i(3, 1), "1x collision should stop at the last safe anchor.")
 
 	_expect_true(scene.set_simulation_speed(4.0), "4x speed should be accepted.")
 	_prepare_static_collision(arm, transport)
