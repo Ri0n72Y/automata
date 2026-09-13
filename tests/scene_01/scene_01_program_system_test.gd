@@ -46,12 +46,13 @@ func _test_model_validation_and_save() -> void:
 	_expect_true(_has_diagnostic(diagnostics, &"next_cycle"), "Ordinary next links must not create a cycle.")
 
 	var save_path := "user://scene_01_program_system_test.tres"
+	var saved_node_count := program.nodes.size()
 	_expect_equal(ResourceSaver.save(program, save_path), OK, "Program resource should save without UI dependencies.")
 	var loaded := ResourceLoader.load(save_path) as Scene01Program
 	_expect_true(loaded != null, "Saved program should load as Scene01Program.")
 	if loaded != null:
 		_expect_equal(loaded.vehicle_id, &"arm_vehicle", "Saved program should preserve vehicle id.")
-		_expect_equal(loaded.nodes.size(), program.nodes.size(), "Saved program should preserve node data.")
+		_expect_equal(loaded.nodes.size(), saved_node_count, "Saved program should preserve node data.")
 		loaded.vehicle_id = &"transport_vehicle"
 		loaded.append_node(ProgramScript.NodeType.GRAB_DROP)
 		var reloaded := ResourceLoader.load(
@@ -62,7 +63,7 @@ func _test_model_validation_and_save() -> void:
 		_expect_true(reloaded != null, "Reload should return the saved program after unsaved edits.")
 		if reloaded != null:
 			_expect_equal(reloaded.vehicle_id, &"arm_vehicle", "Reload should restore the saved vehicle id instead of cached unsaved edits.")
-			_expect_equal(reloaded.nodes.size(), program.nodes.size(), "Reload should restore saved node data instead of cached unsaved edits.")
+			_expect_equal(reloaded.nodes.size(), saved_node_count, "Reload should restore saved node data instead of cached unsaved edits.")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(save_path))
 
 
