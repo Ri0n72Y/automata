@@ -747,7 +747,10 @@ func _test_continuous_collision_boundaries(move_controller, arm, transport) -> v
 		)),
 		"Later transport collision task should start."
 	)
-	move_controller._physics_process(1.0)
+	for _step in range(30):
+		move_controller._physics_process(0.1)
+		if transport.runtime_state.motion_state == RUNTIME.MotionState.BLOCKED:
+			break
 	test.expect_equal(
 		arm.runtime_state.motion_state,
 		RUNTIME.MotionState.WAITING,
