@@ -154,7 +154,7 @@ func _on_load() -> void:
 	if not ResourceLoader.exists(SAVE_PATH):
 		_status_label.text = "没有已保存程序"
 		return
-	var loaded := ResourceLoader.load(SAVE_PATH) as Scene01Program
+	var loaded := ResourceLoader.load(SAVE_PATH, "", ResourceLoader.CACHE_MODE_REPLACE) as Scene01Program
 	if loaded == null:
 		_status_label.text = "程序读取失败"
 		return
