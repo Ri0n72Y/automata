@@ -82,7 +82,7 @@ func _test_visibility_matrix(context: Dictionary) -> void:
 	_expect_state("no vehicle selected", grid_selection, move_controller, false, false, false, false)
 
 	test.expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable.")
-	test.expect_equal(grid_selection.get_target_footprint(), Vector2i(2, 2), "Selected footprint should configure move-command snapping.")
+	test.expect_equal(grid_selection.get_target_footprint(), Vector2i.ONE, "Selected footprint should configure move-command snapping.")
 	grid_selection.update_hover_from_world_position(hover_world)
 	_expect_state("selected but not armed", grid_selection, move_controller, true, false, false, false)
 
