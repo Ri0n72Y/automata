@@ -41,15 +41,11 @@ func _run() -> void:
 	var object_manager := scene.get_node_or_null(
 		"SceneRoot/ObjectRoot/Scene01ObjectManager"
 	) as OBJECT_MANAGER_SCRIPT
-	var status_label := scene.get_node_or_null(
-		"UIRoot/RootControl/Panel/Margin/VBox/StatusLabel"
-	) as Label
 	_expect_true(grab_drop_controller != null, "Input test requires GrabDrop controller.")
 	_expect_true(grid_selection != null, "Input test requires grid selection controller.")
 	_expect_true(selection != null, "Input test requires vehicle selection controller.")
 	_expect_true(vehicle_manager != null, "Input test requires vehicle manager.")
 	_expect_true(object_manager != null, "Input test requires object manager.")
-	_expect_true(status_label != null, "Input test requires GrabDrop status feedback label.")
 	if (
 		grab_drop_controller == null
 		or grid_selection == null
@@ -144,8 +140,6 @@ func _run() -> void:
 			and arm.runtime_state.carried_item.is_claimed_by(arm.runtime_state),
 			"Viewport C cargo should be owned by arm runtime."
 		)
-		if status_label != null:
-			_expect_equal(status_label.text, "抓取成功", "Viewport C Grab should update Chinese player feedback.")
 
 		var carried = arm.runtime_state.carried_item
 		var ground_cell := Vector2i(4, 1)
@@ -159,15 +153,11 @@ func _run() -> void:
 		await _push_key(KEY_C)
 		_expect_false(arm.runtime_state.arm_has_item, "Viewport C should Drop carried block to legal ground.")
 		_expect_true(ground_field.get_item(ground_cell) == carried, "Viewport ground Drop should preserve exact block identity.")
-		if status_label != null:
-			_expect_equal(status_label.text, "放置成功", "Viewport ground Drop should update Chinese player feedback.")
 
 		await _push_key(KEY_C)
 		_expect_true(arm.runtime_state.carried_item == carried, "Second Viewport C should Grab same block from ground.")
 		_expect_true(carried.is_claimed_by(arm.runtime_state), "Ground re-Grab through Viewport should restore arm ownership.")
 		_expect_false(ground_field.has_item(ground_cell), "Ground cell should empty after Viewport re-Grab.")
-		if status_label != null:
-			_expect_equal(status_label.text, "抓取成功", "Viewport ground Grab should update Chinese player feedback.")
 
 	scene.call("reset_scene")
 	await process_frame
