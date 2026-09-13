@@ -128,7 +128,6 @@ unique_name_in_owner = true
 
 [node name="ProgramUIRoot" parent="." instance=ExtResource("25_program_ui")]
 unique_name_in_owner = true
-scene_controller_path = NodePath("..")
 
 [node name="UIRoot" parent="." instance=ExtResource("9_manual_ui")]
 unique_name_in_owner = true
