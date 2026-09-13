@@ -2,14 +2,13 @@ class_name Scene01ProgramUI
 extends CanvasLayer
 
 const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
+const RunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
+const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
+const CompileGateScript := preload("res://scripts/scene_01/scene_01_assembly_compile_gate.gd")
+const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
 const AssemblyCapabilitiesScript := preload("res://scripts/assembly/assembly_capabilities.gd")
 
 const SAVE_PATH := "user://scene_01_program.tres"
-
-@export var scene_controller_path: NodePath = NodePath("..")
-@export var runner_path: NodePath = NodePath("../SceneRoot/Scene01ProgramRunner")
-@export var vehicle_manager_path: NodePath = NodePath("../SceneRoot/RobotRoot/Scene01VehicleManager")
-@export var compile_gate_path: NodePath = NodePath("../SceneRoot/Scene01AssemblyCompileGate")
 
 @onready var _vehicle_option: OptionButton = %VehicleOption
 @onready var _target_x: SpinBox = %TargetX
@@ -28,16 +27,18 @@ const SAVE_PATH := "user://scene_01_program.tres"
 @onready var _run_button: Button = %RunButton
 @onready var _status_label: Label = %StatusLabel
 
-var _runner: Scene01ProgramRunner
-var _vehicle_manager: Node
-var _compile_gate: Node
+var _runner: RunnerScript
+var _vehicle_manager: VehicleManagerScript
+var _compile_gate: CompileGateScript
 var _program: Scene01Program
 
 
 func _ready() -> void:
-	_runner = get_node_or_null(runner_path) as Scene01ProgramRunner
-	_vehicle_manager = get_node_or_null(vehicle_manager_path)
-	_compile_gate = get_node_or_null(compile_gate_path)
+	_runner = get_parent().get_node("SceneRoot/Scene01ProgramRunner") as RunnerScript
+	_vehicle_manager = get_parent().get_node(
+		"SceneRoot/RobotRoot/Scene01VehicleManager"
+	) as VehicleManagerScript
+	_compile_gate = get_parent().get_node("SceneRoot/Scene01AssemblyCompileGate") as CompileGateScript
 	_program = ProgramScript.new()
 	_program.reset()
 	_bind_ui()
@@ -68,10 +69,6 @@ func _bind_ui() -> void:
 
 
 func _bind_runner() -> void:
-	if _runner == null:
-		_status_label.text = "ProgramRunner 未配置"
-		_set_editing_enabled(false)
-		return
 	_runner.execution_started.connect(_on_execution_started)
 	_runner.node_started.connect(_on_node_started)
 	_runner.execution_completed.connect(_on_execution_completed)
@@ -81,10 +78,8 @@ func _bind_runner() -> void:
 
 func _populate_vehicles() -> void:
 	_vehicle_option.clear()
-	if _vehicle_manager == null or not _vehicle_manager.has_method("get_vehicles"):
-		return
-	for vehicle_node in _vehicle_manager.call("get_vehicles"):
-		var vehicle := vehicle_node as VehicleActor
+	for vehicle_node in _vehicle_manager.get_vehicles():
+		var vehicle := vehicle_node as VehicleActorScript
 		if vehicle == null or vehicle.definition == null:
 			continue
 		_vehicle_option.add_item(vehicle.definition.display_name)
@@ -97,8 +92,7 @@ func _populate_vehicles() -> void:
 func _sync_vehicle_id() -> void:
 	if _vehicle_option.item_count <= 0:
 		return
-	var index := _vehicle_option.selected
-	_program.vehicle_id = StringName(_vehicle_option.get_item_metadata(index))
+	_program.vehicle_id = StringName(_vehicle_option.get_item_metadata(_vehicle_option.selected))
 
 
 func _on_vehicle_selected(_index: int) -> void:
@@ -173,10 +167,10 @@ func _on_load() -> void:
 
 func _on_run() -> void:
 	_sync_vehicle_id()
-	if _runner == null or not _runner.start_program(_program):
-		if _runner != null and _runner.get_last_error() != &"":
-			_status_label.text = "运行前拒绝：%s" % String(_runner.get_last_error())
+	if _runner.start_program(_program):
 		return
+	if _runner.get_last_error() != &"":
+		_status_label.text = "运行前拒绝：%s" % _reason_text(_runner.get_last_error())
 
 
 func _on_execution_started(vehicle_id: StringName) -> void:
@@ -198,7 +192,7 @@ func _on_execution_completed(_vehicle_id: StringName) -> void:
 func _on_execution_failed(node_id: int, reason: StringName) -> void:
 	_set_editing_enabled(true)
 	_refresh_capability_buttons()
-	_status_label.text = "节点 #%d 失败：%s" % [node_id, String(reason)]
+	_status_label.text = "节点 #%d 失败：%s" % [node_id, _reason_text(reason)]
 
 
 func _on_execution_reset() -> void:
@@ -214,8 +208,7 @@ func _refresh_program_view(select_node_id: int = ProgramScript.NO_NODE_ID) -> vo
 	for node in _program.get_nodes():
 		var node_id := int(node.get("id", ProgramScript.NO_NODE_ID))
 		var node_type := int(node.get("type", -1))
-		var text := _node_text(node)
-		_program_list.add_item(text)
+		_program_list.add_item(_node_text(node))
 		_program_list.set_item_metadata(_program_list.item_count - 1, node_id)
 		_connect_target_option.add_item("#%d" % node_id)
 		_connect_target_option.set_item_metadata(_connect_target_option.item_count - 1, node_id)
@@ -265,10 +258,15 @@ func _select_list_node(node_id: int) -> void:
 func _refresh_capability_buttons() -> void:
 	var can_move := false
 	var can_grab_drop := false
-	if _compile_gate != null and _program != null and _compile_gate.has_method("prepare_scene_run"):
-		if bool(_compile_gate.call("prepare_scene_run")):
-			can_move = bool(_compile_gate.call("has_vehicle_capability", _program.vehicle_id, AssemblyCapabilitiesScript.CAN_MOVE))
-			can_grab_drop = bool(_compile_gate.call("has_vehicle_capability", _program.vehicle_id, AssemblyCapabilitiesScript.GRAB_DROP))
+	if _compile_gate.prepare_scene_run():
+		can_move = _compile_gate.has_vehicle_capability(
+			_program.vehicle_id,
+			AssemblyCapabilitiesScript.CAN_MOVE
+		)
+		can_grab_drop = _compile_gate.has_vehicle_capability(
+			_program.vehicle_id,
+			AssemblyCapabilitiesScript.GRAB_DROP
+		)
 	_add_move_button.disabled = not can_move
 	_add_grab_button.disabled = not can_grab_drop
 
@@ -289,3 +287,35 @@ func _set_editing_enabled(enabled: bool) -> void:
 	if not enabled:
 		_add_move_button.disabled = true
 		_add_grab_button.disabled = true
+
+
+func _reason_text(reason: StringName) -> String:
+	match reason:
+		&"program_capability_rejected":
+			return "当前装配缺少程序所需能力"
+		&"move_target_required":
+			return "MoveTo 缺少目标格"
+		&"move_target_out_of_bounds":
+			return "MoveTo 目标超出网格"
+		&"move_target_not_walkable":
+			return "MoveTo 目标不可通行"
+		&"invalid_repeat_count":
+			return "Repeat 次数必须为 1–100"
+		&"repeat_target_required", &"invalid_repeat_target":
+			return "Repeat 需要指向之前的执行节点"
+		&"unreachable_node", &"next_cycle", &"missing_next_node":
+			return "程序连接无效"
+		&"move_blocked":
+			return "车辆移动被阻挡"
+		&"no_path":
+			return "目标没有可用路径"
+		&"program_vehicle_missing":
+			return "程序车辆不存在"
+		&"lifecycle_start_rejected":
+			return "场景当前无法开始运行"
+		&"program_already_running":
+			return "程序正在运行"
+		_:
+			if String(reason).begins_with("grab_drop_"):
+				return "GrabDrop 当前无法执行"
+			return String(reason)
