@@ -52,6 +52,17 @@ func _test_model_validation_and_save() -> void:
 	if loaded != null:
 		_expect_equal(loaded.vehicle_id, &"arm_vehicle", "Saved program should preserve vehicle id.")
 		_expect_equal(loaded.nodes.size(), program.nodes.size(), "Saved program should preserve node data.")
+		loaded.vehicle_id = &"transport_vehicle"
+		loaded.append_node(ProgramScript.NodeType.GRAB_DROP)
+		var reloaded := ResourceLoader.load(
+			save_path,
+			"",
+			ResourceLoader.CACHE_MODE_REPLACE
+		) as Scene01Program
+		_expect_true(reloaded != null, "Reload should return the saved program after unsaved edits.")
+		if reloaded != null:
+			_expect_equal(reloaded.vehicle_id, &"arm_vehicle", "Reload should restore the saved vehicle id instead of cached unsaved edits.")
+			_expect_equal(reloaded.nodes.size(), program.nodes.size(), "Reload should restore saved node data instead of cached unsaved edits.")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(save_path))
 
 
