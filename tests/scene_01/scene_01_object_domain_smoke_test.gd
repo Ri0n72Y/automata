@@ -55,9 +55,24 @@ func _run() -> void:
 		_expect_true(first_receiver == first_manager.get_standard_box_receiver(), "Manager exposes the static box resource.")
 		_expect_true(first_source.resource_local_to_scene and first_receiver.resource_local_to_scene, "Object resources are local to scene.")
 		_expect_true(first_source != second_source and first_receiver != second_receiver, "Scene instances do not share object state.")
+		_expect_equal(
+			first_source.get_interaction_cells(),
+			[Vector2i(0, 3)],
+			"InfiniteBlockPile should occupy exactly one grid cell."
+		)
+		_expect_equal(
+			first_receiver.get_interaction_cells(),
+			[Vector2i(15, 3)],
+			"StandardBox should occupy exactly one grid cell."
+		)
 		_expect_true(
 			first_manager.is_static_item_cell_occupied(Vector2i(15, 3)),
 			"StandardBox interaction cell is static occupancy."
+		)
+		_expect_true(
+			not first_manager.is_static_item_cell_occupied(Vector2i(0, 4))
+			and not first_manager.is_static_item_cell_occupied(Vector2i(15, 4)),
+			"Former second warehouse cells should return to ordinary grid occupancy."
 		)
 		_expect_equal(first_box_node.get_current_count(), 3, "First box starts at 3/8.")
 		_expect_equal(second_box_node.get_current_count(), 3, "Second box starts independently at 3/8.")

@@ -109,7 +109,7 @@ func _test_pile_tray_box(controller, selection, arm, transport, objects) -> void
 	_expect_true(arm.runtime_state.carried_item == block, "Arm carries the exact pile block.")
 	_expect_true(block.is_claimed_by(arm.runtime_state), "Arm owns the carried block.")
 
-	_place_vehicle(arm, Vector2i(5, 4), RuntimeStateScript.Facing.EAST)
+	_place_vehicle(arm, Vector2i(6, 4), RuntimeStateScript.Facing.EAST)
 	var drop_to_tray = controller.request_selected_grab_drop()
 	_expect_true(drop_to_tray != null and drop_to_tray.is_success(), "Arm drops into tray.")
 	_expect_equal(transport.runtime_state.tray_count, 1, "Tray becomes 1/8.")
@@ -120,7 +120,7 @@ func _test_pile_tray_box(controller, selection, arm, transport, objects) -> void
 	_expect_equal(transport.runtime_state.tray_count, 0, "Tray returns to 0/8.")
 	_expect_true(arm.runtime_state.carried_item == block, "Tray roundtrip preserves block identity.")
 
-	_place_vehicle(arm, Vector2i(13, 3), RuntimeStateScript.Facing.EAST)
+	_place_vehicle(arm, Vector2i(14, 3), RuntimeStateScript.Facing.EAST)
 	var drop_to_box = controller.request_selected_grab_drop()
 	_expect_true(drop_to_box != null and drop_to_box.is_success(), "Arm drops into StandardBox.")
 	_expect_equal(box.get_current_count(), initial_box_count + 1, "Box increments exactly once.")
@@ -154,9 +154,9 @@ func _test_collision_preserves_cargo(controller, move_controller, selection, arm
 	var carried = grab.item
 
 	_place_vehicle(arm, Vector2i(3, 3), RuntimeStateScript.Facing.EAST)
-	_place_vehicle(transport, Vector2i(6, 3), RuntimeStateScript.Facing.WEST)
+	_place_vehicle(transport, Vector2i(5, 3), RuntimeStateScript.Facing.WEST)
 	var arm_move := _move_command(Vector2i(4, 3), [Vector2i(3, 3), Vector2i(4, 3)])
-	var transport_move := _move_command(Vector2i(5, 3), [Vector2i(6, 3), Vector2i(5, 3)])
+	var transport_move := _move_command(Vector2i(4, 3), [Vector2i(5, 3), Vector2i(4, 3)])
 	if arm_move == null or transport_move == null:
 		return
 	_expect_true(arm.start_move(arm_move), "Carrying arm collision task starts.")

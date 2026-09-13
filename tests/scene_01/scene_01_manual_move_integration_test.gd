@@ -48,7 +48,7 @@ func _run() -> void:
 	)
 	_test_debug_ui_contract(scene)
 	if vehicle_selection != null and move_controller != null and grid_selection != null and manager != null and camera_rig != null:
-		await _test_2x2_screen_mapping_matrix(
+		await _test_screen_mapping_matrix(
 			scene,
 			vehicle_selection,
 			move_controller,
@@ -133,7 +133,7 @@ func _expect_body_visibility(scene: Node, paths: Array, expected: bool, context:
 			test.expect_equal(control.visible, expected, "%s should set %s visibility." % [context, path])
 
 
-func _test_2x2_screen_mapping_matrix(
+func _test_screen_mapping_matrix(
 	scene: Node,
 	vehicle_selection,
 	move_controller,
@@ -142,13 +142,13 @@ func _test_2x2_screen_mapping_matrix(
 	camera_rig
 ) -> void:
 	var arm = manager.get_vehicle_by_id(VEHICLE_MANAGER.ARM_VEHICLE_ID)
-	test.expect_true(arm != null, "2x2 mapping should expose the arm vehicle.")
+	test.expect_true(arm != null, "Screen mapping should expose the arm vehicle.")
 	if arm == null:
 		return
-	test.expect_true(vehicle_selection.select_vehicle(arm), "2x2 mapping should select the arm.")
+	test.expect_true(vehicle_selection.select_vehicle(arm), "Screen mapping should select the arm.")
 	test.expect_false(grid_selection.is_live_target_mode(), "Selection alone should not start prediction.")
-	test.expect_true(grid_selection.activate_live_target_mode(), "M-equivalent activation should start 2x2 prediction.")
-	test.expect_equal(grid_selection.get_target_footprint(), Vector2i(2, 2), "Selected arm should configure 2x2 snapping.")
+	test.expect_true(grid_selection.activate_live_target_mode(), "M-equivalent activation should start prediction.")
+	test.expect_equal(grid_selection.get_target_footprint(), Vector2i.ONE, "Selected arm should configure single-cell snapping.")
 
 	var targets: Array[Vector2i] = [Vector2i(5, 2), Vector2i(5, 4)]
 	var directions := [
@@ -162,7 +162,7 @@ func _test_2x2_screen_mapping_matrix(
 		await process_frame
 		await physics_frame
 		for target in targets:
-			_expect_2x2_screen_target(
+			_expect_screen_target(
 				scene,
 				camera_rig.get_camera(),
 				grid_selection,
@@ -176,9 +176,9 @@ func _test_2x2_screen_mapping_matrix(
 	camera_rig.set_view_direction(CAMERA_RIG.ViewDirection.SOUTHEAST, false)
 	camera_rig.rotate_clockwise(true)
 	await create_timer(0.2).timeout
-	test.expect_true(camera_rig.is_transitioning(), "2x2 mapping should sample an active camera transition.")
+	test.expect_true(camera_rig.is_transitioning(), "Screen mapping should sample an active camera transition.")
 	for target in targets:
-		_expect_2x2_screen_target(
+		_expect_screen_target(
 			scene,
 			camera_rig.get_camera(),
 			grid_selection,
@@ -192,7 +192,7 @@ func _test_2x2_screen_mapping_matrix(
 	vehicle_selection.cancel_selection()
 
 
-func _expect_2x2_screen_target(
+func _expect_screen_target(
 	scene: Node,
 	camera: Camera3D,
 	grid_selection,
@@ -203,7 +203,7 @@ func _expect_2x2_screen_target(
 	test.expect_true(camera != null, "%s should expose a camera." % context)
 	if camera == null:
 		return
-	var world_center: Vector3 = scene.call("grid_footprint_center_to_world", target, Vector2i(2, 2))
+	var world_center: Vector3 = scene.call("grid_footprint_center_to_world", target, Vector2i.ONE)
 	var screen_position: Vector2 = camera.unproject_position(world_center)
 	test.expect_true(
 		grid_selection.update_hover_from_screen_position(screen_position),
@@ -212,7 +212,7 @@ func _expect_2x2_screen_target(
 	test.expect_equal(
 		grid_selection.selected_cell,
 		target,
-		"%s should preserve the nearest 2x2 intersection anchor." % context
+		"%s should preserve the single-cell anchor." % context
 	)
 	var path: Array[Vector2i] = move_controller.get_preview_path()
 	test.expect_false(path.is_empty(), "%s should expose a preview path." % context)
@@ -271,7 +271,7 @@ func _test_user_flow(scene: Node, vehicle_selection, move_controller, grid_selec
 	arm.runtime_state.clear_move_command()
 
 	test.expect_true(grid_selection.update_hover_from_screen_position(target_screen), "Screen hover should update the MoveTo target.")
-	test.expect_equal(grid_selection.selected_cell, target, "Hover should resolve the expected 2x2 anchor.")
+	test.expect_equal(grid_selection.selected_cell, target, "Hover should resolve the expected single-cell anchor.")
 	test.expect_true(move_controller.is_target_preview_valid(), "Reachable hover should show a valid target.")
 	test.expect_true(move_controller.is_path_preview_visible(), "Reachable hover should show a path.")
 	test.expect_true(grid_selection.primary_action_from_screen_position(target_screen), "Left-click-equivalent primary action should submit MoveTo.")

@@ -32,25 +32,25 @@ emission_energy_multiplier = 0.65
 roughness = 0.42
 
 [sub_resource type="BoxMesh" id="ChassisMesh"]
-size = Vector3(1.52, 0.34, 1.48)
+size = Vector3(0.76, 0.34, 0.74)
 
 [sub_resource type="CylinderMesh" id="WheelMesh"]
-top_radius = 0.23
-bottom_radius = 0.23
-height = 0.24
+top_radius = 0.16
+bottom_radius = 0.16
+height = 0.12
 radial_segments = 20
 
 [sub_resource type="BoxMesh" id="TrayMesh"]
-size = Vector3(1.48, 0.18, 1.4)
+size = Vector3(0.74, 0.18, 0.7)
 
 [sub_resource type="BoxMesh" id="RailMesh"]
-size = Vector3(1.54, 0.22, 0.1)
+size = Vector3(0.77, 0.22, 0.06)
 
 [sub_resource type="BoxMesh" id="MarkerMesh"]
-size = Vector3(0.46, 0.12, 0.22)
+size = Vector3(0.23, 0.12, 0.11)
 
 [sub_resource type="BoxShape3D" id="SelectionShape"]
-size = Vector3(1.82, 1.15, 1.82)
+size = Vector3(0.91, 1.15, 0.91)
 
 [node name="TransportVehicle" type="Node3D"]
 script = ExtResource("1_actor")
@@ -67,25 +67,25 @@ mesh = SubResource("ChassisMesh")
 material_override = SubResource("ChassisMaterial")
 
 [node name="WheelFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(-0.72, 0.22, -0.62)
+position = Vector3(-0.36, 0.22, -0.31)
 rotation = Vector3(0, 0, 1.5708)
 mesh = SubResource("WheelMesh")
 material_override = SubResource("WheelMaterial")
 
 [node name="WheelFrontRight" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(0.72, 0.22, -0.62)
+position = Vector3(0.36, 0.22, -0.31)
 rotation = Vector3(0, 0, 1.5708)
 mesh = SubResource("WheelMesh")
 material_override = SubResource("WheelMaterial")
 
 [node name="WheelRearLeft" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(-0.72, 0.22, 0.62)
+position = Vector3(-0.36, 0.22, 0.31)
 rotation = Vector3(0, 0, 1.5708)
 mesh = SubResource("WheelMesh")
 material_override = SubResource("WheelMaterial")
 
 [node name="WheelRearRight" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(0.72, 0.22, 0.62)
+position = Vector3(0.36, 0.22, 0.31)
 rotation = Vector3(0, 0, 1.5708)
 mesh = SubResource("WheelMesh")
 material_override = SubResource("WheelMaterial")
@@ -96,12 +96,12 @@ mesh = SubResource("TrayMesh")
 material_override = SubResource("TrayMaterial")
 
 [node name="TrayRailLeft" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(0, 0.81, -0.66)
+position = Vector3(0, 0.81, -0.33)
 mesh = SubResource("RailMesh")
 material_override = SubResource("RailMaterial")
 
 [node name="TrayRailRight" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(0, 0.81, 0.66)
+position = Vector3(0, 0.81, 0.33)
 mesh = SubResource("RailMesh")
 material_override = SubResource("RailMaterial")
 
@@ -110,43 +110,43 @@ unique_name_in_owner = true
 
 [node name="Slot01" parent="VisualRoot/TraySlots" instance=ExtResource("2_block")]
 visible = false
-position = Vector3(-0.45, 0.7, -0.25)
-scale = Vector3(0.62, 0.62, 0.62)
+position = Vector3(-0.225, 0.7, -0.125)
+scale = Vector3(0.31, 0.31, 0.31)
 
 [node name="Slot02" parent="VisualRoot/TraySlots" instance=ExtResource("2_block")]
 visible = false
-position = Vector3(-0.15, 0.7, -0.25)
-scale = Vector3(0.62, 0.62, 0.62)
+position = Vector3(-0.075, 0.7, -0.125)
+scale = Vector3(0.31, 0.31, 0.31)
 
 [node name="Slot03" parent="VisualRoot/TraySlots" instance=ExtResource("2_block")]
 visible = false
-position = Vector3(0.15, 0.7, -0.25)
-scale = Vector3(0.62, 0.62, 0.62)
+position = Vector3(0.075, 0.7, -0.125)
+scale = Vector3(0.31, 0.31, 0.31)
 
 [node name="Slot04" parent="VisualRoot/TraySlots" instance=ExtResource("2_block")]
 visible = false
-position = Vector3(0.45, 0.7, -0.25)
-scale = Vector3(0.62, 0.62, 0.62)
+position = Vector3(0.225, 0.7, -0.125)
+scale = Vector3(0.31, 0.31, 0.31)
 
 [node name="Slot05" parent="VisualRoot/TraySlots" instance=ExtResource("2_block")]
 visible = false
-position = Vector3(-0.45, 0.7, 0.25)
-scale = Vector3(0.62, 0.62, 0.62)
+position = Vector3(-0.225, 0.7, 0.125)
+scale = Vector3(0.31, 0.31, 0.31)
 
 [node name="Slot06" parent="VisualRoot/TraySlots" instance=ExtResource("2_block")]
 visible = false
-position = Vector3(-0.15, 0.7, 0.25)
-scale = Vector3(0.62, 0.62, 0.62)
+position = Vector3(-0.075, 0.7, 0.125)
+scale = Vector3(0.31, 0.31, 0.31)
 
 [node name="Slot07" parent="VisualRoot/TraySlots" instance=ExtResource("2_block")]
 visible = false
-position = Vector3(0.15, 0.7, 0.25)
-scale = Vector3(0.62, 0.62, 0.62)
+position = Vector3(0.075, 0.7, 0.125)
+scale = Vector3(0.31, 0.31, 0.31)
 
 [node name="Slot08" parent="VisualRoot/TraySlots" instance=ExtResource("2_block")]
 visible = false
-position = Vector3(0.45, 0.7, 0.25)
-scale = Vector3(0.62, 0.62, 0.62)
+position = Vector3(0.225, 0.7, 0.125)
+scale = Vector3(0.31, 0.31, 0.31)
 
 [node name="TrayCountLabel" type="Label3D" parent="VisualRoot"]
 unique_name_in_owner = true
@@ -159,7 +159,7 @@ outline_size = 7
 modulate = Color(0.78, 1, 1, 1)
 
 [node name="DirectionMarker" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(0, 0.57, -0.77)
+position = Vector3(0, 0.57, -0.385)
 mesh = SubResource("MarkerMesh")
 material_override = SubResource("MarkerMaterial")
 

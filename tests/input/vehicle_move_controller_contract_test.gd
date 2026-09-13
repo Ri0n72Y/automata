@@ -539,25 +539,25 @@ func _test_manual_stop(
 
 func _test_continuous_collision_boundaries(move_controller, arm, transport) -> void:
 	_place_vehicle(arm, Vector2i(3, 3))
-	_place_vehicle(transport, Vector2i(6, 3))
+	_place_vehicle(transport, Vector2i(5, 3))
 	test.expect_true(
 		arm.start_move(_command(Vector2i(4, 3), [Vector2i(3, 3), Vector2i(4, 3)])),
-		"Head-on arm task should start."
+		"Converging arm task should start."
 	)
 	test.expect_true(
-		transport.start_move(_command(Vector2i(5, 3), [Vector2i(6, 3), Vector2i(5, 3)])),
-		"Head-on transport task should start."
+		transport.start_move(_command(Vector2i(4, 3), [Vector2i(5, 3), Vector2i(4, 3)])),
+		"Converging transport task should start."
 	)
 	move_controller._physics_process(0.5)
 	test.expect_equal(
 		arm.runtime_state.motion_state,
 		RUNTIME.MotionState.BLOCKED,
-		"Same-frame head-on arm collision should block."
+		"Same-frame convergence should block arm."
 	)
 	test.expect_equal(
 		transport.runtime_state.motion_state,
 		RUNTIME.MotionState.BLOCKED,
-		"Same-frame head-on transport collision should block."
+		"Same-frame convergence should block transport."
 	)
 	test.expect_true(
 		arm.runtime_state.active_move_command == null,
@@ -590,7 +590,7 @@ func _test_continuous_collision_boundaries(move_controller, arm, transport) -> v
 	)
 	test.expect_equal(
 		arm.runtime_state.anchor_cell,
-		Vector2i(2, 1),
+		Vector2i(3, 1),
 		"Large-delta collision should retain the last safe completed anchor."
 	)
 
@@ -614,7 +614,7 @@ func _test_continuous_collision_boundaries(move_controller, arm, transport) -> v
 	)
 	test.expect_equal(
 		arm.runtime_state.anchor_cell,
-		Vector2i(2, 1),
+		Vector2i(3, 1),
 		"Collision safe anchor must be invariant across physics-frame sizes."
 	)
 
@@ -666,7 +666,7 @@ func _test_continuous_collision_boundaries(move_controller, arm, transport) -> v
 	)
 	test.expect_equal(
 		large_transport_safe_anchor,
-		Vector2i(6, 3),
+		Vector2i(5, 3),
 		"Transport should retain its last safe completed node before moving collision."
 	)
 	test.expect_false(
@@ -742,12 +742,15 @@ func _test_continuous_collision_boundaries(move_controller, arm, transport) -> v
 	)
 	test.expect_true(
 		transport.start_move(_command(
-			Vector2i(4, 3),
-			[Vector2i(7, 3), Vector2i(6, 3), Vector2i(5, 3), Vector2i(4, 3)]
+			Vector2i(3, 3),
+			[Vector2i(7, 3), Vector2i(6, 3), Vector2i(5, 3), Vector2i(4, 3), Vector2i(3, 3)]
 		)),
 		"Later transport collision task should start."
 	)
-	move_controller._physics_process(1.0)
+	for _step in range(30):
+		move_controller._physics_process(0.1)
+		if transport.runtime_state.motion_state == RUNTIME.MotionState.BLOCKED:
+			break
 	test.expect_equal(
 		arm.runtime_state.motion_state,
 		RUNTIME.MotionState.WAITING,
@@ -765,12 +768,12 @@ func _test_continuous_collision_boundaries(move_controller, arm, transport) -> v
 	)
 	test.expect_equal(
 		transport.runtime_state.anchor_cell,
-		Vector2i(5, 3),
+		Vector2i(4, 3),
 		"Later collision should retain transport's last safe completed anchor."
 	)
 
 	_place_vehicle(arm, Vector2i(1, 1))
-	_place_vehicle(transport, Vector2i(4, 1))
+	_place_vehicle(transport, Vector2i(3, 1))
 	test.expect_true(
 		arm.start_move(_command(Vector2i(2, 1), [Vector2i(1, 1), Vector2i(2, 1)])),
 		"Edge-contact arm task should start."
@@ -816,13 +819,13 @@ func _test_real_physics_frame_coordination(manager) -> void:
 		test.expect_true(false, "Real physics coordination requires both vehicles.")
 		return
 	_place_vehicle(arm, Vector2i(3, 3))
-	_place_vehicle(transport, Vector2i(6, 3))
+	_place_vehicle(transport, Vector2i(5, 3))
 	test.expect_true(
 		arm.start_move(_command(Vector2i(4, 3), [Vector2i(3, 3), Vector2i(4, 3)])),
 		"Real-frame arm collision task should start."
 	)
 	test.expect_true(
-		transport.start_move(_command(Vector2i(5, 3), [Vector2i(6, 3), Vector2i(5, 3)])),
+		transport.start_move(_command(Vector2i(4, 3), [Vector2i(5, 3), Vector2i(4, 3)])),
 		"Real-frame transport collision task should start."
 	)
 	test.expect_false(
@@ -879,6 +882,33 @@ func _command(target: Vector2i, path: Array[Vector2i]) -> COMMAND:
 	return command
 
 
+func _select_anchor(scene: Node, grid_selection, anchor: Vector2i) -> void:
+	var footprint: Vector2i = grid_selection.get_target_footprint()
+	var world: Vector3 = scene.call("grid_footprint_center_to_world", anchor, footprint)
+	grid_selection.update_hover_from_world_position(world)
+
+
+func _expect_last_rejection(
+	rejected: Array[Dictionary],
+	expected_vehicle_id: StringName,
+	expected_target: Vector2i,
+	expected_reason: StringName,
+	context: String
+) -> void:
+	test.expect_true(not rejected.is_empty(), "%s should emit a rejection." % context)
+	if rejected.is_empty():
+		return
+	test.expect_equal(
+		rejected.back(),
+		{
+			"vehicle_id": expected_vehicle_id,
+			"target": expected_target,
+			"reason": expected_reason,
+		},
+		"%s rejection payload." % context
+	)
+
+
 func _key_event(
 	keycode: int,
 	pressed: bool,
@@ -895,33 +925,3 @@ func _key_event(
 	event.alt_pressed = alted
 	event.meta_pressed = metaed
 	return event
-
-
-func _select_anchor(scene: Node, grid_selection, anchor: Vector2i) -> void:
-	var world_position: Vector3 = scene.call("grid_cell_to_world", anchor)
-	test.expect_true(
-		grid_selection.select_from_world_position(world_position),
-		"Anchor %s should be selectable as a ground position." % str(anchor)
-	)
-	test.expect_equal(
-		grid_selection.selected_cell,
-		anchor,
-		"Anchor %s should remain the selected target." % str(anchor)
-	)
-
-
-func _expect_last_rejection(
-	rejected: Array[Dictionary],
-	expected_vehicle: StringName,
-	expected_target: Vector2i,
-	expected_reason: StringName,
-	context: String
-) -> void:
-	test.expect_false(rejected.is_empty(), "%s should emit a rejection." % context)
-	if rejected.is_empty():
-		return
-	test.expect_equal(
-		rejected.back(),
-		{"vehicle_id": expected_vehicle, "target": expected_target, "reason": expected_reason},
-		"%s rejection payload." % context
-	)

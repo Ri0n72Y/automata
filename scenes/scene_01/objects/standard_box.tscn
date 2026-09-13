@@ -7,7 +7,7 @@
 [sub_resource type="Resource" id="Resource_box"]
 resource_local_to_scene = true
 script = ExtResource("2_resource")
-interaction_cells = Array[Vector2i]([Vector2i(15, 3), Vector2i(15, 4)])
+interaction_cells = Array[Vector2i]([Vector2i(15, 3)])
 capacity = 8
 initial_count = 3
 
@@ -22,13 +22,13 @@ metallic = 0.18
 roughness = 0.58
 
 [sub_resource type="BoxMesh" id="BaseMesh"]
-size = Vector3(1.7, 0.18, 1.3)
+size = Vector3(0.9, 0.18, 0.82)
 
 [sub_resource type="BoxMesh" id="SideWallMesh"]
-size = Vector3(0.14, 0.62, 1.3)
+size = Vector3(0.08, 0.62, 0.82)
 
 [sub_resource type="BoxMesh" id="FrontWallMesh"]
-size = Vector3(1.7, 0.62, 0.14)
+size = Vector3(0.9, 0.62, 0.08)
 
 [node name="StandardBox" type="Node3D"]
 script = ExtResource("1_node")
@@ -44,22 +44,22 @@ mesh = SubResource("BaseMesh")
 material_override = SubResource("CrateMaterial")
 
 [node name="WallLeft" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(-0.78, 0.4, 0)
+position = Vector3(-0.41, 0.4, 0)
 mesh = SubResource("SideWallMesh")
 material_override = SubResource("RimMaterial")
 
 [node name="WallRight" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(0.78, 0.4, 0)
+position = Vector3(0.41, 0.4, 0)
 mesh = SubResource("SideWallMesh")
 material_override = SubResource("RimMaterial")
 
 [node name="WallFront" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(0, 0.4, -0.58)
+position = Vector3(0, 0.4, -0.37)
 mesh = SubResource("FrontWallMesh")
 material_override = SubResource("RimMaterial")
 
 [node name="WallRear" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(0, 0.4, 0.58)
+position = Vector3(0, 0.4, 0.37)
 mesh = SubResource("FrontWallMesh")
 material_override = SubResource("RimMaterial")
 
@@ -67,48 +67,48 @@ material_override = SubResource("RimMaterial")
 unique_name_in_owner = true
 
 [node name="Slot01" parent="VisualRoot/CapacitySlots" instance=ExtResource("3_block")]
-position = Vector3(-0.51, 0.2, -0.25)
-scale = Vector3(0.72, 0.72, 0.72)
+position = Vector3(-0.28, 0.2, -0.18)
+scale = Vector3(0.42, 0.42, 0.42)
 
 [node name="Slot02" parent="VisualRoot/CapacitySlots" instance=ExtResource("3_block")]
-position = Vector3(-0.17, 0.2, -0.25)
-scale = Vector3(0.72, 0.72, 0.72)
+position = Vector3(-0.09, 0.2, -0.18)
+scale = Vector3(0.42, 0.42, 0.42)
 
 [node name="Slot03" parent="VisualRoot/CapacitySlots" instance=ExtResource("3_block")]
-position = Vector3(0.17, 0.2, -0.25)
-scale = Vector3(0.72, 0.72, 0.72)
+position = Vector3(0.09, 0.2, -0.18)
+scale = Vector3(0.42, 0.42, 0.42)
 
 [node name="Slot04" parent="VisualRoot/CapacitySlots" instance=ExtResource("3_block")]
 visible = false
-position = Vector3(0.51, 0.2, -0.25)
-scale = Vector3(0.72, 0.72, 0.72)
+position = Vector3(0.28, 0.2, -0.18)
+scale = Vector3(0.42, 0.42, 0.42)
 
 [node name="Slot05" parent="VisualRoot/CapacitySlots" instance=ExtResource("3_block")]
 visible = false
-position = Vector3(-0.51, 0.2, 0.25)
-scale = Vector3(0.72, 0.72, 0.72)
+position = Vector3(-0.28, 0.2, 0.18)
+scale = Vector3(0.42, 0.42, 0.42)
 
 [node name="Slot06" parent="VisualRoot/CapacitySlots" instance=ExtResource("3_block")]
 visible = false
-position = Vector3(-0.17, 0.2, 0.25)
-scale = Vector3(0.72, 0.72, 0.72)
+position = Vector3(-0.09, 0.2, 0.18)
+scale = Vector3(0.42, 0.42, 0.42)
 
 [node name="Slot07" parent="VisualRoot/CapacitySlots" instance=ExtResource("3_block")]
 visible = false
-position = Vector3(0.17, 0.2, 0.25)
-scale = Vector3(0.72, 0.72, 0.72)
+position = Vector3(0.09, 0.2, 0.18)
+scale = Vector3(0.42, 0.42, 0.42)
 
 [node name="Slot08" parent="VisualRoot/CapacitySlots" instance=ExtResource("3_block")]
 visible = false
-position = Vector3(0.51, 0.2, 0.25)
-scale = Vector3(0.72, 0.72, 0.72)
+position = Vector3(0.28, 0.2, 0.18)
+scale = Vector3(0.42, 0.42, 0.42)
 
 [node name="CapacityLabel" type="Label3D" parent="VisualRoot"]
 unique_name_in_owner = true
-position = Vector3(0, 1.08, 0)
+position = Vector3(0, 1.0, 0)
 billboard = 1
 no_depth_test = true
 text = "3/8  IN"
-font_size = 30
+font_size = 28
 outline_size = 8
 modulate = Color(1, 0.9, 0.58, 1)
