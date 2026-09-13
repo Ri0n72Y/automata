@@ -58,7 +58,7 @@ func _test_model_validation_and_save() -> void:
 		var reloaded := ResourceLoader.load(
 			save_path,
 			"",
-			ResourceLoader.CACHE_MODE_REPLACE
+			ResourceLoader.CACHE_MODE_IGNORE
 		) as Scene01Program
 		_expect_true(reloaded != null, "Reload should return the saved program after unsaved edits.")
 		if reloaded != null:
