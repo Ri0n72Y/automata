@@ -128,13 +128,13 @@ func _test_move_and_stop_preserve_inventory(
 
 func _test_collision_preserves_inventory(move_controller, arm, transport) -> Variant:
 	_place_vehicle(arm, Vector2i(3, 3))
-	_place_vehicle(transport, Vector2i(6, 3))
+	_place_vehicle(transport, Vector2i(5, 3))
 	var block := STANDARD_BLOCK_SCRIPT.create()
 	if not transport.runtime_state.tray_state.put_item(block).is_success():
 		_expect_true(false, "Transport tray should accept collision-test cargo.")
 		return null
 	var arm_command = _command(Vector2i(4, 3), [Vector2i(3, 3), Vector2i(4, 3)])
-	var transport_command = _command(Vector2i(5, 3), [Vector2i(6, 3), Vector2i(5, 3)])
+	var transport_command = _command(Vector2i(4, 3), [Vector2i(5, 3), Vector2i(4, 3)])
 	if arm_command == null or transport_command == null:
 		return block
 	if not arm.start_move(arm_command) or not transport.start_move(transport_command):
