@@ -36,16 +36,16 @@ func _run() -> void:
 	) as VEHICLE_MANAGER_SCRIPT
 	var first_selection = first_scene.get_node_or_null("SceneRoot/GridRoot/VehicleSelectionController")
 	var first_status = first_scene.get_node_or_null(
-		"UIRoot/RootControl/Panel/Margin/VBox/StatusLabel"
+		"HUDRoot/RootControl/StatusPanel/Margin/VBox/FeedbackLabel"
 	) as Label
 	var second_status = second_scene.get_node_or_null(
-		"UIRoot/RootControl/Panel/Margin/VBox/StatusLabel"
+		"HUDRoot/RootControl/StatusPanel/Margin/VBox/FeedbackLabel"
 	) as Label
 
 	_expect_true(first_manager != null and second_manager != null, "Both Scene01 instances need object managers.")
 	_expect_true(first_grab_drop != null and second_grab_drop != null, "Both Scene01 instances need GrabDrop controllers.")
 	_expect_true(first_vehicle_manager != null and first_selection != null, "First Scene01 needs vehicle interaction nodes.")
-	_expect_true(first_status != null and second_status != null, "Both Scene01 instances need status labels.")
+	_expect_true(first_status != null and second_status != null, "Both Scene01 instances need HUD feedback labels.")
 	if (
 		first_manager == null
 		or second_manager == null
@@ -196,8 +196,8 @@ func _test_feedback_is_instance_local(controller, selection, vehicle_manager, fi
 	var second_before := second_status.text
 	var result = controller.request_selected_grab_drop()
 	_expect_true(result.is_success(), "First Scene01 Grab should succeed for feedback isolation.")
-	_expect_equal(first_status.text, "抓取成功", "First Scene01 player UI should receive localized controller feedback.")
-	_expect_equal(second_status.text, second_before, "Second Scene01 UI must not receive first controller feedback.")
+	_expect_true(first_status.text.find("抓取成功") >= 0, "First Scene01 HUD should receive localized controller feedback.")
+	_expect_equal(second_status.text, second_before, "Second Scene01 HUD must not receive first controller feedback.")
 
 
 func _finish_scenes(first_scene: Node, second_scene: Node) -> void:

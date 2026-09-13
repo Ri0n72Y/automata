@@ -71,7 +71,6 @@ func _test_debug_ui_contract(scene: Node) -> void:
 	var guide_body_paths := [
 		"UIRoot/RootControl/Panel/Margin/VBox/Instructions",
 		"UIRoot/RootControl/Panel/Margin/VBox/ScopeNote",
-		"UIRoot/RootControl/Panel/Margin/VBox/StatusLabel",
 	]
 	var debug_body_paths := [
 		"DebugUIRoot/RootControl/Panel/Margin/VBox/CoordinatesRow",
