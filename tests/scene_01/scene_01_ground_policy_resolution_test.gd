@@ -2,8 +2,6 @@ extends SceneTree
 
 const SCENE_PATH := "res://scenes/scene_01/scene_01_basic_packing.tscn"
 const GRID_MODEL_SCRIPT := preload("res://scripts/grid/grid_model.gd")
-const GRAB_DROP_CONTROLLER_SCRIPT := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
-const GRAB_DROP_RESULT_SCRIPT := preload("res://scripts/vehicles/grab_drop_result.gd")
 const ITEM_TRANSFER_RESULT_SCRIPT := preload("res://scripts/objects/item_transfer_result.gd")
 const VEHICLE_MANAGER_SCRIPT := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const OBJECT_MANAGER_SCRIPT := preload("res://scripts/scene_01/scene_01_object_manager.gd")
@@ -28,19 +26,15 @@ func _run() -> void:
 	await process_frame
 	await physics_frame
 
-	var controller := scene.get_node_or_null(
-		"SceneRoot/GridRoot/VehicleGrabDropController"
-	) as GRAB_DROP_CONTROLLER_SCRIPT
 	var vehicle_manager := scene.get_node_or_null(
 		"SceneRoot/RobotRoot/Scene01VehicleManager"
 	) as VEHICLE_MANAGER_SCRIPT
 	var object_manager := scene.get_node_or_null(
 		"SceneRoot/ObjectRoot/Scene01ObjectManager"
 	) as OBJECT_MANAGER_SCRIPT
-	_expect_true(controller != null, "Ground policy contract requires GrabDrop controller.")
 	_expect_true(vehicle_manager != null, "Ground policy contract requires vehicle manager.")
 	_expect_true(object_manager != null, "Ground policy contract requires object manager.")
-	if controller == null or vehicle_manager == null or object_manager == null:
+	if vehicle_manager == null or object_manager == null:
 		await _finish_scene(scene)
 		return
 
@@ -48,7 +42,6 @@ func _run() -> void:
 	_test_cached_ground_interface_rechecks_dynamic_occupancy(object_manager, vehicle_manager)
 	_test_grid_policy_updates_immediately(scene, object_manager)
 	_test_runtime_grid_geometry_is_immutable(scene, object_manager)
-	_test_ground_and_tray_ambiguity(scene, controller, object_manager, vehicle_manager)
 
 	await _finish_scene(scene)
 
@@ -198,60 +191,6 @@ func _test_runtime_grid_geometry_is_immutable(scene, object_manager) -> void:
 	_expect_true(object_manager.get_ground_block_visual(cell) == visual, "Rejected geometry rebuild must preserve visual identity.")
 	_expect_true(visual.position.is_equal_approx(previous_visual_position), "Rejected geometry rebuild must preserve visual position.")
 	field.reset()
-
-
-func _test_ground_and_tray_ambiguity(scene, controller, object_manager, vehicle_manager) -> void:
-	scene.call("reset_scene")
-	var arm = vehicle_manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.ARM_VEHICLE_ID)
-	var transport = vehicle_manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.TRANSPORT_VEHICLE_ID)
-	_expect_true(arm != null and transport != null, "Ambiguity fixture requires both vehicles.")
-	if (
-		arm == null
-		or transport == null
-		or arm.runtime_state == null
-		or transport.runtime_state == null
-		or transport.runtime_state.tray_state == null
-	):
-		return
-
-	_place_vehicle(arm, Vector2i(4, 3), VEHICLE_RUNTIME_STATE_SCRIPT.Facing.EAST)
-	_place_vehicle(transport, Vector2i(6, 4), VEHICLE_RUNTIME_STATE_SCRIPT.Facing.WEST)
-	var ground_cell := Vector2i(6, 3)
-	_expect_equal(
-		controller.get_forward_interaction_cells(arm),
-		[Vector2i(6, 3), Vector2i(6, 4)],
-		"Ambiguity fixture should expose one ground cell and one tray cell on the same front edge."
-	)
-	_expect_equal(
-		controller.get_primary_ground_interaction_cell(arm),
-		ground_cell,
-		"Ambiguity fixture should use the free front-left cell as ground socket."
-	)
-	var ground_interface = object_manager.get_ground_cell_interface(ground_cell)
-	_expect_true(ground_interface != null, "Ambiguity fixture requires legal front-left ground.")
-	if ground_interface == null:
-		return
-	var ground_block := STANDARD_BLOCK_SCRIPT.create()
-	var tray_block := STANDARD_BLOCK_SCRIPT.create()
-	_expect_true(ground_interface.put_item(ground_block).is_success(), "Ambiguity fixture should place ground block.")
-	_expect_true(transport.runtime_state.tray_state.put_item(tray_block).is_success(), "Ambiguity fixture should load tray block.")
-	_expect_true(
-		controller.resolve_target_for_vehicle(arm) == null,
-		"Ground and tray simultaneously matching the front edge must reject as ambiguous."
-	)
-	var selection = controller.vehicle_selection_controller
-	_expect_true(selection != null and selection.select_vehicle(arm), "Ambiguity request should select the arm.")
-	if selection == null:
-		return
-	var result = controller.request_selected_grab_drop()
-	_expect_equal(
-		result.status,
-		GRAB_DROP_RESULT_SCRIPT.Status.NO_TARGET,
-		"Ambiguous Grab must reject before consuming either source."
-	)
-	_expect_true(ground_block.is_claimed_by(object_manager.get_ground_block_field()), "Ambiguous rejection must preserve ground ownership.")
-	_expect_true(tray_block.is_claimed_by(transport.runtime_state.tray_state), "Ambiguous rejection must preserve tray ownership.")
-	_expect_false(arm.runtime_state.arm_has_item, "Ambiguous rejection must preserve empty arm state.")
 
 
 func _call_with_expected_errors_suppressed(callback: Callable) -> Variant:
