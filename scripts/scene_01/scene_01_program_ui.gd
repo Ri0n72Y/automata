@@ -4,7 +4,9 @@ extends CanvasLayer
 const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
 const RunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
 const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
-const CompileGateScript := preload("res://scripts/scene_01/scene_01_assembly_compile_gate.gd")
+const AssemblyDefinitionAdapterScript := preload("res://scripts/scene_01/scene_01_assembly_definition_adapter.gd")
+const AssemblyCompilerScript := preload("res://scripts/assembly/assembly_compiler.gd")
+const AssemblyCompileRequestScript := preload("res://scripts/assembly/assembly_compile_request.gd")
 const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
 const AssemblyCapabilitiesScript := preload("res://scripts/assembly/assembly_capabilities.gd")
 
@@ -29,7 +31,6 @@ const SAVE_PATH := "user://scene_01_program.tres"
 
 var _runner: RunnerScript
 var _vehicle_manager: VehicleManagerScript
-var _compile_gate: CompileGateScript
 var _program: Scene01Program
 
 
@@ -38,7 +39,6 @@ func _ready() -> void:
 	_vehicle_manager = get_parent().get_node(
 		"SceneRoot/RobotRoot/Scene01VehicleManager"
 	) as VehicleManagerScript
-	_compile_gate = get_parent().get_node("SceneRoot/Scene01AssemblyCompileGate") as CompileGateScript
 	_program = ProgramScript.new()
 	_program.reset()
 	_bind_ui()
@@ -154,7 +154,7 @@ func _on_load() -> void:
 	if not ResourceLoader.exists(SAVE_PATH):
 		_status_label.text = "没有已保存程序"
 		return
-	var loaded := ResourceLoader.load(SAVE_PATH, "", ResourceLoader.CACHE_MODE_REPLACE) as Scene01Program
+	var loaded := ResourceLoader.load(SAVE_PATH, "", ResourceLoader.CACHE_MODE_IGNORE) as Scene01Program
 	if loaded == null:
 		_status_label.text = "程序读取失败"
 		return
@@ -258,15 +258,16 @@ func _select_list_node(node_id: int) -> void:
 func _refresh_capability_buttons() -> void:
 	var can_move := false
 	var can_grab_drop := false
-	if _compile_gate.prepare_scene_run():
-		can_move = _compile_gate.has_vehicle_capability(
-			_program.vehicle_id,
-			AssemblyCapabilitiesScript.CAN_MOVE
-		)
-		can_grab_drop = _compile_gate.has_vehicle_capability(
-			_program.vehicle_id,
-			AssemblyCapabilitiesScript.GRAB_DROP
-		)
+	var vehicle := _vehicle_manager.get_vehicle_by_id(_program.vehicle_id)
+	if vehicle != null:
+		var definition = AssemblyDefinitionAdapterScript.new().build_definition(vehicle)
+		if definition != null:
+			var compile_result = AssemblyCompilerScript.new().compile(
+				AssemblyCompileRequestScript.new(definition)
+			)
+			if compile_result.is_success():
+				can_move = compile_result.has_capability(AssemblyCapabilitiesScript.CAN_MOVE)
+				can_grab_drop = compile_result.has_capability(AssemblyCapabilitiesScript.GRAB_DROP)
 	_add_move_button.disabled = not can_move
 	_add_grab_button.disabled = not can_grab_drop
 
