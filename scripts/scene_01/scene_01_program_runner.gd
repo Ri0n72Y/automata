@@ -70,8 +70,6 @@ func start_program(program: Scene01Program) -> bool:
 		return _fail_start(&"program_vehicle_missing")
 	if not _validate_move_targets():
 		return false
-	if not _selection_controller.select_vehicle(_vehicle):
-		return _fail_start(&"program_vehicle_selection_failed")
 
 	var required: Array[StringName] = _validator.required_capabilities(_program)
 	_compile_gate.set_required_capabilities(_program.vehicle_id, required)
@@ -81,6 +79,9 @@ func start_program(program: Scene01Program) -> bool:
 	for capability in required:
 		if not _compile_gate.has_vehicle_capability(_program.vehicle_id, capability):
 			return _fail_start(&"program_capability_rejected")
+
+	if not _selection_controller.select_vehicle(_vehicle):
+		return _fail_start(&"program_vehicle_selection_failed")
 	if not _scene_controller.ensure_gameplay_running():
 		return _fail_start(&"lifecycle_start_rejected")
 
