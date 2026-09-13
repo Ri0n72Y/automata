@@ -120,11 +120,11 @@ func _command_availability_text(motion_state: int, selected_id: StringName) -> S
 		motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
 		or motion_state == VehicleRuntimeStateScript.MotionState.MOVING
 	)
-	var can_move := (
+	var can_move: bool = (
 		definition != null
 		and definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_MOVE)
 	)
-	var can_grab := (
+	var can_grab: bool = (
 		definition != null
 		and definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_GRAB)
 	)
