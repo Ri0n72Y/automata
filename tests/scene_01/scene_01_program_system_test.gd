@@ -25,11 +25,25 @@ func _test_model_validation_and_save() -> void:
 	_expect_true(validator.validate(program, Vector2i(16, 10)).is_empty(), "Valid basic program should pass graph validation.")
 	_expect_equal(validator.required_capabilities(program).size(), 2, "MoveTo + GrabDrop should require exactly two assembly capabilities.")
 
-	var invalid := program.duplicate_program()
-	var repeat_id := invalid.get_tail_node_id()
-	invalid.set_repeat(repeat_id, 0, 2)
-	var diagnostics := validator.validate(invalid, Vector2i(16, 10))
+	var invalid_repeat_count := program.duplicate_program()
+	var repeat_id := invalid_repeat_count.get_tail_node_id()
+	invalid_repeat_count.set_repeat(repeat_id, 0, 2)
+	var diagnostics := validator.validate(invalid_repeat_count, Vector2i(16, 10))
 	_expect_true(_has_diagnostic(diagnostics, &"invalid_repeat_count"), "Repeat 0 should be rejected before runtime.")
+
+	var invalid_repeat_target := program.duplicate_program()
+	repeat_id = invalid_repeat_target.get_tail_node_id()
+	invalid_repeat_target.set_repeat(repeat_id, 5, invalid_repeat_target.start_node_id)
+	diagnostics = validator.validate(invalid_repeat_target, Vector2i(16, 10))
+	_expect_true(_has_diagnostic(diagnostics, &"invalid_repeat_target"), "Repeat should reject Start as a loop target.")
+
+	var invalid_cycle := program.duplicate_program()
+	var first_node := invalid_cycle.get_node_data(invalid_cycle.start_node_id)
+	var first_executable_id := int(first_node.get("next_id", ProgramScript.NO_NODE_ID))
+	repeat_id = invalid_cycle.get_tail_node_id()
+	invalid_cycle.connect_nodes(repeat_id, first_executable_id)
+	diagnostics = validator.validate(invalid_cycle, Vector2i(16, 10))
+	_expect_true(_has_diagnostic(diagnostics, &"next_cycle"), "Ordinary next links must not create a cycle.")
 
 	var save_path := "user://scene_01_program_system_test.tres"
 	_expect_equal(ResourceSaver.save(program, save_path), OK, "Program resource should save without UI dependencies.")
