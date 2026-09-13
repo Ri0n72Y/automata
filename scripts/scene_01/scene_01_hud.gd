@@ -100,8 +100,13 @@ func _command_availability_text(motion_state: int, has_selection: bool) -> Strin
 	if not has_selection:
 		return "命令：M 移动 —   X 停止 —   C 抓放 —"
 	var paused := _is_paused()
+	var busy := (
+		motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
+		or motion_state == VehicleRuntimeStateScript.MotionState.MOVING
+	)
 	var move_available := (
 		not paused
+		and not busy
 		and _grid_selection != null
 		and _grid_selection.has_method("is_live_target_available")
 		and bool(_grid_selection.call("is_live_target_available"))
@@ -113,6 +118,7 @@ func _command_availability_text(motion_state: int, has_selection: bool) -> Strin
 	var stop_available := not paused and motion_state == VehicleRuntimeStateScript.MotionState.MOVING
 	var grab_available := (
 		not paused
+		and not busy
 		and _grab_drop_controller != null
 		and _grab_drop_controller.has_method("is_interaction_preview_valid")
 		and bool(_grab_drop_controller.call("is_interaction_preview_valid"))
@@ -282,7 +288,7 @@ func _connect_once(source: Object, signal_name: StringName, callable: Callable) 
 		source.connect(signal_name, callable)
 
 
-func _scene_node(path: NodePath) -> Node:
+func _scene_node(path: String) -> Node:
 	if _scene_controller == null:
 		return null
-	return _scene_controller.get_node_or_null(path)
+	return _scene_controller.get_node_or_null(NodePath(path))
