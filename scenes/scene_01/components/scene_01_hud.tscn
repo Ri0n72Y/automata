@@ -1,0 +1,136 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_hud.gd" id="1_hud"]
+[ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
+
+[node name="HUDRoot" type="CanvasLayer"]
+layer = 5
+script = ExtResource("1_hud")
+
+[node name="RootControl" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("2_theme")
+
+[node name="StatusPanel" type="PanelContainer" parent="RootControl"]
+layout_mode = 0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -214.0
+offset_right = 438.0
+offset_bottom = -16.0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="RootControl/StatusPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="RootControl/StatusPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Header" type="HBoxContainer" parent="RootControl/StatusPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="RootControl/StatusPanel/Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SCENE 01 · 状态"
+theme_override_font_sizes/font_size = 18
+
+[node name="PauseLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox/Header"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "PAUSED"
+modulate = Color(1, 0.72, 0.28, 1)
+
+[node name="SelectedLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "选中：未选择"
+
+[node name="VehicleStateLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "状态：—"
+
+[node name="InventoryLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "机械臂：—   托盘：—   标准箱：—"
+
+[node name="MissionLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "任务：初始化中"
+
+[node name="CommandsLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "命令：M 移动 —   X 停止 —   C 抓放 —"
+modulate = Color(0.72, 0.82, 0.94, 1)
+
+[node name="FeedbackLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "选择车辆后使用 M / X / C"
+autowrap_mode = 2
+modulate = Color(0.55, 0.88, 0.72, 1)
+
+[node name="CompletionPanel" type="PanelContainer" parent="RootControl"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -82.0
+offset_right = 230.0
+offset_bottom = 82.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="RootControl/CompletionPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 18
+
+[node name="VBox" type="VBoxContainer" parent="RootControl/CompletionPanel/Margin"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 8
+
+[node name="CompletionTitle" type="Label" parent="RootControl/CompletionPanel/Margin/VBox"]
+layout_mode = 2
+text = "MISSION COMPLETED"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 28
+modulate = Color(0.55, 0.95, 0.7, 1)
+
+[node name="CompletionSummaryLabel" type="Label" parent="RootControl/CompletionPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "标准箱 8/8 · 任务已完成"
+horizontal_alignment = 1
+
+[node name="ScorePlaceholder" type="Label" parent="RootControl/CompletionPanel/Margin/VBox"]
+layout_mode = 2
+text = "计时 / 成本 / 自动化率将在评分阶段显示"
+horizontal_alignment = 1
+modulate = Color(0.68, 0.74, 0.82, 1)
