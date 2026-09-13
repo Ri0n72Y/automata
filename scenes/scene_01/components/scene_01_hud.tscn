@@ -131,6 +131,6 @@ horizontal_alignment = 1
 
 [node name="ScorePlaceholder" type="Label" parent="RootControl/CompletionPanel/Margin/VBox"]
 layout_mode = 2
-text = "计时 / 成本 / 自动化率将在评分阶段显示"
+text = "时间 —   成本 —   自动化率 —"
 horizontal_alignment = 1
 modulate = Color(0.68, 0.74, 0.82, 1)
