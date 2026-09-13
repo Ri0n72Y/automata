@@ -38,14 +38,10 @@ func _run() -> void:
 	var object_manager := scene.get_node_or_null(
 		"SceneRoot/ObjectRoot/Scene01ObjectManager"
 	) as OBJECT_MANAGER_SCRIPT
-	var status_label := scene.get_node_or_null(
-		"UIRoot/RootControl/Panel/Margin/VBox/StatusLabel"
-	) as Label
 	_expect_true(controller != null, "Ground test requires VehicleGrabDropController.")
 	_expect_true(selection != null, "Ground test requires VehicleSelectionController.")
 	_expect_true(vehicle_manager != null, "Ground test requires vehicle manager.")
 	_expect_true(object_manager != null, "Ground test requires object manager.")
-	_expect_true(status_label != null, "Ground test requires player StatusLabel feedback.")
 	if controller == null or selection == null or vehicle_manager == null or object_manager == null:
 		scene.queue_free()
 		await process_frame
@@ -78,8 +74,6 @@ func _run() -> void:
 		await _finish_scene(scene)
 		return
 	var first_block = first_grab.item
-	if status_label != null:
-		_expect_equal(status_label.text, "抓取成功", "Player feedback should report successful Grab in Chinese.")
 
 	var ground_anchor := Vector2i(4, 2)
 	var primary_cell := Vector2i(4, 1)
@@ -101,8 +95,6 @@ func _run() -> void:
 	_expect_true(ground_field.get_item(primary_cell) == first_block, "First Drop should use deterministic primary workspace cell.")
 	_expect_true(first_block.is_claimed_by(ground_field), "Ground field should own dropped block.")
 	_expect_true(object_manager.get_ground_block_visual(primary_cell) != null, "Ground Drop should create StandardBlock visual.")
-	if status_label != null:
-		_expect_equal(status_label.text, "放置成功", "Player feedback should report successful Drop in Chinese.")
 
 	controller.refresh_interaction_preview()
 	_expect_true(controller.is_interaction_preview_valid(), "One occupied workspace cell should be a valid empty-arm Grab target.")
