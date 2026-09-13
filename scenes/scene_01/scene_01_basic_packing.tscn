@@ -123,7 +123,6 @@ unique_name_in_owner = true
 [node name="UIRoot" parent="." instance=ExtResource("9_manual_ui")]
 unique_name_in_owner = true
 scene_controller_path = NodePath("..")
-grab_drop_controller_path = NodePath("../SceneRoot/GridRoot/VehicleGrabDropController")
 
 [node name="LifecycleUIRoot" parent="." instance=ExtResource("21_lifecycle_ui")]
 unique_name_in_owner = true
