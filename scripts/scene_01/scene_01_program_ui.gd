@@ -42,6 +42,10 @@ func _ready() -> void:
 	_program.reset()
 	_bind_ui()
 	_bind_runner()
+	call_deferred("_initialize_editor")
+
+
+func _initialize_editor() -> void:
 	_populate_vehicles()
 	_refresh_program_view()
 	_refresh_capability_buttons()
