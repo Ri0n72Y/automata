@@ -147,8 +147,8 @@ func _run() -> void:
 		grab_drop_controller.refresh_interaction_preview()
 		_expect_equal(
 			grab_drop_controller.get_interaction_preview_cells(),
-			[Vector2i(4, 1), Vector2i(5, 1)],
-			"Viewport flow should expose both front workspace cells."
+			[ground_cell],
+			"Viewport flow should expose the single front workspace cell."
 		)
 		await _push_key(KEY_C)
 		_expect_false(arm.runtime_state.arm_has_item, "Viewport C should Drop carried block to legal ground.")
