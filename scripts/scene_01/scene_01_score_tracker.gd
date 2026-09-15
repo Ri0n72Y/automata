@@ -137,7 +137,7 @@ func _end_program_runtime() -> void:
 	var vehicle_id := _program_vehicle_id
 	_stop_automated(now)
 	_program_vehicle_id = &""
-	if _scene_controller.is_gameplay_running() and _manual_moving.has(vehicle_id):
+	if not _finalized and _scene_controller.is_gameplay_running() and _manual_moving.has(vehicle_id):
 		_start_manual(vehicle_id, now)
 func _start_active_segments(now: float) -> void:
 	if _finalized:
