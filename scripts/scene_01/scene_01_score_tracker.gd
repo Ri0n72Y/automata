@@ -100,7 +100,6 @@ func _capture_cost() -> void:
 			continue
 		var result = _compile_gate.get_compile_result(vehicle.get_vehicle_id())
 		if result == null or not result.is_success():
-			push_error("Scene 01 scoring requires compiled metrics for every vehicle.")
 			return
 		total += result.get_metrics().get_cost()
 	_total_cost = total
