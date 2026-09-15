@@ -1,6 +1,7 @@
 extends Node
 
 const ScoreTrackerScript := preload("res://scripts/scene_01/scene_01_score_tracker.gd")
+
 var _score_tracker: ScoreTrackerScript
 var _score_label: Label
 
