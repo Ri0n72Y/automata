@@ -61,10 +61,15 @@ func _run() -> void:
 	program.reset()
 	program.vehicle_id = VehicleManagerScript.ARM_VEHICLE_ID
 	test.expect_true(runner.start_program(program), "Start-only program should enter automated runtime.")
+	test.expect_true(move.request_selected_vehicle_move(Vector2i(4, 2)), "Player takeover should remain available while Program runs.")
+	scene.timer = 4.0
+	test.expect_true(move.request_selected_vehicle_stop(), "Player takeover should stop through the shared controller.")
+	test.expect_float_approx(score.get_manual_runtime(), 4.0, "Same-vehicle takeover must count as manual runtime.")
+	test.expect_float_approx(score.get_automated_runtime(), 0.0, "Takeover time must not count as automated runtime.")
 	scene.timer = 5.0
 	scene.call("pause_scene")
-	test.expect_float_approx(score.get_automated_runtime(), 3.0, "Pause should close automated runtime at Mission time.")
-	test.expect_float_approx(score.get_automation_rate(), 0.6, "Automation should be runtime-based, not action-based.")
+	test.expect_float_approx(score.get_automated_runtime(), 1.0, "Automation should resume after takeover ends.")
+	test.expect_float_approx(score.get_automation_rate(), 0.2, "Takeover should reduce runtime-based automation ratio.")
 	scene.call("resume_scene")
 
 	while box.get_current_count() < box.get_capacity() - 1:
@@ -76,13 +81,13 @@ func _run() -> void:
 	var final_drop = grab_drop.request_selected_grab_drop()
 	test.expect_true(final_drop != null and final_drop.is_success(), "Real final Drop should complete Mission.")
 	test.expect_float_approx(score.get_elapsed_time(), 7.0, "Completion time should be Mission frozen time.")
-	test.expect_float_approx(score.get_manual_runtime(), 2.0, "Manual runtime should freeze at completion.")
-	test.expect_float_approx(score.get_automated_runtime(), 5.0, "Automated runtime should freeze at completion.")
-	var final_rate := 5.0 / 7.0
+	test.expect_float_approx(score.get_manual_runtime(), 4.0, "Manual runtime should freeze at completion.")
+	test.expect_float_approx(score.get_automated_runtime(), 3.0, "Automated runtime should freeze at completion.")
+	var final_rate := 3.0 / 7.0
 	test.expect_float_approx(score.get_automation_rate(), final_rate, "Completion should freeze runtime automation ratio.")
 	test.expect_true(score_label.text.contains("时间 7.0s"), "Result panel should display completion time.")
 	test.expect_true(score_label.text.contains("组件 %d" % expected_components), "Result panel should display component count.")
-	test.expect_true(score_label.text.contains("自动化率 71%"), "Result panel should display runtime automation ratio.")
+	test.expect_true(score_label.text.contains("自动化率 43%"), "Result panel should display runtime automation ratio.")
 
 	await process_frame
 	await process_frame
@@ -91,7 +96,7 @@ func _run() -> void:
 	test.expect_true(move.request_selected_vehicle_move(Vector2i(8, 4)), "Post-completion MoveTo should still be a real command.")
 	scene.timer = 20.0
 	test.expect_true(move.request_selected_vehicle_stop(), "Post-completion MoveTo should be stoppable.")
-	test.expect_float_approx(score.get_manual_runtime(), 2.0, "Post-completion commands must not mutate final score.")
+	test.expect_float_approx(score.get_manual_runtime(), 4.0, "Post-completion commands must not mutate final score.")
 	test.expect_float_approx(score.get_automation_rate(), final_rate, "Final automation ratio must remain frozen.")
 
 	test.expect_true(bool(scene.call("reset_scene")), "Scene Reset should succeed.")
@@ -99,6 +104,19 @@ func _run() -> void:
 	test.expect_float_approx(score.get_manual_runtime(), 0.0, "Reset should clear manual runtime.")
 	test.expect_float_approx(score.get_automated_runtime(), 0.0, "Reset should clear automated runtime.")
 	test.expect_float_approx(score.get_elapsed_time(), 0.0, "Reset should expose Mission time zero.")
+
+	scene.call("run_scene")
+	var move_program := ProgramScript.new()
+	move_program.reset()
+	move_program.vehicle_id = VehicleManagerScript.ARM_VEHICLE_ID
+	var program_move_id := move_program.append_node(ProgramScript.NodeType.MOVE_TO)
+	test.expect_true(move_program.set_move_target(program_move_id, arm.runtime_state.anchor_cell), "Program MoveTo fixture should configure.")
+	test.expect_true(runner.start_program(move_program), "Program MoveTo should start after Reset.")
+	await process_frame
+	await process_frame
+	await process_frame
+	test.expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Zero-distance Program MoveTo should complete.")
+	test.expect_float_approx(score.get_manual_runtime(), 0.0, "Program-owned MoveTo must not be counted as manual takeover.")
 
 	scene.queue_free()
 	await process_frame
