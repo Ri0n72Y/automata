@@ -37,7 +37,7 @@ var _state: int = STATE_IDLE
 var _current_node_id: int = ProgramScript.NO_NODE_ID
 var _waiting_for_move: bool = false
 var _repeat_remaining: Dictionary = {}
-var _requirements_vehicle_id: StringName = &""
+var _requirements_vehicle_ids: Array[StringName] = []
 var _last_error: StringName = &""
 
 
@@ -65,27 +65,18 @@ func start_program(program: Scene01Program) -> bool:
 			int(diagnostics[0].get("node_id", ProgramScript.NO_NODE_ID))
 		)
 
-	_vehicle = _vehicle_manager.get_vehicle_by_id(_program.vehicle_id)
-	if _vehicle == null or _vehicle.definition == null or _vehicle.runtime_state == null:
-		return _fail_start(&"program_vehicle_missing")
+	if not _configure_program_requirements():
+		return false
 	if not _validate_move_targets():
 		return false
-
-	var required: Array[StringName] = _validator.required_capabilities(_program)
-	_compile_gate.set_required_capabilities(_program.vehicle_id, required)
-	_requirements_vehicle_id = _program.vehicle_id
 	if not _compile_gate.prepare_scene_run():
 		return _fail_start(&"program_capability_rejected")
-	for capability in required:
-		if not _compile_gate.has_vehicle_capability(_program.vehicle_id, capability):
-			return _fail_start(&"program_capability_rejected")
 
-	if not _selection_controller.select_vehicle(_vehicle):
-		return _fail_start(&"program_vehicle_selection_failed")
+	if not _switch_vehicle(_program.vehicle_id):
+		return _fail_start(&"program_vehicle_missing")
 	if not _scene_controller.ensure_gameplay_running():
 		return _fail_start(&"lifecycle_start_rejected")
 
-	_bind_vehicle(_vehicle)
 	_state = STATE_RUNNING
 	_current_node_id = _program.start_node_id
 	_last_error = &""
@@ -128,6 +119,8 @@ func _execute_current_node() -> void:
 	match node_type:
 		ProgramScript.NodeType.START:
 			_advance(int(node.get("next_id", ProgramScript.NO_NODE_ID)))
+		ProgramScript.NodeType.SELECT_VEHICLE:
+			_execute_select_vehicle(node)
 		ProgramScript.NodeType.MOVE_TO:
 			_execute_move(node)
 		ProgramScript.NodeType.GRAB_DROP:
@@ -136,6 +129,15 @@ func _execute_current_node() -> void:
 			_execute_repeat(node)
 		_:
 			_fail_execution(node_id, &"invalid_runtime_node")
+
+
+func _execute_select_vehicle(node: Dictionary) -> void:
+	var node_id := int(node.get("id", ProgramScript.NO_NODE_ID))
+	var vehicle_id := StringName(node.get("vehicle_id", &""))
+	if not _switch_vehicle(vehicle_id):
+		_fail_execution(node_id, &"program_vehicle_missing")
+		return
+	_advance(int(node.get("next_id", ProgramScript.NO_NODE_ID)))
 
 
 func _execute_move(node: Dictionary) -> void:
@@ -214,12 +216,35 @@ func _on_lifecycle_reset_completed() -> void:
 	_clear_execution(true)
 
 
+func _configure_program_requirements() -> bool:
+	var requirements := _validator.required_capabilities_by_vehicle(_program)
+	for vehicle_value in requirements.keys():
+		var vehicle_id := StringName(vehicle_value)
+		var vehicle := _vehicle_manager.get_vehicle_by_id(vehicle_id)
+		if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
+			return _fail_start(&"program_vehicle_missing")
+		var required: Array[StringName] = []
+		for capability_value in requirements[vehicle_value]:
+			required.append(StringName(capability_value))
+		_compile_gate.set_required_capabilities(vehicle_id, required)
+		_requirements_vehicle_ids.append(vehicle_id)
+	return true
+
+
 func _validate_move_targets() -> bool:
-	for node in _program.nodes:
-		if int(node.get("type", -1)) != ProgramScript.NodeType.MOVE_TO:
+	var current_vehicle_id := _program.vehicle_id
+	for node in _ordered_nodes():
+		var node_type := int(node.get("type", -1))
+		if node_type == ProgramScript.NodeType.SELECT_VEHICLE:
+			current_vehicle_id = StringName(node.get("vehicle_id", &""))
 			continue
+		if node_type != ProgramScript.NodeType.MOVE_TO:
+			continue
+		var vehicle := _vehicle_manager.get_vehicle_by_id(current_vehicle_id)
+		if vehicle == null or vehicle.definition == null:
+			return _fail_start(&"program_vehicle_missing", int(node.get("id", ProgramScript.NO_NODE_ID)))
 		var target: Vector2i = node.get("target_anchor", Vector2i(-1, -1))
-		if not _scene_controller.is_grid_footprint_walkable(target, _vehicle.definition.footprint):
+		if not _scene_controller.is_grid_footprint_walkable(target, vehicle.definition.footprint):
 			return _fail_start(
 				&"move_target_not_walkable",
 				int(node.get("id", ProgramScript.NO_NODE_ID))
@@ -227,11 +252,35 @@ func _validate_move_targets() -> bool:
 	return true
 
 
+func _ordered_nodes() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var current_id := _program.start_node_id
+	var visited: Dictionary = {}
+	while current_id != ProgramScript.NO_NODE_ID and not visited.has(current_id):
+		visited[current_id] = true
+		var node := _program.get_node_data(current_id)
+		if node.is_empty():
+			break
+		result.append(node)
+		current_id = int(node.get("next_id", ProgramScript.NO_NODE_ID))
+	return result
+
+
 func _has_runtime_capability(capability: StringName) -> bool:
 	return (
-		_program != null
-		and _compile_gate.has_vehicle_capability(_program.vehicle_id, capability)
+		_vehicle != null
+		and _compile_gate.has_vehicle_capability(_vehicle.get_vehicle_id(), capability)
 	)
+
+
+func _switch_vehicle(vehicle_id: StringName) -> bool:
+	var vehicle := _vehicle_manager.get_vehicle_by_id(vehicle_id)
+	if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
+		return false
+	if not _selection_controller.select_vehicle(vehicle):
+		return false
+	_bind_vehicle(vehicle)
+	return true
 
 
 func _bind_vehicle(vehicle: VehicleActorScript) -> void:
@@ -295,7 +344,7 @@ func _clear_execution(emit_reset: bool) -> void:
 
 
 func _clear_requirements() -> void:
-	if _requirements_vehicle_id != &"":
+	for vehicle_id in _requirements_vehicle_ids:
 		var empty: Array[StringName] = []
-		_compile_gate.set_required_capabilities(_requirements_vehicle_id, empty)
-	_requirements_vehicle_id = &""
+		_compile_gate.set_required_capabilities(vehicle_id, empty)
+	_requirements_vehicle_ids.clear()
