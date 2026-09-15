@@ -2,6 +2,7 @@ class_name Scene01ProgramUI
 extends CanvasLayer
 
 const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
+const ProgramSourceScript := preload("res://scripts/scene_01/scene_01_program_source.gd")
 const RunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
 const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const AssemblyDefinitionAdapterScript := preload("res://scripts/scene_01/scene_01_assembly_definition_adapter.gd")
@@ -10,37 +11,35 @@ const AssemblyCompileRequestScript := preload("res://scripts/assembly/assembly_c
 const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
 const AssemblyCapabilitiesScript := preload("res://scripts/assembly/assembly_capabilities.gd")
 
-const SAVE_PATH := "user://scene_01_program.tres"
+const SAVE_PATH := "user://scene_01_program.txt"
 
 @onready var _vehicle_option: OptionButton = %VehicleOption
 @onready var _target_x: SpinBox = %TargetX
 @onready var _target_y: SpinBox = %TargetY
 @onready var _repeat_count: SpinBox = %RepeatCount
 @onready var _repeat_target_option: OptionButton = %RepeatTargetOption
-@onready var _program_list: ItemList = %ProgramList
-@onready var _connect_target_option: OptionButton = %ConnectTargetOption
+@onready var _source_editor: CodeEdit = %SourceEditor
 @onready var _add_move_button: Button = %AddMoveButton
 @onready var _add_grab_button: Button = %AddGrabButton
 @onready var _add_repeat_button: Button = %AddRepeatButton
-@onready var _connect_button: Button = %ConnectButton
-@onready var _delete_button: Button = %DeleteButton
+@onready var _clear_button: Button = %ClearButton
 @onready var _save_button: Button = %SaveButton
 @onready var _load_button: Button = %LoadButton
+@onready var _export_button: Button = %ExportButton
 @onready var _run_button: Button = %RunButton
 @onready var _status_label: Label = %StatusLabel
 
 var _runner: RunnerScript
 var _vehicle_manager: VehicleManagerScript
+var _source_codec := ProgramSourceScript.new()
 var _program: Scene01Program
+var _editing_enabled := true
+var _suppress_source_signal := false
 
 
 func _ready() -> void:
 	_runner = get_parent().get_node("SceneRoot/Scene01ProgramRunner") as RunnerScript
-	_vehicle_manager = get_parent().get_node(
-		"SceneRoot/RobotRoot/Scene01VehicleManager"
-	) as VehicleManagerScript
-	_program = ProgramScript.new()
-	_program.reset()
+	_vehicle_manager = get_parent().get_node("SceneRoot/RobotRoot/Scene01VehicleManager") as VehicleManagerScript
 	_bind_ui()
 	_bind_runner()
 	call_deferred("_initialize_editor")
@@ -48,7 +47,8 @@ func _ready() -> void:
 
 func _initialize_editor() -> void:
 	_populate_vehicles()
-	_refresh_program_view()
+	_set_source_text_internal(ProgramSourceScript.HEADER + "\n")
+	_parse_current_source(false)
 	_refresh_capability_buttons()
 
 
@@ -56,15 +56,25 @@ func get_program() -> Scene01Program:
 	return _program
 
 
+func get_source_text() -> String:
+	return _source_editor.text if _source_editor != null else ""
+
+
+func set_source_text(source: String) -> void:
+	_set_source_text_internal(source)
+	_parse_current_source(true)
+
+
 func _bind_ui() -> void:
 	_vehicle_option.item_selected.connect(_on_vehicle_selected)
+	_source_editor.text_changed.connect(_on_source_changed)
 	_add_move_button.pressed.connect(_on_add_move)
 	_add_grab_button.pressed.connect(_on_add_grab)
 	_add_repeat_button.pressed.connect(_on_add_repeat)
-	_connect_button.pressed.connect(_on_connect)
-	_delete_button.pressed.connect(_on_delete)
+	_clear_button.pressed.connect(_on_clear)
 	_save_button.pressed.connect(_on_save)
 	_load_button.pressed.connect(_on_load)
+	_export_button.pressed.connect(_on_export)
 	_run_button.pressed.connect(_on_run)
 
 
@@ -84,239 +94,247 @@ func _populate_vehicles() -> void:
 			continue
 		_vehicle_option.add_item(vehicle.definition.display_name)
 		_vehicle_option.set_item_metadata(_vehicle_option.item_count - 1, vehicle.get_vehicle_id())
-		if vehicle.get_vehicle_id() == _program.vehicle_id:
-			_vehicle_option.select(_vehicle_option.item_count - 1)
-	_sync_vehicle_id()
+	if _vehicle_option.item_count > 0:
+		_vehicle_option.select(0)
 
 
-func _sync_vehicle_id() -> void:
+func _selected_vehicle_id() -> StringName:
 	if _vehicle_option.item_count <= 0:
-		return
-	_program.vehicle_id = StringName(_vehicle_option.get_item_metadata(_vehicle_option.selected))
+		return &""
+	return StringName(_vehicle_option.get_item_metadata(_vehicle_option.selected))
 
 
 func _on_vehicle_selected(_index: int) -> void:
-	_sync_vehicle_id()
 	_refresh_capability_buttons()
-	_status_label.text = "程序车辆：%s" % String(_program.vehicle_id)
+	_status_label.text = "新增命令车辆：%s" % String(_selected_vehicle_id())
+
+
+func _on_source_changed() -> void:
+	if _suppress_source_signal:
+		return
+	_parse_current_source(true)
 
 
 func _on_add_move() -> void:
-	var node_id := _program.append_node(ProgramScript.NodeType.MOVE_TO)
-	_program.set_move_target(node_id, Vector2i(int(_target_x.value), int(_target_y.value)))
-	_refresh_program_view(node_id)
+	_append_source_line("[%s:moveTo] %d %d" % [
+		String(_selected_vehicle_id()),
+		int(_target_x.value),
+		int(_target_y.value),
+	])
 
 
 func _on_add_grab() -> void:
-	var node_id := _program.append_node(ProgramScript.NodeType.GRAB_DROP)
-	_refresh_program_view(node_id)
+	_append_source_line("[%s:grabDrop]" % String(_selected_vehicle_id()))
 
 
 func _on_add_repeat() -> void:
-	if _repeat_target_option.item_count <= 0:
-		_status_label.text = "Repeat 需要一个之前的执行节点"
+	if _program == null or _repeat_target_option.item_count <= 0:
+		_status_label.text = "Repeat 需要一个之前的车辆命令"
 		return
-	var node_id := _program.append_node(ProgramScript.NodeType.REPEAT)
-	var target_id := int(_repeat_target_option.get_item_metadata(_repeat_target_option.selected))
-	_program.set_repeat(node_id, int(_repeat_count.value), target_id)
-	_refresh_program_view(node_id)
+	var target_statement := int(_repeat_target_option.get_item_metadata(_repeat_target_option.selected))
+	_append_source_line("repeat %d %d" % [int(_repeat_count.value), target_statement])
 
 
-func _on_connect() -> void:
-	var selected := _program_list.get_selected_items()
-	if selected.is_empty() or _connect_target_option.item_count <= 0:
-		return
-	var from_id := int(_program_list.get_item_metadata(selected[0]))
-	var to_id := int(_connect_target_option.get_item_metadata(_connect_target_option.selected))
-	if _program.connect_nodes(from_id, to_id):
-		_refresh_program_view(from_id)
-	else:
-		_status_label.text = "连接无效"
-
-
-func _on_delete() -> void:
-	var selected := _program_list.get_selected_items()
-	if selected.is_empty():
-		return
-	var node_id := int(_program_list.get_item_metadata(selected[0]))
-	if not _program.remove_node(node_id):
-		_status_label.text = "Start 不能删除"
-		return
-	_refresh_program_view()
+func _on_clear() -> void:
+	_set_source_text_internal(ProgramSourceScript.HEADER + "\n")
+	_parse_current_source(false)
+	_status_label.text = "源码已清空"
 
 
 func _on_save() -> void:
-	var result := ResourceSaver.save(_program, SAVE_PATH)
-	_status_label.text = "已保存" if result == OK else "保存失败：%d" % result
+	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if file == null:
+		_status_label.text = "保存失败：%d" % FileAccess.get_open_error()
+		return
+	file.store_string(_source_editor.text)
+	file.close()
+	_status_label.text = "源码已保存"
 
 
 func _on_load() -> void:
-	if not ResourceLoader.exists(SAVE_PATH):
-		_status_label.text = "没有已保存程序"
+	if not FileAccess.file_exists(SAVE_PATH):
+		_status_label.text = "没有已保存源码"
 		return
-	var loaded := ResourceLoader.load(SAVE_PATH, "", ResourceLoader.CACHE_MODE_IGNORE) as Scene01Program
-	if loaded == null:
-		_status_label.text = "程序读取失败"
+	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	if file == null:
+		_status_label.text = "源码读取失败：%d" % FileAccess.get_open_error()
 		return
-	_program = loaded
-	_populate_vehicles()
-	_refresh_program_view()
-	_refresh_capability_buttons()
-	_status_label.text = "已读取"
+	var source := file.get_as_text()
+	file.close()
+	_set_source_text_internal(source)
+	_parse_current_source(true)
+	if _program != null:
+		_status_label.text = "源码已读取"
+
+
+func _on_export() -> void:
+	DisplayServer.clipboard_set(_source_editor.text)
+	_status_label.text = "Blueprint 已复制到剪贴板"
 
 
 func _on_run() -> void:
-	_sync_vehicle_id()
-	if _runner.start_program(_program):
+	var parsed := _parse_current_source(true)
+	if not bool(parsed.get("ok", false)):
+		return
+	var snapshot := parsed.get("program") as Scene01Program
+	if snapshot == null:
+		_status_label.text = "源码没有生成可运行程序"
+		return
+	if _runner.start_program(snapshot):
 		return
 	if _runner.get_last_error() != &"":
 		_status_label.text = "运行前拒绝：%s" % _reason_text(_runner.get_last_error())
 
 
-func _on_execution_started(vehicle_id: StringName) -> void:
+func _on_execution_started(_vehicle_id: StringName) -> void:
 	_set_editing_enabled(false)
-	_status_label.text = "运行中：%s" % String(vehicle_id)
+	_status_label.text = "全局程序运行中 · 编辑器已锁定"
 
 
 func _on_node_started(node_id: int, _node_type: int) -> void:
 	_status_label.text = "运行节点 #%d" % node_id
-	_select_list_node(node_id)
 
 
 func _on_execution_completed(_vehicle_id: StringName) -> void:
 	_set_editing_enabled(true)
-	_refresh_capability_buttons()
+	_parse_current_source(false)
 	_status_label.text = "程序完成"
 
 
 func _on_execution_failed(node_id: int, reason: StringName) -> void:
 	_set_editing_enabled(true)
-	_refresh_capability_buttons()
+	_parse_current_source(false)
 	_status_label.text = "节点 #%d 失败：%s" % [node_id, _reason_text(reason)]
 
 
 func _on_execution_reset() -> void:
 	_set_editing_enabled(true)
-	_refresh_capability_buttons()
+	_parse_current_source(false)
 	_status_label.text = "程序已重置"
 
 
-func _refresh_program_view(select_node_id: int = ProgramScript.NO_NODE_ID) -> void:
-	_program_list.clear()
+func _append_source_line(line: String) -> void:
+	var source := _source_editor.text
+	if source.strip_edges().is_empty():
+		source = ProgramSourceScript.HEADER + "\n"
+	if not source.ends_with("\n"):
+		source += "\n"
+	source += line + "\n"
+	_set_source_text_internal(source)
+	_parse_current_source(false)
+	_move_caret_to_end()
+	_status_label.text = "已添加：%s" % line
+
+
+func _set_source_text_internal(source: String) -> void:
+	_suppress_source_signal = true
+	_source_editor.text = source
+	_suppress_source_signal = false
+	_move_caret_to_end()
+
+
+func _move_caret_to_end() -> void:
+	if _source_editor == null:
+		return
+	var line_index := maxi(0, _source_editor.get_line_count() - 1)
+	_source_editor.set_caret_line(line_index)
+	_source_editor.set_caret_column(_source_editor.get_line(line_index).length())
+
+
+func _parse_current_source(show_status: bool) -> Dictionary:
+	var parsed := _source_codec.parse(_source_editor.text)
+	var diagnostics: Array = parsed.get("diagnostics", [])
+	if not diagnostics.is_empty():
+		_program = null
+		_refresh_repeat_controls()
+		if show_status:
+			_status_label.text = _diagnostic_text(diagnostics[0])
+		return {"ok": false, "program": null, "diagnostics": diagnostics}
+	_program = parsed.get("program") as Scene01Program
+	_refresh_repeat_controls()
+	if show_status:
+		_status_label.text = "源码有效 · %d 条语句" % _statement_count(_program)
+	return {"ok": _program != null, "program": _program, "diagnostics": diagnostics}
+
+
+func _refresh_repeat_controls() -> void:
 	_repeat_target_option.clear()
-	_connect_target_option.clear()
-	for node in _program.get_nodes():
-		var node_id := int(node.get("id", ProgramScript.NO_NODE_ID))
-		var node_type := int(node.get("type", -1))
-		_program_list.add_item(_node_text(node))
-		_program_list.set_item_metadata(_program_list.item_count - 1, node_id)
-		_connect_target_option.add_item("#%d" % node_id)
-		_connect_target_option.set_item_metadata(_connect_target_option.item_count - 1, node_id)
-		if node_type != ProgramScript.NodeType.START and node_type != ProgramScript.NodeType.REPEAT:
-			_repeat_target_option.add_item("#%d %s" % [node_id, _node_type_name(node_type)])
-			_repeat_target_option.set_item_metadata(_repeat_target_option.item_count - 1, node_id)
-	if select_node_id != ProgramScript.NO_NODE_ID:
-		_select_list_node(select_node_id)
+	if _program != null:
+		var statement_index := 0
+		for node in _program.get_execution_order():
+			var node_type := int(node.get("type", -1))
+			if node_type == ProgramScript.NodeType.START:
+				continue
+			statement_index += 1
+			if node_type != ProgramScript.NodeType.MOVE_TO and node_type != ProgramScript.NodeType.GRAB_DROP:
+				continue
+			var vehicle_id := String(node.get("vehicle_id", &""))
+			var command_name := "MoveTo" if node_type == ProgramScript.NodeType.MOVE_TO else "GrabDrop"
+			_repeat_target_option.add_item("#%d [%s] %s" % [statement_index, vehicle_id, command_name])
+			_repeat_target_option.set_item_metadata(_repeat_target_option.item_count - 1, statement_index)
+	_add_repeat_button.disabled = not _editing_enabled or _repeat_target_option.item_count <= 0
+	_repeat_target_option.disabled = not _editing_enabled or _repeat_target_option.item_count <= 0
 
 
-func _node_text(node: Dictionary) -> String:
-	var node_id := int(node.get("id", ProgramScript.NO_NODE_ID))
-	var node_type := int(node.get("type", -1))
-	var next_id := int(node.get("next_id", ProgramScript.NO_NODE_ID))
-	var suffix := "END" if next_id == ProgramScript.NO_NODE_ID else "#%d" % next_id
-	match node_type:
-		ProgramScript.NodeType.MOVE_TO:
-			return "#%d MoveTo %s → %s" % [node_id, str(node.get("target_anchor", Vector2i(-1, -1))), suffix]
-		ProgramScript.NodeType.GRAB_DROP:
-			return "#%d GrabDrop → %s" % [node_id, suffix]
-		ProgramScript.NodeType.REPEAT:
-			return "#%d Repeat %d × #%d → %s" % [node_id, int(node.get("repeat_count", 1)), int(node.get("repeat_target_id", ProgramScript.NO_NODE_ID)), suffix]
-		_:
-			return "#%d Start → %s" % [node_id, suffix]
-
-
-func _node_type_name(node_type: int) -> String:
-	match node_type:
-		ProgramScript.NodeType.MOVE_TO:
-			return "MoveTo"
-		ProgramScript.NodeType.GRAB_DROP:
-			return "GrabDrop"
-		ProgramScript.NodeType.REPEAT:
-			return "Repeat"
-		_:
-			return "Start"
-
-
-func _select_list_node(node_id: int) -> void:
-	for index in range(_program_list.item_count):
-		if int(_program_list.get_item_metadata(index)) == node_id:
-			_program_list.select(index)
-			_program_list.ensure_current_is_visible()
-			return
+func _statement_count(program: Scene01Program) -> int:
+	if program == null:
+		return 0
+	return maxi(0, program.get_execution_order().size() - 1)
 
 
 func _refresh_capability_buttons() -> void:
 	var can_move := false
 	var can_grab_drop := false
-	var vehicle := _vehicle_manager.get_vehicle_by_id(_program.vehicle_id)
+	var vehicle := _vehicle_manager.get_vehicle_by_id(_selected_vehicle_id()) if _vehicle_manager != null else null
 	if vehicle != null:
 		var definition = AssemblyDefinitionAdapterScript.new().build_definition(vehicle)
 		if definition != null:
-			var compile_result = AssemblyCompilerScript.new().compile(
-				AssemblyCompileRequestScript.new(definition)
-			)
+			var compile_result = AssemblyCompilerScript.new().compile(AssemblyCompileRequestScript.new(definition))
 			if compile_result.is_success():
 				can_move = compile_result.has_capability(AssemblyCapabilitiesScript.CAN_MOVE)
 				can_grab_drop = compile_result.has_capability(AssemblyCapabilitiesScript.GRAB_DROP)
-	_add_move_button.disabled = not can_move
-	_add_grab_button.disabled = not can_grab_drop
+	_add_move_button.disabled = not _editing_enabled or not can_move
+	_add_grab_button.disabled = not _editing_enabled or not can_grab_drop
 
 
 func _set_editing_enabled(enabled: bool) -> void:
+	_editing_enabled = enabled
 	_vehicle_option.disabled = not enabled
 	_target_x.editable = enabled
 	_target_y.editable = enabled
 	_repeat_count.editable = enabled
-	_repeat_target_option.disabled = not enabled
-	_connect_target_option.disabled = not enabled
-	_add_repeat_button.disabled = not enabled
-	_connect_button.disabled = not enabled
-	_delete_button.disabled = not enabled
+	_source_editor.editable = enabled
+	_clear_button.disabled = not enabled
 	_save_button.disabled = not enabled
 	_load_button.disabled = not enabled
+	_export_button.disabled = not enabled
 	_run_button.disabled = not enabled
-	if not enabled:
-		_add_move_button.disabled = true
-		_add_grab_button.disabled = true
+	_refresh_capability_buttons()
+	_refresh_repeat_controls()
+
+
+func _diagnostic_text(diagnostic: Dictionary) -> String:
+	return "第 %d 行 · %s：%s" % [
+		int(diagnostic.get("line", 0)),
+		String(diagnostic.get("code", &"source_invalid")),
+		String(diagnostic.get("message", "源码无效")),
+	]
 
 
 func _reason_text(reason: StringName) -> String:
 	match reason:
-		&"program_capability_rejected":
-			return "当前装配缺少程序所需能力"
-		&"move_target_required":
-			return "MoveTo 缺少目标格"
-		&"move_target_out_of_bounds":
-			return "MoveTo 目标超出网格"
-		&"move_target_not_walkable":
-			return "MoveTo 目标不可通行"
-		&"invalid_repeat_count":
-			return "Repeat 次数必须为 1–100"
-		&"repeat_target_required", &"invalid_repeat_target":
-			return "Repeat 需要指向之前的执行节点"
-		&"unreachable_node", &"next_cycle", &"missing_next_node":
-			return "程序连接无效"
-		&"move_blocked":
-			return "车辆移动被阻挡"
-		&"no_path":
-			return "目标没有可用路径"
-		&"program_vehicle_missing":
-			return "程序车辆不存在"
-		&"lifecycle_start_rejected":
-			return "场景当前无法开始运行"
-		&"program_already_running":
-			return "程序正在运行"
+		&"program_capability_rejected": return "当前装配缺少程序所需能力"
+		&"command_vehicle_required": return "命令缺少车辆"
+		&"move_target_required": return "MoveTo 缺少目标格"
+		&"move_target_out_of_bounds": return "MoveTo 目标超出网格"
+		&"move_target_not_walkable": return "MoveTo 目标不可通行"
+		&"invalid_repeat_count": return "Repeat 次数必须为 1–100"
+		&"repeat_target_required", &"invalid_repeat_target": return "Repeat 需要指向之前的车辆命令"
+		&"unreachable_node", &"next_cycle", &"missing_next_node": return "程序连接无效"
+		&"move_blocked": return "车辆移动被阻挡"
+		&"no_path": return "目标没有可用路径"
+		&"program_vehicle_missing": return "程序车辆不存在"
+		&"lifecycle_start_rejected": return "场景当前无法开始运行"
+		&"program_already_running": return "程序正在运行"
 		_:
-			if String(reason).begins_with("grab_drop_"):
-				return "GrabDrop 当前无法执行"
-			return String(reason)
+			return "GrabDrop 当前无法执行" if String(reason).begins_with("grab_drop_") else String(reason)

@@ -32,9 +32,7 @@ func _run() -> void:
 	var grab_drop = scene.get_node("SceneRoot/GridRoot/VehicleGrabDropController")
 	var runner := scene.get_node("SceneRoot/Scene01ProgramRunner") as ProgramRunnerScript
 	var box = scene.get_node("SceneRoot/ObjectRoot/Scene01ObjectManager").get_standard_box()
-	var score_label := scene.get_node(
-		"HUDRoot/RootControl/CompletionPanel/Margin/VBox/ScorePlaceholder"
-	) as Label
+	var score_label := scene.get_node("HUDRoot/RootControl/CompletionPanel/Margin/VBox/ScorePlaceholder") as Label
 	var arm = manager.get_vehicle_by_id(VehicleManagerScript.ARM_VEHICLE_ID)
 	var transport = manager.get_vehicle_by_id(VehicleManagerScript.TRANSPORT_VEHICLE_ID)
 	test.expect_true(score != null and arm != null and transport != null, "Scoring production wiring should exist.")
@@ -59,12 +57,11 @@ func _run() -> void:
 
 	var program := ProgramScript.new()
 	program.reset()
-	program.vehicle_id = VehicleManagerScript.ARM_VEHICLE_ID
 	test.expect_true(runner.start_program(program), "Start-only program should enter automated runtime.")
 	test.expect_true(move.request_selected_vehicle_move(Vector2i(4, 2)), "Player takeover should remain available while Program runs.")
 	scene.timer = 4.0
 	test.expect_true(move.request_selected_vehicle_stop(), "Player takeover should stop through the shared controller.")
-	test.expect_float_approx(score.get_manual_runtime(), 4.0, "Same-vehicle takeover must count as manual runtime.")
+	test.expect_float_approx(score.get_manual_runtime(), 4.0, "Takeover must count as manual runtime.")
 	test.expect_float_approx(score.get_automated_runtime(), 0.0, "Takeover time must not count as automated runtime.")
 	scene.timer = 5.0
 	scene.call("pause_scene")
@@ -108,8 +105,8 @@ func _run() -> void:
 	scene.call("run_scene")
 	var move_program := ProgramScript.new()
 	move_program.reset()
-	move_program.vehicle_id = VehicleManagerScript.ARM_VEHICLE_ID
 	var program_move_id := move_program.append_node(ProgramScript.NodeType.MOVE_TO)
+	move_program.set_command_vehicle(program_move_id, VehicleManagerScript.ARM_VEHICLE_ID)
 	test.expect_true(move_program.set_move_target(program_move_id, arm.runtime_state.anchor_cell), "Program MoveTo fixture should configure.")
 	test.expect_true(runner.start_program(move_program), "Program MoveTo should start after Reset.")
 	await process_frame
@@ -117,6 +114,28 @@ func _run() -> void:
 	await process_frame
 	test.expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Zero-distance Program MoveTo should complete.")
 	test.expect_float_approx(score.get_manual_runtime(), 0.0, "Program-owned MoveTo must not be counted as manual takeover.")
+
+	test.expect_true(bool(scene.call("reset_scene")), "Second Reset should prepare multi-vehicle scoring regression.")
+	scene.call("run_scene")
+	var multi := ProgramScript.new()
+	multi.reset()
+	var arm_move := multi.append_node(ProgramScript.NodeType.MOVE_TO)
+	multi.set_command_vehicle(arm_move, VehicleManagerScript.ARM_VEHICLE_ID)
+	multi.set_move_target(arm_move, arm.runtime_state.anchor_cell)
+	var transport_move := multi.append_node(ProgramScript.NodeType.MOVE_TO)
+	multi.set_command_vehicle(transport_move, VehicleManagerScript.TRANSPORT_VEHICLE_ID)
+	multi.set_move_target(transport_move, transport.runtime_state.anchor_cell)
+	test.expect_true(runner.start_program(multi), "One Program should automate Arm and Transport.")
+	scene.timer = 2.0
+	var frames := 0
+	while runner.get_state() == ProgramRunnerScript.STATE_RUNNING and frames < 20:
+		await process_frame
+		frames += 1
+	test.expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Multi-vehicle Program should complete.")
+	var program_elapsed := score.get_elapsed_time()
+	test.expect_float_approx(score.get_manual_runtime(), 0.0, "Transport Program Move must not be misclassified as manual.")
+	test.expect_float_approx(score.get_automated_runtime(), program_elapsed, "Global Program runtime should follow simulation elapsed time through completion.")
+	test.expect_float_approx(score.get_automation_rate(), 1.0, "Multi-vehicle Program should score 100% automation.")
 
 	scene.queue_free()
 	await process_frame
