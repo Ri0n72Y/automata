@@ -36,9 +36,7 @@ var _program: Scene01Program
 
 func _ready() -> void:
 	_runner = get_parent().get_node("SceneRoot/Scene01ProgramRunner") as RunnerScript
-	_vehicle_manager = get_parent().get_node(
-		"SceneRoot/RobotRoot/Scene01VehicleManager"
-	) as VehicleManagerScript
+	_vehicle_manager = get_parent().get_node("SceneRoot/RobotRoot/Scene01VehicleManager") as VehicleManagerScript
 	_program = ProgramScript.new()
 	_program.reset()
 	_bind_ui()
@@ -84,37 +82,37 @@ func _populate_vehicles() -> void:
 			continue
 		_vehicle_option.add_item(vehicle.definition.display_name)
 		_vehicle_option.set_item_metadata(_vehicle_option.item_count - 1, vehicle.get_vehicle_id())
-		if vehicle.get_vehicle_id() == _program.vehicle_id:
-			_vehicle_option.select(_vehicle_option.item_count - 1)
-	_sync_vehicle_id()
+	if _vehicle_option.item_count > 0:
+		_vehicle_option.select(0)
 
 
-func _sync_vehicle_id() -> void:
+func _selected_vehicle_id() -> StringName:
 	if _vehicle_option.item_count <= 0:
-		return
-	_program.vehicle_id = StringName(_vehicle_option.get_item_metadata(_vehicle_option.selected))
+		return &""
+	return StringName(_vehicle_option.get_item_metadata(_vehicle_option.selected))
 
 
 func _on_vehicle_selected(_index: int) -> void:
-	_sync_vehicle_id()
 	_refresh_capability_buttons()
-	_status_label.text = "程序车辆：%s" % String(_program.vehicle_id)
+	_status_label.text = "命令车辆：%s" % String(_selected_vehicle_id())
 
 
 func _on_add_move() -> void:
 	var node_id := _program.append_node(ProgramScript.NodeType.MOVE_TO)
+	_program.set_command_vehicle(node_id, _selected_vehicle_id())
 	_program.set_move_target(node_id, Vector2i(int(_target_x.value), int(_target_y.value)))
 	_refresh_program_view(node_id)
 
 
 func _on_add_grab() -> void:
 	var node_id := _program.append_node(ProgramScript.NodeType.GRAB_DROP)
+	_program.set_command_vehicle(node_id, _selected_vehicle_id())
 	_refresh_program_view(node_id)
 
 
 func _on_add_repeat() -> void:
 	if _repeat_target_option.item_count <= 0:
-		_status_label.text = "Repeat 需要一个之前的执行节点"
+		_status_label.text = "Repeat 需要一个之前的车辆命令"
 		return
 	var node_id := _program.append_node(ProgramScript.NodeType.REPEAT)
 	var target_id := int(_repeat_target_option.get_item_metadata(_repeat_target_option.selected))
@@ -159,23 +157,21 @@ func _on_load() -> void:
 		_status_label.text = "程序读取失败"
 		return
 	_program = loaded
-	_populate_vehicles()
 	_refresh_program_view()
 	_refresh_capability_buttons()
 	_status_label.text = "已读取"
 
 
 func _on_run() -> void:
-	_sync_vehicle_id()
 	if _runner.start_program(_program):
 		return
 	if _runner.get_last_error() != &"":
 		_status_label.text = "运行前拒绝：%s" % _reason_text(_runner.get_last_error())
 
 
-func _on_execution_started(vehicle_id: StringName) -> void:
+func _on_execution_started(_vehicle_id: StringName) -> void:
 	_set_editing_enabled(false)
-	_status_label.text = "运行中：%s" % String(vehicle_id)
+	_status_label.text = "全局程序运行中"
 
 
 func _on_node_started(node_id: int, _node_type: int) -> void:
@@ -212,7 +208,7 @@ func _refresh_program_view(select_node_id: int = ProgramScript.NO_NODE_ID) -> vo
 		_program_list.set_item_metadata(_program_list.item_count - 1, node_id)
 		_connect_target_option.add_item("#%d" % node_id)
 		_connect_target_option.set_item_metadata(_connect_target_option.item_count - 1, node_id)
-		if node_type != ProgramScript.NodeType.START and node_type != ProgramScript.NodeType.REPEAT:
+		if node_type == ProgramScript.NodeType.MOVE_TO or node_type == ProgramScript.NodeType.GRAB_DROP:
 			_repeat_target_option.add_item("#%d %s" % [node_id, _node_type_name(node_type)])
 			_repeat_target_option.set_item_metadata(_repeat_target_option.item_count - 1, node_id)
 	if select_node_id != ProgramScript.NO_NODE_ID:
@@ -224,11 +220,12 @@ func _node_text(node: Dictionary) -> String:
 	var node_type := int(node.get("type", -1))
 	var next_id := int(node.get("next_id", ProgramScript.NO_NODE_ID))
 	var suffix := "END" if next_id == ProgramScript.NO_NODE_ID else "#%d" % next_id
+	var vehicle := String(node.get("vehicle_id", &""))
 	match node_type:
 		ProgramScript.NodeType.MOVE_TO:
-			return "#%d MoveTo %s → %s" % [node_id, str(node.get("target_anchor", Vector2i(-1, -1))), suffix]
+			return "#%d [%s] MoveTo %s → %s" % [node_id, vehicle, str(node.get("target_anchor", Vector2i(-1, -1))), suffix]
 		ProgramScript.NodeType.GRAB_DROP:
-			return "#%d GrabDrop → %s" % [node_id, suffix]
+			return "#%d [%s] GrabDrop → %s" % [node_id, vehicle, suffix]
 		ProgramScript.NodeType.REPEAT:
 			return "#%d Repeat %d × #%d → %s" % [node_id, int(node.get("repeat_count", 1)), int(node.get("repeat_target_id", ProgramScript.NO_NODE_ID)), suffix]
 		_:
@@ -258,13 +255,11 @@ func _select_list_node(node_id: int) -> void:
 func _refresh_capability_buttons() -> void:
 	var can_move := false
 	var can_grab_drop := false
-	var vehicle := _vehicle_manager.get_vehicle_by_id(_program.vehicle_id)
+	var vehicle := _vehicle_manager.get_vehicle_by_id(_selected_vehicle_id())
 	if vehicle != null:
 		var definition = AssemblyDefinitionAdapterScript.new().build_definition(vehicle)
 		if definition != null:
-			var compile_result = AssemblyCompilerScript.new().compile(
-				AssemblyCompileRequestScript.new(definition)
-			)
+			var compile_result = AssemblyCompilerScript.new().compile(AssemblyCompileRequestScript.new(definition))
 			if compile_result.is_success():
 				can_move = compile_result.has_capability(AssemblyCapabilitiesScript.CAN_MOVE)
 				can_grab_drop = compile_result.has_capability(AssemblyCapabilitiesScript.GRAB_DROP)
@@ -292,31 +287,18 @@ func _set_editing_enabled(enabled: bool) -> void:
 
 func _reason_text(reason: StringName) -> String:
 	match reason:
-		&"program_capability_rejected":
-			return "当前装配缺少程序所需能力"
-		&"move_target_required":
-			return "MoveTo 缺少目标格"
-		&"move_target_out_of_bounds":
-			return "MoveTo 目标超出网格"
-		&"move_target_not_walkable":
-			return "MoveTo 目标不可通行"
-		&"invalid_repeat_count":
-			return "Repeat 次数必须为 1–100"
-		&"repeat_target_required", &"invalid_repeat_target":
-			return "Repeat 需要指向之前的执行节点"
-		&"unreachable_node", &"next_cycle", &"missing_next_node":
-			return "程序连接无效"
-		&"move_blocked":
-			return "车辆移动被阻挡"
-		&"no_path":
-			return "目标没有可用路径"
-		&"program_vehicle_missing":
-			return "程序车辆不存在"
-		&"lifecycle_start_rejected":
-			return "场景当前无法开始运行"
-		&"program_already_running":
-			return "程序正在运行"
+		&"program_capability_rejected": return "当前装配缺少程序所需能力"
+		&"command_vehicle_required": return "命令缺少车辆"
+		&"move_target_required": return "MoveTo 缺少目标格"
+		&"move_target_out_of_bounds": return "MoveTo 目标超出网格"
+		&"move_target_not_walkable": return "MoveTo 目标不可通行"
+		&"invalid_repeat_count": return "Repeat 次数必须为 1–100"
+		&"repeat_target_required", &"invalid_repeat_target": return "Repeat 需要指向之前的车辆命令"
+		&"unreachable_node", &"next_cycle", &"missing_next_node": return "程序连接无效"
+		&"move_blocked": return "车辆移动被阻挡"
+		&"no_path": return "目标没有可用路径"
+		&"program_vehicle_missing": return "程序车辆不存在"
+		&"lifecycle_start_rejected": return "场景当前无法开始运行"
+		&"program_already_running": return "程序正在运行"
 		_:
-			if String(reason).begins_with("grab_drop_"):
-				return "GrabDrop 当前无法执行"
-			return String(reason)
+			return "GrabDrop 当前无法执行" if String(reason).begins_with("grab_drop_") else String(reason)
