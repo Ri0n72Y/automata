@@ -22,9 +22,9 @@ layout_mode = 0
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -780.0
-offset_top = 16.0
+offset_top = 72.0
 offset_right = -16.0
-offset_bottom = 690.0
+offset_bottom = 704.0
 grow_horizontal = 0
 
 [node name="Margin" type="MarginContainer" parent="RootControl/ProgramPanel"]
@@ -187,7 +187,7 @@ autowrap_mode = 2
 
 [node name="SourceEditor" type="CodeEdit" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/SourceColumn"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 470)
+custom_minimum_size = Vector2(0, 420)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
