@@ -1,7 +1,9 @@
 extends Node
+
 const ScoreTrackerScript := preload("res://scripts/scene_01/scene_01_score_tracker.gd")
 var _score_tracker: ScoreTrackerScript
 var _score_label: Label
+
 func _ready() -> void:
 	_score_tracker = get_node("../../SceneRoot/Scene01ScoreTracker") as ScoreTrackerScript
 	_score_label = get_node("../RootControl/CompletionPanel/Margin/VBox/ScorePlaceholder") as Label
