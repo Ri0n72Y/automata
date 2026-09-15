@@ -4,14 +4,12 @@ extends Resource
 const NO_NODE_ID := -1
 
 enum NodeType {
-	START,
-	SELECT_VEHICLE,
-	MOVE_TO,
-	GRAB_DROP,
-	REPEAT,
+	START = 0,
+	MOVE_TO = 1,
+	GRAB_DROP = 2,
+	REPEAT = 3,
 }
 
-@export var vehicle_id: StringName = &"arm_vehicle"
 @export var start_node_id: int = NO_NODE_ID
 @export var nodes: Array[Dictionary] = []
 
@@ -24,7 +22,7 @@ func reset() -> void:
 func append_node(node_type: int) -> int:
 	if nodes.is_empty():
 		reset()
-	if node_type <= NodeType.START or node_type > NodeType.REPEAT:
+	if not _is_appendable_type(node_type):
 		return NO_NODE_ID
 	var tail_id := get_tail_node_id()
 	var node_id := _append_raw_node(node_type)
@@ -66,12 +64,15 @@ func remove_node(node_id: int) -> bool:
 	return true
 
 
-func set_select_vehicle(node_id: int, selected_vehicle_id: StringName) -> bool:
+func set_command_vehicle(node_id: int, vehicle_id: StringName) -> bool:
 	var index := _find_node_index(node_id)
-	if index < 0 or int(nodes[index].get("type", -1)) != NodeType.SELECT_VEHICLE:
+	if index < 0:
+		return false
+	var node_type := int(nodes[index].get("type", -1))
+	if node_type != NodeType.MOVE_TO and node_type != NodeType.GRAB_DROP:
 		return false
 	var node := nodes[index].duplicate(true)
-	node["vehicle_id"] = selected_vehicle_id
+	node["vehicle_id"] = vehicle_id
 	nodes[index] = node
 	return true
 
@@ -109,26 +110,30 @@ func get_nodes() -> Array[Dictionary]:
 	return result
 
 
-func get_tail_node_id() -> int:
-	if start_node_id == NO_NODE_ID:
-		return NO_NODE_ID
+func get_execution_order() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
 	var current_id := start_node_id
 	var visited: Dictionary = {}
 	while current_id != NO_NODE_ID and not visited.has(current_id):
 		visited[current_id] = true
 		var node := get_node_data(current_id)
 		if node.is_empty():
-			return NO_NODE_ID
-		var next_id := int(node.get("next_id", NO_NODE_ID))
-		if next_id == NO_NODE_ID:
-			return current_id
-		current_id = next_id
-	return NO_NODE_ID
+			break
+		result.append(node)
+		current_id = int(node.get("next_id", NO_NODE_ID))
+	return result
+
+
+func get_tail_node_id() -> int:
+	var ordered := get_execution_order()
+	if ordered.is_empty():
+		return NO_NODE_ID
+	var tail: Dictionary = ordered[ordered.size() - 1]
+	return int(tail.get("id", NO_NODE_ID)) if int(tail.get("next_id", NO_NODE_ID)) == NO_NODE_ID else NO_NODE_ID
 
 
 func duplicate_program() -> Scene01Program:
 	var copy := Scene01Program.new()
-	copy.vehicle_id = vehicle_id
 	copy.start_node_id = start_node_id
 	copy.nodes = get_nodes()
 	return copy
@@ -146,6 +151,10 @@ func _append_raw_node(node_type: int) -> int:
 		"repeat_target_id": NO_NODE_ID,
 	})
 	return node_id
+
+
+func _is_appendable_type(node_type: int) -> bool:
+	return node_type in [NodeType.MOVE_TO, NodeType.GRAB_DROP, NodeType.REPEAT]
 
 
 func _next_node_id() -> int:
