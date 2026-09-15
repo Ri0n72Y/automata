@@ -4,7 +4,7 @@
 [ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
 
 [node name="ProgramUIRoot" type="CanvasLayer"]
-layer = 6
+layer = 4
 script = ExtResource("1_ui")
 
 [node name="RootControl" type="Control" parent="."]
