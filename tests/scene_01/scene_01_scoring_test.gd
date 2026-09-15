@@ -84,7 +84,9 @@ func _run() -> void:
 	test.expect_true(score_label.text.contains("组件 %d" % expected_components), "Result panel should display component count.")
 	test.expect_true(score_label.text.contains("自动化率 71%"), "Result panel should display runtime automation ratio.")
 
-	runner.execution_completed.emit(VehicleManagerScript.ARM_VEHICLE_ID)
+	await process_frame
+	await process_frame
+	test.expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Program should complete normally after Mission finalizes.")
 	test.expect_true(selection.select_vehicle(transport), "Transport should remain controllable after completion.")
 	test.expect_true(move.request_selected_vehicle_move(Vector2i(8, 4)), "Post-completion MoveTo should still be a real command.")
 	scene.timer = 20.0
