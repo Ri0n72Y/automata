@@ -134,27 +134,22 @@ text = "+ GrabDrop"
 layout_mode = 2
 text = "Repeat"
 
-[node name="RepeatParams" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn"]
+[node name="RepeatParams" type="VBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn"]
 layout_mode = 2
 theme_override_constants/separation = 5
 
 [node name="RepeatCount" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn/RepeatParams"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
 min_value = 1.0
 max_value = 100.0
 value = 2.0
 prefix = "× "
 
-[node name="RepeatTarget" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn/RepeatParams"]
+[node name="RepeatTargetOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn/RepeatParams"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
-min_value = 1.0
-max_value = 1.0
-value = 1.0
-prefix = "from #"
+disabled = true
 
 [node name="AddRepeatButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn"]
 unique_name_in_owner = true
