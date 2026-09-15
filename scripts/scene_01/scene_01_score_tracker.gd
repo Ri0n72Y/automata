@@ -19,7 +19,7 @@ var _component_count: int = 0
 var _components_captured: bool = false
 var _manual_runtime: float = 0.0
 var _automated_runtime: float = 0.0
-var _program_vehicle_id: StringName = &""
+var _program_running: bool = false
 var _pending_program_move_vehicle_id: StringName = &""
 var _manual_moving: Dictionary = {}
 var _manual_started_at: Dictionary = {}
@@ -58,7 +58,7 @@ func _bind_runtime() -> void:
 	_scene_controller.lifecycle_reset_completed.connect(_on_lifecycle_reset_completed)
 	_scene_controller.mission_completed.connect(_on_mission_completed)
 	_program_runner.execution_started.connect(_on_program_started)
-	_program_runner.node_started.connect(_on_program_node_started)
+	_program_runner.command_started.connect(_on_program_command_started)
 	_program_runner.execution_completed.connect(_on_program_ended)
 	_program_runner.execution_failed.connect(_on_program_failed)
 	_program_runner.execution_reset.connect(_on_program_reset)
@@ -106,7 +106,7 @@ func _on_move_accepted(vehicle_id: StringName, _target_anchor: Vector2i) -> void
 	if vehicle.runtime_state.active_move_command == null:
 		return
 	var now := get_elapsed_time()
-	if vehicle_id == _program_vehicle_id:
+	if _program_running:
 		_stop_automated(now)
 	_manual_moving[vehicle_id] = true
 	if _scene_controller.is_gameplay_running():
@@ -123,21 +123,17 @@ func _finish_manual_move(vehicle_id: StringName, now: float) -> void:
 	var was_manual := _manual_moving.has(vehicle_id)
 	_stop_manual(vehicle_id, now)
 	_manual_moving.erase(vehicle_id)
-	if was_manual and vehicle_id == _program_vehicle_id and not _finalized and _scene_controller.is_gameplay_running():
+	if was_manual and _manual_moving.is_empty() and _program_running and not _finalized and _scene_controller.is_gameplay_running():
 		_start_automated(now)
-func _on_program_started(vehicle_id: StringName) -> void:
+func _on_program_started(_vehicle_id: StringName) -> void:
 	if _finalized:
 		return
-	_program_vehicle_id = vehicle_id
+	_program_running = true
 	_pending_program_move_vehicle_id = &""
-	if not _scene_controller.is_gameplay_running():
-		return
-	if _manual_moving.has(vehicle_id):
-		_start_manual(vehicle_id, get_elapsed_time())
-	else:
+	if _scene_controller.is_gameplay_running() and _manual_moving.is_empty():
 		_start_automated(get_elapsed_time())
-func _on_program_node_started(_node_id: int, node_type: int) -> void:
-	_pending_program_move_vehicle_id = _program_vehicle_id if node_type == ProgramScript.NodeType.MOVE_TO else &""
+func _on_program_command_started(_node_id: int, node_type: int, vehicle_id: StringName) -> void:
+	_pending_program_move_vehicle_id = vehicle_id if node_type == ProgramScript.NodeType.MOVE_TO else &""
 func _on_program_ended(_vehicle_id: StringName) -> void:
 	_end_program_runtime()
 func _on_program_failed(_node_id: int, _reason: StringName) -> void:
@@ -145,19 +141,15 @@ func _on_program_failed(_node_id: int, _reason: StringName) -> void:
 func _on_program_reset() -> void:
 	_end_program_runtime()
 func _end_program_runtime() -> void:
-	var now := get_elapsed_time()
-	var vehicle_id := _program_vehicle_id
-	_stop_automated(now)
-	_program_vehicle_id = &""
+	_stop_automated(get_elapsed_time())
+	_program_running = false
 	_pending_program_move_vehicle_id = &""
-	if not _finalized and _scene_controller.is_gameplay_running() and _manual_moving.has(vehicle_id):
-		_start_manual(vehicle_id, now)
 func _start_active_segments(now: float) -> void:
 	if _finalized:
 		return
 	for vehicle_id_value in _manual_moving.keys():
 		_start_manual(StringName(vehicle_id_value), now)
-	if _program_vehicle_id != &"" and not _manual_moving.has(_program_vehicle_id):
+	if _program_running and _manual_moving.is_empty():
 		_start_automated(now)
 func _start_manual(vehicle_id: StringName, now: float) -> void:
 	if not _manual_started_at.has(vehicle_id):
@@ -188,7 +180,7 @@ func _on_lifecycle_reset_completed() -> void:
 	_components_captured = false
 	_manual_runtime = 0.0
 	_automated_runtime = 0.0
-	_program_vehicle_id = &""
+	_program_running = false
 	_pending_program_move_vehicle_id = &""
 	_manual_moving.clear()
 	_manual_started_at.clear()
