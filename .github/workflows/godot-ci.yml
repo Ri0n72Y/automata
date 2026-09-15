@@ -23,10 +23,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Godot 4.7.1
+      - name: Setup Godot 4.7.2
         uses: chickensoft-games/setup-godot@v2
         with:
-          version: 4.7.1
+          version: 4.7.2
           use-dotnet: false
 
       - name: Show Godot version

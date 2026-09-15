@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_hud.gd" id="1_hud"]
 [ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_score_presenter.gd" id="3_score_presenter"]
 
 [node name="HUDRoot" type="CanvasLayer"]
 layer = 5
@@ -131,6 +132,9 @@ horizontal_alignment = 1
 
 [node name="ScorePlaceholder" type="Label" parent="RootControl/CompletionPanel/Margin/VBox"]
 layout_mode = 2
-text = "时间 —   成本 —   自动化率 —"
+text = "时间 —   组件 —   自动化率 —"
 horizontal_alignment = 1
 modulate = Color(0.68, 0.74, 0.82, 1)
+
+[node name="ScorePresenter" type="Node" parent="."]
+script = ExtResource("3_score_presenter")
