@@ -22,6 +22,9 @@ func _run() -> void:
 	await process_frame
 
 	var ui = scene.get_node("ProgramUIRoot")
+	var hud = scene.get_node("HUDRoot") as CanvasLayer
+	var program_panel := ui.get_node("RootControl/ProgramPanel") as Control
+	var lifecycle_panel := scene.get_node("LifecycleUIRoot/RootControl/Panel") as Control
 	var source_editor := ui.get_node("%SourceEditor") as CodeEdit
 	var add_move := ui.get_node("%AddMoveButton") as Button
 	var add_grab := ui.get_node("%AddGrabButton") as Button
@@ -43,6 +46,8 @@ func _run() -> void:
 	_expect_true(add_move.get_parent() is VBoxContainer, "MoveTo add button should occupy its own VBox row.")
 	_expect_true(add_grab.get_parent() is VBoxContainer, "GrabDrop add button should occupy its own VBox row.")
 	_expect_true(add_repeat.get_parent() is VBoxContainer, "Repeat add button should occupy its own VBox row.")
+	_expect_true(not program_panel.get_global_rect().intersects(lifecycle_panel.get_global_rect()), "Program workspace must not cover lifecycle controls.")
+	_expect_true((ui as CanvasLayer).layer < hud.layer, "HUD completion results must render above the Program workspace.")
 
 	target_x.value = 4
 	target_y.value = 5
