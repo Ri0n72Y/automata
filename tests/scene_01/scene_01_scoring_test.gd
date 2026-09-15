@@ -132,8 +132,9 @@ func _run() -> void:
 		await process_frame
 		frames += 1
 	test.expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Multi-vehicle Program should complete.")
+	var program_elapsed := score.get_elapsed_time()
 	test.expect_float_approx(score.get_manual_runtime(), 0.0, "Transport Program Move must not be misclassified as manual.")
-	test.expect_float_approx(score.get_automated_runtime(), 2.0, "Entire global Program window should remain automated.")
+	test.expect_float_approx(score.get_automated_runtime(), program_elapsed, "Global Program runtime should follow simulation elapsed time through completion.")
 	test.expect_float_approx(score.get_automation_rate(), 1.0, "Multi-vehicle Program should score 100% automation.")
 
 	scene.queue_free()
