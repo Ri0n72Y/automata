@@ -17,7 +17,7 @@ const SAVE_PATH := "user://scene_01_program.txt"
 @onready var _target_x: SpinBox = %TargetX
 @onready var _target_y: SpinBox = %TargetY
 @onready var _repeat_count: SpinBox = %RepeatCount
-@onready var _repeat_target: SpinBox = %RepeatTarget
+@onready var _repeat_target_option: OptionButton = %RepeatTargetOption
 @onready var _source_editor: CodeEdit = %SourceEditor
 @onready var _add_move_button: Button = %AddMoveButton
 @onready var _add_grab_button: Button = %AddGrabButton
@@ -128,10 +128,11 @@ func _on_add_grab() -> void:
 
 
 func _on_add_repeat() -> void:
-	if _program == null or _count_vehicle_commands(_program) <= 0:
+	if _program == null or _repeat_target_option.item_count <= 0:
 		_status_label.text = "Repeat 需要一个之前的车辆命令"
 		return
-	_append_source_line("repeat %d %d" % [int(_repeat_count.value), int(_repeat_target.value)])
+	var target_statement := int(_repeat_target_option.get_item_metadata(_repeat_target_option.selected))
+	_append_source_line("repeat %d %d" % [int(_repeat_count.value), target_statement])
 
 
 func _on_clear() -> void:
@@ -246,35 +247,33 @@ func _parse_current_source(show_status: bool) -> Dictionary:
 	if not diagnostics.is_empty():
 		_program = null
 		_refresh_repeat_controls()
-		_refresh_capability_buttons()
 		if show_status:
 			_status_label.text = _diagnostic_text(diagnostics[0])
 		return {"ok": false, "program": null, "diagnostics": diagnostics}
 	_program = parsed.get("program") as Scene01Program
 	_refresh_repeat_controls()
-	_refresh_capability_buttons()
 	if show_status:
 		_status_label.text = "源码有效 · %d 条语句" % _statement_count(_program)
 	return {"ok": _program != null, "program": _program, "diagnostics": diagnostics}
 
 
 func _refresh_repeat_controls() -> void:
-	var target_count := _count_vehicle_commands(_program)
-	_repeat_target.max_value = float(maxi(1, target_count))
-	if int(_repeat_target.value) > target_count and target_count > 0:
-		_repeat_target.value = target_count
-	_add_repeat_button.disabled = not _editing_enabled or target_count <= 0
-
-
-func _count_vehicle_commands(program: Scene01Program) -> int:
-	if program == null:
-		return 0
-	var count := 0
-	for node in program.get_execution_order():
-		var node_type := int(node.get("type", -1))
-		if node_type == ProgramScript.NodeType.MOVE_TO or node_type == ProgramScript.NodeType.GRAB_DROP:
-			count += 1
-	return count
+	_repeat_target_option.clear()
+	if _program != null:
+		var statement_index := 0
+		for node in _program.get_execution_order():
+			var node_type := int(node.get("type", -1))
+			if node_type == ProgramScript.NodeType.START:
+				continue
+			statement_index += 1
+			if node_type != ProgramScript.NodeType.MOVE_TO and node_type != ProgramScript.NodeType.GRAB_DROP:
+				continue
+			var vehicle_id := String(node.get("vehicle_id", &""))
+			var command_name := "MoveTo" if node_type == ProgramScript.NodeType.MOVE_TO else "GrabDrop"
+			_repeat_target_option.add_item("#%d [%s] %s" % [statement_index, vehicle_id, command_name])
+			_repeat_target_option.set_item_metadata(_repeat_target_option.item_count - 1, statement_index)
+	_add_repeat_button.disabled = not _editing_enabled or _repeat_target_option.item_count <= 0
+	_repeat_target_option.disabled = not _editing_enabled or _repeat_target_option.item_count <= 0
 
 
 func _statement_count(program: Scene01Program) -> int:
@@ -304,7 +303,6 @@ func _set_editing_enabled(enabled: bool) -> void:
 	_target_x.editable = enabled
 	_target_y.editable = enabled
 	_repeat_count.editable = enabled
-	_repeat_target.editable = enabled
 	_source_editor.editable = enabled
 	_clear_button.disabled = not enabled
 	_save_button.disabled = not enabled
