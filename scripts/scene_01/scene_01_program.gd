@@ -5,6 +5,7 @@ const NO_NODE_ID := -1
 
 enum NodeType {
 	START,
+	SELECT_VEHICLE,
 	MOVE_TO,
 	GRAB_DROP,
 	REPEAT,
@@ -62,6 +63,16 @@ func remove_node(node_id: int) -> bool:
 		if int(node.get("repeat_target_id", NO_NODE_ID)) == node_id:
 			node["repeat_target_id"] = NO_NODE_ID
 		nodes[current_index] = node
+	return true
+
+
+func set_select_vehicle(node_id: int, selected_vehicle_id: StringName) -> bool:
+	var index := _find_node_index(node_id)
+	if index < 0 or int(nodes[index].get("type", -1)) != NodeType.SELECT_VEHICLE:
+		return false
+	var node := nodes[index].duplicate(true)
+	node["vehicle_id"] = selected_vehicle_id
+	nodes[index] = node
 	return true
 
 
@@ -129,6 +140,7 @@ func _append_raw_node(node_type: int) -> int:
 		"id": node_id,
 		"type": node_type,
 		"next_id": NO_NODE_ID,
+		"vehicle_id": &"",
 		"target_anchor": Vector2i(-1, -1),
 		"repeat_count": 1,
 		"repeat_target_id": NO_NODE_ID,
