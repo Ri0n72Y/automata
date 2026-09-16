@@ -6,6 +6,8 @@ const ProgramRunnerScript := preload("res://scripts/scene_01/scene_01_program_ru
 const CompileGateScript := preload("res://scripts/scene_01/scene_01_assembly_compile_gate.gd")
 var failures := 0
 var observed_command_vehicles: Array[StringName] = []
+var observed_player_selections: Array[StringName] = []
+var selection_probe
 func _init() -> void:
 	call_deferred("_run")
 func _run() -> void:
@@ -44,6 +46,7 @@ func _test_production_runner() -> void:
 	var object_manager := scene.get_node_or_null("SceneRoot/ObjectRoot/Scene01ObjectManager") as Scene01ObjectManager
 	var selection = scene.get_node_or_null("SceneRoot/GridRoot/VehicleSelectionController")
 	var move_controller = scene.get_node_or_null("SceneRoot/GridRoot/VehicleMoveController")
+	selection_probe = selection
 	_expect_true(runner != null and compile_gate != null and manager != null and object_manager != null and selection != null and move_controller != null, "Production scene should expose program dependencies.")
 	if runner == null or compile_gate == null or manager == null or object_manager == null or selection == null or move_controller == null:
 		scene.queue_free()
@@ -108,7 +111,9 @@ func _test_production_runner() -> void:
 	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_IDLE, "Reset should clear stopped Program failure state.")
 	_expect_true(selection.select_vehicle(arm), "Fixture should select Arm before multi-vehicle program.")
 	observed_command_vehicles.clear()
+	observed_player_selections.clear()
 	runner.command_started.connect(_on_command_started)
+	move_controller.move_accepted.connect(_on_move_accepted_probe)
 	var multi := ProgramScript.new()
 	var arm_move := multi.append_statement(ProgramScript.StatementType.MOVE_TO)
 	multi.set_statement_vehicle(arm_move, &"arm_vehicle")
@@ -125,6 +130,7 @@ func _test_production_runner() -> void:
 		frames += 1
 	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Multi-vehicle Repeat should complete.")
 	_expect_equal(observed_command_vehicles, [&"arm_vehicle", &"transport_vehicle", &"arm_vehicle", &"transport_vehicle"], "Repeat should replay fixed vehicle statements.")
+	_expect_equal(observed_player_selections, [&"arm_vehicle", &"arm_vehicle", &"arm_vehicle", &"arm_vehicle"], "Command signals must expose the real player selection, not command context.")
 	_expect_equal(selection.get_selected_vehicle(), arm, "Program commands must not mutate player selection.")
 	scene.queue_free()
 	await process_frame
@@ -150,6 +156,9 @@ func _append_grab(program: Scene01Program, vehicle_id: StringName) -> int:
 	return index
 func _on_command_started(_statement_index: int, _command_type: int, vehicle_id: StringName) -> void:
 	observed_command_vehicles.append(vehicle_id)
+func _on_move_accepted_probe(_vehicle_id: StringName, _target_anchor: Vector2i) -> void:
+	if selection_probe != null:
+		observed_player_selections.append(selection_probe.get_selected_vehicle_id())
 func _has_diagnostic(diagnostics: Array[Dictionary], code: StringName) -> bool:
 	for diagnostic in diagnostics:
 		if StringName(diagnostic.get("code", &"")) == code:
