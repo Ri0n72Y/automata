@@ -147,7 +147,7 @@ func _on_move_completed() -> void:
 		return
 	_waiting_for_move = false
 	_pc += 1
-	_drain_until_wait()
+	call_deferred("_drain_until_wait")
 func _on_move_blocked() -> void:
 	if _state == STATE_RUNNING and _waiting_for_move:
 		_fail_execution(_pc, &"move_blocked")
