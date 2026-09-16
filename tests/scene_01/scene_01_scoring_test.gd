@@ -142,24 +142,26 @@ func _run() -> void:
 	test.expect_float_approx(score.get_manual_runtime(), 0.0, "Program-owned MoveTo must not be counted as manual takeover.")
 
 	test.expect_true(bool(scene.call("reset_scene")), "Second Reset should prepare multi-vehicle scoring regression.")
+	test.expect_true(bool(scene.call("set_simulation_speed", 4.0)), "Multi-vehicle scoring regression should use 4x wall-clock acceleration.")
 	scene.call("run_scene")
 	var multi := ProgramScript.new()
 	var arm_move := multi.append_statement(ProgramScript.StatementType.MOVE_TO)
 	multi.set_statement_vehicle(arm_move, VehicleManagerScript.ARM_VEHICLE_ID)
-	multi.set_move_target(arm_move, arm.runtime_state.anchor_cell)
+	multi.set_move_target(arm_move, Vector2i(3, 2))
 	var transport_move := multi.append_statement(ProgramScript.StatementType.MOVE_TO)
 	multi.set_statement_vehicle(transport_move, VehicleManagerScript.TRANSPORT_VEHICLE_ID)
-	multi.set_move_target(transport_move, transport.runtime_state.anchor_cell)
-	test.expect_true(runner.start_program(multi), "One Program should automate Arm and Transport.")
-	scene.timer = 2.0
+	multi.set_move_target(transport_move, Vector2i(8, 4))
+	test.expect_true(runner.start_program(multi), "One Program should automate real Arm and Transport moves.")
 	frames = 0
-	while runner.get_state() == ProgramRunnerScript.STATE_RUNNING and frames < 20:
-		await process_frame
+	while runner.get_state() == ProgramRunnerScript.STATE_RUNNING and frames < 240:
+		await physics_frame
 		frames += 1
-	test.expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Multi-vehicle Program should complete.")
+	test.expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Multi-vehicle Program should complete real serial moves.")
 	var program_elapsed := score.get_elapsed_time()
+	var automated_elapsed := score.get_automated_runtime()
 	test.expect_float_approx(score.get_manual_runtime(), 0.0, "Transport Program Move must not be misclassified as manual.")
-	test.expect_float_approx(score.get_automated_runtime(), program_elapsed, "Global Program runtime should follow simulation elapsed time through completion.")
+	test.expect_true(automated_elapsed > 0.0, "Real multi-vehicle Program should accrue automated simulation runtime.")
+	test.expect_true(absf(automated_elapsed - program_elapsed) < 0.05, "Global Program runtime should follow real simulation elapsed time through completion.")
 	test.expect_float_approx(score.get_automation_rate(), 1.0, "Multi-vehicle Program should score 100% automation.")
 
 	scene.queue_free()
