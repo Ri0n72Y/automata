@@ -35,7 +35,6 @@ var _repeat_remaining: Dictionary = {}
 var _requirements_vehicle_ids: Array[StringName] = []
 var _last_error: StringName = &""
 
-
 func _ready() -> void:
 	_scene_controller = get_parent().get_parent() as MissionControllerScript
 	_vehicle_manager = get_node("../RobotRoot/Scene01VehicleManager") as VehicleManagerScript
@@ -43,14 +42,12 @@ func _ready() -> void:
 	_command_executor.configure(
 		get_node("../GridRoot/VehicleMoveController") as MoveControllerScript,
 		get_node("../GridRoot/VehicleGrabDropController") as GrabDropControllerScript,
-		_vehicle_manager,
-		_compile_gate
+		_vehicle_manager
 	)
 	_command_executor.move_completed.connect(_on_move_completed)
 	_command_executor.move_blocked.connect(_on_move_blocked)
 	_scene_controller.lifecycle_reset_completed.connect(_on_lifecycle_reset_completed)
 	set_process(false)
-
 
 func start_program(program: Scene01Program) -> bool:
 	if _state == STATE_RUNNING:
@@ -60,10 +57,7 @@ func start_program(program: Scene01Program) -> bool:
 	_program = program.duplicate_program() if program != null else null
 	var result := _preflight.prepare(_program, _scene_controller, _vehicle_manager, _compile_gate)
 	if not bool(result.get("ok", false)):
-		return _fail_start(
-			StringName(result.get("reason", &"program_invalid")),
-			int(result.get("statement_index", ProgramScript.NO_STATEMENT_INDEX))
-		)
+		return _fail_start(StringName(result.get("reason", &"program_invalid")), int(result.get("statement_index", ProgramScript.NO_STATEMENT_INDEX)))
 	for value in result.get("requirement_vehicle_ids", []):
 		_requirements_vehicle_ids.append(StringName(value))
 	if not _scene_controller.ensure_gameplay_running():
@@ -75,18 +69,12 @@ func start_program(program: Scene01Program) -> bool:
 	execution_started.emit()
 	return true
 
-
 func get_state() -> int:
 	return _state
-
-
 func get_current_statement_index() -> int:
 	return _pc
-
-
 func get_last_error() -> StringName:
 	return _last_error
-
 
 func _process(_delta: float) -> void:
 	if _state != STATE_RUNNING or _waiting_for_move or not _scene_controller.is_gameplay_running():
@@ -96,27 +84,20 @@ func _process(_delta: float) -> void:
 		return
 	_execute_statement()
 
-
 func _execute_statement() -> void:
 	var statement := _program.get_statement(_pc)
 	if statement.is_empty():
 		_fail_execution(_pc, &"missing_runtime_statement")
 		return
-	var index := _pc
 	var statement_type := int(statement.get("type", -1))
-	statement_started.emit(index, statement_type)
+	statement_started.emit(_pc, statement_type)
 	if statement_type == ProgramScript.StatementType.MOVE_TO or statement_type == ProgramScript.StatementType.GRAB_DROP:
-		command_started.emit(index, statement_type, StringName(statement.get("vehicle_id", &"")))
+		command_started.emit(_pc, statement_type, StringName(statement.get("vehicle_id", &"")))
 	match statement_type:
-		ProgramScript.StatementType.MOVE_TO:
-			_execute_move(statement)
-		ProgramScript.StatementType.GRAB_DROP:
-			_execute_grab_drop(statement)
-		ProgramScript.StatementType.REPEAT:
-			_execute_repeat(statement)
-		_:
-			_fail_execution(index, &"invalid_runtime_statement")
-
+		ProgramScript.StatementType.MOVE_TO: _execute_move(statement)
+		ProgramScript.StatementType.GRAB_DROP: _execute_grab_drop(statement)
+		ProgramScript.StatementType.REPEAT: _execute_repeat(statement)
+		_: _fail_execution(_pc, &"invalid_runtime_statement")
 
 func _execute_move(statement: Dictionary) -> void:
 	var result := _command_executor.execute_move(statement)
@@ -127,7 +108,6 @@ func _execute_move(statement: Dictionary) -> void:
 	if not _waiting_for_move:
 		_pc += 1
 
-
 func _execute_grab_drop(statement: Dictionary) -> void:
 	var result := _command_executor.execute_grab_drop(statement)
 	if not bool(result.get("ok", false)):
@@ -135,12 +115,8 @@ func _execute_grab_drop(statement: Dictionary) -> void:
 		return
 	_pc += 1
 
-
 func _execute_repeat(statement: Dictionary) -> void:
-	var remaining := int(_repeat_remaining.get(
-		_pc,
-		maxi(int(statement.get("repeat_count", 1)) - 1, 0)
-	))
+	var remaining := int(_repeat_remaining.get(_pc, maxi(int(statement.get("repeat_count", 1)) - 1, 0)))
 	if remaining > 0:
 		_repeat_remaining[_pc] = remaining - 1
 		_pc = int(statement.get("repeat_target_index", ProgramScript.NO_STATEMENT_INDEX))
@@ -148,18 +124,13 @@ func _execute_repeat(statement: Dictionary) -> void:
 	_repeat_remaining.erase(_pc)
 	_pc += 1
 
-
 func _on_move_completed() -> void:
-	if _state != STATE_RUNNING or not _waiting_for_move:
-		return
-	_waiting_for_move = false
-	_pc += 1
-
-
+	if _state == STATE_RUNNING and _waiting_for_move:
+		_waiting_for_move = false
+		_pc += 1
 func _on_move_blocked() -> void:
 	if _state == STATE_RUNNING and _waiting_for_move:
 		_fail_execution(_pc, &"move_blocked")
-
 
 func _complete_execution() -> void:
 	_state = STATE_COMPLETED
@@ -169,16 +140,10 @@ func _complete_execution() -> void:
 	_command_executor.cancel()
 	execution_completed.emit()
 
-
-func _fail_start(
-	reason: StringName,
-	statement_index: int = ProgramScript.NO_STATEMENT_INDEX
-) -> bool:
+func _fail_start(reason: StringName, statement_index: int = ProgramScript.NO_STATEMENT_INDEX) -> bool:
 	_fail_execution(statement_index, reason)
 	_clear_requirements()
 	return false
-
-
 func _fail_execution(statement_index: int, reason: StringName) -> void:
 	_state = STATE_FAILED
 	_last_error = reason
@@ -186,11 +151,8 @@ func _fail_execution(statement_index: int, reason: StringName) -> void:
 	set_process(false)
 	_command_executor.cancel()
 	execution_failed.emit(statement_index, reason)
-
-
 func _on_lifecycle_reset_completed() -> void:
 	_clear_execution(true)
-
 
 func _clear_execution(emit_reset: bool) -> void:
 	set_process(false)
@@ -204,8 +166,6 @@ func _clear_execution(emit_reset: bool) -> void:
 	_last_error = &""
 	if emit_reset:
 		execution_reset.emit()
-
-
 func _clear_requirements() -> void:
 	for vehicle_id in _requirements_vehicle_ids:
 		var empty: Array[StringName] = []
