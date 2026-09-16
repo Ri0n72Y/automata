@@ -118,6 +118,19 @@ func _run() -> void:
 	test.expect_float_approx(score.get_elapsed_time(), 0.0, "Reset should expose Mission time zero.")
 
 	scene.call("run_scene")
+	test.expect_true(selection.select_vehicle(arm), "Arm should start overlapping manual regression.")
+	test.expect_true(move.request_selected_vehicle_move(Vector2i(3, 2)), "Arm overlapping manual Move should start.")
+	scene.timer = 1.0
+	test.expect_true(selection.select_vehicle(transport), "Transport should be selectable while Arm moves.")
+	test.expect_true(move.request_selected_vehicle_move(Vector2i(8, 4)), "Transport overlapping manual Move should start.")
+	scene.timer = 2.0
+	test.expect_true(selection.select_vehicle(arm) and move.request_selected_vehicle_stop(), "Arm overlapping Move should stop first.")
+	test.expect_float_approx(score.get_manual_runtime(), 2.0, "Overlapping manual moves should count elapsed union time once.")
+	scene.timer = 3.0
+	test.expect_true(selection.select_vehicle(transport) and move.request_selected_vehicle_stop(), "Transport overlapping Move should stop last.")
+	test.expect_float_approx(score.get_manual_runtime(), 3.0, "Two overlapping manual moves must not double-count shared time.")
+	test.expect_true(bool(scene.call("reset_scene")), "Overlap regression Reset should restore scoring baseline.")
+	scene.call("run_scene")
 	var move_program := ProgramScript.new()
 	var program_move_index := move_program.append_statement(ProgramScript.StatementType.MOVE_TO)
 	move_program.set_statement_vehicle(program_move_index, VehicleManagerScript.ARM_VEHICLE_ID)
