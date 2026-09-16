@@ -11,6 +11,7 @@ func _init() -> void:
 	_test_source_builds_linear_statements()
 	_test_source_diagnostic_and_statement_lines()
 	_test_repeat_range_rejects_repeat()
+	_test_execution_budget()
 	_test_requirements_follow_command_vehicle()
 	if failures == 0:
 		print("scene_01_program_source_test: PASS")
@@ -52,6 +53,26 @@ func _test_repeat_range_rejects_repeat() -> void:
 		return
 	var diagnostics := ValidatorScript.new().validate(program, Vector2i(16, 10))
 	_expect_true(_has_diagnostic(diagnostics, &"nested_repeat_unsupported"), "DSL v2 must reject Repeat ranges containing another Repeat before runtime.")
+
+func _test_execution_budget() -> void:
+	var validator := ValidatorScript.new()
+	var at_limit := _build_budget_program(99, 100)
+	_expect_true(validator.validate(at_limit, Vector2i(16, 10)).is_empty(), "Exactly 10,000 expanded steps should remain valid.")
+	var over_limit := _build_budget_program(100, 100)
+	var diagnostics := validator.validate(over_limit, Vector2i(16, 10))
+	_expect_true(_has_diagnostic(diagnostics, &"program_too_large"), "Programs above 10,000 expanded steps must be rejected before runtime.")
+	if not diagnostics.is_empty():
+		_expect_equal(int(diagnostics[0].get("statement_index", -1)), 100, "Execution budget rejection should identify the Repeat that crosses the limit.")
+
+func _build_budget_program(move_count: int, repeat_count: int) -> Scene01Program:
+	var program := ProgramScript.new()
+	for _index in range(move_count):
+		var move := program.append_statement(ProgramScript.StatementType.MOVE_TO)
+		program.set_statement_vehicle(move, &"arm_vehicle")
+		program.set_move_target(move, Vector2i(1, 3))
+	var repeat := program.append_statement(ProgramScript.StatementType.REPEAT)
+	program.set_repeat(repeat, repeat_count, 0)
+	return program
 
 func _test_requirements_follow_command_vehicle() -> void:
 	var program := ProgramScript.new()
