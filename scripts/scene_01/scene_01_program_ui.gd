@@ -24,6 +24,7 @@ var _runner: RunnerScript
 var _vehicle_manager: VehicleManagerScript
 var _support := SupportScript.new()
 var _program: Scene01Program
+var _statement_lines: Array[int] = []
 var _editing_enabled := true
 var _suppress_source_signal := false
 func _ready() -> void:
@@ -110,15 +111,14 @@ func _on_run() -> void:
 	if not bool(parsed.get("ok", false)):
 		return
 	var snapshot := parsed.get("program") as Scene01Program
-	if snapshot != null and _runner.start_program(snapshot):
-		return
-	if _runner.get_last_error() != &"":
-		_status_label.text = "运行前拒绝：%s" % _support.reason_text(_runner.get_last_error())
+	if snapshot != null:
+		_runner.start_program(snapshot)
 func _on_execution_started() -> void:
 	_set_editing_enabled(false)
 	_status_label.text = "全局程序运行中 · 编辑器已锁定"
 func _on_statement_started(statement_index: int, _statement_type: int) -> void:
-	_status_label.text = "运行语句 #%d" % (statement_index + 1)
+	var line := _source_line(statement_index)
+	_status_label.text = "运行第 %d 行" % line if line > 0 else "运行语句 #%d" % (statement_index + 1)
 func _on_execution_completed() -> void:
 	_set_editing_enabled(true)
 	_parse_current_source(false)
@@ -126,7 +126,8 @@ func _on_execution_completed() -> void:
 func _on_execution_failed(statement_index: int, reason: StringName) -> void:
 	_set_editing_enabled(true)
 	_parse_current_source(false)
-	var prefix := "运行前" if statement_index < 0 else "语句 #%d" % (statement_index + 1)
+	var line := _source_line(statement_index)
+	var prefix := "运行前" if statement_index < 0 else ("第 %d 行" % line if line > 0 else "语句 #%d" % (statement_index + 1))
 	_status_label.text = "%s 失败：%s" % [prefix, _support.reason_text(reason)]
 func _on_execution_reset() -> void:
 	_set_editing_enabled(true)
@@ -152,10 +153,15 @@ func _parse_current_source(show_status: bool) -> Dictionary:
 	var parsed := _support.parse(_source_editor.text)
 	var diagnostics: Array = parsed.get("diagnostics", [])
 	_program = null if not diagnostics.is_empty() else parsed.get("program") as Scene01Program
+	_statement_lines.clear()
+	for value in parsed.get("statement_lines", []):
+		_statement_lines.append(int(value))
 	_refresh_repeat_controls()
 	if show_status:
 		_status_label.text = _support.diagnostic_text(diagnostics[0]) if not diagnostics.is_empty() else "源码有效 · %d 条语句" % (_program.get_statement_count() if _program != null else 0)
 	return {"ok": _program != null, "program": _program, "diagnostics": diagnostics}
+func _source_line(statement_index: int) -> int:
+	return _statement_lines[statement_index] if statement_index >= 0 and statement_index < _statement_lines.size() else 0
 func _refresh_repeat_controls() -> void:
 	_repeat_target_option.clear()
 	for option in _support.repeat_options(_program):
