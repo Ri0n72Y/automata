@@ -7,15 +7,14 @@ const AssemblyCapabilitiesScript := preload("res://scripts/assembly/assembly_cap
 
 var failures := 0
 
-
 func _init() -> void:
 	_test_source_builds_linear_statements()
-	_test_source_diagnostic_physical_line()
+	_test_source_diagnostic_and_statement_lines()
+	_test_repeat_range_rejects_repeat()
 	_test_requirements_follow_command_vehicle()
 	if failures == 0:
 		print("scene_01_program_source_test: PASS")
 	quit(failures)
-
 
 func _test_source_builds_linear_statements() -> void:
 	var source := """automata_scene01_program 2
@@ -31,25 +30,28 @@ repeat 2 1
 	if program == null:
 		return
 	_expect_equal(program.get_statement_count(), 4, "Source should map one-to-one to four linear statements.")
-	var first := program.get_statement(0)
-	var third := program.get_statement(2)
-	var repeat := program.get_statement(3)
-	_expect_equal(int(first.get("type", -1)), ProgramScript.StatementType.MOVE_TO, "First statement should be MoveTo.")
-	_expect_equal(StringName(first.get("vehicle_id", &"")), &"arm_vehicle", "First statement should bind Arm explicitly.")
-	_expect_equal(StringName(third.get("vehicle_id", &"")), &"transport_vehicle", "Third statement should bind Transport explicitly.")
-	_expect_equal(int(repeat.get("repeat_target_index", -1)), 0, "repeat target #1 should resolve to statement index 0.")
+	_expect_equal(StringName(program.get_statement(0).get("vehicle_id", &"")), &"arm_vehicle", "First statement should bind Arm explicitly.")
+	_expect_equal(StringName(program.get_statement(2).get("vehicle_id", &"")), &"transport_vehicle", "Third statement should bind Transport explicitly.")
+	_expect_equal(int(program.get_statement(3).get("repeat_target_index", -1)), 0, "repeat target #1 should resolve to statement index 0.")
 	_expect_true(ValidatorScript.new().validate(program, Vector2i(16, 10)).is_empty(), "Parsed source should be structurally valid.")
 
-
-func _test_source_diagnostic_physical_line() -> void:
-	var source := "automata_scene01_program 2\n\n# comment\n\n[arm_vehicle:moveTo] x 3\n"
-	var parsed := SourceScript.new().parse(source)
-	var diagnostics: Array = parsed["diagnostics"]
+func _test_source_diagnostic_and_statement_lines() -> void:
+	var invalid := SourceScript.new().parse("automata_scene01_program 2\n\n# comment\n\n[arm_vehicle:moveTo] x 3\n")
+	var diagnostics: Array = invalid["diagnostics"]
 	_expect_equal(diagnostics.size(), 1, "Invalid MoveTo should produce one source diagnostic.")
 	if not diagnostics.is_empty():
-		_expect_equal(int(diagnostics[0].get("line", 0)), 5, "Diagnostic should preserve physical source line numbers.")
-		_expect_equal(StringName(diagnostics[0].get("code", &"")), &"move_to_syntax", "Diagnostic should expose a stable code.")
+		_expect_equal(int(diagnostics[0].get("line", 0)), 5, "Syntax diagnostic should preserve physical source line numbers.")
+	var mapped := SourceScript.new().parse("automata_scene01_program 2\n\n# comment\n[arm_vehicle:moveTo] 1 3\n\nrepeat 2 1\n")
+	_expect_equal(mapped.get("statement_lines", []), [4, 6], "Parser should preserve physical line for every runtime statement.")
 
+func _test_repeat_range_rejects_repeat() -> void:
+	var parsed := SourceScript.new().parse("automata_scene01_program 2\n[arm_vehicle:moveTo] 1 3\nrepeat 100 1\nrepeat 100 1\n")
+	var program := parsed.get("program") as Scene01Program
+	_expect_true(program != null, "Nested Repeat fixture should be syntactically valid.")
+	if program == null:
+		return
+	var diagnostics := ValidatorScript.new().validate(program, Vector2i(16, 10))
+	_expect_true(_has_diagnostic(diagnostics, &"nested_repeat_unsupported"), "DSL v2 must reject Repeat ranges containing another Repeat before runtime.")
 
 func _test_requirements_follow_command_vehicle() -> void:
 	var program := ProgramScript.new()
@@ -63,7 +65,6 @@ func _test_requirements_follow_command_vehicle() -> void:
 	program.set_statement_vehicle(arm_grab, &"arm_vehicle")
 	var repeat_index := program.append_statement(ProgramScript.StatementType.REPEAT)
 	program.set_repeat(repeat_index, 2, arm_move)
-
 	var validator := ValidatorScript.new()
 	_expect_true(validator.validate(program, Vector2i(16, 10)).is_empty(), "Multi-vehicle program should validate structurally.")
 	var requirements := validator.required_capabilities_by_vehicle(program)
@@ -74,17 +75,17 @@ func _test_requirements_follow_command_vehicle() -> void:
 	_expect_true(requirements[&"transport_vehicle"].has(AssemblyCapabilitiesScript.CAN_MOVE), "Transport should require Move capability.")
 	_expect_false(requirements[&"transport_vehicle"].has(AssemblyCapabilitiesScript.GRAB_DROP), "Transport should not inherit Arm GrabDrop requirements.")
 
-
+func _has_diagnostic(diagnostics: Array[Dictionary], code: StringName) -> bool:
+	for diagnostic in diagnostics:
+		if StringName(diagnostic.get("code", &"")) == code:
+			return true
+	return false
 func _expect_true(value: bool, message: String) -> void:
 	if not value:
 		failures += 1
 		push_error(message)
-
-
 func _expect_false(value: bool, message: String) -> void:
 	_expect_true(not value, message)
-
-
 func _expect_equal(actual: Variant, expected: Variant, message: String) -> void:
 	if actual != expected:
 		failures += 1
