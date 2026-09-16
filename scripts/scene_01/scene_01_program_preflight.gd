@@ -22,46 +22,35 @@ func prepare(
 			StringName(first.get("code", &"program_invalid")),
 			int(first.get("statement_index", ProgramScript.NO_STATEMENT_INDEX))
 		)
+	for index in range(program.get_statement_count()):
+		var statement := program.get_statement(index)
+		var statement_type := int(statement.get("type", -1))
+		if statement_type != ProgramScript.StatementType.MOVE_TO and statement_type != ProgramScript.StatementType.GRAB_DROP:
+			continue
+		var vehicle_id := StringName(statement.get("vehicle_id", &""))
+		var vehicle := vehicle_manager.get_vehicle_by_id(vehicle_id)
+		if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
+			return _failure(&"program_vehicle_missing", index)
+		if statement_type != ProgramScript.StatementType.MOVE_TO:
+			continue
+		var target: Vector2i = statement.get("target_anchor", Vector2i(-1, -1))
+		if not scene_controller.is_grid_footprint_walkable(target, vehicle.definition.footprint):
+			return _failure(&"move_target_not_walkable", index)
 	var requirement_vehicle_ids: Array[StringName] = []
 	var requirements := _validator.required_capabilities_by_vehicle(program)
 	for vehicle_value in requirements.keys():
 		var vehicle_id := StringName(vehicle_value)
-		var vehicle := vehicle_manager.get_vehicle_by_id(vehicle_id)
-		if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
-			_clear_requirements(compile_gate, requirement_vehicle_ids)
-			return _failure(&"program_vehicle_missing")
 		var required: Array[StringName] = []
 		for capability_value in requirements[vehicle_value]:
 			required.append(StringName(capability_value))
 		compile_gate.set_required_capabilities(vehicle_id, required)
 		requirement_vehicle_ids.append(vehicle_id)
-	for index in range(program.get_statement_count()):
-		var statement := program.get_statement(index)
-		if int(statement.get("type", -1)) != ProgramScript.StatementType.MOVE_TO:
-			continue
-		var vehicle_id := StringName(statement.get("vehicle_id", &""))
-		var vehicle := vehicle_manager.get_vehicle_by_id(vehicle_id)
-		if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
-			_clear_requirements(compile_gate, requirement_vehicle_ids)
-			return _failure(&"program_vehicle_missing", index)
-		var target: Vector2i = statement.get("target_anchor", Vector2i(-1, -1))
-		if not scene_controller.is_grid_footprint_walkable(target, vehicle.definition.footprint):
-			_clear_requirements(compile_gate, requirement_vehicle_ids)
-			return _failure(&"move_target_not_walkable", index)
 	return {
 		"ok": true,
 		"reason": &"",
 		"statement_index": ProgramScript.NO_STATEMENT_INDEX,
 		"requirement_vehicle_ids": requirement_vehicle_ids,
 	}
-
-func _clear_requirements(
-	compile_gate: CompileGateScript,
-	vehicle_ids: Array[StringName]
-) -> void:
-	for vehicle_id in vehicle_ids:
-		var empty: Array[StringName] = []
-		compile_gate.set_required_capabilities(vehicle_id, empty)
 
 func _failure(
 	reason: StringName,
