@@ -38,7 +38,7 @@ func _initialize_editor() -> void:
 	_set_source_text_internal(SupportScript.HEADER + "\n")
 	_parse_current_source(false)
 func get_program() -> Scene01Program:
-	return _program
+	return _program.duplicate_program() if _program != null else null
 func get_source_text() -> String:
 	return _source_editor.text if _source_editor != null else ""
 func set_source_text(source: String) -> void:
