@@ -43,8 +43,9 @@ func _test_production_runner() -> void:
 	var manager := scene.get_node_or_null("SceneRoot/RobotRoot/Scene01VehicleManager") as Scene01VehicleManager
 	var object_manager := scene.get_node_or_null("SceneRoot/ObjectRoot/Scene01ObjectManager") as Scene01ObjectManager
 	var selection = scene.get_node_or_null("SceneRoot/GridRoot/VehicleSelectionController")
-	_expect_true(runner != null and compile_gate != null and manager != null and object_manager != null and selection != null, "Production scene should expose program dependencies.")
-	if runner == null or compile_gate == null or manager == null or object_manager == null or selection == null:
+	var move_controller = scene.get_node_or_null("SceneRoot/GridRoot/VehicleMoveController")
+	_expect_true(runner != null and compile_gate != null and manager != null and object_manager != null and selection != null and move_controller != null, "Production scene should expose program dependencies.")
+	if runner == null or compile_gate == null or manager == null or object_manager == null or selection == null or move_controller == null:
 		scene.queue_free()
 		await process_frame
 		return
@@ -93,6 +94,18 @@ func _test_production_runner() -> void:
 	await process_frame
 	var arm = manager.get_vehicle_by_id(&"arm_vehicle")
 	var transport = manager.get_vehicle_by_id(&"transport_vehicle")
+	_expect_true(selection.select_vehicle(transport), "Fixture should select Transport for Program Stop regression.")
+	var stopped_program := ProgramScript.new()
+	_append_move(stopped_program, &"transport_vehicle", Vector2i(8, 4))
+	_expect_true(runner.start_program(stopped_program), "Transport Program Move should start before player Stop.")
+	await process_frame
+	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_RUNNING, "Program Move should be active before Stop.")
+	_expect_true(move_controller.request_selected_vehicle_stop(), "Player Stop should cancel the selected Program-owned Move.")
+	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_FAILED, "Player Stop must terminate Program instead of leaving it RUNNING.")
+	_expect_equal(runner.get_last_error(), &"move_blocked", "Vehicle cancellation should surface through the existing move_blocked contract.")
+	_expect_true(bool(scene.call("reset_scene_state")), "Reset should recover after player-stopped Program Move.")
+	await process_frame
+	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_IDLE, "Reset should clear stopped Program failure state.")
 	_expect_true(selection.select_vehicle(arm), "Fixture should select Arm before multi-vehicle program.")
 	observed_command_vehicles.clear()
 	runner.command_started.connect(_on_command_started)
