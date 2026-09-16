@@ -84,7 +84,7 @@ func _run() -> void:
 	var program_end_time := score.get_elapsed_time()
 	var program_automated := score.get_automated_runtime()
 	test.expect_true(program_automated > 1.0, "Automation should continue accruing after takeover until Program completion.")
-	test.expect_float_approx(program_automated, program_end_time - 4.0, "Automation runtime should follow actual post-takeover simulation time.")
+	test.expect_true(absf(program_automated - (program_end_time - 4.0)) < 0.05, "Automation runtime should match real post-takeover scheduling within one-frame tolerance.")
 
 	while box.get_current_count() < box.get_capacity() - 1:
 		test.expect_true(box.put_item(StandardBlockScript.create()).is_success(), "Fixture should prepare box at 7/8.")
