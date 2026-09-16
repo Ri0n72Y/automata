@@ -29,6 +29,7 @@ func request_vehicle_move(vehicle: VehicleActor, target_anchor: Vector2i) -> boo
 	var accepted := super.request_selected_vehicle_move(target_anchor)
 	_has_command_vehicle_override = false
 	_command_vehicle_override = null
+	_sync_live_target_mode()
 	if accepted:
 		_face_vehicle_for_final_step(vehicle)
 	return accepted
