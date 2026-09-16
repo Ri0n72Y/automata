@@ -36,6 +36,7 @@ func request_vehicle_grab_drop(vehicle: VehicleActor) -> GrabDropResultScript:
 	var result := super.request_selected_grab_drop()
 	_has_command_vehicle_override = false
 	_command_vehicle_override = null
+	refresh_interaction_preview()
 	return result
 
 
