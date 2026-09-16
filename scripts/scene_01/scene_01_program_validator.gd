@@ -5,6 +5,7 @@ const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
 const AssemblyCapabilitiesScript := preload("res://scripts/assembly/assembly_capabilities.gd")
 
 const MAX_REPEAT_COUNT := 100
+const MAX_EXPANDED_STEPS := 10000
 
 func validate(program: Scene01Program, grid_size: Vector2i = Vector2i.ZERO) -> Array[Dictionary]:
 	var diagnostics: Array[Dictionary] = []
@@ -14,6 +15,8 @@ func validate(program: Scene01Program, grid_size: Vector2i = Vector2i.ZERO) -> A
 		return [_diagnostic(&"statements_required", "Program requires at least one statement.")]
 	for index in range(program.get_statement_count()):
 		_validate_statement(program, index, grid_size, diagnostics)
+	if diagnostics.is_empty():
+		_validate_execution_budget(program, diagnostics)
 	return diagnostics
 
 func required_capabilities(program: Scene01Program) -> Array[StringName]:
@@ -81,6 +84,22 @@ func _validate_repeat(
 	for nested_index in range(target_index, index):
 		if int(program.get_statement(nested_index).get("type", -1)) == ProgramScript.StatementType.REPEAT:
 			diagnostics.append(_diagnostic(&"nested_repeat_unsupported", "Repeat ranges cannot contain another Repeat in DSL v2.", index))
+			return
+
+func _validate_execution_budget(program: Scene01Program, diagnostics: Array[Dictionary]) -> void:
+	var expanded_steps := program.get_statement_count()
+	if expanded_steps > MAX_EXPANDED_STEPS:
+		diagnostics.append(_diagnostic(&"program_too_large", "Expanded Program exceeds %d execution steps." % MAX_EXPANDED_STEPS, MAX_EXPANDED_STEPS))
+		return
+	for index in range(program.get_statement_count()):
+		var statement := program.get_statement(index)
+		if int(statement.get("type", -1)) != ProgramScript.StatementType.REPEAT:
+			continue
+		var target_index := int(statement.get("repeat_target_index", ProgramScript.NO_STATEMENT_INDEX))
+		var repeat_count := int(statement.get("repeat_count", 1))
+		expanded_steps += (repeat_count - 1) * (index - target_index + 1)
+		if expanded_steps > MAX_EXPANDED_STEPS:
+			diagnostics.append(_diagnostic(&"program_too_large", "Expanded Program exceeds %d execution steps." % MAX_EXPANDED_STEPS, index))
 			return
 
 func _append_requirement(result: Dictionary, vehicle_id: StringName, capability: StringName) -> void:
