@@ -21,6 +21,7 @@ const STATE_IDLE := 0
 const STATE_RUNNING := 1
 const STATE_COMPLETED := 2
 const STATE_FAILED := 3
+const MAX_SYNCHRONOUS_STEPS := 10000
 
 var _preflight := PreflightScript.new()
 var _command_executor := CommandExecutorScript.new()
@@ -47,7 +48,6 @@ func _ready() -> void:
 	_command_executor.move_completed.connect(_on_move_completed)
 	_command_executor.move_blocked.connect(_on_move_blocked)
 	_scene_controller.lifecycle_reset_completed.connect(_on_lifecycle_reset_completed)
-	set_process(false)
 
 func start_program(program: Scene01Program) -> bool:
 	if _state == STATE_RUNNING:
@@ -60,13 +60,13 @@ func start_program(program: Scene01Program) -> bool:
 		return _fail_start(StringName(result.get("reason", &"program_invalid")), int(result.get("statement_index", ProgramScript.NO_STATEMENT_INDEX)))
 	for value in result.get("requirement_vehicle_ids", []):
 		_requirements_vehicle_ids.append(StringName(value))
-	if not _scene_controller.ensure_gameplay_running():
-		return _fail_start(&"lifecycle_start_rejected")
+	if not _prepare_runtime():
+		return false
 	_state = STATE_RUNNING
 	_pc = 0
 	_last_error = &""
-	set_process(true)
 	execution_started.emit()
+	_drain_until_wait()
 	return true
 
 func get_state() -> int:
@@ -76,13 +76,31 @@ func get_current_statement_index() -> int:
 func get_last_error() -> StringName:
 	return _last_error
 
-func _process(_delta: float) -> void:
-	if _state != STATE_RUNNING or _waiting_for_move or not _scene_controller.is_gameplay_running():
-		return
-	if _pc >= _program.get_statement_count():
-		_complete_execution()
-		return
-	_execute_statement()
+func _prepare_runtime() -> bool:
+	if _scene_controller.is_gameplay_running():
+		if _compile_gate.prepare_scene_run():
+			return true
+		return _fail_start(&"program_capability_rejected")
+	if _scene_controller.ensure_gameplay_running():
+		return true
+	var reason := &"lifecycle_start_rejected"
+	if not _compile_gate.get_last_diagnostics().is_empty():
+		reason = &"program_capability_rejected"
+	return _fail_start(reason)
+
+func _drain_until_wait() -> void:
+	var steps := 0
+	while _state == STATE_RUNNING and not _waiting_for_move:
+		if not _scene_controller.is_gameplay_running():
+			return
+		if _pc >= _program.get_statement_count():
+			_complete_execution()
+			return
+		steps += 1
+		if steps > MAX_SYNCHRONOUS_STEPS:
+			_fail_execution(_pc, &"program_step_limit_exceeded")
+			return
+		_execute_statement()
 
 func _execute_statement() -> void:
 	var statement := _program.get_statement(_pc)
@@ -125,9 +143,11 @@ func _execute_repeat(statement: Dictionary) -> void:
 	_pc += 1
 
 func _on_move_completed() -> void:
-	if _state == STATE_RUNNING and _waiting_for_move:
-		_waiting_for_move = false
-		_pc += 1
+	if _state != STATE_RUNNING or not _waiting_for_move:
+		return
+	_waiting_for_move = false
+	_pc += 1
+	_drain_until_wait()
 func _on_move_blocked() -> void:
 	if _state == STATE_RUNNING and _waiting_for_move:
 		_fail_execution(_pc, &"move_blocked")
@@ -136,7 +156,6 @@ func _complete_execution() -> void:
 	_state = STATE_COMPLETED
 	_waiting_for_move = false
 	_last_error = &""
-	set_process(false)
 	_command_executor.cancel()
 	execution_completed.emit()
 
@@ -148,14 +167,12 @@ func _fail_execution(statement_index: int, reason: StringName) -> void:
 	_state = STATE_FAILED
 	_last_error = reason
 	_waiting_for_move = false
-	set_process(false)
 	_command_executor.cancel()
 	execution_failed.emit(statement_index, reason)
 func _on_lifecycle_reset_completed() -> void:
 	_clear_execution(true)
 
 func _clear_execution(emit_reset: bool) -> void:
-	set_process(false)
 	_command_executor.cancel()
 	_clear_requirements()
 	_program = null
