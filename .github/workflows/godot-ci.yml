@@ -33,12 +33,28 @@ jobs:
         run: godot --version
 
       - name: Import project
-        run: godot --headless --path . --editor --quit
+        shell: bash
+        run: |
+          set -euo pipefail
+          log="$(mktemp)"
+          trap 'rm -f "$log"' EXIT
+
+          if godot --headless --path . --editor --quit 2>&1 | tee "$log"; then
+            rc=0
+          else
+            rc=$?
+          fi
+
+          if (( rc != 0 )) || grep -q 'SCRIPT ERROR:' "$log"; then
+            echo "Godot import failed (exit=$rc)."
+            exit 1
+          fi
 
       - name: Run runtime test matrix
         shell: bash
         run: |
           set -euo pipefail
+          readonly test_timeout_seconds=30
           mapfile -t tests < <(
             find tests -type f \
               \( -name '*_test.gd' -o -name '*_smoke_test.gd' \) \
@@ -52,7 +68,8 @@ jobs:
             test="res://$test_path"
             log="$(mktemp)"
             echo "=== RUN  $test ==="
-            if godot --headless --path . --script "$test" 2>&1 | tee "$log"; then
+            if timeout --signal=TERM --kill-after=5s "${test_timeout_seconds}s" \
+              godot --headless --path . --script "$test" 2>&1 | tee "$log"; then
               rc=0
             else
               rc=$?
