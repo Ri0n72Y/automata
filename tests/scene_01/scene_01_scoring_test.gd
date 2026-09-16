@@ -13,8 +13,11 @@ const StandardBlockScript := preload("res://scripts/objects/standard_block.gd")
 
 var test := ContractTestScript.new()
 
+
 func _init() -> void:
 	call_deferred("_run")
+
+
 func _run() -> void:
 	var packed := load(SCENE_PATH) as PackedScene
 	test.expect_true(packed != null, "Scene 01 should load for scoring test.")
@@ -56,8 +59,10 @@ func _run() -> void:
 	test.expect_float_approx(score.get_manual_runtime(), 2.0, "Manual runtime should use Mission timer duration.")
 
 	var program := ProgramScript.new()
-	program.reset()
-	test.expect_true(runner.start_program(program), "Start-only program should enter automated runtime.")
+	var program_move := program.append_statement(ProgramScript.StatementType.MOVE_TO)
+	program.set_statement_vehicle(program_move, VehicleManagerScript.TRANSPORT_VEHICLE_ID)
+	program.set_move_target(program_move, transport.runtime_state.anchor_cell)
+	test.expect_true(runner.start_program(program), "Transport no-op program should enter automated runtime.")
 	test.expect_true(move.request_selected_vehicle_move(Vector2i(4, 2)), "Player takeover should remain available while Program runs.")
 	scene.timer = 4.0
 	test.expect_true(move.request_selected_vehicle_stop(), "Player takeover should stop through the shared controller.")
@@ -104,10 +109,9 @@ func _run() -> void:
 
 	scene.call("run_scene")
 	var move_program := ProgramScript.new()
-	move_program.reset()
-	var program_move_id := move_program.append_node(ProgramScript.NodeType.MOVE_TO)
-	move_program.set_command_vehicle(program_move_id, VehicleManagerScript.ARM_VEHICLE_ID)
-	test.expect_true(move_program.set_move_target(program_move_id, arm.runtime_state.anchor_cell), "Program MoveTo fixture should configure.")
+	var program_move_index := move_program.append_statement(ProgramScript.StatementType.MOVE_TO)
+	move_program.set_statement_vehicle(program_move_index, VehicleManagerScript.ARM_VEHICLE_ID)
+	test.expect_true(move_program.set_move_target(program_move_index, arm.runtime_state.anchor_cell), "Program MoveTo fixture should configure.")
 	test.expect_true(runner.start_program(move_program), "Program MoveTo should start after Reset.")
 	await process_frame
 	await process_frame
@@ -118,12 +122,11 @@ func _run() -> void:
 	test.expect_true(bool(scene.call("reset_scene")), "Second Reset should prepare multi-vehicle scoring regression.")
 	scene.call("run_scene")
 	var multi := ProgramScript.new()
-	multi.reset()
-	var arm_move := multi.append_node(ProgramScript.NodeType.MOVE_TO)
-	multi.set_command_vehicle(arm_move, VehicleManagerScript.ARM_VEHICLE_ID)
+	var arm_move := multi.append_statement(ProgramScript.StatementType.MOVE_TO)
+	multi.set_statement_vehicle(arm_move, VehicleManagerScript.ARM_VEHICLE_ID)
 	multi.set_move_target(arm_move, arm.runtime_state.anchor_cell)
-	var transport_move := multi.append_node(ProgramScript.NodeType.MOVE_TO)
-	multi.set_command_vehicle(transport_move, VehicleManagerScript.TRANSPORT_VEHICLE_ID)
+	var transport_move := multi.append_statement(ProgramScript.StatementType.MOVE_TO)
+	multi.set_statement_vehicle(transport_move, VehicleManagerScript.TRANSPORT_VEHICLE_ID)
 	multi.set_move_target(transport_move, transport.runtime_state.anchor_cell)
 	test.expect_true(runner.start_program(multi), "One Program should automate Arm and Transport.")
 	scene.timer = 2.0
