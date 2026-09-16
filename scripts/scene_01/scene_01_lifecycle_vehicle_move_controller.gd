@@ -1,9 +1,6 @@
 class_name Scene01LifecycleVehicleMoveController
 extends "res://scripts/input/vehicle_move_controller.gd"
 
-var _command_vehicle: VehicleActor
-var _command_vehicle_active := false
-
 
 func _physics_process(delta: float) -> void:
 	if not _is_lifecycle_running():
@@ -24,11 +21,7 @@ func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
 func request_vehicle_move(vehicle: VehicleActor, target_anchor: Vector2i) -> bool:
 	if vehicle != null and not _ensure_gameplay_running():
 		return false
-	_command_vehicle = vehicle
-	_command_vehicle_active = true
-	var accepted := super.request_selected_vehicle_move(target_anchor)
-	_command_vehicle_active = false
-	_command_vehicle = null
+	var accepted := super.request_vehicle_move(vehicle, target_anchor)
 	if accepted:
 		_face_vehicle_for_final_step(vehicle)
 	_sync_live_target_mode()
@@ -43,12 +36,6 @@ func request_selected_vehicle_stop() -> bool:
 
 func sync_lifecycle_state() -> void:
 	_sync_live_target_mode()
-
-
-func _get_selected_vehicle() -> VehicleActor:
-	if _command_vehicle_active:
-		return _command_vehicle
-	return super._get_selected_vehicle()
 
 
 func _sync_live_target_mode() -> void:
