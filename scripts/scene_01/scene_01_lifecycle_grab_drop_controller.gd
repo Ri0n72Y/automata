@@ -21,13 +21,31 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func request_selected_grab_drop() -> GrabDropResultScript:
+	return request_vehicle_grab_drop(_get_selected_vehicle())
+
+
+func request_vehicle_grab_drop(vehicle: VehicleActor) -> GrabDropResultScript:
 	if _is_lifecycle_paused():
 		return null
-	if _get_selected_vehicle() == null:
-		return super.request_selected_grab_drop()
+	if vehicle == null or vehicle.runtime_state == null:
+		var missing_vehicle_result := GrabDropResultScript.rejected(
+			GrabDropResultScript.Action.NONE,
+			GrabDropResultScript.Status.NO_TARGET
+		)
+		grab_drop_completed.emit(
+			&"",
+			missing_vehicle_result.action,
+			missing_vehicle_result.status
+		)
+		return missing_vehicle_result
 	if not _ensure_gameplay_running():
 		return null
-	return super.request_selected_grab_drop()
+	var target: Variant = resolve_target_for_vehicle(vehicle)
+	var result := _command.execute(vehicle.runtime_state, target)
+	vehicle.sync_from_state()
+	refresh_interaction_preview()
+	grab_drop_completed.emit(vehicle.get_vehicle_id(), result.action, result.status)
+	return result
 
 
 func rotate_selected_arm(direction: int) -> bool:
