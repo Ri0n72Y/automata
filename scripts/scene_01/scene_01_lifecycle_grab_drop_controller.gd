@@ -1,11 +1,14 @@
 class_name Scene01LifecycleGrabDropController
 extends "res://scripts/input/vehicle_grab_drop_controller.gd"
 
+const BaseGrabDropControllerScript := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
+const CommandSelectionProxyScript := preload("res://scripts/scene_01/scene_01_command_vehicle_selection_proxy.gd")
+
 @export var scene_controller_path: NodePath = NodePath("../../..")
 
 var _scene_controller: Node
-var _command_vehicle_override: VehicleActor
-var _has_command_vehicle_override := false
+var _command_delegate: BaseGrabDropControllerScript
+var _command_selection: Scene01CommandVehicleSelectionProxy
 
 
 func _ready() -> void:
@@ -31,12 +34,13 @@ func request_vehicle_grab_drop(vehicle: VehicleActor) -> GrabDropResultScript:
 		return null
 	if vehicle != null and not _ensure_gameplay_running():
 		return null
-	_command_vehicle_override = vehicle
-	_has_command_vehicle_override = true
-	var result := super.request_selected_grab_drop()
-	_has_command_vehicle_override = false
-	_command_vehicle_override = null
+	_prepare_command_delegate(vehicle)
+	var result := _command_delegate.request_selected_grab_drop() as GrabDropResultScript
+	_command_selection.clear_command_vehicle()
 	refresh_interaction_preview()
+	if result != null:
+		var vehicle_id := vehicle.get_vehicle_id() if vehicle != null else &""
+		grab_drop_completed.emit(vehicle_id, result.action, result.status)
 	return result
 
 
@@ -44,7 +48,7 @@ func rotate_selected_arm(direction: int) -> bool:
 	if _is_lifecycle_paused():
 		return false
 	var step := clampi(direction, -1, 1)
-	if step == 0 or _get_selected_vehicle() == null:
+	if step == 0 or super._get_selected_vehicle() == null:
 		return false
 	if not _ensure_gameplay_running():
 		return false
@@ -62,10 +66,15 @@ func sync_lifecycle_state() -> void:
 	refresh_interaction_preview()
 
 
-func _get_selected_vehicle():
-	if _has_command_vehicle_override:
-		return _command_vehicle_override
-	return super._get_selected_vehicle()
+func _prepare_command_delegate(vehicle: VehicleActor) -> void:
+	if _command_selection == null:
+		_command_selection = CommandSelectionProxyScript.new()
+	if _command_delegate == null:
+		_command_delegate = BaseGrabDropControllerScript.new()
+	_command_selection.set_command_vehicle(vehicle)
+	_command_delegate.vehicle_selection_controller = _command_selection
+	_command_delegate.vehicle_manager = vehicle_manager
+	_command_delegate.object_manager = object_manager
 
 
 func _ensure_gameplay_running() -> bool:
