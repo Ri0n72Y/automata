@@ -5,11 +5,7 @@ const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
 const ProgramSourceScript := preload("res://scripts/scene_01/scene_01_program_source.gd")
 const RunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
 const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
-const AssemblyDefinitionAdapterScript := preload("res://scripts/scene_01/scene_01_assembly_definition_adapter.gd")
-const AssemblyCompilerScript := preload("res://scripts/assembly/assembly_compiler.gd")
-const AssemblyCompileRequestScript := preload("res://scripts/assembly/assembly_compile_request.gd")
 const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
-const AssemblyCapabilitiesScript := preload("res://scripts/assembly/assembly_capabilities.gd")
 
 const SAVE_PATH := "user://scene_01_program.txt"
 
@@ -49,7 +45,6 @@ func _initialize_editor() -> void:
 	_populate_vehicles()
 	_set_source_text_internal(ProgramSourceScript.HEADER + "\n")
 	_parse_current_source(false)
-	_refresh_capability_buttons()
 
 
 func get_program() -> Scene01Program:
@@ -80,7 +75,7 @@ func _bind_ui() -> void:
 
 func _bind_runner() -> void:
 	_runner.execution_started.connect(_on_execution_started)
-	_runner.node_started.connect(_on_node_started)
+	_runner.statement_started.connect(_on_statement_started)
 	_runner.execution_completed.connect(_on_execution_completed)
 	_runner.execution_failed.connect(_on_execution_failed)
 	_runner.execution_reset.connect(_on_execution_reset)
@@ -105,7 +100,6 @@ func _selected_vehicle_id() -> StringName:
 
 
 func _on_vehicle_selected(_index: int) -> void:
-	_refresh_capability_buttons()
 	_status_label.text = "新增命令车辆：%s" % String(_selected_vehicle_id())
 
 
@@ -186,25 +180,26 @@ func _on_run() -> void:
 		_status_label.text = "运行前拒绝：%s" % _reason_text(_runner.get_last_error())
 
 
-func _on_execution_started(_vehicle_id: StringName) -> void:
+func _on_execution_started() -> void:
 	_set_editing_enabled(false)
 	_status_label.text = "全局程序运行中 · 编辑器已锁定"
 
 
-func _on_node_started(node_id: int, _node_type: int) -> void:
-	_status_label.text = "运行节点 #%d" % node_id
+func _on_statement_started(statement_index: int, _statement_type: int) -> void:
+	_status_label.text = "运行语句 #%d" % (statement_index + 1)
 
 
-func _on_execution_completed(_vehicle_id: StringName) -> void:
+func _on_execution_completed() -> void:
 	_set_editing_enabled(true)
 	_parse_current_source(false)
 	_status_label.text = "程序完成"
 
 
-func _on_execution_failed(node_id: int, reason: StringName) -> void:
+func _on_execution_failed(statement_index: int, reason: StringName) -> void:
 	_set_editing_enabled(true)
 	_parse_current_source(false)
-	_status_label.text = "节点 #%d 失败：%s" % [node_id, _reason_text(reason)]
+	var prefix := "运行前" if statement_index < 0 else "语句 #%d" % (statement_index + 1)
+	_status_label.text = "%s 失败：%s" % [prefix, _reason_text(reason)]
 
 
 func _on_execution_reset() -> void:
@@ -260,41 +255,23 @@ func _parse_current_source(show_status: bool) -> Dictionary:
 func _refresh_repeat_controls() -> void:
 	_repeat_target_option.clear()
 	if _program != null:
-		var statement_index := 0
-		for node in _program.get_execution_order():
-			var node_type := int(node.get("type", -1))
-			if node_type == ProgramScript.NodeType.START:
+		var statements := _program.get_statements()
+		for index in range(statements.size()):
+			var statement: Dictionary = statements[index]
+			var statement_type := int(statement.get("type", -1))
+			if statement_type != ProgramScript.StatementType.MOVE_TO and statement_type != ProgramScript.StatementType.GRAB_DROP:
 				continue
-			statement_index += 1
-			if node_type != ProgramScript.NodeType.MOVE_TO and node_type != ProgramScript.NodeType.GRAB_DROP:
-				continue
-			var vehicle_id := String(node.get("vehicle_id", &""))
-			var command_name := "MoveTo" if node_type == ProgramScript.NodeType.MOVE_TO else "GrabDrop"
-			_repeat_target_option.add_item("#%d [%s] %s" % [statement_index, vehicle_id, command_name])
-			_repeat_target_option.set_item_metadata(_repeat_target_option.item_count - 1, statement_index)
+			var vehicle_id := String(statement.get("vehicle_id", &""))
+			var command_name := "MoveTo" if statement_type == ProgramScript.StatementType.MOVE_TO else "GrabDrop"
+			var source_number := index + 1
+			_repeat_target_option.add_item("#%d [%s] %s" % [source_number, vehicle_id, command_name])
+			_repeat_target_option.set_item_metadata(_repeat_target_option.item_count - 1, source_number)
 	_add_repeat_button.disabled = not _editing_enabled or _repeat_target_option.item_count <= 0
 	_repeat_target_option.disabled = not _editing_enabled or _repeat_target_option.item_count <= 0
 
 
 func _statement_count(program: Scene01Program) -> int:
-	if program == null:
-		return 0
-	return maxi(0, program.get_execution_order().size() - 1)
-
-
-func _refresh_capability_buttons() -> void:
-	var can_move := false
-	var can_grab_drop := false
-	var vehicle := _vehicle_manager.get_vehicle_by_id(_selected_vehicle_id()) if _vehicle_manager != null else null
-	if vehicle != null:
-		var definition = AssemblyDefinitionAdapterScript.new().build_definition(vehicle)
-		if definition != null:
-			var compile_result = AssemblyCompilerScript.new().compile(AssemblyCompileRequestScript.new(definition))
-			if compile_result.is_success():
-				can_move = compile_result.has_capability(AssemblyCapabilitiesScript.CAN_MOVE)
-				can_grab_drop = compile_result.has_capability(AssemblyCapabilitiesScript.GRAB_DROP)
-	_add_move_button.disabled = not _editing_enabled or not can_move
-	_add_grab_button.disabled = not _editing_enabled or not can_grab_drop
+	return program.get_statement_count() if program != null else 0
 
 
 func _set_editing_enabled(enabled: bool) -> void:
@@ -304,12 +281,13 @@ func _set_editing_enabled(enabled: bool) -> void:
 	_target_y.editable = enabled
 	_repeat_count.editable = enabled
 	_source_editor.editable = enabled
+	_add_move_button.disabled = not enabled
+	_add_grab_button.disabled = not enabled
 	_clear_button.disabled = not enabled
 	_save_button.disabled = not enabled
 	_load_button.disabled = not enabled
 	_export_button.disabled = not enabled
 	_run_button.disabled = not enabled
-	_refresh_capability_buttons()
 	_refresh_repeat_controls()
 
 
@@ -324,13 +302,13 @@ func _diagnostic_text(diagnostic: Dictionary) -> String:
 func _reason_text(reason: StringName) -> String:
 	match reason:
 		&"program_capability_rejected": return "当前装配缺少程序所需能力"
+		&"statements_required": return "程序至少需要一条语句"
 		&"command_vehicle_required": return "命令缺少车辆"
 		&"move_target_required": return "MoveTo 缺少目标格"
 		&"move_target_out_of_bounds": return "MoveTo 目标超出网格"
 		&"move_target_not_walkable": return "MoveTo 目标不可通行"
 		&"invalid_repeat_count": return "Repeat 次数必须为 1–100"
-		&"repeat_target_required", &"invalid_repeat_target": return "Repeat 需要指向之前的车辆命令"
-		&"unreachable_node", &"next_cycle", &"missing_next_node": return "程序连接无效"
+		&"invalid_repeat_target": return "Repeat 需要指向之前的车辆命令"
 		&"move_blocked": return "车辆移动被阻挡"
 		&"no_path": return "目标没有可用路径"
 		&"program_vehicle_missing": return "程序车辆不存在"
