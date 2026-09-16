@@ -6,7 +6,6 @@ const AssemblyCapabilitiesScript := preload("res://scripts/assembly/assembly_cap
 
 const MAX_REPEAT_COUNT := 100
 
-
 func validate(program: Scene01Program, grid_size: Vector2i = Vector2i.ZERO) -> Array[Dictionary]:
 	var diagnostics: Array[Dictionary] = []
 	if program == null:
@@ -17,7 +16,6 @@ func validate(program: Scene01Program, grid_size: Vector2i = Vector2i.ZERO) -> A
 		_validate_statement(program, index, grid_size, diagnostics)
 	return diagnostics
 
-
 func required_capabilities(program: Scene01Program) -> Array[StringName]:
 	var result: Array[StringName] = []
 	for values in required_capabilities_by_vehicle(program).values():
@@ -26,7 +24,6 @@ func required_capabilities(program: Scene01Program) -> Array[StringName]:
 			if not result.has(capability):
 				result.append(capability)
 	return result
-
 
 func required_capabilities_by_vehicle(program: Scene01Program) -> Dictionary:
 	var result: Dictionary = {}
@@ -40,7 +37,6 @@ func required_capabilities_by_vehicle(program: Scene01Program) -> Dictionary:
 			ProgramScript.StatementType.GRAB_DROP:
 				_append_requirement(result, vehicle_id, AssemblyCapabilitiesScript.GRAB_DROP)
 	return result
-
 
 func _validate_statement(
 	program: Scene01Program,
@@ -65,7 +61,6 @@ func _validate_statement(
 	elif statement_type == ProgramScript.StatementType.REPEAT:
 		_validate_repeat(program, statement, index, diagnostics)
 
-
 func _validate_repeat(
 	program: Scene01Program,
 	statement: Dictionary,
@@ -79,11 +74,14 @@ func _validate_repeat(
 	if target_index < 0 or target_index >= index:
 		diagnostics.append(_diagnostic(&"invalid_repeat_target", "Repeat target must reference an earlier vehicle statement.", index))
 		return
-	var target := program.get_statement(target_index)
-	var target_type := int(target.get("type", -1))
+	var target_type := int(program.get_statement(target_index).get("type", -1))
 	if target_type != ProgramScript.StatementType.MOVE_TO and target_type != ProgramScript.StatementType.GRAB_DROP:
 		diagnostics.append(_diagnostic(&"invalid_repeat_target", "Repeat target must reference an earlier vehicle statement.", index))
-
+		return
+	for nested_index in range(target_index, index):
+		if int(program.get_statement(nested_index).get("type", -1)) == ProgramScript.StatementType.REPEAT:
+			diagnostics.append(_diagnostic(&"nested_repeat_unsupported", "Repeat ranges cannot contain another Repeat in DSL v2.", index))
+			return
 
 func _append_requirement(result: Dictionary, vehicle_id: StringName, capability: StringName) -> void:
 	if vehicle_id == &"":
@@ -96,14 +94,12 @@ func _append_requirement(result: Dictionary, vehicle_id: StringName, capability:
 		capabilities.append(capability)
 	result[vehicle_id] = capabilities
 
-
 func _is_valid_type(statement_type: int) -> bool:
 	return statement_type in [
 		ProgramScript.StatementType.MOVE_TO,
 		ProgramScript.StatementType.GRAB_DROP,
 		ProgramScript.StatementType.REPEAT,
 	]
-
 
 func _diagnostic(code: StringName, message: String, statement_index: int = -1) -> Dictionary:
 	return {"code": code, "message": message, "statement_index": statement_index}
