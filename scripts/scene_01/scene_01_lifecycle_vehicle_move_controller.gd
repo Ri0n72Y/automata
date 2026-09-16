@@ -4,9 +4,6 @@ extends "res://scripts/input/vehicle_move_controller.gd"
 const BaseMoveControllerScript := preload("res://scripts/input/vehicle_move_controller.gd")
 const CommandSelectionProxyScript := preload("res://scripts/scene_01/scene_01_command_vehicle_selection_proxy.gd")
 
-var _command_delegate: BaseMoveControllerScript
-var _command_selection: Scene01CommandVehicleSelectionProxy
-
 
 func _physics_process(delta: float) -> void:
 	if not _is_lifecycle_running():
@@ -27,12 +24,20 @@ func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
 func request_vehicle_move(vehicle: VehicleActor, target_anchor: Vector2i) -> bool:
 	if vehicle != null and not _ensure_gameplay_running():
 		return false
-	_prepare_command_delegate(vehicle)
+	var command_selection := CommandSelectionProxyScript.new()
+	var command_delegate := BaseMoveControllerScript.new()
+	command_selection.set_command_vehicle(vehicle)
+	command_delegate.controller = controller
+	command_delegate.vehicle_selection_controller = command_selection
+	command_delegate.vehicle_manager = vehicle_manager
+	command_delegate.grid_selection_controller = null
 	var vehicle_id := vehicle.get_vehicle_id() if vehicle != null else &""
 	move_requested.emit(vehicle_id, target_anchor)
-	var accepted := _command_delegate.request_selected_vehicle_move(target_anchor)
-	var rejection := _command_delegate.get_last_rejection_reason()
-	_command_selection.clear_command_vehicle()
+	var accepted := command_delegate.request_selected_vehicle_move(target_anchor)
+	var rejection := command_delegate.get_last_rejection_reason()
+	command_selection.clear_command_vehicle()
+	command_delegate.free()
+	command_selection.free()
 	_last_rejection_reason = &"" if accepted else rejection
 	if accepted:
 		move_accepted.emit(vehicle_id, target_anchor)
@@ -52,18 +57,6 @@ func request_selected_vehicle_stop() -> bool:
 
 func sync_lifecycle_state() -> void:
 	_sync_live_target_mode()
-
-
-func _prepare_command_delegate(vehicle: VehicleActor) -> void:
-	if _command_selection == null:
-		_command_selection = CommandSelectionProxyScript.new()
-	if _command_delegate == null:
-		_command_delegate = BaseMoveControllerScript.new()
-	_command_selection.set_command_vehicle(vehicle)
-	_command_delegate.controller = controller
-	_command_delegate.vehicle_selection_controller = _command_selection
-	_command_delegate.vehicle_manager = vehicle_manager
-	_command_delegate.grid_selection_controller = null
 
 
 func _sync_live_target_mode() -> void:
