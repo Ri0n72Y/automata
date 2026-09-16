@@ -4,9 +4,9 @@ extends RefCounted
 const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
 const HEADER := "automata_scene01_program 2"
 
-
 func parse(source: String) -> Dictionary:
 	var diagnostics: Array[Dictionary] = []
+	var statement_lines: Array[int] = []
 	var program := ProgramScript.new()
 	var pending_repeats: Array[Dictionary] = []
 	var saw_header := false
@@ -18,26 +18,25 @@ func parse(source: String) -> Dictionary:
 			continue
 		if not saw_header:
 			if text != HEADER:
-				return _result(null, [_diagnostic(line_number, &"source_header_invalid", "Expected '%s'." % HEADER)])
+				return _result(null, [_diagnostic(line_number, &"source_header_invalid", "Expected '%s'." % HEADER)], statement_lines)
 			saw_header = true
 			continue
 		var tokens := text.split(" ", false)
 		if String(tokens[0]) == "repeat":
-			_parse_repeat(program, tokens, line_number, pending_repeats, diagnostics)
+			_parse_repeat(program, tokens, line_number, pending_repeats, diagnostics, statement_lines)
 		else:
-			_parse_vehicle_command(program, tokens, line_number, diagnostics)
-
+			_parse_vehicle_command(program, tokens, line_number, diagnostics, statement_lines)
 	if not saw_header:
 		diagnostics.append(_diagnostic(1, &"source_header_required", "Program source header is required."))
 	_resolve_repeats(program, pending_repeats, diagnostics)
-	return _result(program if diagnostics.is_empty() else null, diagnostics)
-
+	return _result(program if diagnostics.is_empty() else null, diagnostics, statement_lines)
 
 func _parse_vehicle_command(
 	program: Scene01Program,
 	tokens: PackedStringArray,
 	line_number: int,
-	diagnostics: Array[Dictionary]
+	diagnostics: Array[Dictionary],
+	statement_lines: Array[int]
 ) -> void:
 	var head := String(tokens[0])
 	if not head.begins_with("[") or not head.ends_with("]"):
@@ -66,26 +65,27 @@ func _parse_vehicle_command(
 			diagnostics.append(_diagnostic(line_number, &"unknown_command", "Unknown vehicle command '%s'." % action))
 			return
 	program.set_statement_vehicle(statement_index, vehicle_id)
-
+	statement_lines.append(line_number)
 
 func _parse_repeat(
 	program: Scene01Program,
 	tokens: PackedStringArray,
 	line_number: int,
 	pending_repeats: Array[Dictionary],
-	diagnostics: Array[Dictionary]
+	diagnostics: Array[Dictionary],
+	statement_lines: Array[int]
 ) -> void:
 	if tokens.size() != 3 or not tokens[1].is_valid_int() or not tokens[2].is_valid_int():
 		diagnostics.append(_diagnostic(line_number, &"repeat_syntax", "repeat requires integer count and target statement number."))
 		return
 	var statement_index := program.append_statement(ProgramScript.StatementType.REPEAT)
+	statement_lines.append(line_number)
 	pending_repeats.append({
 		"statement_index": statement_index,
 		"count": int(tokens[1]),
 		"target_number": int(tokens[2]),
 		"line": line_number,
 	})
-
 
 func _resolve_repeats(
 	program: Scene01Program,
@@ -98,17 +98,14 @@ func _resolve_repeats(
 		if target_index < 0 or target_index >= repeat_index:
 			diagnostics.append(_diagnostic(int(repeat["line"]), &"repeat_target_source_invalid", "repeat target must reference an earlier vehicle statement."))
 			continue
-		var target := program.get_statement(target_index)
-		var target_type := int(target.get("type", -1))
+		var target_type := int(program.get_statement(target_index).get("type", -1))
 		if target_type != ProgramScript.StatementType.MOVE_TO and target_type != ProgramScript.StatementType.GRAB_DROP:
 			diagnostics.append(_diagnostic(int(repeat["line"]), &"repeat_target_source_invalid", "repeat target must reference an earlier vehicle statement."))
 			continue
 		program.set_repeat(repeat_index, int(repeat["count"]), target_index)
 
-
 func _diagnostic(line: int, code: StringName, message: String) -> Dictionary:
 	return {"line": line, "code": code, "message": message}
 
-
-func _result(program: Scene01Program, diagnostics: Array[Dictionary]) -> Dictionary:
-	return {"program": program, "diagnostics": diagnostics}
+func _result(program: Scene01Program, diagnostics: Array[Dictionary], statement_lines: Array[int]) -> Dictionary:
+	return {"program": program, "diagnostics": diagnostics, "statement_lines": statement_lines}
