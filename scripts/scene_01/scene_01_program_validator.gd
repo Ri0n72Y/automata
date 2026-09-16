@@ -11,25 +11,11 @@ func validate(program: Scene01Program, grid_size: Vector2i = Vector2i.ZERO) -> A
 	var diagnostics: Array[Dictionary] = []
 	if program == null:
 		return [_diagnostic(&"program_required", "Program is required.")]
-	if program.statements.is_empty():
+	if program.get_statement_count() == 0:
 		return [_diagnostic(&"statements_required", "Program requires at least one statement.")]
-	for index in range(program.statements.size()):
-		_validate_statement(program.statements[index], index, grid_size, diagnostics)
+	for index in range(program.get_statement_count()):
+		_validate_statement(program, index, grid_size, diagnostics)
 	return diagnostics
-
-
-func required_capabilities_by_vehicle(program: Scene01Program) -> Dictionary:
-	var result: Dictionary = {}
-	if program == null:
-		return result
-	for statement in program.statements:
-		var vehicle_id := StringName(statement.get("vehicle_id", &""))
-		match int(statement.get("type", -1)):
-			ProgramScript.StatementType.MOVE_TO:
-				_append_requirement(result, vehicle_id, AssemblyCapabilitiesScript.CAN_MOVE)
-			ProgramScript.StatementType.GRAB_DROP:
-				_append_requirement(result, vehicle_id, AssemblyCapabilitiesScript.GRAB_DROP)
-	return result
 
 
 func required_capabilities(program: Scene01Program) -> Array[StringName]:
@@ -42,7 +28,27 @@ func required_capabilities(program: Scene01Program) -> Array[StringName]:
 	return result
 
 
-func _validate_statement(statement: Dictionary, index: int, grid_size: Vector2i, diagnostics: Array[Dictionary]) -> void:
+func required_capabilities_by_vehicle(program: Scene01Program) -> Dictionary:
+	var result: Dictionary = {}
+	if program == null:
+		return result
+	for statement in program.get_statements():
+		var vehicle_id := StringName(statement.get("vehicle_id", &""))
+		match int(statement.get("type", -1)):
+			ProgramScript.StatementType.MOVE_TO:
+				_append_requirement(result, vehicle_id, AssemblyCapabilitiesScript.CAN_MOVE)
+			ProgramScript.StatementType.GRAB_DROP:
+				_append_requirement(result, vehicle_id, AssemblyCapabilitiesScript.GRAB_DROP)
+	return result
+
+
+func _validate_statement(
+	program: Scene01Program,
+	index: int,
+	grid_size: Vector2i,
+	diagnostics: Array[Dictionary]
+) -> void:
+	var statement := program.get_statement(index)
 	var statement_type := int(statement.get("type", -1))
 	if not _is_valid_type(statement_type):
 		diagnostics.append(_diagnostic(&"invalid_statement_type", "Statement type is invalid.", index))
@@ -56,24 +62,39 @@ func _validate_statement(statement: Dictionary, index: int, grid_size: Vector2i,
 			diagnostics.append(_diagnostic(&"move_target_required", "MoveTo requires a target anchor.", index))
 		elif grid_size.x > 0 and grid_size.y > 0 and (target.x >= grid_size.x or target.y >= grid_size.y):
 			diagnostics.append(_diagnostic(&"move_target_out_of_bounds", "MoveTo target is outside the grid.", index))
-	if statement_type == ProgramScript.StatementType.REPEAT:
-		var count := int(statement.get("repeat_count", 0))
-		var target := int(statement.get("repeat_target_index", -1))
-		if count < 1 or count > MAX_REPEAT_COUNT:
-			diagnostics.append(_diagnostic(&"invalid_repeat_count", "Repeat count is invalid.", index))
-		if target < 0 or target >= index:
-			diagnostics.append(_diagnostic(&"invalid_repeat_target", "Repeat target must reference an earlier statement.", index))
+	elif statement_type == ProgramScript.StatementType.REPEAT:
+		_validate_repeat(program, statement, index, diagnostics)
+
+
+func _validate_repeat(
+	program: Scene01Program,
+	statement: Dictionary,
+	index: int,
+	diagnostics: Array[Dictionary]
+) -> void:
+	var repeat_count := int(statement.get("repeat_count", 0))
+	if repeat_count < 1 or repeat_count > MAX_REPEAT_COUNT:
+		diagnostics.append(_diagnostic(&"invalid_repeat_count", "Repeat count must be between 1 and %d." % MAX_REPEAT_COUNT, index))
+	var target_index := int(statement.get("repeat_target_index", ProgramScript.NO_STATEMENT_INDEX))
+	if target_index < 0 or target_index >= index:
+		diagnostics.append(_diagnostic(&"invalid_repeat_target", "Repeat target must reference an earlier vehicle statement.", index))
+		return
+	var target := program.get_statement(target_index)
+	var target_type := int(target.get("type", -1))
+	if target_type != ProgramScript.StatementType.MOVE_TO and target_type != ProgramScript.StatementType.GRAB_DROP:
+		diagnostics.append(_diagnostic(&"invalid_repeat_target", "Repeat target must reference an earlier vehicle statement.", index))
 
 
 func _append_requirement(result: Dictionary, vehicle_id: StringName, capability: StringName) -> void:
 	if vehicle_id == &"":
 		return
-	if not result.has(vehicle_id):
-		result[vehicle_id] = []
-	var values: Array[StringName] = result[vehicle_id]
-	if not values.has(capability):
-		values.append(capability)
-	result[vehicle_id] = values
+	var capabilities: Array[StringName] = []
+	if result.has(vehicle_id):
+		for value in result[vehicle_id]:
+			capabilities.append(StringName(value))
+	if not capabilities.has(capability):
+		capabilities.append(capability)
+	result[vehicle_id] = capabilities
 
 
 func _is_valid_type(statement_type: int) -> bool:
@@ -84,5 +105,5 @@ func _is_valid_type(statement_type: int) -> bool:
 	]
 
 
-func _diagnostic(code: StringName, message: String, index: int = -1) -> Dictionary:
-	return {"code": code, "message": message, "statement_index": index}
+func _diagnostic(code: StringName, message: String, statement_index: int = -1) -> Dictionary:
+	return {"code": code, "message": message, "statement_index": statement_index}
