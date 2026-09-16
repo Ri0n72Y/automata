@@ -7,8 +7,6 @@ const CommandSelectionProxyScript := preload("res://scripts/scene_01/scene_01_co
 @export var scene_controller_path: NodePath = NodePath("../../..")
 
 var _scene_controller: Node
-var _command_delegate: BaseGrabDropControllerScript
-var _command_selection: Scene01CommandVehicleSelectionProxy
 
 
 func _ready() -> void:
@@ -34,9 +32,16 @@ func request_vehicle_grab_drop(vehicle: VehicleActor) -> GrabDropResultScript:
 		return null
 	if vehicle != null and not _ensure_gameplay_running():
 		return null
-	_prepare_command_delegate(vehicle)
-	var result := _command_delegate.request_selected_grab_drop() as GrabDropResultScript
-	_command_selection.clear_command_vehicle()
+	var command_selection := CommandSelectionProxyScript.new()
+	var command_delegate := BaseGrabDropControllerScript.new()
+	command_selection.set_command_vehicle(vehicle)
+	command_delegate.vehicle_selection_controller = command_selection
+	command_delegate.vehicle_manager = vehicle_manager
+	command_delegate.object_manager = object_manager
+	var result := command_delegate.request_selected_grab_drop() as GrabDropResultScript
+	command_selection.clear_command_vehicle()
+	command_delegate.free()
+	command_selection.free()
 	refresh_interaction_preview()
 	if result != null:
 		var vehicle_id := vehicle.get_vehicle_id() if vehicle != null else &""
@@ -64,17 +69,6 @@ func refresh_interaction_preview() -> void:
 
 func sync_lifecycle_state() -> void:
 	refresh_interaction_preview()
-
-
-func _prepare_command_delegate(vehicle: VehicleActor) -> void:
-	if _command_selection == null:
-		_command_selection = CommandSelectionProxyScript.new()
-	if _command_delegate == null:
-		_command_delegate = BaseGrabDropControllerScript.new()
-	_command_selection.set_command_vehicle(vehicle)
-	_command_delegate.vehicle_selection_controller = _command_selection
-	_command_delegate.vehicle_manager = vehicle_manager
-	_command_delegate.object_manager = object_manager
 
 
 func _ensure_gameplay_running() -> bool:
