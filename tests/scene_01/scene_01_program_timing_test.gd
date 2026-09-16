@@ -5,6 +5,8 @@ const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
 const RunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
 
 var failures := 0
+var failure_signal_saw_baseline := false
+var failure_signal_retry_started := false
 
 func _init() -> void:
 	call_deferred("_run")
@@ -53,7 +55,30 @@ func _probe_speed(scene: Node, runner: Scene01ProgramRunner, compile_gate: Node,
 	_expect_true(bool(scene.call("is_gameplay_running")), "Rejected Program must not stop an already RUNNING lifecycle.")
 	_expect_true(compile_gate.call("get_compile_result", &"arm_vehicle") != null, "Rejected Program must restore baseline Arm compile publication.")
 	_expect_true(compile_gate.call("get_compile_result", &"transport_vehicle") != null, "Rejected Program must restore baseline Transport compile publication.")
+	failure_signal_saw_baseline = false
+	failure_signal_retry_started = false
+	runner.execution_failed.connect(
+		_on_rejected_program_failed.bind(compile_gate, runner, program),
+		CONNECT_ONE_SHOT
+	)
+	_expect_false(runner.start_program(rejected), "Second rejected candidate should still return false after signal-time rollback.")
+	_expect_true(failure_signal_saw_baseline, "execution_failed callbacks must observe the restored baseline publication.")
+	_expect_true(failure_signal_retry_started, "execution_failed callbacks should be able to start a new valid Program without old failure cleanup clobbering it.")
+	_expect_equal(runner.get_state(), RunnerScript.STATE_COMPLETED, "Signal-time retry should remain completed after the rejected start returns.")
 	_expect_true(bool(scene.call("reset_scene_state")), "Timing probe should reset production lifecycle.")
+
+func _on_rejected_program_failed(
+	_statement_index: int,
+	_reason: StringName,
+	compile_gate: Node,
+	runner: Scene01ProgramRunner,
+	retry_program: Scene01Program
+) -> void:
+	failure_signal_saw_baseline = (
+		compile_gate.call("get_compile_result", &"arm_vehicle") != null
+		and compile_gate.call("get_compile_result", &"transport_vehicle") != null
+	)
+	failure_signal_retry_started = runner.start_program(retry_program)
 
 func _probe_resume_drain(scene: Node, runner: Scene01ProgramRunner, arm: VehicleActor) -> void:
 	var program := _build_synchronous_program(arm.runtime_state.anchor_cell)
