@@ -19,6 +19,9 @@ func repeat_options(program: Scene01Program) -> Array[Dictionary]:
 	for index in range(statements.size()):
 		var statement: Dictionary = statements[index]
 		var statement_type := int(statement.get("type", -1))
+		if statement_type == ProgramScript.StatementType.REPEAT:
+			result.clear()
+			continue
 		if statement_type != ProgramScript.StatementType.MOVE_TO and statement_type != ProgramScript.StatementType.GRAB_DROP:
 			continue
 		var vehicle_id := String(statement.get("vehicle_id", &""))
