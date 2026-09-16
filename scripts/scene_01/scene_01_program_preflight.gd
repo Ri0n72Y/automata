@@ -9,7 +9,6 @@ const MissionControllerScript := preload("res://scripts/scene_01/scene_01_missio
 
 var _validator := ValidatorScript.new()
 
-
 func prepare(
 	program: Scene01Program,
 	scene_controller: MissionControllerScript,
@@ -23,7 +22,6 @@ func prepare(
 			StringName(first.get("code", &"program_invalid")),
 			int(first.get("statement_index", ProgramScript.NO_STATEMENT_INDEX))
 		)
-
 	var requirement_vehicle_ids: Array[StringName] = []
 	var requirements := _validator.required_capabilities_by_vehicle(program)
 	for vehicle_value in requirements.keys():
@@ -37,7 +35,6 @@ func prepare(
 			required.append(StringName(capability_value))
 		compile_gate.set_required_capabilities(vehicle_id, required)
 		requirement_vehicle_ids.append(vehicle_id)
-
 	for index in range(program.get_statement_count()):
 		var statement := program.get_statement(index)
 		if int(statement.get("type", -1)) != ProgramScript.StatementType.MOVE_TO:
@@ -51,17 +48,12 @@ func prepare(
 		if not scene_controller.is_grid_footprint_walkable(target, vehicle.definition.footprint):
 			_clear_requirements(compile_gate, requirement_vehicle_ids)
 			return _failure(&"move_target_not_walkable", index)
-
-	if not compile_gate.prepare_scene_run():
-		_clear_requirements(compile_gate, requirement_vehicle_ids)
-		return _failure(&"program_capability_rejected")
 	return {
 		"ok": true,
 		"reason": &"",
 		"statement_index": ProgramScript.NO_STATEMENT_INDEX,
 		"requirement_vehicle_ids": requirement_vehicle_ids,
 	}
-
 
 func _clear_requirements(
 	compile_gate: CompileGateScript,
@@ -70,7 +62,6 @@ func _clear_requirements(
 	for vehicle_id in vehicle_ids:
 		var empty: Array[StringName] = []
 		compile_gate.set_required_capabilities(vehicle_id, empty)
-
 
 func _failure(
 	reason: StringName,
