@@ -107,7 +107,10 @@ func is_vehicle_ui_open() -> bool:
 
 
 func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
-	var vehicle := _get_selected_vehicle()
+	return request_vehicle_move(_get_selected_vehicle(), target_anchor)
+
+
+func request_vehicle_move(vehicle: VehicleActorScript, target_anchor: Vector2i) -> bool:
 	var vehicle_id: StringName = &""
 	if vehicle != null:
 		vehicle_id = vehicle.get_vehicle_id()
