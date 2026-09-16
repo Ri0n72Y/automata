@@ -1,6 +1,9 @@
 class_name Scene01LifecycleVehicleMoveController
 extends "res://scripts/input/vehicle_move_controller.gd"
 
+var _command_vehicle_override: VehicleActor
+var _has_command_vehicle_override := false
+
 
 func _physics_process(delta: float) -> void:
 	if not _is_lifecycle_running():
@@ -15,62 +18,20 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
-	return request_vehicle_move(_get_selected_vehicle(), target_anchor)
+	return request_vehicle_move(super._get_selected_vehicle(), target_anchor)
 
 
 func request_vehicle_move(vehicle: VehicleActor, target_anchor: Vector2i) -> bool:
-	var vehicle_id: StringName = &""
-	if vehicle != null:
-		vehicle_id = vehicle.get_vehicle_id()
-	move_requested.emit(vehicle_id, target_anchor)
-	if vehicle == null:
-		_reject(vehicle_id, target_anchor, REJECTION_NO_VEHICLE)
+	if vehicle != null and not _ensure_gameplay_running():
 		return false
-	if not _ensure_gameplay_running():
-		return false
-	if not _vehicle_has_move_capability(vehicle):
-		_reject(vehicle_id, target_anchor, REJECTION_NO_MOVE_CAPABILITY)
-		_sync_live_target_mode()
-		return false
-	if vehicle.runtime_state == null or not vehicle.runtime_state.begin_move_planning():
-		_reject(vehicle_id, target_anchor, REJECTION_BUSY)
-		refresh_target_preview()
-		return false
-
-	var path := _find_path(vehicle, target_anchor)
-	if path.is_empty():
-		vehicle.runtime_state.fail_move_planning()
-		_reject(vehicle_id, target_anchor, REJECTION_NO_PATH)
-		refresh_target_preview()
-		return false
-
-	var command := MoveCommandScript.new()
-	if not command.configure(target_anchor, path):
-		vehicle.runtime_state.fail_move_planning()
-		_reject(vehicle_id, target_anchor, REJECTION_NO_PATH)
-		refresh_target_preview()
-		return false
-
-	if command.state == MoveCommandScript.State.WAITING:
-		vehicle.runtime_state.clear_move_command()
-		_clear_grid_target()
-		_last_rejection_reason = &""
-		move_accepted.emit(vehicle_id, target_anchor)
-		_sync_live_target_mode()
-		return true
-
-	if not vehicle.start_move(command):
-		vehicle.runtime_state.fail_move_planning()
-		_reject(vehicle_id, target_anchor, REJECTION_START_FAILED)
-		refresh_target_preview()
-		return false
-
-	vehicle.set_physics_process(false)
-	_clear_grid_target()
-	_last_rejection_reason = &""
-	move_accepted.emit(vehicle_id, target_anchor)
-	_face_vehicle_for_final_step(vehicle)
-	return true
+	_command_vehicle_override = vehicle
+	_has_command_vehicle_override = true
+	var accepted := super.request_selected_vehicle_move(target_anchor)
+	_has_command_vehicle_override = false
+	_command_vehicle_override = null
+	if accepted:
+		_face_vehicle_for_final_step(vehicle)
+	return accepted
 
 
 func request_selected_vehicle_stop() -> bool:
@@ -81,6 +42,12 @@ func request_selected_vehicle_stop() -> bool:
 
 func sync_lifecycle_state() -> void:
 	_sync_live_target_mode()
+
+
+func _get_selected_vehicle():
+	if _has_command_vehicle_override:
+		return _command_vehicle_override
+	return super._get_selected_vehicle()
 
 
 func _sync_live_target_mode() -> void:
