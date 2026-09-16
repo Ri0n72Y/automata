@@ -158,7 +158,7 @@ func _parse_current_source(show_status: bool) -> Dictionary:
 		_statement_lines.append(int(value))
 	_refresh_repeat_controls()
 	if show_status:
-		_status_label.text = _support.diagnostic_text(diagnostics[0]) if not diagnostics.is_empty() else "源码有效 · %d 条语句" % (_program.get_statement_count() if _program != null else 0)
+		_status_label.text = _support.diagnostic_text(diagnostics[0]) if not diagnostics.is_empty() else "语法有效 · %d 条语句" % (_program.get_statement_count() if _program != null else 0)
 	return {"ok": _program != null, "program": _program, "diagnostics": diagnostics}
 func _source_line(statement_index: int) -> int:
 	return _statement_lines[statement_index] if statement_index >= 0 and statement_index < _statement_lines.size() else 0
