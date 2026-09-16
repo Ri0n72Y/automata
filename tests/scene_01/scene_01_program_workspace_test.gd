@@ -70,6 +70,15 @@ repeat 2 1
 	_expect_equal(ui.call("get_source_text"), valid_source, "Direct typing API should replace the canonical source exactly.")
 	_expect_true(ui.call("get_program") != null, "Directly typed valid source should parse.")
 	_expect_true(status_label.text.contains("语法有效"), "Editor status should describe parser validity without claiming full Program validation.")
+	var exposed_program := ui.call("get_program") as Scene01Program
+	_expect_true(exposed_program != null, "Workspace accessor should expose a snapshot copy.")
+	if exposed_program != null:
+		exposed_program.set_statement_vehicle(0, &"arm_vehicle")
+	var fresh_program := ui.call("get_program") as Scene01Program
+	_expect_true(fresh_program != null, "Workspace should retain its derived snapshot after external copy mutation.")
+	if fresh_program != null:
+		_expect_equal(StringName(fresh_program.get_statement(0).get("vehicle_id", &"")), &"transport_vehicle", "External snapshot mutation must not change the workspace-derived Program.")
+	_expect_equal(ui.call("get_source_text"), valid_source, "External snapshot mutation must not change canonical source.")
 	ui.call("set_source_text", "automata_scene01_program 2\n[arm_vehicle:moveTo] x 4\n")
 	_expect_true(ui.call("get_program") == null, "Invalid text must not leave a stale mutable Program snapshot.")
 	_expect_true(status_label.text.contains("第 2 行"), "Syntax diagnostics should identify the physical source line.")
