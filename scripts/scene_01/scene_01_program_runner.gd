@@ -151,10 +151,14 @@ func _fail_start(
 	statement_index: int = ProgramScript.NO_STATEMENT_INDEX,
 	restore_baseline_on_failure: bool = false
 ) -> bool:
-	_fail_execution(statement_index, reason)
+	_state = STATE_FAILED
+	_last_error = reason
+	_waiting_for_move = false
+	_command_executor.cancel()
 	_clear_requirements()
 	if restore_baseline_on_failure:
 		_restore_baseline_publication()
+	execution_failed.emit(statement_index, reason)
 	return false
 func _fail_execution(statement_index: int, reason: StringName) -> void:
 	_state = STATE_FAILED
