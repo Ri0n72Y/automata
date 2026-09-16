@@ -56,15 +56,15 @@ func _run() -> void:
 	add_repeat.emit_signal("pressed")
 	_expect_true(String(ui.call("get_source_text")).contains("repeat 2 1\n"), "Add Repeat should write the selected source statement number.")
 	_expect_true(ui.call("get_program") != null, "Valid edited source should produce a runtime snapshot.")
+	_expect_true(add_repeat.disabled, "After a Repeat, UI must require a new vehicle command before another Repeat can be added.")
 	var numbered_source := """automata_scene01_program 2
 [arm_vehicle:moveTo] 1 3
 repeat 2 1
 [transport_vehicle:moveTo] 8 4
 """
 	ui.call("set_source_text", numbered_source)
-	_expect_equal(repeat_target_option.item_count, 2, "Repeat picker should list only legal vehicle-command targets.")
-	_expect_equal(int(repeat_target_option.get_item_metadata(0)), 1, "First vehicle command should remain statement #1.")
-	_expect_equal(int(repeat_target_option.get_item_metadata(1)), 3, "Vehicle command after Repeat should preserve its real source statement #3.")
+	_expect_equal(repeat_target_option.item_count, 1, "Repeat picker should exclude targets whose range would contain an earlier Repeat.")
+	_expect_equal(int(repeat_target_option.get_item_metadata(0)), 3, "Only the vehicle command after the latest Repeat should remain a legal target.")
 	var valid_source := "automata_scene01_program 2\n[transport_vehicle:moveTo] 8 4\n"
 	ui.call("set_source_text", valid_source)
 	_expect_equal(ui.call("get_source_text"), valid_source, "Direct typing API should replace the canonical source exactly.")
