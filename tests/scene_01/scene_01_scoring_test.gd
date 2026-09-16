@@ -12,6 +12,7 @@ const AssemblyAdapterScript := preload("res://scripts/scene_01/scene_01_assembly
 const StandardBlockScript := preload("res://scripts/objects/standard_block.gd")
 
 var test := ContractTestScript.new()
+var observed_program_completion_time := -1.0
 
 func _init() -> void:
 	call_deferred("_run")
@@ -151,19 +152,26 @@ func _run() -> void:
 	var transport_move := multi.append_statement(ProgramScript.StatementType.MOVE_TO)
 	multi.set_statement_vehicle(transport_move, VehicleManagerScript.TRANSPORT_VEHICLE_ID)
 	multi.set_move_target(transport_move, Vector2i(8, 4))
+	observed_program_completion_time = -1.0
+	runner.execution_completed.connect(_capture_program_completion.bind(score), CONNECT_ONE_SHOT)
+	var program_start_time := score.get_elapsed_time()
 	test.expect_true(runner.start_program(multi), "One Program should automate real Arm and Transport moves.")
 	frames = 0
 	while runner.get_state() == ProgramRunnerScript.STATE_RUNNING and frames < 240:
 		await physics_frame
 		frames += 1
 	test.expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Multi-vehicle Program should complete real serial moves.")
-	var program_elapsed := score.get_elapsed_time()
 	var automated_elapsed := score.get_automated_runtime()
+	var execution_elapsed := observed_program_completion_time - program_start_time
 	test.expect_float_approx(score.get_manual_runtime(), 0.0, "Transport Program Move must not be misclassified as manual.")
 	test.expect_true(automated_elapsed > 0.0, "Real multi-vehicle Program should accrue automated simulation runtime.")
-	test.expect_true(absf(automated_elapsed - program_elapsed) < 0.05, "Global Program runtime should follow real simulation elapsed time through completion.")
+	test.expect_true(observed_program_completion_time >= program_start_time, "Program completion should capture simulation time at the completion signal.")
+	test.expect_true(absf(automated_elapsed - execution_elapsed) < 0.0001, "Automation runtime should match exact Program execution simulation time.")
 	test.expect_float_approx(score.get_automation_rate(), 1.0, "Multi-vehicle Program should score 100% automation.")
 
 	scene.queue_free()
 	await process_frame
 	test.finish(self, "Scene 01 scoring tests")
+
+func _capture_program_completion(score: ScoreTrackerScript) -> void:
+	observed_program_completion_time = score.get_elapsed_time()
