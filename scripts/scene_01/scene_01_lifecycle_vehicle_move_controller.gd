@@ -1,8 +1,8 @@
 class_name Scene01LifecycleVehicleMoveController
 extends "res://scripts/input/vehicle_move_controller.gd"
 
-const BaseMoveControllerScript := preload("res://scripts/input/vehicle_move_controller.gd")
-const CommandSelectionProxyScript := preload("res://scripts/scene_01/scene_01_command_vehicle_selection_proxy.gd")
+var _command_vehicle: VehicleActor
+var _command_vehicle_active := false
 
 
 func _physics_process(delta: float) -> void:
@@ -24,27 +24,13 @@ func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
 func request_vehicle_move(vehicle: VehicleActor, target_anchor: Vector2i) -> bool:
 	if vehicle != null and not _ensure_gameplay_running():
 		return false
-	var command_selection := CommandSelectionProxyScript.new()
-	var command_delegate := BaseMoveControllerScript.new()
-	command_selection.set_command_vehicle(vehicle)
-	command_delegate.controller = controller
-	command_delegate.vehicle_selection_controller = command_selection
-	command_delegate.vehicle_manager = vehicle_manager
-	command_delegate.grid_selection_controller = null
-	var vehicle_id := vehicle.get_vehicle_id() if vehicle != null else &""
-	move_requested.emit(vehicle_id, target_anchor)
-	var accepted := command_delegate.request_selected_vehicle_move(target_anchor)
-	var rejection := command_delegate.get_last_rejection_reason()
-	command_selection.clear_command_vehicle()
-	command_delegate.free()
-	command_selection.free()
-	_last_rejection_reason = &"" if accepted else rejection
+	_command_vehicle = vehicle
+	_command_vehicle_active = true
+	var accepted := super.request_selected_vehicle_move(target_anchor)
+	_command_vehicle_active = false
+	_command_vehicle = null
 	if accepted:
-		move_accepted.emit(vehicle_id, target_anchor)
-		_clear_grid_target()
 		_face_vehicle_for_final_step(vehicle)
-	else:
-		move_rejected.emit(vehicle_id, target_anchor, rejection)
 	_sync_live_target_mode()
 	return accepted
 
@@ -57,6 +43,12 @@ func request_selected_vehicle_stop() -> bool:
 
 func sync_lifecycle_state() -> void:
 	_sync_live_target_mode()
+
+
+func _get_selected_vehicle() -> VehicleActor:
+	if _command_vehicle_active:
+		return _command_vehicle
+	return super._get_selected_vehicle()
 
 
 func _sync_live_target_mode() -> void:
