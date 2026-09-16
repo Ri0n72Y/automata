@@ -115,20 +115,18 @@ func _test_production_runner() -> void:
 	runner.command_started.connect(_on_command_started)
 	move_controller.move_accepted.connect(_on_move_accepted_probe)
 	var multi := ProgramScript.new()
-	var arm_move := multi.append_statement(ProgramScript.StatementType.MOVE_TO)
-	multi.set_statement_vehicle(arm_move, &"arm_vehicle")
-	multi.set_move_target(arm_move, arm.runtime_state.anchor_cell)
-	var transport_move := multi.append_statement(ProgramScript.StatementType.MOVE_TO)
-	multi.set_statement_vehicle(transport_move, &"transport_vehicle")
-	multi.set_move_target(transport_move, transport.runtime_state.anchor_cell)
+	var arm_move := _append_move(multi, &"arm_vehicle", Vector2i(3, 4))
+	_append_move(multi, &"transport_vehicle", Vector2i(8, 4))
 	var multi_repeat := multi.append_statement(ProgramScript.StatementType.REPEAT)
 	multi.set_repeat(multi_repeat, 2, arm_move)
-	_expect_true(runner.start_program(multi), "One program should command Arm and Transport serially.")
+	_expect_true(runner.start_program(multi), "One program should command real Arm and Transport moves serially.")
 	frames = 0
-	while runner.get_state() == ProgramRunnerScript.STATE_RUNNING and frames < 30:
+	while runner.get_state() == ProgramRunnerScript.STATE_RUNNING and frames < 240:
 		await physics_frame
 		frames += 1
-	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Multi-vehicle Repeat should complete.")
+	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Multi-vehicle Repeat should complete after real move handoff.")
+	_expect_equal(arm.runtime_state.anchor_cell, Vector2i(3, 4), "Arm should complete its real Program move.")
+	_expect_equal(transport.runtime_state.anchor_cell, Vector2i(8, 4), "Transport should start only after Arm and complete its real Program move.")
 	_expect_equal(observed_command_vehicles, [&"arm_vehicle", &"transport_vehicle", &"arm_vehicle", &"transport_vehicle"], "Repeat should replay fixed vehicle statements.")
 	_expect_equal(observed_player_selections, [&"arm_vehicle", &"arm_vehicle", &"arm_vehicle", &"arm_vehicle"], "Command signals must expose the real player selection, not command context.")
 	_expect_equal(selection.get_selected_vehicle(), arm, "Program commands must not mutate player selection.")
