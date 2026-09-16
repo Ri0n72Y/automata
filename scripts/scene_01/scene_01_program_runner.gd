@@ -21,7 +21,6 @@ const STATE_IDLE := 0
 const STATE_RUNNING := 1
 const STATE_COMPLETED := 2
 const STATE_FAILED := 3
-const MAX_SYNCHRONOUS_STEPS := 10000
 
 var _preflight := PreflightScript.new()
 var _command_executor := CommandExecutorScript.new()
@@ -47,20 +46,26 @@ func _ready() -> void:
 	)
 	_command_executor.move_completed.connect(_on_move_completed)
 	_command_executor.move_blocked.connect(_on_move_blocked)
+	_scene_controller.lifecycle_state_changed.connect(_on_lifecycle_state_changed)
 	_scene_controller.lifecycle_reset_completed.connect(_on_lifecycle_reset_completed)
 
 func start_program(program: Scene01Program) -> bool:
 	if _state == STATE_RUNNING:
 		_last_error = &"program_already_running"
 		return false
+	var restore_baseline_on_failure := _scene_controller.is_gameplay_running()
 	_clear_execution(false)
 	_program = program.duplicate_program() if program != null else null
 	var result := _preflight.prepare(_program, _scene_controller, _vehicle_manager, _compile_gate)
 	if not bool(result.get("ok", false)):
-		return _fail_start(StringName(result.get("reason", &"program_invalid")), int(result.get("statement_index", ProgramScript.NO_STATEMENT_INDEX)))
+		return _fail_start(
+			StringName(result.get("reason", &"program_invalid")),
+			int(result.get("statement_index", ProgramScript.NO_STATEMENT_INDEX)),
+			restore_baseline_on_failure
+		)
 	for value in result.get("requirement_vehicle_ids", []):
 		_requirements_vehicle_ids.append(StringName(value))
-	if not _prepare_runtime():
+	if not _prepare_runtime(restore_baseline_on_failure):
 		return false
 	_state = STATE_RUNNING
 	_pc = 0
@@ -76,11 +81,11 @@ func get_current_statement_index() -> int:
 func get_last_error() -> StringName:
 	return _last_error
 
-func _prepare_runtime() -> bool:
+func _prepare_runtime(restore_baseline_on_failure: bool) -> bool:
 	if _scene_controller.is_gameplay_running():
 		if _compile_gate.prepare_scene_run():
 			return true
-		return _fail_start(&"program_capability_rejected")
+		return _fail_start(&"program_capability_rejected", ProgramScript.NO_STATEMENT_INDEX, restore_baseline_on_failure)
 	if _scene_controller.ensure_gameplay_running():
 		return true
 	var reason := &"lifecycle_start_rejected"
@@ -89,16 +94,11 @@ func _prepare_runtime() -> bool:
 	return _fail_start(reason)
 
 func _drain_until_wait() -> void:
-	var steps := 0
 	while _state == STATE_RUNNING and not _waiting_for_move:
 		if not _scene_controller.is_gameplay_running():
 			return
 		if _pc >= _program.get_statement_count():
 			_complete_execution()
-			return
-		steps += 1
-		if steps > MAX_SYNCHRONOUS_STEPS:
-			_fail_execution(_pc, &"program_step_limit_exceeded")
 			return
 		_execute_statement()
 
@@ -151,6 +151,9 @@ func _on_move_completed() -> void:
 func _on_move_blocked() -> void:
 	if _state == STATE_RUNNING and _waiting_for_move:
 		_fail_execution(_pc, &"move_blocked")
+func _on_lifecycle_state_changed(_previous_state: int, _current_state: int) -> void:
+	if _state == STATE_RUNNING and not _waiting_for_move and _scene_controller.is_gameplay_running():
+		call_deferred("_drain_until_wait")
 
 func _complete_execution() -> void:
 	_state = STATE_COMPLETED
@@ -159,9 +162,15 @@ func _complete_execution() -> void:
 	_command_executor.cancel()
 	execution_completed.emit()
 
-func _fail_start(reason: StringName, statement_index: int = ProgramScript.NO_STATEMENT_INDEX) -> bool:
+func _fail_start(
+	reason: StringName,
+	statement_index: int = ProgramScript.NO_STATEMENT_INDEX,
+	restore_baseline_on_failure: bool = false
+) -> bool:
 	_fail_execution(statement_index, reason)
 	_clear_requirements()
+	if restore_baseline_on_failure:
+		_restore_baseline_publication()
 	return false
 func _fail_execution(statement_index: int, reason: StringName) -> void:
 	_state = STATE_FAILED
@@ -169,6 +178,10 @@ func _fail_execution(statement_index: int, reason: StringName) -> void:
 	_waiting_for_move = false
 	_command_executor.cancel()
 	execution_failed.emit(statement_index, reason)
+func _restore_baseline_publication() -> void:
+	_compile_gate.clear_required_capabilities()
+	if not _compile_gate.prepare_scene_run():
+		push_error("Scene 01 failed to restore baseline compile publication after Program rejection.")
 func _on_lifecycle_reset_completed() -> void:
 	_clear_execution(true)
 
