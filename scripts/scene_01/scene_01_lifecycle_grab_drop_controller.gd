@@ -1,12 +1,11 @@
 class_name Scene01LifecycleGrabDropController
 extends "res://scripts/input/vehicle_grab_drop_controller.gd"
 
-const BaseGrabDropControllerScript := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
-const CommandSelectionProxyScript := preload("res://scripts/scene_01/scene_01_command_vehicle_selection_proxy.gd")
-
 @export var scene_controller_path: NodePath = NodePath("../../..")
 
 var _scene_controller: Node
+var _command_vehicle: VehicleActor
+var _command_vehicle_active := false
 
 
 func _ready() -> void:
@@ -32,20 +31,12 @@ func request_vehicle_grab_drop(vehicle: VehicleActor) -> GrabDropResultScript:
 		return null
 	if vehicle != null and not _ensure_gameplay_running():
 		return null
-	var command_selection := CommandSelectionProxyScript.new()
-	var command_delegate := BaseGrabDropControllerScript.new()
-	command_selection.set_command_vehicle(vehicle)
-	command_delegate.vehicle_selection_controller = command_selection
-	command_delegate.vehicle_manager = vehicle_manager
-	command_delegate.object_manager = object_manager
-	var result := command_delegate.request_selected_grab_drop() as GrabDropResultScript
-	command_selection.clear_command_vehicle()
-	command_delegate.free()
-	command_selection.free()
+	_command_vehicle = vehicle
+	_command_vehicle_active = true
+	var result := super.request_selected_grab_drop() as GrabDropResultScript
+	_command_vehicle_active = false
+	_command_vehicle = null
 	refresh_interaction_preview()
-	if result != null:
-		var vehicle_id := vehicle.get_vehicle_id() if vehicle != null else &""
-		grab_drop_completed.emit(vehicle_id, result.action, result.status)
 	return result
 
 
@@ -69,6 +60,12 @@ func refresh_interaction_preview() -> void:
 
 func sync_lifecycle_state() -> void:
 	refresh_interaction_preview()
+
+
+func _get_selected_vehicle() -> VehicleActor:
+	if _command_vehicle_active:
+		return _command_vehicle
+	return super._get_selected_vehicle()
 
 
 func _ensure_gameplay_running() -> bool:
