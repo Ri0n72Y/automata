@@ -4,6 +4,8 @@ extends "res://scripts/input/vehicle_grab_drop_controller.gd"
 @export var scene_controller_path: NodePath = NodePath("../../..")
 
 var _scene_controller: Node
+var _command_vehicle_override: VehicleActor
+var _has_command_vehicle_override := false
 
 
 func _ready() -> void:
@@ -21,30 +23,19 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func request_selected_grab_drop() -> GrabDropResultScript:
-	return request_vehicle_grab_drop(_get_selected_vehicle())
+	return request_vehicle_grab_drop(super._get_selected_vehicle())
 
 
 func request_vehicle_grab_drop(vehicle: VehicleActor) -> GrabDropResultScript:
 	if _is_lifecycle_paused():
 		return null
-	if vehicle == null or vehicle.runtime_state == null:
-		var missing_vehicle_result := GrabDropResultScript.rejected(
-			GrabDropResultScript.Action.NONE,
-			GrabDropResultScript.Status.NO_TARGET
-		)
-		grab_drop_completed.emit(
-			&"",
-			missing_vehicle_result.action,
-			missing_vehicle_result.status
-		)
-		return missing_vehicle_result
-	if not _ensure_gameplay_running():
+	if vehicle != null and not _ensure_gameplay_running():
 		return null
-	var target: Variant = resolve_target_for_vehicle(vehicle)
-	var result := _command.execute(vehicle.runtime_state, target)
-	vehicle.sync_from_state()
-	refresh_interaction_preview()
-	grab_drop_completed.emit(vehicle.get_vehicle_id(), result.action, result.status)
+	_command_vehicle_override = vehicle
+	_has_command_vehicle_override = true
+	var result := super.request_selected_grab_drop()
+	_has_command_vehicle_override = false
+	_command_vehicle_override = null
 	return result
 
 
@@ -68,6 +59,12 @@ func refresh_interaction_preview() -> void:
 
 func sync_lifecycle_state() -> void:
 	refresh_interaction_preview()
+
+
+func _get_selected_vehicle():
+	if _has_command_vehicle_override:
+		return _command_vehicle_override
+	return super._get_selected_vehicle()
 
 
 func _ensure_gameplay_running() -> bool:
