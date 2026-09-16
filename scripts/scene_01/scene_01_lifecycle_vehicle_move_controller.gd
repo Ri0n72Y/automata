@@ -1,8 +1,11 @@
 class_name Scene01LifecycleVehicleMoveController
 extends "res://scripts/input/vehicle_move_controller.gd"
 
-var _command_vehicle_override: VehicleActor
-var _has_command_vehicle_override := false
+const BaseMoveControllerScript := preload("res://scripts/input/vehicle_move_controller.gd")
+const CommandSelectionProxyScript := preload("res://scripts/scene_01/scene_01_command_vehicle_selection_proxy.gd")
+
+var _command_delegate: BaseMoveControllerScript
+var _command_selection: Scene01CommandVehicleSelectionProxy
 
 
 func _physics_process(delta: float) -> void:
@@ -24,14 +27,20 @@ func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
 func request_vehicle_move(vehicle: VehicleActor, target_anchor: Vector2i) -> bool:
 	if vehicle != null and not _ensure_gameplay_running():
 		return false
-	_command_vehicle_override = vehicle
-	_has_command_vehicle_override = true
-	var accepted := super.request_selected_vehicle_move(target_anchor)
-	_has_command_vehicle_override = false
-	_command_vehicle_override = null
-	_sync_live_target_mode()
+	_prepare_command_delegate(vehicle)
+	var vehicle_id := vehicle.get_vehicle_id() if vehicle != null else &""
+	move_requested.emit(vehicle_id, target_anchor)
+	var accepted := _command_delegate.request_selected_vehicle_move(target_anchor)
+	var rejection := _command_delegate.get_last_rejection_reason()
+	_command_selection.clear_command_vehicle()
+	_last_rejection_reason = &"" if accepted else rejection
 	if accepted:
+		move_accepted.emit(vehicle_id, target_anchor)
+		_clear_grid_target()
 		_face_vehicle_for_final_step(vehicle)
+	else:
+		move_rejected.emit(vehicle_id, target_anchor, rejection)
+	_sync_live_target_mode()
 	return accepted
 
 
@@ -45,17 +54,23 @@ func sync_lifecycle_state() -> void:
 	_sync_live_target_mode()
 
 
-func _get_selected_vehicle():
-	if _has_command_vehicle_override:
-		return _command_vehicle_override
-	return super._get_selected_vehicle()
+func _prepare_command_delegate(vehicle: VehicleActor) -> void:
+	if _command_selection == null:
+		_command_selection = CommandSelectionProxyScript.new()
+	if _command_delegate == null:
+		_command_delegate = BaseMoveControllerScript.new()
+	_command_selection.set_command_vehicle(vehicle)
+	_command_delegate.controller = controller
+	_command_delegate.vehicle_selection_controller = _command_selection
+	_command_delegate.vehicle_manager = vehicle_manager
+	_command_delegate.grid_selection_controller = null
 
 
 func _sync_live_target_mode() -> void:
 	super._sync_live_target_mode()
 	if grid_selection_controller == null or not _is_lifecycle_paused():
 		return
-	var vehicle := _get_selected_vehicle()
+	var vehicle := super._get_selected_vehicle()
 	var footprint := Vector2i.ONE
 	if vehicle != null and vehicle.definition != null:
 		footprint = vehicle.definition.footprint
