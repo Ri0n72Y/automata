@@ -3,7 +3,7 @@ extends RefCounted
 
 const NO_STATEMENT_INDEX := -1
 
-enum NodeType {
+enum StatementType {
 	MOVE_TO = 1,
 	GRAB_DROP = 2,
 	REPEAT = 3,
@@ -32,19 +32,22 @@ func append_statement(statement_type: int) -> int:
 func set_statement_vehicle(index: int, vehicle_id: StringName) -> bool:
 	if not _has_index(index):
 		return false
+	var statement_type := int(statements[index].get("type", -1))
+	if statement_type != StatementType.MOVE_TO and statement_type != StatementType.GRAB_DROP:
+		return false
 	statements[index]["vehicle_id"] = vehicle_id
 	return true
 
 
 func set_move_target(index: int, target_anchor: Vector2i) -> bool:
-	if not _has_index(index) or int(statements[index].get("type", -1)) != NodeType.MOVE_TO:
+	if not _has_index(index) or int(statements[index].get("type", -1)) != StatementType.MOVE_TO:
 		return false
 	statements[index]["target_anchor"] = target_anchor
 	return true
 
 
 func set_repeat(index: int, repeat_count: int, target_index: int) -> bool:
-	if not _has_index(index) or int(statements[index].get("type", -1)) != NodeType.REPEAT:
+	if not _has_index(index) or int(statements[index].get("type", -1)) != StatementType.REPEAT:
 		return false
 	statements[index]["repeat_count"] = repeat_count
 	statements[index]["repeat_target_index"] = target_index
@@ -52,9 +55,7 @@ func set_repeat(index: int, repeat_count: int, target_index: int) -> bool:
 
 
 func get_statement(index: int) -> Dictionary:
-	if not _has_index(index):
-		return {}
-	return statements[index].duplicate(true)
+	return statements[index].duplicate(true) if _has_index(index) else {}
 
 
 func get_statements() -> Array[Dictionary]:
@@ -64,7 +65,7 @@ func get_statements() -> Array[Dictionary]:
 	return result
 
 
-func statement_count() -> int:
+func get_statement_count() -> int:
 	return statements.size()
 
 
@@ -79,4 +80,8 @@ func _has_index(index: int) -> bool:
 
 
 func _is_valid_type(statement_type: int) -> bool:
-	return statement_type in [NodeType.MOVE_TO, NodeType.GRAB_DROP, NodeType.REPEAT]
+	return statement_type in [
+		StatementType.MOVE_TO,
+		StatementType.GRAB_DROP,
+		StatementType.REPEAT,
+	]
