@@ -72,6 +72,7 @@ func reason_text(reason: StringName) -> String:
 		&"invalid_repeat_count": return "Repeat 次数必须为 1–100"
 		&"invalid_repeat_target": return "Repeat 需要指向之前的车辆命令"
 		&"nested_repeat_unsupported": return "DSL v2 的 Repeat 区间不能包含另一个 Repeat"
+		&"program_too_large": return "程序展开后的执行步骤过多"
 		&"move_blocked": return "车辆移动被阻挡"
 		&"no_path": return "目标没有可用路径"
 		&"program_vehicle_missing": return "程序车辆不存在"
