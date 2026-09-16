@@ -4,8 +4,6 @@ extends "res://scripts/input/vehicle_grab_drop_controller.gd"
 @export var scene_controller_path: NodePath = NodePath("../../..")
 
 var _scene_controller: Node
-var _command_vehicle: VehicleActor
-var _command_vehicle_active := false
 
 
 func _ready() -> void:
@@ -31,11 +29,7 @@ func request_vehicle_grab_drop(vehicle: VehicleActor) -> GrabDropResultScript:
 		return null
 	if vehicle != null and not _ensure_gameplay_running():
 		return null
-	_command_vehicle = vehicle
-	_command_vehicle_active = true
-	var result := super.request_selected_grab_drop() as GrabDropResultScript
-	_command_vehicle_active = false
-	_command_vehicle = null
+	var result := super.request_vehicle_grab_drop(vehicle) as GrabDropResultScript
 	refresh_interaction_preview()
 	return result
 
@@ -60,12 +54,6 @@ func refresh_interaction_preview() -> void:
 
 func sync_lifecycle_state() -> void:
 	refresh_interaction_preview()
-
-
-func _get_selected_vehicle() -> VehicleActor:
-	if _command_vehicle_active:
-		return _command_vehicle
-	return super._get_selected_vehicle()
 
 
 func _ensure_gameplay_running() -> bool:
