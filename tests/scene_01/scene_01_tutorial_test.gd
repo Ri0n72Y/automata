@@ -16,6 +16,7 @@ var selection: Node
 var move_controller: Node
 var grab_drop: Node
 var object_manager: Node
+var capability_label: Label
 func _init() -> void:
 	call_deferred("_run")
 func _run() -> void:
@@ -29,10 +30,11 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	_bind_scene()
-	if tutorial == null or runner == null or manager == null or selection == null or move_controller == null or grab_drop == null or object_manager == null:
+	if tutorial == null or runner == null or manager == null or selection == null or move_controller == null or grab_drop == null or object_manager == null or capability_label == null:
 		await _cleanup()
 		_finish()
 		return
+	_test_compile_projection_refresh()
 	await _test_skip_and_manual_catch_up()
 	await _test_program_progression()
 	await _test_reset_alignment()
@@ -46,15 +48,24 @@ func _bind_scene() -> void:
 	move_controller = scene.get_node_or_null("SceneRoot/GridRoot/VehicleMoveController")
 	grab_drop = scene.get_node_or_null("SceneRoot/GridRoot/VehicleGrabDropController")
 	object_manager = scene.get_node_or_null("SceneRoot/ObjectRoot/Scene01ObjectManager")
+	capability_label = scene.get_node_or_null("TutorialUIRoot/RootControl/TutorialPanel/Margin/VBox/CapabilityLabel") as Label
 	arm = manager.get_vehicle_by_id(ManagerScript.ARM_VEHICLE_ID) if manager != null else null
 	_expect_true(tutorial != null and arm != null, "Tutorial owner and Arm vehicle should exist.")
 	var tutorial_ui = scene.get_node_or_null("TutorialUIRoot")
 	var manual_guide = scene.get_node_or_null("UIRoot/RootControl") as Control
 	var tutorial_button = scene.get_node_or_null("UIRoot/RootControl/Panel/Margin/VBox/HeaderRow/TutorialButton") as Button
 	_expect_true(tutorial_ui != null and manual_guide != null and tutorial_button != null, "Tutorial and shared Manual Guide presentation should exist.")
+	_expect_false(tutorial.has_signal("step_changed"), "Tutorial should expose one presentation notification surface.")
+	_expect_false(tutorial.has_signal("visibility_changed"), "Tutorial visibility should use the same presentation notification surface.")
 	_expect_true(scene.get_node_or_null("TutorialUIRoot/RootControl/ReopenTutorialButton") == null, "Tutorial UI should not own a second floating reopen entry.")
 	if manual_guide != null:
 		_expect_false(manual_guide.visible, "Visible Tutorial coaching should hide the overlapping generic Manual Guide presentation.")
+func _test_compile_projection_refresh() -> void:
+	_expect_true(capability_label.text.contains("首次运行后由装配编译确认"), "Tutorial capability copy should begin without invented compile truth.")
+	scene.call("run_scene")
+	_expect_true(bool(scene.call("is_gameplay_running")), "Top Run should start Scene 01 through the real lifecycle gate.")
+	var text := capability_label.text
+	_expect_true(text.contains("编译通过") and text.contains("可移动") and text.contains("可抓取") and text.contains("可承载"), "Lifecycle publication should refresh Tutorial capability copy immediately.")
 func _test_skip_and_manual_catch_up() -> void:
 	var box = object_manager.get_standard_box()
 	var score = scene.get_node("SceneRoot/Scene01ScoreTracker")
@@ -89,8 +100,6 @@ func _test_skip_and_manual_catch_up() -> void:
 	tutorial_button.pressed.emit()
 	_expect_true(tutorial.is_visible(), "Manual Guide Tutorial button should reopen coaching at the caught-up step.")
 	_expect_false(manual_guide.visible, "Reopen should return the left presentation slot to Tutorial coaching.")
-	var capability_text := tutorial.get_capability_summary()
-	_expect_true(capability_text.contains("编译通过") and capability_text.contains("可移动") and capability_text.contains("可抓取") and capability_text.contains("可承载"), "Tutorial capability copy should project formal CompileGate capabilities/interfaces.")
 func _test_program_progression() -> void:
 	var pickup_only := ProgramScript.new()
 	_append_move(pickup_only, ManagerScript.ARM_VEHICLE_ID, Vector2i(2, 3))
