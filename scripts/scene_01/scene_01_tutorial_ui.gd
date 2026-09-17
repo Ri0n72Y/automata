@@ -37,7 +37,7 @@ func _refresh() -> void:
 	if not tutorial_visible:
 		return
 	var step := _tutorial.get_step()
-	_progress_label.text = "完成" if step == TutorialScript.Step.DONE else "步骤 %d / 5" % (step + 1)
+	_progress_label.text = "完成" if step == TutorialScript.Step.DONE else "步骤 %d / %d" % [step + 1, TutorialScript.Step.DONE]
 	_title_label.text = _step_title(step)
 	_body_label.text = _step_body(step)
 	_capability_label.text = _tutorial.get_capability_summary()
