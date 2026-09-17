@@ -50,13 +50,17 @@ func _bind_scene() -> void:
 	_expect_true(tutorial != null and arm != null, "Tutorial owner and Arm vehicle should exist.")
 	var tutorial_ui = scene.get_node_or_null("TutorialUIRoot")
 	var manual_guide = scene.get_node_or_null("UIRoot/RootControl") as Control
-	_expect_true(tutorial_ui != null and manual_guide != null, "Tutorial and Manual Guide presentation should both exist.")
+	var tutorial_button = scene.get_node_or_null("UIRoot/RootControl/Panel/Margin/VBox/HeaderRow/TutorialButton") as Button
+	_expect_true(tutorial_ui != null and manual_guide != null and tutorial_button != null, "Tutorial and shared Manual Guide presentation should exist.")
+	_expect_true(scene.get_node_or_null("TutorialUIRoot/RootControl/ReopenTutorialButton") == null, "Tutorial UI should not own a second floating reopen entry.")
 	if manual_guide != null:
 		_expect_false(manual_guide.visible, "Visible Tutorial coaching should hide the overlapping generic Manual Guide presentation.")
 func _test_skip_and_manual_catch_up() -> void:
 	var box = object_manager.get_standard_box()
 	var score = scene.get_node("SceneRoot/Scene01ScoreTracker")
+	var manual_controls = scene.get_node("UIRoot")
 	var manual_guide := scene.get_node("UIRoot/RootControl") as Control
+	var tutorial_button := scene.get_node("UIRoot/RootControl/Panel/Margin/VBox/HeaderRow/TutorialButton") as Button
 	_expect_equal(tutorial.get_step(), TutorialScript.Step.SELECT_ARM, "Tutorial should start by asking for Arm selection.")
 	var box_before: int = int(box.get_current_count())
 	var manual_before := float(score.call("get_manual_runtime"))
@@ -79,8 +83,11 @@ func _test_skip_and_manual_catch_up() -> void:
 	var drop_result = grab_drop.call("request_selected_grab_drop")
 	_expect_true(drop_result != null and drop_result.status == GrabDropResultScript.Status.ACCEPTED, "Manual drop should use real GrabDrop.")
 	_expect_equal(tutorial.get_step(), TutorialScript.Step.PROGRAM_RUN, "Real StandardBox increment should advance to Program teaching.")
-	tutorial.reopen_tutorial()
-	_expect_true(tutorial.is_visible(), "Reopen should show coaching at the caught-up step.")
+	manual_controls.call("set_collapsed", false)
+	_expect_false(bool(manual_controls.call("is_collapsed")), "Manual Guide should be expandable while Tutorial is hidden.")
+	_expect_true(tutorial_button.is_visible_in_tree(), "Expanded Manual Guide should keep the Tutorial reopen entry visible.")
+	tutorial_button.pressed.emit()
+	_expect_true(tutorial.is_visible(), "Manual Guide Tutorial button should reopen coaching at the caught-up step.")
 	_expect_false(manual_guide.visible, "Reopen should return the left presentation slot to Tutorial coaching.")
 	var capability_text := tutorial.get_capability_summary()
 	_expect_true(capability_text.contains("编译通过") and capability_text.contains("可移动") and capability_text.contains("可抓取") and capability_text.contains("可承载"), "Tutorial capability copy should project formal CompileGate capabilities/interfaces.")
