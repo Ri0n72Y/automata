@@ -18,7 +18,7 @@ var _completed_multi_vehicle_program := false
 var _run_seen_arm_move := false
 var _run_seen_arm_grab := false
 var _run_seen_transport_move := false
-var _run_box_count_before := 0
+var _run_arm_grab_active := false
 var _run_box_incremented := false
 @onready var _observable: ObservableScript = %Scene01ObservableState
 @onready var _runner: RunnerScript = %Scene01ProgramRunner
@@ -82,20 +82,22 @@ func _on_standard_box_count_changed(previous_count: int, current_count: int) -> 
 	if current_count <= previous_count:
 		return
 	if _runner.get_state() == RunnerScript.STATE_RUNNING:
-		_run_box_incremented = current_count > _run_box_count_before
+		if _run_arm_grab_active:
+			_run_box_incremented = true
 	else:
 		_manual_drop_seen = true
 	_evaluate_progress()
 func _on_program_started() -> void:
 	_clear_run_profile()
-	_run_box_count_before = _observable.get_standard_box_count()
 	presentation_changed.emit()
 func _on_program_command_started(_statement_index: int, command_type: int, vehicle_id: StringName) -> void:
+	_run_arm_grab_active = false
 	if vehicle_id == VehicleManagerScript.ARM_VEHICLE_ID:
 		if command_type == ProgramScript.StatementType.MOVE_TO:
 			_run_seen_arm_move = true
 		elif command_type == ProgramScript.StatementType.GRAB_DROP:
 			_run_seen_arm_grab = true
+			_run_arm_grab_active = true
 	elif vehicle_id == VehicleManagerScript.TRANSPORT_VEHICLE_ID and command_type == ProgramScript.StatementType.MOVE_TO:
 		_run_seen_transport_move = true
 func _on_program_completed() -> void:
@@ -121,7 +123,7 @@ func _clear_run_profile() -> void:
 	_run_seen_arm_move = false
 	_run_seen_arm_grab = false
 	_run_seen_transport_move = false
-	_run_box_count_before = 0
+	_run_arm_grab_active = false
 	_run_box_incremented = false
 func _evaluate_progress() -> void:
 	var next_step := _step
