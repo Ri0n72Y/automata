@@ -49,19 +49,20 @@ func _bind_scene() -> void:
 	arm = manager.get_vehicle_by_id(ManagerScript.ARM_VEHICLE_ID) if manager != null else null
 	_expect_true(tutorial != null and arm != null, "Tutorial owner and Arm vehicle should exist.")
 	var tutorial_ui = scene.get_node_or_null("TutorialUIRoot")
-	_expect_true(tutorial_ui != null, "Tutorial coaching UI should be in the production scene.")
-	if tutorial_ui != null:
-		var tutorial_panel := tutorial_ui.get_node("%TutorialPanel") as Control
-		var manual_panel := scene.get_node("UIRoot/RootControl/Panel") as Control
-		_expect_false(tutorial_panel.get_global_rect().intersects(manual_panel.get_global_rect()), "Tutorial panel should not cover the manual guide.")
+	var manual_guide = scene.get_node_or_null("UIRoot") as CanvasLayer
+	_expect_true(tutorial_ui != null and manual_guide != null, "Tutorial and Manual Guide UI should both exist.")
+	if manual_guide != null:
+		_expect_false(manual_guide.visible, "Visible Tutorial coaching should hide the overlapping generic Manual Guide.")
 func _test_skip_and_manual_catch_up() -> void:
 	var box = object_manager.get_standard_box()
 	var score = scene.get_node("SceneRoot/Scene01ScoreTracker")
+	var manual_guide := scene.get_node("UIRoot") as CanvasLayer
 	_expect_equal(tutorial.get_step(), TutorialScript.Step.SELECT_ARM, "Tutorial should start by asking for Arm selection.")
 	var box_before: int = int(box.get_current_count())
 	var manual_before := float(score.call("get_manual_runtime"))
 	tutorial.skip_tutorial()
 	_expect_false(tutorial.is_visible(), "Skip should hide coaching.")
+	_expect_true(manual_guide.visible, "Skip should restore the generic Manual Guide.")
 	_expect_equal(box.get_current_count(), box_before, "Skip must not modify StandardBox truth.")
 	_expect_equal(float(score.call("get_manual_runtime")), manual_before, "Skip must not modify Scoring truth.")
 	_expect_true(selection.call("select_vehicle", arm), "Arm should be selectable while Tutorial is hidden.")
@@ -80,6 +81,7 @@ func _test_skip_and_manual_catch_up() -> void:
 	_expect_equal(tutorial.get_step(), TutorialScript.Step.PROGRAM_RUN, "Real StandardBox increment should advance to Program teaching.")
 	tutorial.reopen_tutorial()
 	_expect_true(tutorial.is_visible(), "Reopen should show coaching at the caught-up step.")
+	_expect_false(manual_guide.visible, "Reopen should return the left UI slot to Tutorial coaching.")
 	var capability_text := tutorial.get_capability_summary()
 	_expect_true(capability_text.contains("编译通过") and capability_text.contains("可移动") and capability_text.contains("可抓取") and capability_text.contains("可承载"), "Tutorial capability copy should project formal CompileGate capabilities/interfaces.")
 func _test_program_progression() -> void:
