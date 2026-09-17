@@ -1,0 +1,100 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_tutorial_ui.gd" id="1_ui"]
+[ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
+
+[node name="TutorialUIRoot" type="CanvasLayer"]
+layer = 3
+script = ExtResource("1_ui")
+
+[node name="RootControl" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("2_theme")
+
+[node name="TutorialPanel" type="PanelContainer" parent="RootControl"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 16.0
+offset_top = 82.0
+offset_right = 438.0
+offset_bottom = 382.0
+mouse_filter = 1
+
+[node name="Margin" type="MarginContainer" parent="RootControl/TutorialPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="RootControl/TutorialPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="HBoxContainer" parent="RootControl/TutorialPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="RootControl/TutorialPanel/Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SCENE 01 · 教学"
+theme_override_font_sizes/font_size = 18
+
+[node name="ProgressLabel" type="Label" parent="RootControl/TutorialPanel/Margin/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "步骤 1 / 5"
+modulate = Color(0.68, 0.82, 0.94, 1)
+
+[node name="StepTitle" type="Label" parent="RootControl/TutorialPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "1 · 选择机械臂"
+theme_override_font_sizes/font_size = 16
+
+[node name="StepBody" type="Label" parent="RootControl/TutorialPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+text = "左键点击机械臂小车。"
+autowrap_mode = 2
+
+[node name="Rule" type="HSeparator" parent="RootControl/TutorialPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="CapabilityHeader" type="Label" parent="RootControl/TutorialPanel/Margin/VBox"]
+layout_mode = 2
+text = "模板能力 · 正式结果来自装配编译"
+modulate = Color(0.72, 0.8, 0.9, 1)
+
+[node name="CapabilityLabel" type="Label" parent="RootControl/TutorialPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "机械臂小车：首次运行后由装配编译确认\n运输平台：首次运行后由装配编译确认"
+autowrap_mode = 2
+
+[node name="ButtonRow" type="HBoxContainer" parent="RootControl/TutorialPanel/Margin/VBox"]
+layout_mode = 2
+alignment = 2
+
+[node name="SkipButton" type="Button" parent="RootControl/TutorialPanel/Margin/VBox/ButtonRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "跳过教学"
+
+[node name="ReopenTutorialButton" type="Button" parent="RootControl"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 16.0
+offset_top = 82.0
+offset_right = 132.0
+offset_bottom = 118.0
+text = "打开教学"
