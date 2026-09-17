@@ -58,7 +58,7 @@ func _test_skip_and_manual_catch_up() -> void:
 	var box = object_manager.get_standard_box()
 	var score = scene.get_node("SceneRoot/Scene01ScoreTracker")
 	_expect_equal(tutorial.get_step(), TutorialScript.Step.SELECT_ARM, "Tutorial should start by asking for Arm selection.")
-	var box_before := box.get_current_count()
+	var box_before: int = int(box.get_current_count())
 	var manual_before := float(score.call("get_manual_runtime"))
 	tutorial.skip_tutorial()
 	_expect_false(tutorial.is_visible(), "Skip should hide coaching.")
