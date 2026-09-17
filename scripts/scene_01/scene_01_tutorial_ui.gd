@@ -2,18 +2,19 @@ class_name Scene01TutorialUI
 extends CanvasLayer
 const TutorialScript := preload("res://scripts/scene_01/scene_01_tutorial.gd")
 @onready var _panel: PanelContainer = %TutorialPanel
-@onready var _reopen_button: Button = %ReopenTutorialButton
 @onready var _progress_label: Label = %ProgressLabel
 @onready var _title_label: Label = %StepTitle
 @onready var _body_label: Label = %StepBody
 @onready var _capability_label: Label = %CapabilityLabel
 @onready var _skip_button: Button = %SkipButton
 @onready var _manual_guide: Control = get_parent().get_node_or_null("UIRoot/RootControl") as Control
+@onready var _reopen_button: Button = get_parent().get_node_or_null("UIRoot/RootControl/Panel/Margin/VBox/HeaderRow/TutorialButton") as Button
 var _tutorial: TutorialScript
 func _ready() -> void:
 	_tutorial = get_parent().get_node("SceneRoot/Scene01Tutorial") as TutorialScript
 	_skip_button.pressed.connect(_on_skip_pressed)
-	_reopen_button.pressed.connect(_on_reopen_pressed)
+	if _reopen_button != null:
+		_reopen_button.pressed.connect(_on_reopen_pressed)
 	_tutorial.step_changed.connect(_on_step_changed)
 	_tutorial.visibility_changed.connect(_on_visibility_changed)
 	_tutorial.presentation_changed.connect(_refresh)
@@ -31,7 +32,6 @@ func _refresh() -> void:
 		return
 	var tutorial_visible := _tutorial.is_visible()
 	_panel.visible = tutorial_visible
-	_reopen_button.visible = not tutorial_visible
 	if _manual_guide != null:
 		_manual_guide.visible = not tutorial_visible
 	if not tutorial_visible:
