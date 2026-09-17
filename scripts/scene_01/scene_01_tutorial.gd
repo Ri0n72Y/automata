@@ -7,6 +7,7 @@ const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
 const RunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
 const ObservableScript := preload("res://scripts/scene_01/scene_01_observable_state.gd")
 const CompileGateScript := preload("res://scripts/scene_01/scene_01_assembly_compile_gate.gd")
+const AssemblyAdapterScript := preload("res://scripts/scene_01/scene_01_assembly_definition_adapter.gd")
 const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const AssemblyCapabilitiesScript := preload("res://scripts/assembly/assembly_capabilities.gd")
 enum Step { SELECT_ARM, MANUAL_PICKUP, MANUAL_DROP, PROGRAM_RUN, MULTI_VEHICLE, DONE }
@@ -65,7 +66,7 @@ func _capability_line(vehicle_id: StringName, label: String, is_arm: bool) -> St
 		parts.append("可移动")
 	if is_arm and result.has_capability(AssemblyCapabilitiesScript.GRAB_DROP):
 		parts.append("可抓取")
-	if not is_arm and _has_interface(result, &"tray"):
+	if not is_arm and _has_interface(result, AssemblyAdapterScript.TRAY_INTERFACE_KIND):
 		parts.append("可承载")
 	return "%s：%s" % [label, " / ".join(parts)]
 func _has_interface(result, kind: StringName) -> bool:
