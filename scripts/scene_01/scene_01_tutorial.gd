@@ -8,6 +8,7 @@ const RunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd
 const ObservableScript := preload("res://scripts/scene_01/scene_01_observable_state.gd")
 const CompileGateScript := preload("res://scripts/scene_01/scene_01_assembly_compile_gate.gd")
 const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
+const AssemblyCapabilitiesScript := preload("res://scripts/assembly/assembly_capabilities.gd")
 enum Step { SELECT_ARM, MANUAL_PICKUP, MANUAL_DROP, PROGRAM_RUN, MULTI_VEHICLE, DONE }
 var _step := Step.SELECT_ARM
 var _visible := true
@@ -60,9 +61,9 @@ func _capability_line(vehicle_id: StringName, label: String, is_arm: bool) -> St
 	if result == null or not result.is_success():
 		return "%s：首次运行后由装配编译确认" % label
 	var parts := PackedStringArray(["编译通过"])
-	if result.has_capability(&"can_move"):
+	if result.has_capability(AssemblyCapabilitiesScript.CAN_MOVE):
 		parts.append("可移动")
-	if is_arm and result.has_capability(&"grab_drop"):
+	if is_arm and result.has_capability(AssemblyCapabilitiesScript.GRAB_DROP):
 		parts.append("可抓取")
 	if not is_arm and _has_interface(result, &"tray"):
 		parts.append("可承载")
