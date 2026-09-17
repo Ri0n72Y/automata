@@ -88,13 +88,3 @@ alignment = 2
 unique_name_in_owner = true
 layout_mode = 2
 text = "跳过教学"
-
-[node name="ReopenTutorialButton" type="Button" parent="RootControl"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_left = 16.0
-offset_top = 82.0
-offset_right = 132.0
-offset_bottom = 118.0
-text = "打开教学"
