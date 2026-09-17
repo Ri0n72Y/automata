@@ -15,14 +15,16 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
-	var vehicle := _get_selected_vehicle()
-	if vehicle == null:
-		return super.request_selected_vehicle_move(target_anchor)
-	if not _ensure_gameplay_running():
+	return request_vehicle_move(super._get_selected_vehicle(), target_anchor)
+
+
+func request_vehicle_move(vehicle: VehicleActor, target_anchor: Vector2i) -> bool:
+	if vehicle != null and not _ensure_gameplay_running():
 		return false
-	var accepted := super.request_selected_vehicle_move(target_anchor)
+	var accepted := super.request_vehicle_move(vehicle, target_anchor)
 	if accepted:
 		_face_vehicle_for_final_step(vehicle)
+	_sync_live_target_mode()
 	return accepted
 
 
@@ -40,7 +42,7 @@ func _sync_live_target_mode() -> void:
 	super._sync_live_target_mode()
 	if grid_selection_controller == null or not _is_lifecycle_paused():
 		return
-	var vehicle := _get_selected_vehicle()
+	var vehicle := super._get_selected_vehicle()
 	var footprint := Vector2i.ONE
 	if vehicle != null and vehicle.definition != null:
 		footprint = vehicle.definition.footprint

@@ -84,7 +84,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func request_selected_grab_drop() -> GrabDropResultScript:
-	var vehicle := _get_selected_vehicle()
+	return request_vehicle_grab_drop(_get_selected_vehicle())
+
+
+func request_vehicle_grab_drop(vehicle: VehicleActorScript) -> GrabDropResultScript:
 	if vehicle == null or vehicle.runtime_state == null:
 		var missing_vehicle_result := GrabDropResultScript.rejected(
 			GrabDropResultScript.Action.NONE,

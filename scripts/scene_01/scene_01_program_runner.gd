@@ -1,301 +1,190 @@
 class_name Scene01ProgramRunner
 extends Node
-
-signal execution_started(vehicle_id: StringName)
-signal node_started(node_id: int, node_type: int)
-signal execution_completed(vehicle_id: StringName)
-signal execution_failed(node_id: int, reason: StringName)
+signal execution_started()
+signal statement_started(statement_index: int, statement_type: int)
+signal command_started(statement_index: int, command_type: int, vehicle_id: StringName)
+signal execution_completed()
+signal execution_failed(statement_index: int, reason: StringName)
 signal execution_reset()
-
 const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
-const ValidatorScript := preload("res://scripts/scene_01/scene_01_program_validator.gd")
+const PreflightScript := preload("res://scripts/scene_01/scene_01_program_preflight.gd")
+const CommandExecutorScript := preload("res://scripts/scene_01/scene_01_program_command_executor.gd")
 const MissionControllerScript := preload("res://scripts/scene_01/scene_01_mission_controller.gd")
-const SelectionControllerScript := preload("res://scripts/input/vehicle_selection_controller.gd")
 const MoveControllerScript := preload("res://scripts/scene_01/scene_01_lifecycle_vehicle_move_controller.gd")
 const GrabDropControllerScript := preload("res://scripts/scene_01/scene_01_lifecycle_grab_drop_controller.gd")
 const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const CompileGateScript := preload("res://scripts/scene_01/scene_01_assembly_compile_gate.gd")
-const AssemblyCapabilitiesScript := preload("res://scripts/assembly/assembly_capabilities.gd")
-const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.gd")
-const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
-
 const STATE_IDLE := 0
 const STATE_RUNNING := 1
 const STATE_COMPLETED := 2
 const STATE_FAILED := 3
-
-var _validator := ValidatorScript.new()
+var _preflight := PreflightScript.new()
+var _command_executor := CommandExecutorScript.new()
 var _scene_controller: MissionControllerScript
-var _selection_controller: SelectionControllerScript
-var _move_controller: MoveControllerScript
-var _grab_drop_controller: GrabDropControllerScript
 var _vehicle_manager: VehicleManagerScript
 var _compile_gate: CompileGateScript
 var _program: Scene01Program
-var _vehicle: VehicleActorScript
-var _state: int = STATE_IDLE
-var _current_node_id: int = ProgramScript.NO_NODE_ID
-var _waiting_for_move: bool = false
+var _state := STATE_IDLE
+var _pc := 0
+var _waiting_for_move := false
 var _repeat_remaining: Dictionary = {}
-var _requirements_vehicle_id: StringName = &""
+var _requirements_vehicle_ids: Array[StringName] = []
 var _last_error: StringName = &""
-
-
 func _ready() -> void:
 	_scene_controller = get_parent().get_parent() as MissionControllerScript
-	_selection_controller = get_node("../GridRoot/VehicleSelectionController") as SelectionControllerScript
-	_move_controller = get_node("../GridRoot/VehicleMoveController") as MoveControllerScript
-	_grab_drop_controller = get_node("../GridRoot/VehicleGrabDropController") as GrabDropControllerScript
 	_vehicle_manager = get_node("../RobotRoot/Scene01VehicleManager") as VehicleManagerScript
 	_compile_gate = get_node("../Scene01AssemblyCompileGate") as CompileGateScript
+	_command_executor.configure(
+		get_node("../GridRoot/VehicleMoveController") as MoveControllerScript,
+		get_node("../GridRoot/VehicleGrabDropController") as GrabDropControllerScript,
+		_vehicle_manager
+	)
+	_command_executor.move_completed.connect(_on_move_completed)
+	_command_executor.move_blocked.connect(_on_move_blocked)
+	_scene_controller.lifecycle_state_changed.connect(_on_lifecycle_state_changed)
 	_scene_controller.lifecycle_reset_completed.connect(_on_lifecycle_reset_completed)
-	set_process(false)
-
-
 func start_program(program: Scene01Program) -> bool:
 	if _state == STATE_RUNNING:
 		_last_error = &"program_already_running"
 		return false
+	var restore_baseline_on_failure := _scene_controller.is_gameplay_running()
 	_clear_execution(false)
 	_program = program.duplicate_program() if program != null else null
-	var diagnostics := _validator.validate(_program, _scene_controller.get_grid_size())
-	if not diagnostics.is_empty():
+	var result := _preflight.prepare(_program, _scene_controller, _vehicle_manager, _compile_gate)
+	if not bool(result.get("ok", false)):
 		return _fail_start(
-			StringName(diagnostics[0].get("code", &"program_invalid")),
-			int(diagnostics[0].get("node_id", ProgramScript.NO_NODE_ID))
+			StringName(result.get("reason", &"program_invalid")),
+			int(result.get("statement_index", ProgramScript.NO_STATEMENT_INDEX)),
+			restore_baseline_on_failure
 		)
-
-	_vehicle = _vehicle_manager.get_vehicle_by_id(_program.vehicle_id)
-	if _vehicle == null or _vehicle.definition == null or _vehicle.runtime_state == null:
-		return _fail_start(&"program_vehicle_missing")
-	if not _validate_move_targets():
+	for value in result.get("requirement_vehicle_ids", []):
+		_requirements_vehicle_ids.append(StringName(value))
+	if not _prepare_runtime(restore_baseline_on_failure):
 		return false
-
-	var required: Array[StringName] = _validator.required_capabilities(_program)
-	_compile_gate.set_required_capabilities(_program.vehicle_id, required)
-	_requirements_vehicle_id = _program.vehicle_id
-	if not _compile_gate.prepare_scene_run():
-		return _fail_start(&"program_capability_rejected")
-	for capability in required:
-		if not _compile_gate.has_vehicle_capability(_program.vehicle_id, capability):
-			return _fail_start(&"program_capability_rejected")
-
-	if not _selection_controller.select_vehicle(_vehicle):
-		return _fail_start(&"program_vehicle_selection_failed")
-	if not _scene_controller.ensure_gameplay_running():
-		return _fail_start(&"lifecycle_start_rejected")
-
-	_bind_vehicle(_vehicle)
 	_state = STATE_RUNNING
-	_current_node_id = _program.start_node_id
+	_pc = 0
 	_last_error = &""
-	set_process(true)
-	execution_started.emit(_program.vehicle_id)
+	execution_started.emit()
+	_drain_until_wait()
 	return true
-
-
 func get_state() -> int:
 	return _state
-
-
-func get_current_node_id() -> int:
-	return _current_node_id
-
-
+func get_current_statement_index() -> int:
+	return _pc
 func get_last_error() -> StringName:
 	return _last_error
-
-
-func _process(_delta: float) -> void:
-	if _state != STATE_RUNNING or _waiting_for_move:
+func _prepare_runtime(restore_baseline_on_failure: bool) -> bool:
+	if _scene_controller.is_gameplay_running():
+		if _compile_gate.prepare_scene_run():
+			return true
+		return _fail_start(&"program_capability_rejected", ProgramScript.NO_STATEMENT_INDEX, restore_baseline_on_failure)
+	if _scene_controller.ensure_gameplay_running():
+		return true
+	var reason := &"lifecycle_start_rejected"
+	if not _compile_gate.get_last_diagnostics().is_empty():
+		reason = &"program_capability_rejected"
+	return _fail_start(reason)
+func _drain_until_wait() -> void:
+	while _state == STATE_RUNNING and not _waiting_for_move:
+		if not _scene_controller.is_gameplay_running():
+			return
+		if _pc >= _program.get_statement_count():
+			_complete_execution()
+			return
+		_execute_statement()
+func _execute_statement() -> void:
+	var statement := _program.get_statement(_pc)
+	if statement.is_empty():
+		_fail_execution(_pc, &"missing_runtime_statement")
 		return
-	if not _scene_controller.is_gameplay_running():
+	var statement_type := int(statement.get("type", -1))
+	statement_started.emit(_pc, statement_type)
+	if statement_type == ProgramScript.StatementType.MOVE_TO or statement_type == ProgramScript.StatementType.GRAB_DROP:
+		command_started.emit(_pc, statement_type, StringName(statement.get("vehicle_id", &"")))
+	match statement_type:
+		ProgramScript.StatementType.MOVE_TO: _execute_move(statement)
+		ProgramScript.StatementType.GRAB_DROP: _execute_grab_drop(statement)
+		ProgramScript.StatementType.REPEAT: _execute_repeat(statement)
+		_: _fail_execution(_pc, &"invalid_runtime_statement")
+func _execute_move(statement: Dictionary) -> void:
+	var result := _command_executor.execute_move(statement)
+	if not bool(result.get("ok", false)):
+		_fail_execution(_pc, StringName(result.get("reason", &"move_rejected")))
 		return
-	if _current_node_id == ProgramScript.NO_NODE_ID:
-		_complete_execution()
+	_waiting_for_move = bool(result.get("waiting", false))
+	if not _waiting_for_move:
+		_pc += 1
+func _execute_grab_drop(statement: Dictionary) -> void:
+	var result := _command_executor.execute_grab_drop(statement)
+	if not bool(result.get("ok", false)):
+		_fail_execution(_pc, StringName(result.get("reason", &"grab_drop_rejected")))
 		return
-	_execute_current_node()
-
-
-func _execute_current_node() -> void:
-	var node := _program.get_node_data(_current_node_id)
-	if node.is_empty():
-		_fail_execution(_current_node_id, &"missing_runtime_node")
-		return
-	var node_id := _current_node_id
-	var node_type := int(node.get("type", -1))
-	node_started.emit(node_id, node_type)
-	match node_type:
-		ProgramScript.NodeType.START:
-			_advance(int(node.get("next_id", ProgramScript.NO_NODE_ID)))
-		ProgramScript.NodeType.MOVE_TO:
-			_execute_move(node)
-		ProgramScript.NodeType.GRAB_DROP:
-			_execute_grab_drop(node)
-		ProgramScript.NodeType.REPEAT:
-			_execute_repeat(node)
-		_:
-			_fail_execution(node_id, &"invalid_runtime_node")
-
-
-func _execute_move(node: Dictionary) -> void:
-	var node_id := int(node.get("id", ProgramScript.NO_NODE_ID))
-	if not _has_runtime_capability(AssemblyCapabilitiesScript.CAN_MOVE):
-		_fail_execution(node_id, &"move_capability_missing")
-		return
-	if not _selection_controller.select_vehicle(_vehicle):
-		_fail_execution(node_id, &"program_vehicle_selection_failed")
-		return
-	var target: Vector2i = node.get("target_anchor", Vector2i(-1, -1))
-	if not _move_controller.request_selected_vehicle_move(target):
-		var reason := _move_controller.get_last_rejection_reason()
-		_fail_execution(node_id, reason if reason != &"" else &"move_rejected")
-		return
-	if _vehicle.runtime_state.anchor_cell == target and _vehicle.runtime_state.active_move_command == null:
-		_advance(int(node.get("next_id", ProgramScript.NO_NODE_ID)))
-		return
-	_waiting_for_move = true
-
-
-func _execute_grab_drop(node: Dictionary) -> void:
-	var node_id := int(node.get("id", ProgramScript.NO_NODE_ID))
-	if not _has_runtime_capability(AssemblyCapabilitiesScript.GRAB_DROP):
-		_fail_execution(node_id, &"grab_drop_capability_missing")
-		return
-	if not _selection_controller.select_vehicle(_vehicle):
-		_fail_execution(node_id, &"program_vehicle_selection_failed")
-		return
-	var result := _grab_drop_controller.request_selected_grab_drop() as GrabDropResultScript
-	if result == null:
-		_fail_execution(node_id, &"grab_drop_lifecycle_rejected")
-		return
-	if not result.is_success():
-		_fail_execution(node_id, StringName("grab_drop_%d" % result.status))
-		return
-	_advance(int(node.get("next_id", ProgramScript.NO_NODE_ID)))
-
-
-func _execute_repeat(node: Dictionary) -> void:
-	var node_id := int(node.get("id", ProgramScript.NO_NODE_ID))
-	var remaining: int
-	if _repeat_remaining.has(node_id):
-		remaining = int(_repeat_remaining[node_id])
-	else:
-		remaining = maxi(int(node.get("repeat_count", 1)) - 1, 0)
+	_pc += 1
+func _execute_repeat(statement: Dictionary) -> void:
+	var remaining := int(_repeat_remaining.get(_pc, maxi(int(statement.get("repeat_count", 1)) - 1, 0)))
 	if remaining > 0:
-		_repeat_remaining[node_id] = remaining - 1
-		_advance(int(node.get("repeat_target_id", ProgramScript.NO_NODE_ID)))
+		_repeat_remaining[_pc] = remaining - 1
+		_pc = int(statement.get("repeat_target_index", ProgramScript.NO_STATEMENT_INDEX))
 		return
-	_repeat_remaining.erase(node_id)
-	_advance(int(node.get("next_id", ProgramScript.NO_NODE_ID)))
-
-
-func _advance(next_id: int) -> void:
-	_current_node_id = next_id
-
-
-func _on_vehicle_move_completed(_target_anchor: Vector2i) -> void:
+	_repeat_remaining.erase(_pc)
+	_pc += 1
+func _on_move_completed() -> void:
 	if _state != STATE_RUNNING or not _waiting_for_move:
 		return
-	var node := _program.get_node_data(_current_node_id)
-	if int(node.get("type", -1)) != ProgramScript.NodeType.MOVE_TO:
-		_fail_execution(_current_node_id, &"unexpected_move_completion")
-		return
 	_waiting_for_move = false
-	_advance(int(node.get("next_id", ProgramScript.NO_NODE_ID)))
-
-
-func _on_vehicle_move_blocked() -> void:
+	_pc += 1
+	call_deferred("_drain_until_wait")
+func _on_move_blocked() -> void:
 	if _state == STATE_RUNNING and _waiting_for_move:
-		_fail_execution(_current_node_id, &"move_blocked")
-
-
-func _on_lifecycle_reset_completed() -> void:
-	_clear_execution(true)
-
-
-func _validate_move_targets() -> bool:
-	for node in _program.nodes:
-		if int(node.get("type", -1)) != ProgramScript.NodeType.MOVE_TO:
-			continue
-		var target: Vector2i = node.get("target_anchor", Vector2i(-1, -1))
-		if not _scene_controller.is_grid_footprint_walkable(target, _vehicle.definition.footprint):
-			return _fail_start(
-				&"move_target_not_walkable",
-				int(node.get("id", ProgramScript.NO_NODE_ID))
-			)
-	return true
-
-
-func _has_runtime_capability(capability: StringName) -> bool:
-	return (
-		_program != null
-		and _compile_gate.has_vehicle_capability(_program.vehicle_id, capability)
-	)
-
-
-func _bind_vehicle(vehicle: VehicleActorScript) -> void:
-	_unbind_vehicle()
-	_vehicle = vehicle
-	_vehicle.move_completed.connect(_on_vehicle_move_completed)
-	_vehicle.move_blocked.connect(_on_vehicle_move_blocked)
-
-
-func _unbind_vehicle() -> void:
-	if _vehicle == null or not is_instance_valid(_vehicle):
-		return
-	if _vehicle.move_completed.is_connected(_on_vehicle_move_completed):
-		_vehicle.move_completed.disconnect(_on_vehicle_move_completed)
-	if _vehicle.move_blocked.is_connected(_on_vehicle_move_blocked):
-		_vehicle.move_blocked.disconnect(_on_vehicle_move_blocked)
-
-
+		_fail_execution(_pc, &"move_blocked")
+func _on_lifecycle_state_changed(_previous_state: int, _current_state: int) -> void:
+	if _state == STATE_RUNNING and not _waiting_for_move and _scene_controller.is_gameplay_running():
+		call_deferred("_drain_until_wait")
 func _complete_execution() -> void:
-	var vehicle_id := _program.vehicle_id if _program != null else &""
 	_state = STATE_COMPLETED
 	_waiting_for_move = false
 	_last_error = &""
-	set_process(false)
-	_unbind_vehicle()
-	execution_completed.emit(vehicle_id)
-
-
-func _fail_start(reason: StringName, node_id: int = ProgramScript.NO_NODE_ID) -> bool:
+	_command_executor.cancel()
+	execution_completed.emit()
+func _fail_start(
+	reason: StringName,
+	statement_index: int = ProgramScript.NO_STATEMENT_INDEX,
+	restore_baseline_on_failure: bool = false
+) -> bool:
 	_state = STATE_FAILED
 	_last_error = reason
 	_waiting_for_move = false
-	set_process(false)
+	_command_executor.cancel()
 	_clear_requirements()
-	execution_failed.emit(node_id, reason)
+	if restore_baseline_on_failure:
+		_restore_baseline_publication()
+	execution_failed.emit(statement_index, reason)
 	return false
-
-
-func _fail_execution(node_id: int, reason: StringName) -> void:
+func _fail_execution(statement_index: int, reason: StringName) -> void:
 	_state = STATE_FAILED
 	_last_error = reason
 	_waiting_for_move = false
-	set_process(false)
-	_unbind_vehicle()
-	execution_failed.emit(node_id, reason)
-
-
+	_command_executor.cancel()
+	execution_failed.emit(statement_index, reason)
+func _restore_baseline_publication() -> void:
+	_compile_gate.clear_required_capabilities()
+	if not _compile_gate.prepare_scene_run():
+		push_error("Scene 01 failed to restore baseline compile publication after Program rejection.")
+func _on_lifecycle_reset_completed() -> void:
+	_clear_execution(true)
 func _clear_execution(emit_reset: bool) -> void:
-	set_process(false)
-	_unbind_vehicle()
+	_command_executor.cancel()
 	_clear_requirements()
 	_program = null
-	_vehicle = null
 	_state = STATE_IDLE
-	_current_node_id = ProgramScript.NO_NODE_ID
+	_pc = 0
 	_waiting_for_move = false
 	_repeat_remaining.clear()
 	_last_error = &""
 	if emit_reset:
 		execution_reset.emit()
-
-
 func _clear_requirements() -> void:
-	if _requirements_vehicle_id != &"":
+	for vehicle_id in _requirements_vehicle_ids:
 		var empty: Array[StringName] = []
-		_compile_gate.set_required_capabilities(_requirements_vehicle_id, empty)
-	_requirements_vehicle_id = &""
+		_compile_gate.set_required_capabilities(vehicle_id, empty)
+	_requirements_vehicle_ids.clear()

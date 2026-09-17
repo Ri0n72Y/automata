@@ -1,12 +1,10 @@
 [gd_scene load_steps=3 format=3]
-
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_program_ui.gd" id="1_ui"]
 [ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
 
 [node name="ProgramUIRoot" type="CanvasLayer"]
-layer = 6
+layer = 4
 script = ExtResource("1_ui")
-
 [node name="RootControl" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 15
@@ -16,151 +14,155 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme = ExtResource("2_theme")
-
 [node name="ProgramPanel" type="PanelContainer" parent="RootControl"]
 layout_mode = 0
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -438.0
-offset_top = 16.0
+offset_left = -780.0
+offset_top = 72.0
 offset_right = -16.0
-offset_bottom = 574.0
+offset_bottom = 704.0
 grow_horizontal = 0
-
 [node name="Margin" type="MarginContainer" parent="RootControl/ProgramPanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 12
-
 [node name="VBox" type="VBoxContainer" parent="RootControl/ProgramPanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 7
-
-[node name="Title" type="Label" parent="RootControl/ProgramPanel/Margin/VBox"]
+theme_override_constants/separation = 8
+[node name="HeaderRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox"]
 layout_mode = 2
-text = "PROGRAM BLUEPRINT · MVP"
+theme_override_constants/separation = 8
+[node name="Title" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "PROGRAM SOURCE WORKSPACE"
 theme_override_font_sizes/font_size = 18
-
-[node name="VehicleRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox"]
+[node name="SaveButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/HeaderRow"]
+unique_name_in_owner = true
 layout_mode = 2
-
-[node name="Label" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/VehicleRow"]
+text = "Save"
+[node name="LoadButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/HeaderRow"]
+unique_name_in_owner = true
 layout_mode = 2
-text = "车辆"
-
-[node name="VehicleOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/VehicleRow"]
+text = "Load"
+[node name="ExportButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/HeaderRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Export Blueprint"
+[node name="RunButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/HeaderRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "RUN"
+[node name="Rule" type="HSeparator" parent="RootControl/ProgramPanel/Margin/VBox"]
+layout_mode = 2
+[node name="Workspace" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+[node name="AddCommandColumn" type="VBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/Workspace"]
+custom_minimum_size = Vector2(190, 0)
+layout_mode = 2
+theme_override_constants/separation = 7
+[node name="SectionTitle" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn"]
+layout_mode = 2
+text = "ADD COMMAND"
+theme_override_font_sizes/font_size = 14
+[node name="VehicleLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn"]
+layout_mode = 2
+text = "Command vehicle"
+[node name="VehicleOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+[node name="MoveLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn"]
+layout_mode = 2
+text = "MoveTo target"
+[node name="MoveParams" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn"]
+layout_mode = 2
+theme_override_constants/separation = 5
+[node name="TargetX" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn/MoveParams"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-
-[node name="MoveParams" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/MoveParams"]
-layout_mode = 2
-text = "MoveTo"
-
-[node name="TargetX" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/MoveParams"]
-unique_name_in_owner = true
-layout_mode = 2
 min_value = 0.0
 max_value = 255.0
 value = 1.0
 prefix = "X "
-
-[node name="TargetY" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/MoveParams"]
+[node name="TargetY" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn/MoveParams"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 min_value = 0.0
 max_value = 255.0
 value = 3.0
 prefix = "Y "
-
-[node name="AddMoveButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/MoveParams"]
+[node name="AddMoveButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "+ MoveTo"
-
-[node name="ActionRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox"]
-layout_mode = 2
-
-[node name="AddGrabButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ActionRow"]
+[node name="AddGrabButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "+ GrabDrop"
-
-[node name="RepeatCount" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ActionRow"]
+[node name="RepeatLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn"]
+layout_mode = 2
+text = "Repeat"
+[node name="RepeatParams" type="VBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn"]
+layout_mode = 2
+theme_override_constants/separation = 5
+[node name="RepeatCount" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn/RepeatParams"]
 unique_name_in_owner = true
 layout_mode = 2
 min_value = 1.0
 max_value = 100.0
-value = 5.0
-prefix = "Repeat "
-
-[node name="RepeatTargetOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/ActionRow"]
+value = 2.0
+prefix = "× "
+[node name="RepeatTargetOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn/RepeatParams"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="AddRepeatButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ActionRow"]
+disabled = true
+[node name="AddRepeatButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn"]
 unique_name_in_owner = true
 layout_mode = 2
+disabled = true
 text = "+ Repeat"
-
-[node name="ProgramList" type="ItemList" parent="RootControl/ProgramPanel/Margin/VBox"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 220)
+[node name="Spacer" type="Control" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn"]
 layout_mode = 2
 size_flags_vertical = 3
-select_mode = 0
-allow_reselect = true
-
-[node name="EditRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox"]
+[node name="DestructiveRule" type="HSeparator" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn"]
 layout_mode = 2
-
-[node name="Label" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/EditRow"]
-layout_mode = 2
-text = "连接到"
-
-[node name="ConnectTargetOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/EditRow"]
+[node name="ClearButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/AddCommandColumn"]
 unique_name_in_owner = true
+layout_mode = 2
+text = "Clear All"
+[node name="SourceColumn" type="VBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/Workspace"]
 layout_mode = 2
 size_flags_horizontal = 3
-
-[node name="ConnectButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/EditRow"]
-unique_name_in_owner = true
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+[node name="SectionTitle" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/SourceColumn"]
 layout_mode = 2
-text = "Connect"
-
-[node name="DeleteButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/EditRow"]
-unique_name_in_owner = true
+text = "SOURCE · canonical v2"
+theme_override_font_sizes/font_size = 14
+[node name="Hint" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/SourceColumn"]
 layout_mode = 2
-text = "Delete"
-
-[node name="FileRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox"]
-layout_mode = 2
-
-[node name="SaveButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/FileRow"]
+text = "每条车辆命令显式绑定实体，例如 [transport_vehicle:moveTo] 8 4"
+autowrap_mode = 2
+[node name="SourceEditor" type="CodeEdit" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/SourceColumn"]
 unique_name_in_owner = true
-layout_mode = 2
-text = "Save"
-
-[node name="LoadButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/FileRow"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Load"
-
-[node name="RunButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/FileRow"]
-unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 420)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "RUN PROGRAM"
-
-[node name="StatusLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox"]
+size_flags_vertical = 3
+placeholder_text = "automata_scene01_program 2"
+wrap_mode = 1
+gutters_draw_line_numbers = true
+gutters_zero_pad_line_numbers = true
+[node name="StatusLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/Workspace/SourceColumn"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Start 已就绪"
+text = "源码初始化中"
 autowrap_mode = 2
 modulate = Color(0.68, 0.86, 1, 1)
