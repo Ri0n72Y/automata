@@ -8,7 +8,7 @@ const TutorialScript := preload("res://scripts/scene_01/scene_01_tutorial.gd")
 @onready var _body_label: Label = %StepBody
 @onready var _capability_label: Label = %CapabilityLabel
 @onready var _skip_button: Button = %SkipButton
-@onready var _manual_guide: CanvasLayer = get_parent().get_node_or_null("UIRoot") as CanvasLayer
+@onready var _manual_guide: Control = get_parent().get_node_or_null("UIRoot/RootControl") as Control
 var _tutorial: TutorialScript
 func _ready() -> void:
 	_tutorial = get_parent().get_node("SceneRoot/Scene01Tutorial") as TutorialScript
