@@ -60,14 +60,23 @@ layout_mode = 2
 focus_mode = 0
 text = "▶"
 
-[node name="Instructions" type="Label" parent="RootControl/Panel/Margin/VBox"]
+[node name="ManualBody" type="ScrollContainer" parent="RootControl/Panel/Margin/VBox"]
+unique_name_in_owner = true
 visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BodyVBox" type="VBoxContainer" parent="RootControl/Panel/Margin/VBox/ManualBody"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="Instructions" type="Label" parent="RootControl/Panel/Margin/VBox/ManualBody/BodyVBox"]
 layout_mode = 2
 text = "▶/⏸ 播放/暂停 · 倍速 0.5×/1×/2×/4× · ↺ 重置\n左键选择车辆；M 进入移动目标模式，左键确认\nM / Esc / 右键退出目标模式；X 停止车辆任务\n机械臂：A / D 调整朝向，C 抓取或放置\nEsc / 右键取消车辆选择；Q / E 旋转相机"
 autowrap_mode = 2
 
-[node name="ScopeNote" type="Label" parent="RootControl/Panel/Margin/VBox"]
-visible = false
+[node name="ScopeNote" type="Label" parent="RootControl/Panel/Margin/VBox/ManualBody/BodyVBox"]
 layout_mode = 2
 text = "HUD 显示车辆、库存、任务和命令反馈。\n绿色机械臂工作区表示存在可执行交互。\n暂停冻结玩法命令但仍可观察；Debug 位于右上角。"
 autowrap_mode = 2
