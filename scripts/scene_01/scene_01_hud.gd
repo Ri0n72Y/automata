@@ -22,6 +22,7 @@ const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.g
 @onready var feedback_label: Label = %FeedbackLabel
 @onready var completion_panel: PanelContainer = %CompletionPanel
 @onready var completion_summary_label: Label = %CompletionSummaryLabel
+@onready var status_panel: PanelContainer = $RootControl/StatusPanel
 
 var _scene_controller: MissionControllerScript
 var _observable: ObservableStateScript
@@ -51,8 +52,14 @@ func _ready() -> void:
 		"SceneRoot/GridRoot/VehicleGrabDropController"
 	) as VehicleGrabDropControllerScript
 	_bind_signals()
+	get_viewport().size_changed.connect(_apply_status_layout)
+	_apply_status_layout()
 	_refresh()
 	call_deferred("_refresh")
+
+
+func _apply_status_layout() -> void:
+	status_panel.offset_right = status_panel.offset_left + clampf(float(get_viewport().get_visible_rect().size.x) * 0.2, 300.0, 360.0)
 
 
 func _bind_signals() -> void:
