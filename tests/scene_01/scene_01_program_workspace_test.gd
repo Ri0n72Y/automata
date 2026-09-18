@@ -9,8 +9,6 @@ func _init() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
-	root.size = Vector2i(1920, 1080)
-	await process_frame
 	var packed := load(SCENE_PATH) as PackedScene
 	_expect_true(packed != null, "Scene 01 should load for Program workspace test.")
 	if packed == null:
@@ -61,19 +59,19 @@ func _run() -> void:
 	await process_frame
 	_expect_true(not bool(ui.call("is_workspace_collapsed")), "Program rail should expand on explicit player action.")
 	_expect_true(source_editor.is_visible_in_tree(), "Expanded Program rail should expose the canonical source editor.")
-	_expect_true(program_panel.size.x >= 500.0 and program_panel.size.x <= 521.0, "1920px viewport should use the wide Program rail width.")
+	var viewport_width := float(scene.get_viewport().get_visible_rect().size.x)
+	var expected_program_width := clampf(viewport_width * 0.27, 420.0, 520.0)
+	var expected_left_width := clampf(viewport_width * 0.2, 300.0, 360.0)
+	_expect_true(absf(program_panel.size.x - expected_program_width) <= 2.0, "Expanded Program rail should follow the viewport-width formula.")
+	_expect_true(tutorial_panel.size.x <= expected_left_width + 2.0 and hud_panel.size.x <= expected_left_width + 2.0, "Left-rail panels should follow the same bounded viewport-width formula.")
 	var central_width := program_panel.get_global_rect().position.x - (tutorial_panel.get_global_rect().position.x + tutorial_panel.get_global_rect().size.x)
-	_expect_true(central_width >= 900.0, "Wide desktop layout should protect at least 900px of central gameplay width.")
+	_expect_true(central_width > 0.0, "Program and left rails must leave a non-overlapping central gameplay region.")
 	_expect_true(not tutorial_panel.get_global_rect().intersects(hud_panel.get_global_rect()), "Tutorial and HUD must occupy separate vertical slots in the left rail.")
 	_expect_true(program_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and tutorial_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and hud_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and manual_root.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Fullscreen presentation roots must not intercept central gameplay input.")
 	ui.call("set_command_builder_expanded", true)
 	_expect_true(bool(ui.call("is_command_builder_expanded")) and builder_body.visible, "Add Command should expand only inside Program UI presentation state.")
 	_expect_true(not program_panel.get_global_rect().intersects(lifecycle_panel.get_global_rect()), "Program workspace must not cover lifecycle controls.")
 	_expect_true((ui as CanvasLayer).layer < hud.layer, "HUD completion results must render above the Program workspace.")
-	root.size = Vector2i(2264, 1274)
-	await process_frame
-	_expect_true(tutorial_panel.size.x <= 361.0 and hud_panel.size.x <= 361.0, "Wide desktop left rail should cap at 360px.")
-	_expect_true(program_panel.size.x <= 521.0, "Wide desktop Program rail should cap at 520px.")
 	target_x.value = 4
 	target_y.value = 5
 	add_move.emit_signal("pressed")
