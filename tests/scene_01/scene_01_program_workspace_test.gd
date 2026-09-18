@@ -9,6 +9,8 @@ func _init() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	root.size = Vector2i(1920, 1080)
+	await process_frame
 	var packed := load(SCENE_PATH) as PackedScene
 	_expect_true(packed != null, "Scene 01 should load for Program workspace test.")
 	if packed == null:
@@ -35,6 +37,13 @@ func _run() -> void:
 	var repeat_count := ui.get_node("%RepeatCount") as SpinBox
 	var repeat_target_option := ui.get_node("%RepeatTargetOption") as OptionButton
 	var status_label := ui.get_node("%StatusLabel") as Label
+	var builder_body := ui.get_node("%BuilderBody") as Control
+	var tutorial_panel := scene.get_node("TutorialUIRoot/RootControl/TutorialPanel") as Control
+	var hud_panel := scene.get_node("HUDRoot/RootControl/StatusPanel") as Control
+	var program_root := ui.get_node("RootControl") as Control
+	var tutorial_root := scene.get_node("TutorialUIRoot/RootControl") as Control
+	var hud_root := scene.get_node("HUDRoot/RootControl") as Control
+	var manual_root := scene.get_node("UIRoot/RootControl") as Control
 	_expect_true(source_editor != null, "Program workspace should expose one canonical SourceEditor.")
 	_expect_equal(ui.call("get_source_text"), SOURCE_HEADER, "Workspace should initialize with only the v2 source header.")
 	_expect_true(ui.find_child("ProgramList", true, false) == null, "Legacy mutable ProgramList should be removed.")
@@ -43,8 +52,28 @@ func _run() -> void:
 	_expect_true(add_move.get_parent() is VBoxContainer, "MoveTo add button should occupy its own VBox row.")
 	_expect_true(add_grab.get_parent() is VBoxContainer, "GrabDrop add button should occupy its own VBox row.")
 	_expect_true(add_repeat.get_parent() is VBoxContainer, "Repeat add button should occupy its own VBox row.")
+	_expect_true(source_editor.get_parent() is VBoxContainer, "Canonical SourceEditor should be the primary single-column workspace content.")
+	_expect_true(ui.find_child("Workspace", true, false) == null, "Legacy side-by-side workspace container should be removed.")
+	_expect_true(bool(ui.call("is_workspace_collapsed")), "Program rail should start collapsed so gameplay remains visible.")
+	_expect_true(not builder_body.visible, "Add Command should start collapsed behind its accordion.")
+	_expect_true(program_panel.size.x <= 53.0, "Collapsed Program rail should stay near the 52px spec width.")
+	ui.call("set_workspace_collapsed", false)
+	await process_frame
+	_expect_true(not bool(ui.call("is_workspace_collapsed")), "Program rail should expand on explicit player action.")
+	_expect_true(source_editor.is_visible_in_tree(), "Expanded Program rail should expose the canonical source editor.")
+	_expect_true(program_panel.size.x >= 500.0 and program_panel.size.x <= 521.0, "1920px viewport should use the wide Program rail width.")
+	var central_width := program_panel.get_global_rect().position.x - (tutorial_panel.get_global_rect().position.x + tutorial_panel.get_global_rect().size.x)
+	_expect_true(central_width >= 900.0, "Wide desktop layout should protect at least 900px of central gameplay width.")
+	_expect_true(not tutorial_panel.get_global_rect().intersects(hud_panel.get_global_rect()), "Tutorial and HUD must occupy separate vertical slots in the left rail.")
+	_expect_true(program_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and tutorial_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and hud_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and manual_root.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Fullscreen presentation roots must not intercept central gameplay input.")
+	ui.call("set_command_builder_expanded", true)
+	_expect_true(bool(ui.call("is_command_builder_expanded")) and builder_body.visible, "Add Command should expand only inside Program UI presentation state.")
 	_expect_true(not program_panel.get_global_rect().intersects(lifecycle_panel.get_global_rect()), "Program workspace must not cover lifecycle controls.")
 	_expect_true((ui as CanvasLayer).layer < hud.layer, "HUD completion results must render above the Program workspace.")
+	root.size = Vector2i(2264, 1274)
+	await process_frame
+	_expect_true(tutorial_panel.size.x <= 361.0 and hud_panel.size.x <= 361.0, "Wide desktop left rail should cap at 360px.")
+	_expect_true(program_panel.size.x <= 521.0, "Wide desktop Program rail should cap at 520px.")
 	target_x.value = 4
 	target_y.value = 5
 	add_move.emit_signal("pressed")
