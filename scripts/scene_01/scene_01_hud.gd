@@ -118,9 +118,9 @@ func _refresh() -> void:
 
 func _command_availability_text(motion_state: int, selected_id: StringName) -> String:
 	if selected_id == &"":
-		return "命令：M 移动 未选择车辆   X 停止 未选择车辆   C 抓放 未选择车辆"
+		return "M 移动 —   X 停止 —   C 抓放 —"
 	if _scene_controller.is_scene_paused():
-		return "命令：M 移动 暂停   X 停止 暂停   C 抓放 暂停"
+		return "M 移动 暂停   X 停止 暂停   C 抓放 暂停"
 
 	var vehicle = _vehicle_manager.get_vehicle_by_id(selected_id)
 	var definition = vehicle.definition if vehicle != null else null
@@ -139,29 +139,29 @@ func _command_availability_text(motion_state: int, selected_id: StringName) -> S
 
 	var move_text := "可用"
 	if not can_move:
-		move_text = "车辆无移动能力"
+		move_text = "无能力"
 	elif busy:
-		move_text = "车辆忙碌"
+		move_text = "忙碌"
 	elif _grid_selection.is_live_target_mode():
-		move_text = "选择目标中"
+		move_text = "选点中"
 
 	var stop_text := (
 		"可用"
 		if motion_state == VehicleRuntimeStateScript.MotionState.MOVING
-		else "车辆未移动"
+		else "未移动"
 	)
 
-	var grab_text := "无有效交互目标"
+	var grab_text := "无目标"
 	if not can_grab:
-		grab_text = "车辆无机械臂"
+		grab_text = "无机械臂"
 	elif busy:
-		grab_text = "车辆忙碌"
+		grab_text = "忙碌"
 	elif _grid_selection.is_live_target_mode():
-		grab_text = "移动选点中"
+		grab_text = "选点中"
 	elif _grab_drop_controller.is_interaction_preview_valid():
 		grab_text = "可用"
 
-	return "命令：M 移动 %s   X 停止 %s   C 抓放 %s" % [
+	return "M 移动 %s   X 停止 %s   C 抓放 %s" % [
 		move_text,
 		stop_text,
 		grab_text,
