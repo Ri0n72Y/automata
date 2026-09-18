@@ -1,8 +1,8 @@
 class_name Scene01ManualControls
 extends CanvasLayer
 
-const COLLAPSED_SIZE := Vector2(306.0, 52.0)
-const EXPANDED_SIZE := Vector2(468.0, 342.0)
+const COLLAPSED_HEIGHT := 52.0
+const EXPANDED_HEIGHT := 342.0
 const BODY_PATHS := [
 	NodePath("RootControl/Panel/Margin/VBox/Instructions"),
 	NodePath("RootControl/Panel/Margin/VBox/ScopeNote"),
@@ -19,6 +19,7 @@ var _collapsed: bool = true
 
 func _ready() -> void:
 	_disable_button_focus(panel)
+	get_viewport().size_changed.connect(_apply_panel_layout)
 	set_collapsed(start_collapsed)
 
 
@@ -59,12 +60,17 @@ func set_collapsed(collapsed: bool) -> void:
 			control.visible = not _collapsed
 	if collapse_button != null:
 		collapse_button.text = "▶" if _collapsed else "▼"
-	if panel != null:
-		var target_size := COLLAPSED_SIZE if _collapsed else EXPANDED_SIZE
-		panel.offset_right = panel.offset_left + target_size.x
-		panel.offset_bottom = panel.offset_top + target_size.y
+	_apply_panel_layout()
 	if _collapsed:
 		get_viewport().gui_release_focus()
+
+
+func _apply_panel_layout() -> void:
+	if panel == null:
+		return
+	var width := clampf(float(get_viewport().get_visible_rect().size.x) * 0.2, 300.0, 360.0)
+	panel.offset_right = panel.offset_left + width
+	panel.offset_bottom = panel.offset_top + (COLLAPSED_HEIGHT if _collapsed else EXPANDED_HEIGHT)
 
 
 func is_collapsed() -> bool:
