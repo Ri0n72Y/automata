@@ -5,6 +5,16 @@ const SupportScript := preload("res://scripts/scene_01/scene_01_program_workspac
 const RunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
 const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
+const COLLAPSED_WIDTH := 52.0
+const WIDE_WIDTH := 520.0
+const COMPACT_WIDTH := 440.0
+const NARROW_WIDTH := 420.0
+@onready var _program_panel: PanelContainer = %ProgramPanel
+@onready var _title: Label = %ProgramTitle
+@onready var _expanded_content: VBoxContainer = %ExpandedContent
+@onready var _collapse_button: Button = %WorkspaceCollapseButton
+@onready var _builder_toggle: Button = %BuilderToggleButton
+@onready var _builder_body: VBoxContainer = %BuilderBody
 @onready var _vehicle_option: OptionButton = %VehicleOption
 @onready var _target_x: SpinBox = %TargetX
 @onready var _target_y: SpinBox = %TargetY
@@ -27,11 +37,16 @@ var _program: Scene01Program
 var _statement_lines: Array[int] = []
 var _editing_enabled := true
 var _suppress_source_signal := false
+var _workspace_collapsed := true
+var _builder_expanded := false
 func _ready() -> void:
 	_runner = get_parent().get_node("SceneRoot/Scene01ProgramRunner") as RunnerScript
 	_vehicle_manager = get_parent().get_node("SceneRoot/RobotRoot/Scene01VehicleManager") as VehicleManagerScript
 	_bind_ui()
 	_bind_runner()
+	get_viewport().size_changed.connect(_apply_workspace_layout)
+	set_command_builder_expanded(false)
+	set_workspace_collapsed(true)
 	call_deferred("_initialize_editor")
 func _initialize_editor() -> void:
 	_populate_vehicles()
@@ -44,7 +59,32 @@ func get_source_text() -> String:
 func set_source_text(source: String) -> void:
 	_set_source_text_internal(source)
 	_parse_current_source(true)
+func set_workspace_collapsed(collapsed: bool) -> void:
+	_workspace_collapsed = collapsed
+	_title.visible = not collapsed
+	_expanded_content.visible = not collapsed
+	_collapse_button.text = "P ▶" if collapsed else "▶"
+	_collapse_button.tooltip_text = "打开 PROGRAM" if collapsed else "折叠 PROGRAM"
+	_apply_workspace_layout()
+	if collapsed:
+		get_viewport().gui_release_focus()
+func is_workspace_collapsed() -> bool:
+	return _workspace_collapsed
+func set_command_builder_expanded(expanded: bool) -> void:
+	_builder_expanded = expanded
+	_builder_body.visible = expanded
+	_builder_toggle.text = "▼ ADD COMMAND" if expanded else "▶ ADD COMMAND"
+func is_command_builder_expanded() -> bool:
+	return _builder_expanded
+func _apply_workspace_layout() -> void:
+	var viewport_width := float(get_viewport().get_visible_rect().size.x)
+	var width := COLLAPSED_WIDTH
+	if not _workspace_collapsed:
+		width = WIDE_WIDTH if viewport_width >= 1920.0 else (COMPACT_WIDTH if viewport_width >= 1600.0 else NARROW_WIDTH)
+	_program_panel.offset_left = _program_panel.offset_right - width
 func _bind_ui() -> void:
+	_collapse_button.pressed.connect(func(): set_workspace_collapsed(not _workspace_collapsed))
+	_builder_toggle.pressed.connect(func(): set_command_builder_expanded(not _builder_expanded))
 	_vehicle_option.item_selected.connect(_on_vehicle_selected)
 	_source_editor.text_changed.connect(_on_source_changed)
 	_add_move_button.pressed.connect(_on_add_move)
