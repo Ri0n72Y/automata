@@ -23,7 +23,7 @@ layout_mode = 0
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 16.0
-offset_top = -206.0
+offset_top = -214.0
 offset_right = 376.0
 offset_bottom = -16.0
 grow_vertical = 0
@@ -70,17 +70,20 @@ text = "状态：—"
 unique_name_in_owner = true
 layout_mode = 2
 text = "机械臂：—   托盘：—   标准箱：—"
+autowrap_mode = 2
 
 [node name="MissionLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "任务：初始化中"
+autowrap_mode = 2
 
 [node name="CommandsLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "命令：M 移动 —   X 停止 —   C 抓放 —"
 modulate = Color(0.72, 0.82, 0.94, 1)
+autowrap_mode = 2
 
 [node name="FeedbackLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
 unique_name_in_owner = true
