@@ -2,17 +2,14 @@ class_name Scene01ManualControls
 extends CanvasLayer
 
 const COLLAPSED_HEIGHT := 52.0
-const EXPANDED_HEIGHT := 342.0
-const BODY_PATHS := [
-	NodePath("RootControl/Panel/Margin/VBox/Instructions"),
-	NodePath("RootControl/Panel/Margin/VBox/ScopeNote"),
-]
+const EXPANDED_HEIGHT := 320.0
 
 @export var start_collapsed: bool = true
 @export var scene_controller_path: NodePath = NodePath("..")
 
 @onready var panel: PanelContainer = %Panel
 @onready var collapse_button: Button = %CollapseButton
+@onready var manual_body: ScrollContainer = %ManualBody
 
 var _collapsed: bool = true
 
@@ -54,10 +51,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 func set_collapsed(collapsed: bool) -> void:
 	_collapsed = collapsed
-	for path in BODY_PATHS:
-		var control := get_node_or_null(path) as Control
-		if control != null:
-			control.visible = not _collapsed
+	manual_body.visible = not _collapsed
 	if collapse_button != null:
 		collapse_button.text = "▶" if _collapsed else "▼"
 	_apply_panel_layout()
