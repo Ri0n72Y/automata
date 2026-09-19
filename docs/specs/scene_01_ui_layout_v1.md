@@ -76,7 +76,7 @@ Primary validation sizes:
 ### Wide desktop (viewport width >= 1920)
 
 - Left rail target width: 360 px.
-- Program rail target width: 500–520 px.
+- Program rail target width: 460 px.
 - Outer margin: 16 px.
 - Top content offset: 82 px.
 - Vertical bottom margin: 16 px.
@@ -85,7 +85,7 @@ Primary validation sizes:
 ### Compact desktop (1600–1919)
 
 - Left rail target width: 320 px.
-- Program rail target width: 420–460 px.
+- Program rail target width: 400 px.
 - Program should favor collapsed presentation when necessary.
 
 ### Below 1600
@@ -94,7 +94,7 @@ No complete responsive redesign is required in this patch.
 
 Minimum behavior:
 
-- Program defaults collapsed.
+- Program defaults collapsed and expands to 360 px.
 - Left rail should not exceed 300 px.
 - Persistent panels must not re-cover the central gameplay region.
 
@@ -206,7 +206,7 @@ SOURCE · canonical v2
 └────────────────────────────┘
 语法有效 · n 条语句
 
-▶ ADD COMMAND
++ ADD COMMAND
 ```
 
 The Source Editor is primary. Command Builder is secondary.
@@ -214,7 +214,7 @@ The Source Editor is primary. Command Builder is secondary.
 ### Add Command expanded
 
 ```text
-▼ ADD COMMAND
+− ADD COMMAND
 
 Vehicle       [Arm Vehicle ▼]
 
@@ -236,7 +236,7 @@ This is still only a text-generation convenience layer. It must not become a sec
 
 `Scene01ProgramUI` may own presentation-only collapsed/expanded state.
 
-Expanded rail: approximately 420–520 px depending on viewport.
+Expanded rail tiers: 360 px below 1600, 400 px at 1600–1919, and 460 px at 1920+.
 
 Collapsed rail: approximately 48–56 px.
 
@@ -302,7 +302,7 @@ Expected files:
 
 Do not modify unless a direct blocker is demonstrated:
 
-- Program parser / validator / preflight / runner.
+- Program parser / validator / preflight / runner. **Exception accepted 2026-09-19:** the player walkthrough demonstrated that MoveTo + GrabDrop cannot complete the taught packing task without programmable facing, so the minimal absolute `Face` statement is allowed through the existing Program chain.
 - Lifecycle.
 - Scoring.
 - Vehicle selection / move / grab-drop domain logic.
@@ -335,3 +335,53 @@ Implementation is complete only when:
 2. Automated tests covering existing Tutorial/Program contracts still pass.
 3. The player-visible walkthrough can proceed without first hiding major UI panels.
 4. Any further visual-system work is deferred to #58 rather than added to this patch.
+
+
+## 14. Player-walkthrough delta — 2026-09-19
+
+The first graphical walkthrough exposed six direct blockers. These are accepted as part of this spec and do not expand into #58 or #62.
+
+### Disclosure controls
+
+Scene 01 expand/collapse controls use `+` for collapsed and `−` for expanded. Triangle disclosure glyphs are removed from Manual Guide, Program Workspace and Debug. The lifecycle play symbol remains a play control, not a disclosure control.
+
+### Program rail / builder
+
+Program rail widths are the tiers defined above: 360 / 400 / 460 px. The command builder lives inside its own vertical `ScrollContainer`, so Repeat and later controls remain reachable without increasing rail height.
+
+### Tutorial navigation and persistence
+
+Tutorial exposes explicit **上一步 / 下一步** browsing controls.
+
+Lifecycle Reset resets gameplay and Program runtime state but does **not** reset Tutorial step or Tutorial visibility. Tutorial progress is presentation/history state owned by `Scene01Tutorial`.
+
+Automatic Tutorial advancement is event-driven only. It reacts to the expected action event for the current step, for example:
+
+- Arm selection event: SELECT_ARM -> MANUAL_PICKUP.
+- real manual Arm pickup event: MANUAL_PICKUP -> MANUAL_DROP.
+- StandardBox count increment event: MANUAL_DROP -> PROGRAM_RUN.
+- successful Program-owned delivery event: PROGRAM_RUN -> MULTI_VEHICLE.
+- successful delivery session that also contains Transport MoveTo: MULTI_VEHICLE -> DONE.
+
+Tutorial reopening, Reset, or reading current scene snapshots must not infer/catch up Tutorial progress.
+
+### Code editor focus
+
+A left mouse click outside the Program rail releases GUI focus from the CodeEdit/editor. This restores gameplay keyboard commands such as `M` without requiring the Program rail to be collapsed and reopened.
+
+### Absolute Face command
+
+DSL v2 gains one minimal command:
+
+```text
+[arm_vehicle:face] north
+[arm_vehicle:face] east
+[arm_vehicle:face] south
+[arm_vehicle:face] west
+```
+
+`Face` is absolute rather than relative so Repeat remains deterministic.
+
+The command must use the existing vehicle facing owner and lifecycle-aware GrabDrop/facing command path; it must not create a second rotation system. `Face` uses the existing interaction/GrabDrop capability contract because the current formal assembly model exposes no separate facing capability.
+
+The command builder may generate `Face` source text, but CodeEdit remains the only mutable authoring truth.
