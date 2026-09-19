@@ -5,6 +5,7 @@ const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
 const SourceScript := preload("res://scripts/scene_01/scene_01_program_source.gd")
 const SAVE_PATH := "user://scene_01_program.txt"
 const HEADER := SourceScript.HEADER
+const FACING_NAMES := SourceScript.FACING_NAMES
 
 var _source_codec := SourceScript.new()
 
