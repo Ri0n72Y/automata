@@ -2,6 +2,7 @@ extends SceneTree
 
 const SCENE_PATH := "res://scenes/scene_01/scene_01_basic_packing.tscn"
 const SOURCE_HEADER := "automata_scene01_program 2\n"
+const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metrics.gd")
 
 var failures := 0
 
@@ -37,6 +38,7 @@ func _run() -> void:
 	var status_label := ui.get_node("%StatusLabel") as Label
 	var builder_body := ui.get_node("%BuilderBody") as Control
 	var tutorial_panel := scene.get_node("TutorialUIRoot/RootControl/TutorialPanel") as Control
+	var manual_panel := scene.get_node("UIRoot/RootControl/Panel") as Control
 	var hud_panel := scene.get_node("HUDRoot/RootControl/StatusPanel") as Control
 	var program_root := ui.get_node("RootControl") as Control
 	var tutorial_root := scene.get_node("TutorialUIRoot/RootControl") as Control
@@ -60,14 +62,17 @@ func _run() -> void:
 	_expect_true(not bool(ui.call("is_workspace_collapsed")), "Program rail should expand on explicit player action.")
 	_expect_true(source_editor.is_visible_in_tree(), "Expanded Program rail should expose the canonical source editor.")
 	var viewport_width := float(scene.get_viewport().get_visible_rect().size.x)
-	var expected_program_width := 520.0 if viewport_width >= 1920.0 else (440.0 if viewport_width >= 1600.0 else 420.0)
-	var expected_left_width := 360.0 if viewport_width >= 1920.0 else (320.0 if viewport_width >= 1600.0 else 300.0)
-	_expect_true(absf(program_panel.size.x - expected_program_width) <= 2.0, "Expanded Program rail should follow the desktop width tier.")
-	_expect_true(tutorial_panel.size.x <= expected_left_width + 2.0 and hud_panel.size.x <= expected_left_width + 2.0, "Left-rail panels should follow the shared desktop width tier.")
+	var expected_program_width := LayoutMetrics.program_rail_width(viewport_width)
+	var expected_left_width := LayoutMetrics.left_rail_width(viewport_width)
+	_expect_true(absf(program_panel.size.x - expected_program_width) <= 2.0, "Expanded Program rail should follow the shared desktop width tier.")
+	_expect_true(absf(tutorial_panel.size.x - expected_left_width) <= 2.0 and absf(manual_panel.size.x - expected_left_width) <= 2.0 and absf(hud_panel.size.x - expected_left_width) <= 2.0, "All left-rail panels should use the shared immutable width metric.")
 	var central_width := program_panel.get_global_rect().position.x - (tutorial_panel.get_global_rect().position.x + tutorial_panel.get_global_rect().size.x)
 	_expect_true(central_width > 0.0, "Program and left rails must leave a non-overlapping central gameplay region.")
+	var wide_central_width := 1920.0 - 16.0 - LayoutMetrics.program_rail_width(1920.0) - (16.0 + LayoutMetrics.left_rail_width(1920.0))
+	_expect_true(wide_central_width >= 900.0, "1920px spec tier should protect at least 900px of central gameplay width.")
 	_expect_true(not tutorial_panel.get_global_rect().intersects(hud_panel.get_global_rect()), "Tutorial and HUD must occupy separate vertical slots in the left rail.")
 	_expect_true(program_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and tutorial_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and hud_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and manual_root.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Fullscreen presentation roots must not intercept central gameplay input.")
+	_expect_true(tutorial_panel.mouse_filter == Control.MOUSE_FILTER_STOP and manual_panel.mouse_filter == Control.MOUSE_FILTER_STOP, "Visible left-rail panels must stop clicks from leaking into gameplay.")
 	ui.call("set_command_builder_expanded", true)
 	_expect_true(bool(ui.call("is_command_builder_expanded")) and builder_body.visible, "Add Command should expand only inside Program UI presentation state.")
 	_expect_true(not program_panel.get_global_rect().intersects(lifecycle_panel.get_global_rect()), "Program workspace must not cover lifecycle controls.")
