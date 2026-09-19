@@ -5,10 +5,7 @@ const SupportScript := preload("res://scripts/scene_01/scene_01_program_workspac
 const RunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
 const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
-const COLLAPSED_WIDTH := 52.0
-const WIDE_WIDTH := 520.0
-const COMPACT_WIDTH := 440.0
-const NARROW_WIDTH := 420.0
+const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metrics.gd")
 @onready var _program_panel: PanelContainer = %ProgramPanel
 @onready var _title: Label = %ProgramTitle
 @onready var _expanded_content: VBoxContainer = %ExpandedContent
@@ -38,7 +35,7 @@ var _statement_lines: Array[int] = []
 var _editing_enabled := true
 var _suppress_source_signal := false
 var _workspace_collapsed := true
-var _builder_expanded := false
+
 func _ready() -> void:
 	_runner = get_parent().get_node("SceneRoot/Scene01ProgramRunner") as RunnerScript
 	_vehicle_manager = get_parent().get_node("SceneRoot/RobotRoot/Scene01VehicleManager") as VehicleManagerScript
@@ -48,17 +45,20 @@ func _ready() -> void:
 	set_command_builder_expanded(false)
 	set_workspace_collapsed(true)
 	call_deferred("_initialize_editor")
+
 func _initialize_editor() -> void:
 	_populate_vehicles()
 	_set_source_text_internal(SupportScript.HEADER + "\n")
 	_parse_current_source(false)
+
 func get_program() -> Scene01Program:
 	return _program.duplicate_program() if _program != null else null
 func get_source_text() -> String:
-	return _source_editor.text if _source_editor != null else ""
+	return _source_editor.text
 func set_source_text(source: String) -> void:
 	_set_source_text_internal(source)
 	_parse_current_source(true)
+
 func set_workspace_collapsed(collapsed: bool) -> void:
 	_workspace_collapsed = collapsed
 	_title.visible = not collapsed
@@ -70,21 +70,21 @@ func set_workspace_collapsed(collapsed: bool) -> void:
 		get_viewport().gui_release_focus()
 func is_workspace_collapsed() -> bool:
 	return _workspace_collapsed
+
 func set_command_builder_expanded(expanded: bool) -> void:
-	_builder_expanded = expanded
 	_builder_body.visible = expanded
 	_builder_toggle.text = "▼ ADD COMMAND" if expanded else "▶ ADD COMMAND"
 func is_command_builder_expanded() -> bool:
-	return _builder_expanded
+	return _builder_body.visible
+
 func _apply_workspace_layout() -> void:
 	var viewport_width := float(get_viewport().get_visible_rect().size.x)
-	var width := COLLAPSED_WIDTH
-	if not _workspace_collapsed:
-		width = WIDE_WIDTH if viewport_width >= 1920.0 else (COMPACT_WIDTH if viewport_width >= 1600.0 else NARROW_WIDTH)
+	var width := LayoutMetrics.PROGRAM_COLLAPSED_WIDTH if _workspace_collapsed else LayoutMetrics.program_rail_width(viewport_width)
 	_program_panel.offset_left = _program_panel.offset_right - width
+
 func _bind_ui() -> void:
 	_collapse_button.pressed.connect(func(): set_workspace_collapsed(not _workspace_collapsed))
-	_builder_toggle.pressed.connect(func(): set_command_builder_expanded(not _builder_expanded))
+	_builder_toggle.pressed.connect(func(): set_command_builder_expanded(not _builder_body.visible))
 	_vehicle_option.item_selected.connect(_on_vehicle_selected)
 	_source_editor.text_changed.connect(_on_source_changed)
 	_add_move_button.pressed.connect(_on_add_move)
@@ -95,22 +95,24 @@ func _bind_ui() -> void:
 	_load_button.pressed.connect(_on_load)
 	_export_button.pressed.connect(_on_export)
 	_run_button.pressed.connect(_on_run)
+
 func _bind_runner() -> void:
 	_runner.execution_started.connect(_on_execution_started)
 	_runner.statement_started.connect(_on_statement_started)
 	_runner.execution_completed.connect(_on_execution_completed)
 	_runner.execution_failed.connect(_on_execution_failed)
 	_runner.execution_reset.connect(_on_execution_reset)
+
 func _populate_vehicles() -> void:
 	_vehicle_option.clear()
 	for vehicle_node in _vehicle_manager.get_vehicles():
 		var vehicle := vehicle_node as VehicleActorScript
-		if vehicle == null or vehicle.definition == null:
-			continue
-		_vehicle_option.add_item(vehicle.definition.display_name)
-		_vehicle_option.set_item_metadata(_vehicle_option.item_count - 1, vehicle.get_vehicle_id())
+		if vehicle != null and vehicle.definition != null:
+			_vehicle_option.add_item(vehicle.definition.display_name)
+			_vehicle_option.set_item_metadata(_vehicle_option.item_count - 1, vehicle.get_vehicle_id())
 	if _vehicle_option.item_count > 0:
 		_vehicle_option.select(0)
+
 func _selected_vehicle_id() -> StringName:
 	return &"" if _vehicle_option.item_count <= 0 else StringName(_vehicle_option.get_item_metadata(_vehicle_option.selected))
 func _on_vehicle_selected(_index: int) -> void:
@@ -148,11 +150,11 @@ func _on_export() -> void:
 	_status_label.text = "Blueprint 已复制到剪贴板"
 func _on_run() -> void:
 	var parsed := _parse_current_source(true)
-	if not bool(parsed.get("ok", false)):
-		return
-	var snapshot := parsed.get("program") as Scene01Program
-	if snapshot != null:
-		_runner.start_program(snapshot)
+	if bool(parsed.get("ok", false)):
+		var snapshot := parsed.get("program") as Scene01Program
+		if snapshot != null:
+			_runner.start_program(snapshot)
+
 func _on_execution_started() -> void:
 	_set_editing_enabled(false)
 	_status_label.text = "全局程序运行中 · 编辑器已锁定"
@@ -173,6 +175,7 @@ func _on_execution_reset() -> void:
 	_set_editing_enabled(true)
 	_parse_current_source(false)
 	_status_label.text = "程序已重置"
+
 func _append_source_line(line: String) -> void:
 	var source := _source_editor.text
 	if source.strip_edges().is_empty():
@@ -182,6 +185,7 @@ func _append_source_line(line: String) -> void:
 	_set_source_text_internal(source + line + "\n")
 	_parse_current_source(false)
 	_status_label.text = "已添加：%s" % line
+
 func _set_source_text_internal(source: String) -> void:
 	_suppress_source_signal = true
 	_source_editor.text = source
@@ -189,6 +193,7 @@ func _set_source_text_internal(source: String) -> void:
 	var line_index := maxi(0, _source_editor.get_line_count() - 1)
 	_source_editor.set_caret_line(line_index)
 	_source_editor.set_caret_column(_source_editor.get_line(line_index).length())
+
 func _parse_current_source(show_status: bool) -> Dictionary:
 	var parsed := _support.parse(_source_editor.text)
 	var diagnostics: Array = parsed.get("diagnostics", [])
@@ -200,8 +205,10 @@ func _parse_current_source(show_status: bool) -> Dictionary:
 	if show_status:
 		_status_label.text = _support.diagnostic_text(diagnostics[0]) if not diagnostics.is_empty() else "语法有效 · %d 条语句" % (_program.get_statement_count() if _program != null else 0)
 	return {"ok": _program != null, "program": _program, "diagnostics": diagnostics}
+
 func _source_line(statement_index: int) -> int:
 	return _statement_lines[statement_index] if statement_index >= 0 and statement_index < _statement_lines.size() else 0
+
 func _refresh_repeat_controls() -> void:
 	_repeat_target_option.clear()
 	for option in _support.repeat_options(_program):
@@ -210,6 +217,7 @@ func _refresh_repeat_controls() -> void:
 	var unavailable := not _editing_enabled or _repeat_target_option.item_count <= 0
 	_add_repeat_button.disabled = unavailable
 	_repeat_target_option.disabled = unavailable
+
 func _set_editing_enabled(enabled: bool) -> void:
 	_editing_enabled = enabled
 	_vehicle_option.disabled = not enabled
@@ -217,11 +225,6 @@ func _set_editing_enabled(enabled: bool) -> void:
 	_target_y.editable = enabled
 	_repeat_count.editable = enabled
 	_source_editor.editable = enabled
-	_add_move_button.disabled = not enabled
-	_add_grab_button.disabled = not enabled
-	_clear_button.disabled = not enabled
-	_save_button.disabled = not enabled
-	_load_button.disabled = not enabled
-	_export_button.disabled = not enabled
-	_run_button.disabled = not enabled
+	for button in [_add_move_button, _add_grab_button, _clear_button, _save_button, _load_button, _export_button, _run_button]:
+		button.disabled = not enabled
 	_refresh_repeat_controls()
