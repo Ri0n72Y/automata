@@ -11,6 +11,8 @@ const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metric
 @onready var _title_label: Label = %StepTitle
 @onready var _body_label: Label = %StepBody
 @onready var _capability_label: Label = %CapabilityLabel
+@onready var _previous_button: Button = %PreviousButton
+@onready var _next_button: Button = %NextButton
 @onready var _skip_button: Button = %SkipButton
 @onready var _root: Node = get_parent()
 @onready var _tutorial: TutorialScript = _root.get_node("SceneRoot/Scene01Tutorial") as TutorialScript
@@ -18,6 +20,8 @@ const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metric
 @onready var _manual_guide: Control = _root.get_node("UIRoot/RootControl") as Control
 @onready var _reopen_button: Button = _root.get_node("UIRoot/RootControl/Panel/Margin/VBox/HeaderRow/TutorialButton") as Button
 func _ready() -> void:
+	_previous_button.pressed.connect(_tutorial.previous_step)
+	_next_button.pressed.connect(_tutorial.next_step)
 	_skip_button.pressed.connect(_on_skip_pressed)
 	_reopen_button.pressed.connect(_on_reopen_pressed)
 	_tutorial.presentation_changed.connect(_refresh)
@@ -45,6 +49,8 @@ func _refresh() -> void:
 	_title_label.text = _step_title(step)
 	_body_label.text = _step_body(step)
 	_capability_label.text = _capability_summary()
+	_previous_button.disabled = step == TutorialScript.Step.SELECT_ARM
+	_next_button.disabled = step == TutorialScript.Step.DONE
 	_skip_button.text = "关闭教学" if step == TutorialScript.Step.DONE else "跳过教学"
 func _capability_summary() -> String:
 	return "%s\n%s" % [
@@ -81,6 +87,6 @@ func _step_body(step: int) -> String:
 		TutorialScript.Step.SELECT_ARM: return "左键点击机械臂小车。HUD 会显示当前车辆状态。"
 		TutorialScript.Step.MANUAL_PICKUP: return "M 选择方块堆旁目标格；A/D 调整朝向；C 抓取。"
 		TutorialScript.Step.MANUAL_DROP: return "移动到 StandardBox 旁，朝向箱体并按 C 放入方块。"
-		TutorialScript.Step.PROGRAM_RUN: return "打开右侧 PROGRAM，用 Arm 的 MoveTo + GrabDrop 完成一次真实装箱。"
+		TutorialScript.Step.PROGRAM_RUN: return "打开右侧 PROGRAM，用 Arm 的 MoveTo + Face + GrabDrop 完成一次真实装箱。"
 		TutorialScript.Step.MULTI_VEHICLE: return "在同一成功装箱程序加入 Transport MoveTo；每条命令显式写 vehicle_id。"
 		_: return "已完成手动搬运、基础 Program 和最小多车串行。"
