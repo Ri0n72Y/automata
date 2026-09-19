@@ -107,18 +107,24 @@ func request_vehicle_grab_drop(vehicle: VehicleActorScript) -> GrabDropResultScr
 	return result
 
 
-func rotate_selected_arm(direction: int) -> bool:
-	var vehicle := _get_selected_vehicle()
-	if not _can_rotate(vehicle):
+func request_vehicle_facing(vehicle: VehicleActorScript, target_facing: int) -> bool:
+	if not _can_rotate(vehicle) or target_facing < 0 or target_facing > 3:
 		return false
-	var step := clampi(direction, -1, 1)
-	if step == 0:
-		return false
-	vehicle.runtime_state.facing = posmod(vehicle.runtime_state.facing + step, 4)
+	if vehicle.runtime_state.facing == target_facing:
+		return true
+	vehicle.runtime_state.facing = target_facing
 	vehicle.sync_from_state()
 	refresh_interaction_preview()
-	facing_changed.emit(vehicle.get_vehicle_id(), vehicle.runtime_state.facing)
+	facing_changed.emit(vehicle.get_vehicle_id(), target_facing)
 	return true
+
+
+func rotate_selected_arm(direction: int) -> bool:
+	var vehicle := _get_selected_vehicle()
+	var step := clampi(direction, -1, 1)
+	if step == 0 or vehicle == null or vehicle.runtime_state == null:
+		return false
+	return request_vehicle_facing(vehicle, posmod(vehicle.runtime_state.facing + step, 4))
 
 
 func resolve_target_for_vehicle(vehicle: VehicleActorScript) -> Variant:
