@@ -2,7 +2,15 @@ class_name Scene01ProgramSource
 extends RefCounted
 
 const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
+const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 const HEADER := "automata_scene01_program 2"
+const FACING_NAMES := ["north", "east", "south", "west"]
+const FACING_VALUES := {
+	"north": VehicleRuntimeStateScript.Facing.NORTH,
+	"east": VehicleRuntimeStateScript.Facing.EAST,
+	"south": VehicleRuntimeStateScript.Facing.SOUTH,
+	"west": VehicleRuntimeStateScript.Facing.WEST,
+}
 
 func parse(source: String) -> Dictionary:
 	var diagnostics: Array[Dictionary] = []
@@ -61,6 +69,13 @@ func _parse_vehicle_command(
 				diagnostics.append(_diagnostic(line_number, &"grab_drop_syntax", "grabDrop takes no arguments."))
 				return
 			statement_index = program.append_statement(ProgramScript.StatementType.GRAB_DROP)
+		"face":
+			var facing_name := String(tokens[1]).to_lower() if tokens.size() == 2 else ""
+			if not FACING_VALUES.has(facing_name):
+				diagnostics.append(_diagnostic(line_number, &"face_syntax", "face requires north, east, south, or west."))
+				return
+			statement_index = program.append_statement(ProgramScript.StatementType.FACE)
+			program.set_facing(statement_index, int(FACING_VALUES[facing_name]))
 		_:
 			diagnostics.append(_diagnostic(line_number, &"unknown_command", "Unknown vehicle command '%s'." % action))
 			return
@@ -99,7 +114,7 @@ func _resolve_repeats(
 			diagnostics.append(_diagnostic(int(repeat["line"]), &"repeat_target_source_invalid", "repeat target must reference an earlier vehicle statement."))
 			continue
 		var target_type := int(program.get_statement(target_index).get("type", -1))
-		if target_type != ProgramScript.StatementType.MOVE_TO and target_type != ProgramScript.StatementType.GRAB_DROP:
+		if target_type != ProgramScript.StatementType.MOVE_TO and target_type != ProgramScript.StatementType.GRAB_DROP and target_type != ProgramScript.StatementType.FACE:
 			diagnostics.append(_diagnostic(int(repeat["line"]), &"repeat_target_source_invalid", "repeat target must reference an earlier vehicle statement."))
 			continue
 		program.set_repeat(repeat_index, int(repeat["count"]), target_index)

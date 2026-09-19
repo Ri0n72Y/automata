@@ -38,7 +38,7 @@ func set_collapsed(collapsed: bool) -> void:
 		if control != null:
 			control.visible = not _collapsed
 	if collapse_button != null:
-		collapse_button.text = "▶" if _collapsed else "▼"
+		collapse_button.text = "+" if _collapsed else "−"
 	if panel != null:
 		var target_size := COLLAPSED_SIZE if _collapsed else EXPANDED_SIZE
 		panel.offset_left = panel.offset_right - target_size.x

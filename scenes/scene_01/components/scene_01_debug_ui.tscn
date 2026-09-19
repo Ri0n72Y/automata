@@ -53,7 +53,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(36, 30)
 layout_mode = 2
 focus_mode = 0
-text = "▶"
+text = "+"
 
 [node name="CoordinatesRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
 visible = false

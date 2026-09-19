@@ -20,10 +20,10 @@ theme = ExtResource("2_theme")
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 16.0
-offset_top = 16.0
-offset_right = 322.0
-offset_bottom = 68.0
-mouse_filter = 1
+offset_top = 82.0
+offset_right = 376.0
+offset_bottom = 134.0
+mouse_filter = 0
 
 [node name="Margin" type="MarginContainer" parent="RootControl/Panel"]
 layout_mode = 2
@@ -46,24 +46,39 @@ size_flags_horizontal = 3
 text = "Scene 01 · 操作指南"
 theme_override_font_sizes/font_size = 18
 
+[node name="TutorialButton" type="Button" parent="RootControl/Panel/Margin/VBox/HeaderRow"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "教学"
+tooltip_text = "打开 Scene 01 教学"
+
 [node name="CollapseButton" type="Button" parent="RootControl/Panel/Margin/VBox/HeaderRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(36, 30)
 layout_mode = 2
 focus_mode = 0
-text = "▶"
+text = "+"
 
-[node name="Instructions" type="Label" parent="RootControl/Panel/Margin/VBox"]
+[node name="Instructions" type="ScrollContainer" parent="RootControl/Panel/Margin/VBox"]
 visible = false
 layout_mode = 2
-text = "顶部控制：▶/⏸ 播放或暂停，倍速按钮循环 0.5× / 1× / 2× / 4×，↺ 重置\n选择车辆：鼠标左键点击车辆\n移动车辆：按 M 进入目标模式，移动鼠标预览路径，左键确认\n退出移动模式：再次按 M，或按 Esc / 鼠标右键\n机械臂：A / D 调整朝向，C 抓取或放置\n停止车辆任务：X\n取消车辆选择：退出移动模式后按 Esc / 鼠标右键\n旋转相机：Q / E"
+size_flags_vertical = 3
+
+[node name="Text" type="Label" parent="RootControl/Panel/Margin/VBox/Instructions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "▶/⏸ 播放/暂停 · 倍速 0.5×/1×/2×/4× · ↺ 重置\n左键选择车辆；M 进入移动目标模式，左键确认\nM / Esc / 右键退出目标模式；X 停止车辆任务\n机械臂：A / D 调整朝向，C 抓取或放置\nEsc / 右键取消车辆选择；Q / E 旋转相机"
 autowrap_mode = 2
 
-[node name="ScopeNote" type="Label" parent="RootControl/Panel/Margin/VBox"]
+[node name="ScopeNote" type="RichTextLabel" parent="RootControl/Panel/Margin/VBox"]
 visible = false
 layout_mode = 2
-text = "左下角 HUD 显示车辆、库存、任务、命令可用性和命令反馈。\n暂停时车辆运动、场景计时和 M/X/A/D/C 玩法命令被冻结，相机仍可观察。\n机械臂前方紧邻的两格都是工作区；绿色表示当前存在可执行交互。\n移动目标模式开启时，A / D / C 和机械臂工作区预览暂时停用。\n调试功能和场地坐标开关位于右上角独立 Debug 面板。"
-autowrap_mode = 2
+custom_minimum_size = Vector2(0, 54)
+fit_content = false
+scroll_active = true
+bbcode_enabled = false
+text = "HUD 显示车辆、库存、任务和命令反馈。\n绿色机械臂工作区表示存在可执行交互。\n暂停冻结玩法命令但仍可观察；Debug 位于右上角。"
 modulate = Color(0.72, 0.8, 0.9, 1)
 
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/HeaderRow/CollapseButton" to="." method="_on_collapse_pressed"]

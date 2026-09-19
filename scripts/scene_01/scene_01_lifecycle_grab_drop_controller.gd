@@ -34,15 +34,20 @@ func request_vehicle_grab_drop(vehicle: VehicleActor) -> GrabDropResultScript:
 	return result
 
 
-func rotate_selected_arm(direction: int) -> bool:
+func request_vehicle_facing(vehicle: VehicleActor, target_facing: int) -> bool:
 	if _is_lifecycle_paused():
 		return false
+	if vehicle != null and not _ensure_gameplay_running():
+		return false
+	return super.request_vehicle_facing(vehicle, target_facing)
+
+
+func rotate_selected_arm(direction: int) -> bool:
+	var vehicle := super._get_selected_vehicle()
 	var step := clampi(direction, -1, 1)
-	if step == 0 or super._get_selected_vehicle() == null:
+	if step == 0 or vehicle == null or vehicle.runtime_state == null:
 		return false
-	if not _ensure_gameplay_running():
-		return false
-	return super.rotate_selected_arm(direction)
+	return request_vehicle_facing(vehicle, posmod(vehicle.runtime_state.facing + step, 4))
 
 
 func refresh_interaction_preview() -> void:

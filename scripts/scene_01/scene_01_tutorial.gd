@@ -1,0 +1,119 @@
+class_name Scene01Tutorial
+extends Node
+signal presentation_changed()
+const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
+const RunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
+const ObservableScript := preload("res://scripts/scene_01/scene_01_observable_state.gd")
+const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
+enum Step { SELECT_ARM, MANUAL_PICKUP, MANUAL_DROP, PROGRAM_RUN, MULTI_VEHICLE, DONE }
+var _progress_step := Step.SELECT_ARM
+var _view_step := Step.SELECT_ARM
+var _visible := true
+var _run_seen_arm_move := false
+var _run_seen_arm_grab := false
+var _run_seen_transport_move := false
+var _run_arm_grab_active := false
+var _run_box_incremented := false
+@onready var _observable: ObservableScript = %Scene01ObservableState
+@onready var _runner: RunnerScript = %Scene01ProgramRunner
+@onready var _selection: Node = %VehicleSelectionController
+
+func _ready() -> void:
+	_selection.selection_changed.connect(_on_selection_changed)
+	_observable.arm_has_item_changed.connect(_on_arm_has_item_changed)
+	_observable.standard_box_count_changed.connect(_on_standard_box_count_changed)
+	_runner.execution_started.connect(_on_program_started)
+	_runner.command_started.connect(_on_program_command_started)
+	_runner.execution_completed.connect(_on_program_completed)
+	_runner.execution_failed.connect(_on_program_stopped)
+	_runner.execution_reset.connect(_on_program_reset)
+
+func get_step() -> int:
+	return _view_step
+func get_progress_step() -> int:
+	return _progress_step
+func is_visible() -> bool:
+	return _visible
+func skip_tutorial() -> void:
+	if _visible:
+		_visible = false
+		presentation_changed.emit()
+func reopen_tutorial() -> void:
+	if not _visible:
+		_visible = true
+		presentation_changed.emit()
+func previous_step() -> void:
+	_set_view_step(maxi(_view_step - 1, Step.SELECT_ARM))
+func next_step() -> void:
+	_set_view_step(mini(_view_step + 1, _progress_step))
+
+func _set_view_step(step: int) -> void:
+	if step == _view_step:
+		return
+	_view_step = step
+	presentation_changed.emit()
+
+func _set_progress_step(step: int) -> void:
+	if step <= _progress_step:
+		return
+	var was_viewing_frontier := _view_step == _progress_step
+	_progress_step = mini(step, Step.DONE)
+	if was_viewing_frontier:
+		_view_step = _progress_step
+	presentation_changed.emit()
+
+func _advance_from(expected_step: int) -> void:
+	if _progress_step == expected_step:
+		_set_progress_step(_progress_step + 1)
+
+func _on_selection_changed(vehicle_id: StringName, has_selection: bool) -> void:
+	if has_selection and vehicle_id == VehicleManagerScript.ARM_VEHICLE_ID:
+		_advance_from(Step.SELECT_ARM)
+
+func _on_arm_has_item_changed(_previous_value: bool, current_value: bool) -> void:
+	if current_value and _runner.get_state() != RunnerScript.STATE_RUNNING:
+		_advance_from(Step.MANUAL_PICKUP)
+
+func _on_standard_box_count_changed(previous_count: int, current_count: int) -> void:
+	if current_count <= previous_count:
+		return
+	if _runner.get_state() == RunnerScript.STATE_RUNNING:
+		if _run_arm_grab_active:
+			_run_box_incremented = true
+		return
+	_advance_from(Step.MANUAL_DROP)
+
+func _on_program_started() -> void:
+	_clear_run_profile()
+
+func _on_program_command_started(_statement_index: int, command_type: int, vehicle_id: StringName) -> void:
+	_run_arm_grab_active = false
+	if vehicle_id == VehicleManagerScript.ARM_VEHICLE_ID:
+		if command_type == ProgramScript.StatementType.MOVE_TO:
+			_run_seen_arm_move = true
+		elif command_type == ProgramScript.StatementType.GRAB_DROP:
+			_run_seen_arm_grab = true
+			_run_arm_grab_active = true
+	elif vehicle_id == VehicleManagerScript.TRANSPORT_VEHICLE_ID and command_type == ProgramScript.StatementType.MOVE_TO:
+		_run_seen_transport_move = true
+
+func _on_program_completed() -> void:
+	var arm_delivery := _run_seen_arm_move and _run_seen_arm_grab and _run_box_incremented
+	var multi_delivery := arm_delivery and _run_seen_transport_move
+	_clear_run_profile()
+	if _progress_step == Step.PROGRAM_RUN and arm_delivery:
+		_set_progress_step(Step.MULTI_VEHICLE)
+	elif _progress_step == Step.MULTI_VEHICLE and multi_delivery:
+		_set_progress_step(Step.DONE)
+
+func _on_program_stopped(_statement_index: int, _reason: StringName) -> void:
+	_clear_run_profile()
+func _on_program_reset() -> void:
+	_clear_run_profile()
+
+func _clear_run_profile() -> void:
+	_run_seen_arm_move = false
+	_run_seen_arm_grab = false
+	_run_seen_transport_move = false
+	_run_arm_grab_active = false
+	_run_box_incremented = false

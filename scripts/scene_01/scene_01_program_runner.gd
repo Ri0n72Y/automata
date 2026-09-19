@@ -99,11 +99,12 @@ func _execute_statement() -> void:
 		return
 	var statement_type := int(statement.get("type", -1))
 	statement_started.emit(_pc, statement_type)
-	if statement_type == ProgramScript.StatementType.MOVE_TO or statement_type == ProgramScript.StatementType.GRAB_DROP:
+	if statement_type == ProgramScript.StatementType.MOVE_TO or statement_type == ProgramScript.StatementType.GRAB_DROP or statement_type == ProgramScript.StatementType.FACE:
 		command_started.emit(_pc, statement_type, StringName(statement.get("vehicle_id", &"")))
 	match statement_type:
 		ProgramScript.StatementType.MOVE_TO: _execute_move(statement)
 		ProgramScript.StatementType.GRAB_DROP: _execute_grab_drop(statement)
+		ProgramScript.StatementType.FACE: _execute_face(statement)
 		ProgramScript.StatementType.REPEAT: _execute_repeat(statement)
 		_: _fail_execution(_pc, &"invalid_runtime_statement")
 func _execute_move(statement: Dictionary) -> void:
@@ -114,6 +115,13 @@ func _execute_move(statement: Dictionary) -> void:
 	_waiting_for_move = bool(result.get("waiting", false))
 	if not _waiting_for_move:
 		_pc += 1
+func _execute_face(statement: Dictionary) -> void:
+	var result := _command_executor.execute_face(statement)
+	if not bool(result.get("ok", false)):
+		_fail_execution(_pc, StringName(result.get("reason", &"face_rejected")))
+		return
+	_pc += 1
+
 func _execute_grab_drop(statement: Dictionary) -> void:
 	var result := _command_executor.execute_grab_drop(statement)
 	if not bool(result.get("ok", false)):
