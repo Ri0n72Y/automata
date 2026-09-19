@@ -42,6 +42,14 @@ func execute_move(statement: Dictionary) -> Dictionary:
 		cancel()
 	return {"ok": true, "waiting": waiting, "reason": &""}
 
+func execute_face(statement: Dictionary) -> Dictionary:
+	var vehicle := _resolve_vehicle(statement)
+	if vehicle == null:
+		return _failure(&"program_vehicle_missing")
+	if not _grab_drop_controller.request_vehicle_facing(vehicle, int(statement.get("facing", -1))):
+		return _failure(&"face_rejected")
+	return {"ok": true, "waiting": false, "reason": &""}
+
 func execute_grab_drop(statement: Dictionary) -> Dictionary:
 	var vehicle := _resolve_vehicle(statement)
 	if vehicle == null:
