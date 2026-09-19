@@ -22,10 +22,10 @@ func repeat_options(program: Scene01Program) -> Array[Dictionary]:
 		if statement_type == ProgramScript.StatementType.REPEAT:
 			result.clear()
 			continue
-		if statement_type != ProgramScript.StatementType.MOVE_TO and statement_type != ProgramScript.StatementType.GRAB_DROP:
+		if statement_type != ProgramScript.StatementType.MOVE_TO and statement_type != ProgramScript.StatementType.GRAB_DROP and statement_type != ProgramScript.StatementType.FACE:
 			continue
 		var vehicle_id := String(statement.get("vehicle_id", &""))
-		var command_name := "MoveTo" if statement_type == ProgramScript.StatementType.MOVE_TO else "GrabDrop"
+		var command_name := "MoveTo" if statement_type == ProgramScript.StatementType.MOVE_TO else ("Face" if statement_type == ProgramScript.StatementType.FACE else "GrabDrop")
 		var source_number := index + 1
 		result.append({
 			"source_number": source_number,
@@ -69,6 +69,7 @@ func reason_text(reason: StringName) -> String:
 		&"move_target_required": return "MoveTo 缺少目标格"
 		&"move_target_out_of_bounds": return "MoveTo 目标超出网格"
 		&"move_target_not_walkable": return "MoveTo 目标不可通行"
+		&"face_direction_required": return "Face 需要有效朝向"
 		&"invalid_repeat_count": return "Repeat 次数必须为 1–100"
 		&"invalid_repeat_target": return "Repeat 需要指向之前的车辆命令"
 		&"nested_repeat_unsupported": return "DSL v2 的 Repeat 区间不能包含另一个 Repeat"
