@@ -25,7 +25,9 @@ func _ready() -> void:
 	_apply_left_rail_layout()
 	_refresh()
 func _apply_left_rail_layout() -> void:
-	_panel.offset_right = _panel.offset_left + clampf(float(get_viewport().get_visible_rect().size.x) * 0.2, 300.0, 360.0)
+	var viewport_width := float(get_viewport().get_visible_rect().size.x)
+	var width := 360.0 if viewport_width >= 1920.0 else (320.0 if viewport_width >= 1600.0 else 300.0)
+	_panel.offset_right = _panel.offset_left + width
 func _on_skip_pressed() -> void:
 	_tutorial.skip_tutorial()
 func _on_reopen_pressed() -> void:
