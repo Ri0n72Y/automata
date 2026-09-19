@@ -3,9 +3,7 @@ extends CanvasLayer
 
 const COLLAPSED_HEIGHT := 52.0
 const EXPANDED_HEIGHT := 280.0
-const TOP_OFFSET := 82.0
-const HUD_RESERVED_HEIGHT := 214.0
-const RAIL_GAP := 12.0
+const MAX_EXPANDED_VIEWPORT_RATIO := 0.3
 const BODY_PATHS := [
 	NodePath("RootControl/Panel/Margin/VBox/Instructions"),
 	NodePath("RootControl/Panel/Margin/VBox/ScopeNote"),
@@ -72,8 +70,9 @@ func _apply_panel_layout() -> void:
 	if panel == null:
 		return
 	var viewport_size := get_viewport().get_visible_rect().size
-	var width := clampf(float(viewport_size.x) * 0.2, 300.0, 360.0)
-	var expanded_limit := maxf(COLLAPSED_HEIGHT, float(viewport_size.y) - TOP_OFFSET - HUD_RESERVED_HEIGHT - RAIL_GAP)
+	var viewport_width := float(viewport_size.x)
+	var width := 360.0 if viewport_width >= 1920.0 else (320.0 if viewport_width >= 1600.0 else 300.0)
+	var expanded_limit := maxf(COLLAPSED_HEIGHT, float(viewport_size.y) * MAX_EXPANDED_VIEWPORT_RATIO)
 	var height := COLLAPSED_HEIGHT if _collapsed else minf(EXPANDED_HEIGHT, expanded_limit)
 	panel.offset_right = panel.offset_left + width
 	panel.offset_bottom = panel.offset_top + height
