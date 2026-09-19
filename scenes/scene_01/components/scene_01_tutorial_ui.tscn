@@ -24,7 +24,7 @@ offset_left = 16.0
 offset_top = 82.0
 offset_right = 376.0
 offset_bottom = 348.0
-mouse_filter = 1
+mouse_filter = 0
 
 [node name="Margin" type="MarginContainer" parent="RootControl/TutorialPanel"]
 layout_mode = 2
