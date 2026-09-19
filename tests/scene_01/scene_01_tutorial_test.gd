@@ -61,7 +61,7 @@ func _bind_scene() -> void:
 	if manual_guide != null:
 		_expect_false(manual_guide.visible, "Visible Tutorial coaching should hide the overlapping generic Manual Guide presentation.")
 func _test_compile_projection_refresh() -> void:
-	_expect_true(capability_label.text.contains("首次运行后由装配编译确认"), "Tutorial capability copy should begin without invented compile truth.")
+	_expect_true(capability_label.text.contains("首次运行后确认"), "Tutorial capability copy should begin without invented compile truth.")
 	scene.call("run_scene")
 	_expect_true(bool(scene.call("is_gameplay_running")), "Top Run should start Scene 01 through the real lifecycle gate.")
 	var text := capability_label.text
@@ -72,6 +72,8 @@ func _test_skip_and_manual_catch_up() -> void:
 	var manual_controls = scene.get_node("UIRoot")
 	var manual_guide := scene.get_node("UIRoot/RootControl") as Control
 	var tutorial_button := scene.get_node("UIRoot/RootControl/Panel/Margin/VBox/HeaderRow/TutorialButton") as Button
+	var manual_panel := scene.get_node("UIRoot/RootControl/Panel") as Control
+	var hud_panel := scene.get_node("HUDRoot/RootControl/StatusPanel") as Control
 	_expect_equal(tutorial.get_step(), TutorialScript.Step.SELECT_ARM, "Tutorial should start by asking for Arm selection.")
 	var box_before: int = int(box.get_current_count())
 	var manual_before := float(score.call("get_manual_runtime"))
@@ -96,6 +98,7 @@ func _test_skip_and_manual_catch_up() -> void:
 	_expect_equal(tutorial.get_step(), TutorialScript.Step.PROGRAM_RUN, "Real StandardBox increment should advance to Program teaching.")
 	manual_controls.call("set_collapsed", false)
 	_expect_false(bool(manual_controls.call("is_collapsed")), "Manual Guide should be expandable while Tutorial is hidden.")
+	_expect_true(not manual_panel.get_global_rect().intersects(hud_panel.get_global_rect()), "Expanded Manual Guide should remain inside its left-rail slot without covering HUD.")
 	_expect_true(tutorial_button.is_visible_in_tree(), "Expanded Manual Guide should keep the Tutorial reopen entry visible.")
 	tutorial_button.pressed.emit()
 	_expect_true(tutorial.is_visible(), "Manual Guide Tutorial button should reopen coaching at the caught-up step.")

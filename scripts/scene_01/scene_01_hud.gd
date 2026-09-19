@@ -12,6 +12,7 @@ const VehicleMoveControllerScript := preload("res://scripts/input/vehicle_move_c
 const VehicleGrabDropControllerScript := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
 const MissionStateScript := preload("res://scripts/scene_01/scene_01_mission_state.gd")
 const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.gd")
+const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metrics.gd")
 
 @onready var selected_label: Label = %SelectedLabel
 @onready var vehicle_state_label: Label = %VehicleStateLabel
@@ -22,6 +23,7 @@ const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.g
 @onready var feedback_label: Label = %FeedbackLabel
 @onready var completion_panel: PanelContainer = %CompletionPanel
 @onready var completion_summary_label: Label = %CompletionSummaryLabel
+@onready var status_panel: PanelContainer = $RootControl/StatusPanel
 
 var _scene_controller: MissionControllerScript
 var _observable: ObservableStateScript
@@ -51,8 +53,15 @@ func _ready() -> void:
 		"SceneRoot/GridRoot/VehicleGrabDropController"
 	) as VehicleGrabDropControllerScript
 	_bind_signals()
+	get_viewport().size_changed.connect(_apply_status_layout)
+	_apply_status_layout()
 	_refresh()
 	call_deferred("_refresh")
+
+
+func _apply_status_layout() -> void:
+	var viewport_width := float(get_viewport().get_visible_rect().size.x)
+	status_panel.offset_right = status_panel.offset_left + LayoutMetrics.left_rail_width(viewport_width)
 
 
 func _bind_signals() -> void:
