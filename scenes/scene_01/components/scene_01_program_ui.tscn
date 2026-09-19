@@ -39,11 +39,11 @@ theme_override_constants/margin_bottom = 8
 
 [node name="VBox" type="VBoxContainer" parent="RootControl/ProgramPanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="HeaderRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="ProgramTitle" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/HeaderRow"]
 unique_name_in_owner = true
@@ -58,18 +58,18 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(36, 32)
 layout_mode = 2
 focus_mode = 0
-text = "P ▶"
+text = "P +"
 
 [node name="ExpandedContent" type="VBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 7
+theme_override_constants/separation = 6
 
 [node name="ActionRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 
 [node name="SaveButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/ActionRow"]
 unique_name_in_owner = true
@@ -95,9 +95,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "RUN"
 
-[node name="Rule" type="HSeparator" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent"]
-layout_mode = 2
-
 [node name="SourceTitle" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent"]
 layout_mode = 2
 text = "SOURCE · canonical v2"
@@ -105,12 +102,12 @@ theme_override_font_sizes/font_size = 14
 
 [node name="Hint" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent"]
 layout_mode = 2
-text = "车辆命令显式绑定 vehicle_id，例如 [transport_vehicle:moveTo] 8 4"
+text = "[vehicle:moveTo] x y · [vehicle:face] west · [vehicle:grabDrop]"
 autowrap_mode = 2
 
 [node name="SourceEditor" type="CodeEdit" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 240)
+custom_minimum_size = Vector2(0, 160)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -130,31 +127,40 @@ modulate = Color(0.68, 0.86, 1, 1)
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
-text = "▶ ADD COMMAND"
+text = "+ ADD COMMAND"
 
-[node name="BuilderBody" type="VBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent"]
+[node name="BuilderScroll" type="ScrollContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent"]
 unique_name_in_owner = true
 visible = false
+custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
-theme_override_constants/separation = 6
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
-[node name="VehicleLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderBody"]
+[node name="BuilderBody" type="VBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+
+[node name="VehicleLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 layout_mode = 2
 text = "Command vehicle"
 
-[node name="VehicleOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderBody"]
+[node name="VehicleOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="MoveLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderBody"]
+[node name="MoveLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 layout_mode = 2
 text = "MoveTo target"
 
-[node name="MoveParams" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderBody"]
+[node name="MoveParams" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 
-[node name="TargetX" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderBody/MoveParams"]
+[node name="TargetX" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/MoveParams"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -163,7 +169,7 @@ max_value = 255.0
 value = 1.0
 prefix = "X "
 
-[node name="TargetY" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderBody/MoveParams"]
+[node name="TargetY" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/MoveParams"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -172,25 +178,39 @@ max_value = 255.0
 value = 3.0
 prefix = "Y "
 
-[node name="AddMoveButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderBody"]
+[node name="AddMoveButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "+ MoveTo"
 
-[node name="AddGrabButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderBody"]
+[node name="FaceRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="FacingOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/FaceRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="AddFaceButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/FaceRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "+ Face"
+
+[node name="AddGrabButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "+ GrabDrop"
 
-[node name="RepeatLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderBody"]
+[node name="RepeatLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 layout_mode = 2
 text = "Repeat"
 
-[node name="RepeatParams" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderBody"]
+[node name="RepeatParams" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 
-[node name="RepeatCount" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderBody/RepeatParams"]
+[node name="RepeatCount" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RepeatParams"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 1
@@ -199,19 +219,19 @@ max_value = 100.0
 value = 2.0
 prefix = "× "
 
-[node name="RepeatTargetOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderBody/RepeatParams"]
+[node name="RepeatTargetOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RepeatParams"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 
-[node name="AddRepeatButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderBody"]
+[node name="AddRepeatButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
 layout_mode = 2
 disabled = true
 text = "+ Repeat"
 
-[node name="ClearButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderBody"]
+[node name="ClearButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Clear All"
