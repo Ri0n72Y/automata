@@ -12,6 +12,7 @@ const VehicleMoveControllerScript := preload("res://scripts/input/vehicle_move_c
 const VehicleGrabDropControllerScript := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
 const MissionStateScript := preload("res://scripts/scene_01/scene_01_mission_state.gd")
 const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.gd")
+const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metrics.gd")
 
 @onready var selected_label: Label = %SelectedLabel
 @onready var vehicle_state_label: Label = %VehicleStateLabel
@@ -60,8 +61,7 @@ func _ready() -> void:
 
 func _apply_status_layout() -> void:
 	var viewport_width := float(get_viewport().get_visible_rect().size.x)
-	var width := 360.0 if viewport_width >= 1920.0 else (320.0 if viewport_width >= 1600.0 else 300.0)
-	status_panel.offset_right = status_panel.offset_left + width
+	status_panel.offset_right = status_panel.offset_left + LayoutMetrics.left_rail_width(viewport_width)
 
 
 func _bind_signals() -> void:
