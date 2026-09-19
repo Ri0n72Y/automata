@@ -4,6 +4,7 @@ const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
 const ValidatorScript := preload("res://scripts/scene_01/scene_01_program_validator.gd")
 const ProgramRunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
 const CompileGateScript := preload("res://scripts/scene_01/scene_01_assembly_compile_gate.gd")
+const RuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 var failures := 0
 var observed_command_vehicles: Array[StringName] = []
 var observed_player_selections: Array[StringName] = []
@@ -88,6 +89,14 @@ func _test_production_runner() -> void:
 	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_IDLE, "Reset should return runner to IDLE.")
 	_expect_equal(box.get_current_count(), 3, "Reset should restore StandardBox.")
 	_expect_true(compile_gate.get_compile_result(&"arm_vehicle") == null, "Reset should end compile publication lifetime.")
+	var arm = manager.get_vehicle_by_id(&"arm_vehicle")
+	var face_program := ProgramScript.new()
+	var face_index := face_program.append_statement(ProgramScript.StatementType.FACE)
+	face_program.set_statement_vehicle(face_index, &"arm_vehicle")
+	face_program.set_facing(face_index, RuntimeStateScript.Facing.WEST)
+	_expect_true(runner.start_program(face_program), "Absolute Face program should start through the shared command path.")
+	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Face-only Program should complete synchronously.")
+	_expect_equal(arm.runtime_state.facing, RuntimeStateScript.Facing.WEST, "Program Face should mutate the same runtime facing truth as manual rotation.")
 	var transport_program := ProgramScript.new()
 	var transport_grab := transport_program.append_statement(ProgramScript.StatementType.GRAB_DROP)
 	transport_program.set_statement_vehicle(transport_grab, &"transport_vehicle")
@@ -95,7 +104,6 @@ func _test_production_runner() -> void:
 	_expect_equal(runner.get_last_error(), &"program_capability_rejected", "Capability rejection should come from compile gate.")
 	_expect_true(bool(scene.call("reset_scene_state")), "Reset should recover from rejected start.")
 	await process_frame
-	var arm = manager.get_vehicle_by_id(&"arm_vehicle")
 	var transport = manager.get_vehicle_by_id(&"transport_vehicle")
 	_expect_true(selection.select_vehicle(transport), "Fixture should select Transport for Program Stop regression.")
 	var stopped_program := ProgramScript.new()
