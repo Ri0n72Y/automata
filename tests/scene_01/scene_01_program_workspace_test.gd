@@ -36,6 +36,7 @@ func _run() -> void:
 	var repeat_count := ui.get_node("%RepeatCount") as SpinBox
 	var repeat_target_option := ui.get_node("%RepeatTargetOption") as OptionButton
 	var status_label := ui.get_node("%StatusLabel") as Label
+	var expanded_content := ui.get_node("%ExpandedContent") as Control
 	var builder_body := ui.get_node("%BuilderBody") as Control
 	var tutorial_panel := scene.get_node("TutorialUIRoot/RootControl/TutorialPanel") as Control
 	var manual_panel := scene.get_node("UIRoot/RootControl/Panel") as Control
@@ -54,12 +55,12 @@ func _run() -> void:
 	_expect_true(add_repeat.get_parent() is VBoxContainer, "Repeat add button should occupy its own VBox row.")
 	_expect_true(source_editor.get_parent() is VBoxContainer, "Canonical SourceEditor should be the primary single-column workspace content.")
 	_expect_true(ui.find_child("Workspace", true, false) == null, "Legacy side-by-side workspace container should be removed.")
-	_expect_true(bool(ui.call("is_workspace_collapsed")), "Program rail should start collapsed so gameplay remains visible.")
+	_expect_true(not expanded_content.visible, "Program rail should start collapsed so gameplay remains visible.")
 	_expect_true(not builder_body.visible, "Add Command should start collapsed behind its accordion.")
 	_expect_true(program_panel.size.x <= 53.0, "Collapsed Program rail should stay near the 52px spec width.")
 	ui.call("set_workspace_collapsed", false)
 	await process_frame
-	_expect_true(not bool(ui.call("is_workspace_collapsed")), "Program rail should expand on explicit player action.")
+	_expect_true(expanded_content.visible, "Program rail should expand on explicit player action.")
 	_expect_true(source_editor.is_visible_in_tree(), "Expanded Program rail should expose the canonical source editor.")
 	var viewport_width := float(scene.get_viewport().get_visible_rect().size.x)
 	var expected_program_width := LayoutMetrics.program_rail_width(viewport_width)
@@ -74,7 +75,7 @@ func _run() -> void:
 	_expect_true(program_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and tutorial_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and hud_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and manual_root.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Fullscreen presentation roots must not intercept central gameplay input.")
 	_expect_true(tutorial_panel.mouse_filter == Control.MOUSE_FILTER_STOP and manual_panel.mouse_filter == Control.MOUSE_FILTER_STOP, "Visible left-rail panels must stop clicks from leaking into gameplay.")
 	ui.call("set_command_builder_expanded", true)
-	_expect_true(bool(ui.call("is_command_builder_expanded")) and builder_body.visible, "Add Command should expand only inside Program UI presentation state.")
+	_expect_true(builder_body.visible, "Add Command should expand only inside Program UI presentation state.")
 	_expect_true(not program_panel.get_global_rect().intersects(lifecycle_panel.get_global_rect()), "Program workspace must not cover lifecycle controls.")
 	_expect_true((ui as CanvasLayer).layer < hud.layer, "HUD completion results must render above the Program workspace.")
 	target_x.value = 4
