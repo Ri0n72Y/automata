@@ -297,6 +297,7 @@ Expected files:
 - `scenes/scene_01/components/scene_01_hud.tscn`
 - `scenes/scene_01/components/scene_01_manual_ui.tscn`
 - `scripts/scene_01/scene_01_program_ui.gd`
+- `scripts/scene_01/scene_01_ui_layout_metrics.gd` — immutable rail width metrics only; no mutable state or coordination
 - optionally minimal presentation-only changes in `scene_01_tutorial_ui.gd`
 
 Do not modify unless a direct blocker is demonstrated:
