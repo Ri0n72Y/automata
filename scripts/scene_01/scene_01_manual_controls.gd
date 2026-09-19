@@ -1,6 +1,7 @@
 class_name Scene01ManualControls
 extends CanvasLayer
 
+const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metrics.gd")
 const COLLAPSED_HEIGHT := 52.0
 const EXPANDED_HEIGHT := 280.0
 const MAX_EXPANDED_VIEWPORT_RATIO := 0.3
@@ -71,7 +72,7 @@ func _apply_panel_layout() -> void:
 		return
 	var viewport_size := get_viewport().get_visible_rect().size
 	var viewport_width := float(viewport_size.x)
-	var width := 360.0 if viewport_width >= 1920.0 else (320.0 if viewport_width >= 1600.0 else 300.0)
+	var width := LayoutMetrics.left_rail_width(viewport_width)
 	var expanded_limit := maxf(COLLAPSED_HEIGHT, float(viewport_size.y) * MAX_EXPANDED_VIEWPORT_RATIO)
 	var height := COLLAPSED_HEIGHT if _collapsed else minf(EXPANDED_HEIGHT, expanded_limit)
 	panel.offset_right = panel.offset_left + width
