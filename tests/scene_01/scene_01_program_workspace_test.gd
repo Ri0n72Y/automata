@@ -25,6 +25,7 @@ func _run() -> void:
 	var lifecycle_panel := scene.get_node("LifecycleUIRoot/RootControl/Panel") as Control
 	var source_editor := ui.get_node("%SourceEditor") as CodeEdit
 	var add_move := ui.get_node("%AddMoveButton") as Button
+	var add_face := ui.get_node("%AddFaceButton") as Button
 	var add_grab := ui.get_node("%AddGrabButton") as Button
 	var add_repeat := ui.get_node("%AddRepeatButton") as Button
 	var clear_button := ui.get_node("%ClearButton") as Button
@@ -33,11 +34,15 @@ func _run() -> void:
 	var run_button := ui.get_node("%RunButton") as Button
 	var target_x := ui.get_node("%TargetX") as SpinBox
 	var target_y := ui.get_node("%TargetY") as SpinBox
+	var facing_option := ui.get_node("%FacingOption") as OptionButton
 	var repeat_count := ui.get_node("%RepeatCount") as SpinBox
 	var repeat_target_option := ui.get_node("%RepeatTargetOption") as OptionButton
 	var status_label := ui.get_node("%StatusLabel") as Label
 	var expanded_content := ui.get_node("%ExpandedContent") as Control
+	var builder_scroll := ui.get_node("%BuilderScroll") as ScrollContainer
 	var builder_body := ui.get_node("%BuilderBody") as Control
+	var workspace_button := ui.get_node("%WorkspaceCollapseButton") as Button
+	var builder_button := ui.get_node("%BuilderToggleButton") as Button
 	var tutorial_panel := scene.get_node("TutorialUIRoot/RootControl/TutorialPanel") as Control
 	var manual_panel := scene.get_node("UIRoot/RootControl/Panel") as Control
 	var hud_panel := scene.get_node("HUDRoot/RootControl/StatusPanel") as Control
@@ -51,12 +56,14 @@ func _run() -> void:
 	_expect_true(ui.find_child("ConnectButton", true, false) == null, "Legacy graph Connect control should be removed.")
 	_expect_true(ui.find_child("DeleteButton", true, false) == null, "Legacy graph Delete control should be removed.")
 	_expect_true(add_move.get_parent() is VBoxContainer, "MoveTo add button should occupy its own VBox row.")
+	_expect_true(add_face != null and facing_option != null, "Program builder should expose the absolute Face command.")
 	_expect_true(add_grab.get_parent() is VBoxContainer, "GrabDrop add button should occupy its own VBox row.")
 	_expect_true(add_repeat.get_parent() is VBoxContainer, "Repeat add button should occupy its own VBox row.")
 	_expect_true(source_editor.get_parent() is VBoxContainer, "Canonical SourceEditor should be the primary single-column workspace content.")
 	_expect_true(ui.find_child("Workspace", true, false) == null, "Legacy side-by-side workspace container should be removed.")
 	_expect_true(not expanded_content.visible, "Program rail should start collapsed so gameplay remains visible.")
-	_expect_true(not builder_body.visible, "Add Command should start collapsed behind its accordion.")
+	_expect_true(not builder_scroll.visible, "Add Command should start collapsed behind its accordion.")
+	_expect_true(workspace_button.text.contains("+"), "Collapsed Program disclosure should use plus instead of a triangle arrow.")
 	_expect_true(program_panel.size.x <= 53.0, "Collapsed Program rail should stay near the 52px spec width.")
 	ui.call("set_workspace_collapsed", false)
 	await process_frame
@@ -75,13 +82,27 @@ func _run() -> void:
 	_expect_true(program_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and tutorial_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and hud_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and manual_root.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Fullscreen presentation roots must not intercept central gameplay input.")
 	_expect_true(tutorial_panel.mouse_filter == Control.MOUSE_FILTER_STOP and manual_panel.mouse_filter == Control.MOUSE_FILTER_STOP, "Visible left-rail panels must stop clicks from leaking into gameplay.")
 	ui.call("set_command_builder_expanded", true)
-	_expect_true(builder_body.visible, "Add Command should expand only inside Program UI presentation state.")
+	_expect_true(builder_scroll.visible and builder_body.is_visible_in_tree(), "Add Command should expand inside a bounded scroll region.")
+	_expect_true(builder_button.text.begins_with("−"), "Expanded command builder should use minus instead of a triangle arrow.")
+	_expect_true(builder_scroll.get_global_rect().end.y <= program_panel.get_global_rect().end.y + 1.0, "Scrollable builder must remain inside the Program rail instead of pushing Repeat off-screen.")
 	_expect_true(not program_panel.get_global_rect().intersects(lifecycle_panel.get_global_rect()), "Program workspace must not cover lifecycle controls.")
 	_expect_true((ui as CanvasLayer).layer < hud.layer, "HUD completion results must render above the Program workspace.")
+	source_editor.grab_focus()
+	await process_frame
+	_expect_true(scene.get_viewport().gui_get_focus_owner() == source_editor, "SourceEditor should own focus before world-click regression.")
+	var world_click := InputEventMouseButton.new()
+	world_click.button_index = MOUSE_BUTTON_LEFT
+	world_click.pressed = true
+	world_click.position = Vector2(8, 8)
+	ui.call("_input", world_click)
+	_expect_true(scene.get_viewport().gui_get_focus_owner() != source_editor, "Clicking outside Program rail should release CodeEdit focus so M returns to gameplay.")
 	target_x.value = 4
 	target_y.value = 5
 	add_move.emit_signal("pressed")
 	_expect_true(String(ui.call("get_source_text")).contains("[arm_vehicle:moveTo] 4 5\n"), "Add MoveTo should write directly into source.")
+	facing_option.select(3)
+	add_face.emit_signal("pressed")
+	_expect_true(String(ui.call("get_source_text")).contains("[arm_vehicle:face] west\n"), "Add Face should write an absolute direction directly into source.")
 	add_grab.emit_signal("pressed")
 	_expect_true(String(ui.call("get_source_text")).contains("[arm_vehicle:grabDrop]\n"), "Add GrabDrop should write directly into source.")
 	repeat_count.value = 2
