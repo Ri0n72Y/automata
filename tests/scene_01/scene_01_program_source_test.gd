@@ -20,6 +20,7 @@ func _init() -> void:
 func _test_source_builds_linear_statements() -> void:
 	var source := """automata_scene01_program 2
 [arm_vehicle:moveTo] 1 3
+[arm_vehicle:face] west
 [arm_vehicle:grabDrop]
 [transport_vehicle:moveTo] 2 3
 repeat 2 1
@@ -30,10 +31,12 @@ repeat 2 1
 	_expect_true(program != null, "Valid source should produce a runtime program snapshot.")
 	if program == null:
 		return
-	_expect_equal(program.get_statement_count(), 4, "Source should map one-to-one to four linear statements.")
+	_expect_equal(program.get_statement_count(), 5, "Source should map one-to-one to five linear statements.")
 	_expect_equal(StringName(program.get_statement(0).get("vehicle_id", &"")), &"arm_vehicle", "First statement should bind Arm explicitly.")
-	_expect_equal(StringName(program.get_statement(2).get("vehicle_id", &"")), &"transport_vehicle", "Third statement should bind Transport explicitly.")
-	_expect_equal(int(program.get_statement(3).get("repeat_target_index", -1)), 0, "repeat target #1 should resolve to statement index 0.")
+	_expect_equal(int(program.get_statement(1).get("type", -1)), ProgramScript.StatementType.FACE, "Second statement should be Face.")
+	_expect_equal(int(program.get_statement(1).get("facing", -1)), 3, "Face west should map to the canonical WEST facing value.")
+	_expect_equal(StringName(program.get_statement(3).get("vehicle_id", &"")), &"transport_vehicle", "Fourth statement should bind Transport explicitly.")
+	_expect_equal(int(program.get_statement(4).get("repeat_target_index", -1)), 0, "repeat target #1 should resolve to statement index 0.")
 	_expect_true(ValidatorScript.new().validate(program, Vector2i(16, 10)).is_empty(), "Parsed source should be structurally valid.")
 
 func _test_source_diagnostic_and_statement_lines() -> void:
@@ -42,6 +45,8 @@ func _test_source_diagnostic_and_statement_lines() -> void:
 	_expect_equal(diagnostics.size(), 1, "Invalid MoveTo should produce one source diagnostic.")
 	if not diagnostics.is_empty():
 		_expect_equal(int(diagnostics[0].get("line", 0)), 5, "Syntax diagnostic should preserve physical source line numbers.")
+	var invalid_face := SourceScript.new().parse("automata_scene01_program 2\n[arm_vehicle:face] diagonal\n")
+	_expect_equal(StringName(invalid_face["diagnostics"][0].get("code", &"")), &"face_syntax", "Invalid Face direction should be rejected by the source codec.")
 	var mapped := SourceScript.new().parse("automata_scene01_program 2\n\n# comment\n[arm_vehicle:moveTo] 1 3\n\nrepeat 2 1\n")
 	_expect_equal(mapped.get("statement_lines", []), [4, 6], "Parser should preserve physical line for every runtime statement.")
 
@@ -82,6 +87,9 @@ func _test_requirements_follow_command_vehicle() -> void:
 	var transport_move := program.append_statement(ProgramScript.StatementType.MOVE_TO)
 	program.set_statement_vehicle(transport_move, &"transport_vehicle")
 	program.set_move_target(transport_move, Vector2i(2, 3))
+	var arm_face := program.append_statement(ProgramScript.StatementType.FACE)
+	program.set_statement_vehicle(arm_face, &"arm_vehicle")
+	program.set_facing(arm_face, 3)
 	var arm_grab := program.append_statement(ProgramScript.StatementType.GRAB_DROP)
 	program.set_statement_vehicle(arm_grab, &"arm_vehicle")
 	var repeat_index := program.append_statement(ProgramScript.StatementType.REPEAT)
