@@ -9,24 +9,11 @@ const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metric
 @onready var _title: Label = %ProgramTitle
 @onready var _expanded_content: VBoxContainer = %ExpandedContent
 @onready var _collapse_button: Button = %WorkspaceCollapseButton
-@onready var _builder_toggle: Button = %BuilderToggleButton
 @onready var _builder_scroll: ScrollContainer = %BuilderScroll
 @onready var _vehicle_option: OptionButton = %VehicleOption
-@onready var _target_x: SpinBox = %TargetX
-@onready var _target_y: SpinBox = %TargetY
-@onready var _facing_option: OptionButton = %FacingOption
-@onready var _repeat_count: SpinBox = %RepeatCount
 @onready var _repeat_target_option: OptionButton = %RepeatTargetOption
 @onready var _source_editor: CodeEdit = %SourceEditor
-@onready var _add_move_button: Button = %AddMoveButton
-@onready var _add_face_button: Button = %AddFaceButton
-@onready var _add_grab_button: Button = %AddGrabButton
 @onready var _add_repeat_button: Button = %AddRepeatButton
-@onready var _clear_button: Button = %ClearButton
-@onready var _save_button: Button = %SaveButton
-@onready var _load_button: Button = %LoadButton
-@onready var _export_button: Button = %ExportButton
-@onready var _run_button: Button = %RunButton
 @onready var _status_label: Label = %StatusLabel
 @onready var _runner: RunnerScript = get_parent().get_node("SceneRoot/Scene01ProgramRunner") as RunnerScript
 @onready var _vehicle_manager: VehicleManagerScript = get_parent().get_node("SceneRoot/RobotRoot/Scene01VehicleManager") as VehicleManagerScript
@@ -35,7 +22,6 @@ var _program: Scene01Program
 var _statement_lines: Array[int] = []
 var _editing_enabled := true
 var _suppress_source_signal := false
-
 func _ready() -> void:
 	_bind_ui()
 	_bind_runner()
@@ -43,20 +29,17 @@ func _ready() -> void:
 	set_command_builder_expanded(false)
 	set_workspace_collapsed(true)
 	call_deferred("_initialize_editor")
-
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		if not _program_panel.get_global_rect().has_point(event.position):
 			get_viewport().gui_release_focus()
-
 func _initialize_editor() -> void:
 	_populate_vehicles()
-	_facing_option.clear()
+	%FacingOption.clear()
 	for facing in SupportScript.FACING_NAMES:
-		_facing_option.add_item(String(facing).capitalize())
+		%FacingOption.add_item(String(facing).capitalize())
 	_set_source_text_internal(SupportScript.HEADER + "\n")
 	_parse_current_source(false)
-
 func get_program() -> Scene01Program:
 	return _program.duplicate_program() if _program != null else null
 func get_source_text() -> String:
@@ -64,7 +47,6 @@ func get_source_text() -> String:
 func set_source_text(source: String) -> void:
 	_set_source_text_internal(source)
 	_parse_current_source(true)
-
 func set_workspace_collapsed(collapsed: bool) -> void:
 	_title.visible = not collapsed
 	_expanded_content.visible = not collapsed
@@ -73,38 +55,33 @@ func set_workspace_collapsed(collapsed: bool) -> void:
 	_apply_workspace_layout()
 	if collapsed:
 		get_viewport().gui_release_focus()
-
 func set_command_builder_expanded(expanded: bool) -> void:
 	_builder_scroll.visible = expanded
-	_builder_toggle.text = "− ADD COMMAND" if expanded else "+ ADD COMMAND"
-
+	%BuilderToggleButton.text = "− ADD COMMAND" if expanded else "+ ADD COMMAND"
 func _apply_workspace_layout() -> void:
 	var viewport_width := float(get_viewport().get_visible_rect().size.x)
 	var width := LayoutMetrics.program_rail_width(viewport_width) if _expanded_content.visible else LayoutMetrics.PROGRAM_COLLAPSED_WIDTH
 	_program_panel.offset_left = _program_panel.offset_right - width
-
 func _bind_ui() -> void:
 	_collapse_button.pressed.connect(func(): set_workspace_collapsed(_expanded_content.visible))
-	_builder_toggle.pressed.connect(func(): set_command_builder_expanded(not _builder_scroll.visible))
+	%BuilderToggleButton.pressed.connect(func(): set_command_builder_expanded(not _builder_scroll.visible))
 	_vehicle_option.item_selected.connect(func(_index): _status_label.text = "新增命令车辆：%s" % String(_selected_vehicle_id()))
 	_source_editor.text_changed.connect(func(): _parse_current_source(true) if not _suppress_source_signal else null)
-	_add_move_button.pressed.connect(_on_add_move)
-	_add_face_button.pressed.connect(_on_add_face)
-	_add_grab_button.pressed.connect(_on_add_grab)
+	%AddMoveButton.pressed.connect(_on_add_move)
+	%AddFaceButton.pressed.connect(_on_add_face)
+	%AddGrabButton.pressed.connect(_on_add_grab)
 	_add_repeat_button.pressed.connect(_on_add_repeat)
-	_clear_button.pressed.connect(_on_clear)
-	_save_button.pressed.connect(_on_save)
-	_load_button.pressed.connect(_on_load)
-	_export_button.pressed.connect(_on_export)
-	_run_button.pressed.connect(_on_run)
-
+	%ClearButton.pressed.connect(_on_clear)
+	%SaveButton.pressed.connect(_on_save)
+	%LoadButton.pressed.connect(_on_load)
+	%ExportButton.pressed.connect(_on_export)
+	%RunButton.pressed.connect(_on_run)
 func _bind_runner() -> void:
 	_runner.execution_started.connect(_on_execution_started)
 	_runner.statement_started.connect(_on_statement_started)
 	_runner.execution_completed.connect(_on_execution_completed)
 	_runner.execution_failed.connect(_on_execution_failed)
 	_runner.execution_reset.connect(_on_execution_reset)
-
 func _populate_vehicles() -> void:
 	_vehicle_option.clear()
 	for vehicle_node in _vehicle_manager.get_vehicles():
@@ -114,20 +91,19 @@ func _populate_vehicles() -> void:
 			_vehicle_option.set_item_metadata(_vehicle_option.item_count - 1, vehicle.get_vehicle_id())
 	if _vehicle_option.item_count > 0:
 		_vehicle_option.select(0)
-
 func _selected_vehicle_id() -> StringName:
 	return &"" if _vehicle_option.item_count <= 0 else StringName(_vehicle_option.get_item_metadata(_vehicle_option.selected))
 func _on_add_move() -> void:
-	_append_source_line("[%s:moveTo] %d %d" % [String(_selected_vehicle_id()), int(_target_x.value), int(_target_y.value)])
+	_append_source_line("[%s:moveTo] %d %d" % [String(_selected_vehicle_id()), int(%TargetX.value), int(%TargetY.value)])
 func _on_add_face() -> void:
-	_append_source_line("[%s:face] %s" % [String(_selected_vehicle_id()), String(SupportScript.FACING_NAMES[_facing_option.selected])])
+	_append_source_line("[%s:face] %s" % [String(_selected_vehicle_id()), String(SupportScript.FACING_NAMES[%FacingOption.selected])])
 func _on_add_grab() -> void:
 	_append_source_line("[%s:grabDrop]" % String(_selected_vehicle_id()))
 func _on_add_repeat() -> void:
 	if _program == null or _repeat_target_option.item_count <= 0:
 		_status_label.text = "Repeat 需要一个之前的车辆命令"
 		return
-	_append_source_line("repeat %d %d" % [int(_repeat_count.value), int(_repeat_target_option.get_item_metadata(_repeat_target_option.selected))])
+	_append_source_line("repeat %d %d" % [int(%RepeatCount.value), int(_repeat_target_option.get_item_metadata(_repeat_target_option.selected))])
 func _on_clear() -> void:
 	_set_source_text_internal(SupportScript.HEADER + "\n")
 	_parse_current_source(false)
@@ -153,7 +129,6 @@ func _on_run() -> void:
 		var snapshot := parsed.get("program") as Scene01Program
 		if snapshot != null:
 			_runner.start_program(snapshot)
-
 func _on_execution_started() -> void:
 	_set_editing_enabled(false)
 	_status_label.text = "全局程序运行中 · 编辑器已锁定"
@@ -174,7 +149,6 @@ func _on_execution_reset() -> void:
 	_set_editing_enabled(true)
 	_parse_current_source(false)
 	_status_label.text = "程序已重置"
-
 func _append_source_line(line: String) -> void:
 	var source := _source_editor.text
 	if source.strip_edges().is_empty():
@@ -184,7 +158,6 @@ func _append_source_line(line: String) -> void:
 	_set_source_text_internal(source + line + "\n")
 	_parse_current_source(false)
 	_status_label.text = "已添加：%s" % line
-
 func _set_source_text_internal(source: String) -> void:
 	_suppress_source_signal = true
 	_source_editor.text = source
@@ -192,7 +165,6 @@ func _set_source_text_internal(source: String) -> void:
 	var line_index := maxi(0, _source_editor.get_line_count() - 1)
 	_source_editor.set_caret_line(line_index)
 	_source_editor.set_caret_column(_source_editor.get_line(line_index).length())
-
 func _parse_current_source(show_status: bool) -> Dictionary:
 	var parsed := _support.parse(_source_editor.text)
 	var diagnostics: Array = parsed.get("diagnostics", [])
@@ -204,10 +176,8 @@ func _parse_current_source(show_status: bool) -> Dictionary:
 	if show_status:
 		_status_label.text = _support.diagnostic_text(diagnostics[0]) if not diagnostics.is_empty() else "语法有效 · %d 条语句" % (_program.get_statement_count() if _program != null else 0)
 	return {"ok": _program != null, "program": _program, "diagnostics": diagnostics}
-
 func _source_line(statement_index: int) -> int:
 	return _statement_lines[statement_index] if statement_index >= 0 and statement_index < _statement_lines.size() else 0
-
 func _refresh_repeat_controls() -> void:
 	_repeat_target_option.clear()
 	for option in _support.repeat_options(_program):
@@ -216,15 +186,14 @@ func _refresh_repeat_controls() -> void:
 	var unavailable := not _editing_enabled or _repeat_target_option.item_count <= 0
 	_add_repeat_button.disabled = unavailable
 	_repeat_target_option.disabled = unavailable
-
 func _set_editing_enabled(enabled: bool) -> void:
 	_editing_enabled = enabled
 	_vehicle_option.disabled = not enabled
-	_facing_option.disabled = not enabled
-	_target_x.editable = enabled
-	_target_y.editable = enabled
-	_repeat_count.editable = enabled
+	%FacingOption.disabled = not enabled
+	%TargetX.editable = enabled
+	%TargetY.editable = enabled
+	%RepeatCount.editable = enabled
 	_source_editor.editable = enabled
-	for button in [_add_move_button, _add_face_button, _add_grab_button, _clear_button, _save_button, _load_button, _export_button, _run_button]:
+	for button in [%AddMoveButton, %AddFaceButton, %AddGrabButton, %ClearButton, %SaveButton, %LoadButton, %ExportButton, %RunButton]:
 		button.disabled = not enabled
 	_refresh_repeat_controls()
