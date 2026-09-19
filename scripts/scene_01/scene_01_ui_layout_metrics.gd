@@ -7,9 +7,9 @@ const LEFT_NARROW_WIDTH := 300.0
 const LEFT_COMPACT_WIDTH := 320.0
 const LEFT_WIDE_WIDTH := 360.0
 const PROGRAM_COLLAPSED_WIDTH := 52.0
-const PROGRAM_NARROW_WIDTH := 420.0
-const PROGRAM_COMPACT_WIDTH := 440.0
-const PROGRAM_WIDE_WIDTH := 520.0
+const PROGRAM_NARROW_WIDTH := 360.0
+const PROGRAM_COMPACT_WIDTH := 400.0
+const PROGRAM_WIDE_WIDTH := 460.0
 
 static func left_rail_width(viewport_width: float) -> float:
 	return LEFT_WIDE_WIDTH if viewport_width >= WIDE_BREAKPOINT else (LEFT_COMPACT_WIDTH if viewport_width >= COMPACT_BREAKPOINT else LEFT_NARROW_WIDTH)
