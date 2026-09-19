@@ -61,7 +61,7 @@ func set_collapsed(collapsed: bool) -> void:
 		if control != null:
 			control.visible = not _collapsed
 	if collapse_button != null:
-		collapse_button.text = "▶" if _collapsed else "▼"
+		collapse_button.text = "+" if _collapsed else "−"
 	_apply_panel_layout()
 	if _collapsed:
 		get_viewport().gui_release_focus()
