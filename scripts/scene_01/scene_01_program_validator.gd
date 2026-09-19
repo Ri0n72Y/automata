@@ -37,7 +37,7 @@ func required_capabilities_by_vehicle(program: Scene01Program) -> Dictionary:
 		match int(statement.get("type", -1)):
 			ProgramScript.StatementType.MOVE_TO:
 				_append_requirement(result, vehicle_id, AssemblyCapabilitiesScript.CAN_MOVE)
-			ProgramScript.StatementType.GRAB_DROP:
+			ProgramScript.StatementType.GRAB_DROP, ProgramScript.StatementType.FACE:
 				_append_requirement(result, vehicle_id, AssemblyCapabilitiesScript.GRAB_DROP)
 	return result
 
@@ -52,10 +52,14 @@ func _validate_statement(
 	if not _is_valid_type(statement_type):
 		diagnostics.append(_diagnostic(&"invalid_statement_type", "Statement type is invalid.", index))
 		return
-	if statement_type == ProgramScript.StatementType.MOVE_TO or statement_type == ProgramScript.StatementType.GRAB_DROP:
+	if statement_type == ProgramScript.StatementType.MOVE_TO or statement_type == ProgramScript.StatementType.GRAB_DROP or statement_type == ProgramScript.StatementType.FACE:
 		if StringName(statement.get("vehicle_id", &"")) == &"":
 			diagnostics.append(_diagnostic(&"command_vehicle_required", "Vehicle command requires a vehicle id.", index))
-	if statement_type == ProgramScript.StatementType.MOVE_TO:
+	if statement_type == ProgramScript.StatementType.FACE:
+		var facing := int(statement.get("facing", -1))
+		if facing < 0 or facing > 3:
+			diagnostics.append(_diagnostic(&"face_direction_required", "Face requires a valid direction.", index))
+	elif statement_type == ProgramScript.StatementType.MOVE_TO:
 		var target: Vector2i = statement.get("target_anchor", Vector2i(-1, -1))
 		if target.x < 0 or target.y < 0:
 			diagnostics.append(_diagnostic(&"move_target_required", "MoveTo requires a target anchor.", index))
@@ -78,7 +82,7 @@ func _validate_repeat(
 		diagnostics.append(_diagnostic(&"invalid_repeat_target", "Repeat target must reference an earlier vehicle statement.", index))
 		return
 	var target_type := int(program.get_statement(target_index).get("type", -1))
-	if target_type != ProgramScript.StatementType.MOVE_TO and target_type != ProgramScript.StatementType.GRAB_DROP:
+	if target_type != ProgramScript.StatementType.MOVE_TO and target_type != ProgramScript.StatementType.GRAB_DROP and target_type != ProgramScript.StatementType.FACE:
 		diagnostics.append(_diagnostic(&"invalid_repeat_target", "Repeat target must reference an earlier vehicle statement.", index))
 		return
 	for nested_index in range(target_index, index):
@@ -118,6 +122,7 @@ func _is_valid_type(statement_type: int) -> bool:
 		ProgramScript.StatementType.MOVE_TO,
 		ProgramScript.StatementType.GRAB_DROP,
 		ProgramScript.StatementType.REPEAT,
+		ProgramScript.StatementType.FACE,
 	]
 
 func _diagnostic(code: StringName, message: String, statement_index: int = -1) -> Dictionary:
