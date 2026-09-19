@@ -71,6 +71,7 @@ func reason_text(reason: StringName) -> String:
 		&"move_target_out_of_bounds": return "MoveTo 目标超出网格"
 		&"move_target_not_walkable": return "MoveTo 目标不可通行"
 		&"face_direction_required": return "Face 需要有效朝向"
+		&"face_rejected": return "车辆当前无法调整朝向"
 		&"invalid_repeat_count": return "Repeat 次数必须为 1–100"
 		&"invalid_repeat_target": return "Repeat 需要指向之前的车辆命令"
 		&"nested_repeat_unsupported": return "DSL v2 的 Repeat 区间不能包含另一个 Repeat"

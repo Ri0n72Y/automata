@@ -6,7 +6,8 @@ const RunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd
 const ObservableScript := preload("res://scripts/scene_01/scene_01_observable_state.gd")
 const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 enum Step { SELECT_ARM, MANUAL_PICKUP, MANUAL_DROP, PROGRAM_RUN, MULTI_VEHICLE, DONE }
-var _step := Step.SELECT_ARM
+var _progress_step := Step.SELECT_ARM
+var _view_step := Step.SELECT_ARM
 var _visible := true
 var _run_seen_arm_move := false
 var _run_seen_arm_grab := false
@@ -28,7 +29,9 @@ func _ready() -> void:
 	_runner.execution_reset.connect(_on_program_reset)
 
 func get_step() -> int:
-	return _step
+	return _view_step
+func get_progress_step() -> int:
+	return _progress_step
 func is_visible() -> bool:
 	return _visible
 func skip_tutorial() -> void:
@@ -40,19 +43,28 @@ func reopen_tutorial() -> void:
 		_visible = true
 		presentation_changed.emit()
 func previous_step() -> void:
-	_set_step(maxi(_step - 1, Step.SELECT_ARM))
+	_set_view_step(maxi(_view_step - 1, Step.SELECT_ARM))
 func next_step() -> void:
-	_set_step(mini(_step + 1, Step.DONE))
+	_set_view_step(mini(_view_step + 1, _progress_step))
 
-func _set_step(step: int) -> void:
-	if step == _step:
+func _set_view_step(step: int) -> void:
+	if step == _view_step:
 		return
-	_step = step
+	_view_step = step
+	presentation_changed.emit()
+
+func _set_progress_step(step: int) -> void:
+	if step <= _progress_step:
+		return
+	var was_viewing_frontier := _view_step == _progress_step
+	_progress_step = mini(step, Step.DONE)
+	if was_viewing_frontier:
+		_view_step = _progress_step
 	presentation_changed.emit()
 
 func _advance_from(expected_step: int) -> void:
-	if _step == expected_step:
-		_set_step(_step + 1)
+	if _progress_step == expected_step:
+		_set_progress_step(_progress_step + 1)
 
 func _on_selection_changed(vehicle_id: StringName, has_selection: bool) -> void:
 	if has_selection and vehicle_id == VehicleManagerScript.ARM_VEHICLE_ID:
@@ -89,10 +101,10 @@ func _on_program_completed() -> void:
 	var arm_delivery := _run_seen_arm_move and _run_seen_arm_grab and _run_box_incremented
 	var multi_delivery := arm_delivery and _run_seen_transport_move
 	_clear_run_profile()
-	if _step == Step.PROGRAM_RUN and arm_delivery:
-		_set_step(Step.MULTI_VEHICLE)
-	elif _step == Step.MULTI_VEHICLE and multi_delivery:
-		_set_step(Step.DONE)
+	if _progress_step == Step.PROGRAM_RUN and arm_delivery:
+		_set_progress_step(Step.MULTI_VEHICLE)
+	elif _progress_step == Step.MULTI_VEHICLE and multi_delivery:
+		_set_progress_step(Step.DONE)
 
 func _on_program_stopped(_statement_index: int, _reason: StringName) -> void:
 	_clear_run_profile()

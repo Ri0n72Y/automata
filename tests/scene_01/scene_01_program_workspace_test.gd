@@ -21,6 +21,9 @@ func _run() -> void:
 	await process_frame
 	var ui = scene.get_node("ProgramUIRoot")
 	var hud = scene.get_node("HUDRoot") as CanvasLayer
+	var selection = scene.get_node("SceneRoot/GridRoot/VehicleSelectionController")
+	var grid_selection = scene.get_node("SceneRoot/GridRoot/GridSelectionController")
+	var manager = scene.get_node("SceneRoot/RobotRoot/Scene01VehicleManager")
 	var program_panel := ui.get_node("RootControl/ProgramPanel") as Control
 	var lifecycle_panel := scene.get_node("LifecycleUIRoot/RootControl/Panel") as Control
 	var source_editor := ui.get_node("%SourceEditor") as CodeEdit
@@ -94,8 +97,17 @@ func _run() -> void:
 	world_click.button_index = MOUSE_BUTTON_LEFT
 	world_click.pressed = true
 	world_click.position = Vector2(8, 8)
-	ui.call("_input", world_click)
-	_expect_true(scene.get_viewport().gui_get_focus_owner() != source_editor, "Clicking outside Program rail should release CodeEdit focus so M returns to gameplay.")
+	Input.parse_input_event(world_click)
+	await process_frame
+	_expect_true(scene.get_viewport().gui_get_focus_owner() != source_editor, "A real world click through the input pipeline should release CodeEdit focus.")
+	var arm = manager.call("get_vehicle_by_id", &"arm_vehicle")
+	_expect_true(arm != null and selection.call("select_vehicle", arm), "Input regression should select a movable vehicle through the gameplay owner.")
+	var move_key := InputEventKey.new()
+	move_key.keycode = KEY_M
+	move_key.pressed = true
+	Input.parse_input_event(move_key)
+	await process_frame
+	_expect_true(bool(grid_selection.get("_live_target_mode")), "After focus release, a real M key event should reach gameplay and activate move targeting.")
 	target_x.value = 4
 	target_y.value = 5
 	add_move.emit_signal("pressed")

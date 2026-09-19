@@ -45,12 +45,13 @@ func _refresh() -> void:
 	if not tutorial_visible:
 		return
 	var step := _tutorial.get_step()
-	_progress_label.text = "完成" if step == TutorialScript.Step.DONE else "步骤 %d / %d" % [step + 1, TutorialScript.Step.DONE]
+	var progress_step := _tutorial.get_progress_step()
+	_progress_label.text = "完成" if progress_step == TutorialScript.Step.DONE else "步骤 %d / %d" % [step + 1, TutorialScript.Step.DONE]
 	_title_label.text = _step_title(step)
 	_body_label.text = _step_body(step)
 	_capability_label.text = _capability_summary()
 	_previous_button.disabled = step == TutorialScript.Step.SELECT_ARM
-	_next_button.disabled = step == TutorialScript.Step.DONE
+	_next_button.disabled = step >= progress_step
 	_skip_button.text = "关闭教学" if step == TutorialScript.Step.DONE else "跳过教学"
 func _capability_summary() -> String:
 	return "%s\n%s" % [
