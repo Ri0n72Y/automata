@@ -39,7 +39,7 @@ Ownership remains:
 - `Scene01TutorialUI`: tutorial presentation only.
 - `Scene01ManualControls`: manual guide presentation + existing input ownership.
 - `Scene01HUD`: current gameplay status presentation.
-- `Scene01ProgramUI`: Program authoring presentation plus its own presentation-only collapse state.
+- `Scene01ProgramUI`: Program authoring presentation; collapse/accordion presentation truth is the real Control visibility.
 - CodeEdit source text remains the single mutable Program authoring truth.
 
 Forbidden dependencies:
@@ -155,7 +155,7 @@ Keep the existing owner and default collapsed behavior.
 Header remains conceptually:
 
 ```text
-Scene 01 · 操作指南       教学   ▶
+Scene 01 · 操作指南       教学   +
 ```
 
 When expanded, it grows only inside the left rail and must not enter the gameplay region.
@@ -216,10 +216,12 @@ The Source Editor is primary. Command Builder is secondary.
 ```text
 − ADD COMMAND
 
-Vehicle       [Arm Vehicle ▼]
+Vehicle       [Arm Vehicle]
 
 MoveTo        X [ ]  Y [ ]
               [+ MoveTo]
+
+Face          [West] [+ Face]
 
               [+ GrabDrop]
 
@@ -254,7 +256,7 @@ Remove the current fixed 420 px minimum height as the controlling layout constra
 Target:
 
 - Vertical expand/fill.
-- Practical minimum around 220–260 px.
+- Practical minimum around 160 px; use remaining rail height when available.
 - Use remaining rail height.
 
 ## 9. Input contract
@@ -325,7 +327,7 @@ This layout patch is ready for #21 walkthrough when all are true:
 - Add Command does not hold a second Program state.
 - HUD remains readable.
 - Central gameplay mouse interaction is not blocked by transparent controls.
-- No gameplay / scoring / lifecycle / Program execution behavior changes.
+- No gameplay / scoring / lifecycle behavior changes. Program execution changes are limited to the accepted absolute `Face` statement described below.
 
 ## 13. Definition of Done
 
