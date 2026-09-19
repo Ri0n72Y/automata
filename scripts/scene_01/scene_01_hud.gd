@@ -59,7 +59,9 @@ func _ready() -> void:
 
 
 func _apply_status_layout() -> void:
-	status_panel.offset_right = status_panel.offset_left + clampf(float(get_viewport().get_visible_rect().size.x) * 0.2, 300.0, 360.0)
+	var viewport_width := float(get_viewport().get_visible_rect().size.x)
+	var width := 360.0 if viewport_width >= 1920.0 else (320.0 if viewport_width >= 1600.0 else 300.0)
+	status_panel.offset_right = status_panel.offset_left + width
 
 
 func _bind_signals() -> void:
