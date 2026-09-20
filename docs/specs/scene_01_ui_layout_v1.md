@@ -341,6 +341,15 @@ Implementation is complete only when:
 4. Any further visual-system work is deferred to #58 rather than added to this patch.
 
 
+## 13.5. Language baseline — 2026-09-20
+
+Scene 01 当前以**简体中文**作为玩家界面的 canonical copy：
+
+- 所有玩家可见标题、按钮、状态、提示、任务文本、错误反馈和场景内 3D 标签使用中文。
+- DSL namespace、命令 token、参数 token、`vehicle_id` 与快捷键名称保持运行时原值，例如 `automata_scene01_program 2`、`moveTo`、`rotate`、`grabDrop`、`clockwise`、`counterclockwise`；这些属于编程语言 contract，不属于 UI 翻译。
+- 当前不引入第二套文案表、语言状态 owner 或临时翻译抽象。中文字符串直接作为基准文案。
+- 后续英文及其他语言支持应通过统一 localization/i18n 模块抽取这些玩家可见字符串，不修改 gameplay、Program DSL 或 scene ownership。
+
 ## 14. Player-walkthrough delta — 2026-09-19 / 2026-09-20
 
 The graphical walkthrough exposed direct player-facing blockers. These are accepted here without expanding into #58 or #62.

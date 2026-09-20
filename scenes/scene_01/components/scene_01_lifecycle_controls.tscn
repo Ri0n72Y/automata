@@ -61,7 +61,7 @@ custom_minimum_size = Vector2(54, 34)
 layout_mode = 2
 focus_mode = 0
 text = "↺"
-tooltip_text = "重置 Scene 01"
+tooltip_text = "重置场景 01"
 
 [connection signal="pressed" from="RootControl/Panel/Margin/Controls/RunPauseButton" to="." method="_on_run_pause_pressed"]
 [connection signal="pressed" from="RootControl/Panel/Margin/Controls/SpeedButton" to="." method="_on_speed_pressed"]

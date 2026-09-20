@@ -36,8 +36,8 @@ func _input(event: InputEvent) -> void:
 func _initialize_editor() -> void:
 	_populate_vehicles()
 	%RotationOption.clear()
-	%RotationOption.add_item("Clockwise · D · +90°")
-	%RotationOption.add_item("Counterclockwise · A · -90°")
+	%RotationOption.add_item("顺时针 · D · +90°")
+	%RotationOption.add_item("逆时针 · A · -90°")
 	_set_source_text_internal(SupportScript.HEADER + "\n")
 	_parse_current_source(false)
 func get_program() -> Scene01Program:
@@ -50,14 +50,14 @@ func set_source_text(source: String) -> void:
 func set_workspace_collapsed(collapsed: bool) -> void:
 	_title.visible = not collapsed
 	_expanded_content.visible = not collapsed
-	_collapse_button.text = "P +" if collapsed else "−"
-	_collapse_button.tooltip_text = "打开 PROGRAM" if collapsed else "折叠 PROGRAM"
+	_collapse_button.text = "+" if collapsed else "−"
+	_collapse_button.tooltip_text = "展开程序面板" if collapsed else "折叠程序面板"
 	_apply_workspace_layout()
 	if collapsed:
 		get_viewport().gui_release_focus()
 func set_command_builder_expanded(expanded: bool) -> void:
 	_builder_scroll.visible = expanded
-	%BuilderToggleButton.text = "− ADD COMMAND" if expanded else "+ ADD COMMAND"
+	%BuilderToggleButton.text = "− 添加命令" if expanded else "+ 添加命令"
 func _apply_workspace_layout() -> void:
 	var viewport_width := float(get_viewport().get_visible_rect().size.x)
 	var width := LayoutMetrics.program_rail_width(viewport_width) if _expanded_content.visible else LayoutMetrics.PROGRAM_COLLAPSED_WIDTH
@@ -101,7 +101,7 @@ func _on_add_grab() -> void:
 	_append_source_line("[%s:grabDrop]" % String(_selected_vehicle_id()))
 func _on_add_repeat() -> void:
 	if _program == null or _repeat_target_option.item_count <= 0:
-		_status_label.text = "Repeat 需要一个之前的车辆命令"
+		_status_label.text = "重复命令需要一个之前的车辆命令"
 		return
 	_append_source_line("repeat %d %d" % [int(%RepeatCount.value), int(_repeat_target_option.get_item_metadata(_repeat_target_option.selected))])
 func _on_clear() -> void:
@@ -122,7 +122,7 @@ func _on_load() -> void:
 		_status_label.text = "源码已读取"
 func _on_export() -> void:
 	_support.export_source(_source_editor.text)
-	_status_label.text = "Blueprint 已复制到剪贴板"
+	_status_label.text = "程序源码已复制到剪贴板"
 func _on_run() -> void:
 	var parsed := _parse_current_source(true)
 	if bool(parsed.get("ok", false)):
@@ -131,10 +131,10 @@ func _on_run() -> void:
 			_runner.start_program(snapshot)
 func _on_execution_started() -> void:
 	_set_editing_enabled(false)
-	_status_label.text = "全局程序运行中 · 编辑器已锁定"
+	_status_label.text = "程序运行中 · 编辑器已锁定"
 func _on_statement_started(statement_index: int, _statement_type: int) -> void:
 	var line := _source_line(statement_index)
-	_status_label.text = "运行第 %d 行" % line if line > 0 else "运行语句 #%d" % (statement_index + 1)
+	_status_label.text = "运行第 %d 行" % line if line > 0 else "运行第 %d 条语句" % (statement_index + 1)
 func _on_execution_completed() -> void:
 	_set_editing_enabled(true)
 	_parse_current_source(false)

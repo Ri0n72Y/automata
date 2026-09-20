@@ -106,7 +106,7 @@ func _sync_coordinates_button() -> void:
 func _call_scene_action(method_name: StringName, args: Array = []) -> void:
 	var scene_controller := _get_scene_controller()
 	if scene_controller == null or not scene_controller.has_method(method_name):
-		_update_status("场景调试操作不可用：%s" % String(method_name))
+		_update_status("场景调试操作不可用")
 		return
 	scene_controller.callv(method_name, args)
 

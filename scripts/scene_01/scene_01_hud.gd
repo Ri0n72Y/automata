@@ -182,13 +182,13 @@ func _selected_vehicle_name(vehicle_id: StringName) -> String:
 func _motion_state_text(state: int) -> String:
 	match state:
 		VehicleRuntimeStateScript.MotionState.WAITING:
-			return "WAITING"
+			return "等待"
 		VehicleRuntimeStateScript.MotionState.PLANNING:
-			return "PLANNING"
+			return "规划中"
 		VehicleRuntimeStateScript.MotionState.MOVING:
-			return "MOVING"
+			return "移动中"
 		VehicleRuntimeStateScript.MotionState.BLOCKED:
-			return "BLOCKED"
+			return "受阻"
 		_:
 			return "—"
 
@@ -196,13 +196,13 @@ func _motion_state_text(state: int) -> String:
 func _mission_state_text(state: int) -> String:
 	match state:
 		MissionStateScript.State.READY:
-			return "READY"
+			return "就绪"
 		MissionStateScript.State.RUNNING:
-			return "RUNNING"
+			return "运行中"
 		MissionStateScript.State.PAUSED:
-			return "PAUSED"
+			return "已暂停"
 		MissionStateScript.State.COMPLETED:
-			return "COMPLETED"
+			return "已完成"
 		_:
 			return "—"
 

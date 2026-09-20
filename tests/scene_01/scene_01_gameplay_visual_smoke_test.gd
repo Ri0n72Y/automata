@@ -56,14 +56,14 @@ func _run() -> void:
 		if capacity_slots != null:
 			_expect_equal(capacity_slots.get_child_count(), 8, "Box should contain eight visual slots.")
 		_expect_equal(box_node.get_visible_slot_count(), 3, "Box should initially show three blocks.")
-		_expect_equal(box_node.get_capacity_label_text(), "3/8  IN", "Box label should show 3/8.")
+		_expect_equal(box_node.get_capacity_label_text(), "3/8 装箱", "Box label should show 3/8.")
 
 	if pile_node != null and box_node != null:
 		var produced: ItemTransferResult = pile_node.take_item()
 		_expect_true(produced.is_success(), "Pile should produce a block for visual update.")
 		_expect_true(box_node.put_item(produced.item).is_success(), "Box should accept the produced block.")
 		_expect_equal(box_node.get_visible_slot_count(), 4, "Box should show four blocks after put.")
-		_expect_equal(box_node.get_capacity_label_text(), "4/8  IN", "Box label should show 4/8.")
+		_expect_equal(box_node.get_capacity_label_text(), "4/8 装箱", "Box label should show 4/8.")
 
 	if vehicle_manager != null:
 		_test_vehicle_state_visuals(vehicle_manager)

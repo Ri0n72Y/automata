@@ -45,7 +45,7 @@ theme_override_constants/separation = 8
 [node name="Title" type="Label" parent="RootControl/Panel/Margin/VBox/HeaderRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Scene 01 · Debug"
+text = "场景 01 · 调试"
 theme_override_font_sizes/font_size = 18
 
 [node name="CollapseButton" type="Button" parent="RootControl/Panel/Margin/VBox/HeaderRow"]
@@ -75,13 +75,13 @@ theme_override_constants/separation = 8
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
-text = "Grid -90°"
+text = "网格 -90°"
 
 [node name="RotateRight" type="Button" parent="RootControl/Panel/Margin/VBox/RotateRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
-text = "Grid +90°"
+text = "网格 +90°"
 
 [node name="TransformRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
 visible = false
@@ -91,7 +91,7 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
-text = "切换 Grid 偏移"
+text = "切换网格偏移"
 
 [node name="ResetRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
 visible = false
@@ -108,12 +108,12 @@ text = "重置场景"
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
-text = "恢复 Grid"
+text = "恢复网格"
 
 [node name="ShortcutNote" type="Label" parent="RootControl/Panel/Margin/VBox"]
 visible = false
 layout_mode = 2
-text = "快捷键：Shift+Q/E 旋转 GridRoot · G 切换偏移 · R 重置 · Home 恢复"
+text = "快捷键：Shift+Q/E 旋转网格 · G 切换偏移 · R 重置 · Home 恢复"
 autowrap_mode = 2
 modulate = Color(0.72, 0.8, 0.9, 1)
 

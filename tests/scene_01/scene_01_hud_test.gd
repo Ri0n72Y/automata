@@ -62,7 +62,7 @@ func _run() -> void:
 	var feedback_label := hud.get_node("RootControl/StatusPanel/Margin/VBox/FeedbackLabel") as Label
 	var completion_panel := hud.get_node("RootControl/CompletionPanel") as PanelContainer
 
-	test.expect_true(mission_label.text.find("READY") >= 0, "HUD should expose initial Mission READY.")
+	test.expect_true(mission_label.text.find("就绪") >= 0, "HUD should expose initial Mission READY.")
 	test.expect_true(mission_label.text.find("3/8") >= 0, "HUD should expose initial box progress.")
 	test.expect_true(commands_label.text.find("未选择车辆") >= 0, "HUD should explain unavailable commands before selection.")
 	test.expect_false(completion_panel.visible, "Completion panel should start hidden.")
@@ -85,8 +85,8 @@ func _run() -> void:
 	arm.runtime_state.facing = RuntimeStateScript.Facing.WEST
 	arm.sync_from_state()
 	test.expect_true(bool(selection.call("select_vehicle", arm)), "Arm should be selectable for HUD binding test.")
-	test.expect_true(selected_label.text.find("Arm Vehicle") >= 0, "HUD should show selected vehicle display name.")
-	test.expect_true(vehicle_state_label.text.find("WAITING") >= 0, "HUD should show selected vehicle state.")
+	test.expect_true(selected_label.text.find("机械臂车") >= 0, "HUD should show selected vehicle display name.")
+	test.expect_true(vehicle_state_label.text.find("等待") >= 0, "HUD should show selected vehicle state.")
 	test.expect_true(commands_label.text.find("M 移动 可用") >= 0, "Waiting movable vehicle should expose Move as available.")
 	test.expect_true(commands_label.text.find("X 停止 车辆未移动") >= 0, "Waiting vehicle should explain why Stop is unavailable.")
 	test.expect_true(commands_label.text.find("C 抓放 可用") >= 0, "Arm facing the pile should expose GrabDrop as available.")
@@ -124,7 +124,7 @@ func _run() -> void:
 	test.expect_true(bool(selection.call("select_vehicle", arm)), "Arm should be reselected for state binding checks.")
 
 	test.expect_true(arm.runtime_state.begin_move_planning(), "HUD state fixture should enter PLANNING.")
-	test.expect_true(vehicle_state_label.text.find("PLANNING") >= 0, "HUD should react to observable vehicle state changes.")
+	test.expect_true(vehicle_state_label.text.find("规划中") >= 0, "HUD should react to observable vehicle state changes.")
 	test.expect_true(commands_label.text.find("M 移动 车辆忙碌") >= 0, "Planning should explain Move unavailability.")
 	test.expect_true(commands_label.text.find("C 抓放 车辆忙碌") >= 0, "Planning should explain GrabDrop unavailability.")
 	arm.runtime_state.reset()
@@ -153,7 +153,7 @@ func _run() -> void:
 			"HUD completion fixture should fill StandardBox."
 		)
 	test.expect_true(completion_panel.visible, "HUD should show completion panel from Mission COMPLETED.")
-	test.expect_true(mission_label.text.find("COMPLETED") >= 0, "HUD should expose Mission COMPLETED explicitly.")
+	test.expect_true(mission_label.text.find("已完成") >= 0, "HUD should expose Mission COMPLETED explicitly.")
 
 	test.expect_true(bool(scene.call("reset_scene")), "Scene Reset should succeed for HUD reset binding.")
 	await process_frame

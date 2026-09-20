@@ -124,7 +124,7 @@ func _create_arm_definition() -> VehicleDefinitionScript:
 	var definition := VehicleDefinitionScript.new()
 	if not definition.configure(
 		ARM_VEHICLE_ID,
-		"Arm Vehicle",
+		"机械臂车",
 		VehicleDefinitionScript.VehicleKind.ARM,
 		Vector2i.ONE,
 		2.0,
@@ -147,7 +147,7 @@ func _create_transport_definition() -> VehicleDefinitionScript:
 	var definition := VehicleDefinitionScript.new()
 	if not definition.configure(
 		TRANSPORT_VEHICLE_ID,
-		"Transport Vehicle",
+		"运输车",
 		VehicleDefinitionScript.VehicleKind.TRANSPORT,
 		Vector2i.ONE,
 		2.4,

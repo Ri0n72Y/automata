@@ -26,11 +26,11 @@ func repeat_options(program: Scene01Program) -> Array[Dictionary]:
 		if statement_type != ProgramScript.StatementType.MOVE_TO and statement_type != ProgramScript.StatementType.GRAB_DROP and statement_type != ProgramScript.StatementType.ROTATE:
 			continue
 		var vehicle_id := String(statement.get("vehicle_id", &""))
-		var command_name := "MoveTo" if statement_type == ProgramScript.StatementType.MOVE_TO else ("Rotate" if statement_type == ProgramScript.StatementType.ROTATE else "GrabDrop")
+		var command_name := "移动到" if statement_type == ProgramScript.StatementType.MOVE_TO else ("旋转" if statement_type == ProgramScript.StatementType.ROTATE else "抓放")
 		var source_number := index + 1
 		result.append({
 			"source_number": source_number,
-			"label": "#%d [%s] %s" % [source_number, vehicle_id, command_name],
+			"label": "第%d条 · [%s] · %s" % [source_number, vehicle_id, command_name],
 		})
 	return result
 
@@ -56,9 +56,8 @@ func export_source(source: String) -> void:
 	DisplayServer.clipboard_set(source)
 
 func diagnostic_text(diagnostic: Dictionary) -> String:
-	return "第 %d 行 · %s：%s" % [
+	return "第 %d 行：%s" % [
 		int(diagnostic.get("line", 0)),
-		String(diagnostic.get("code", &"source_invalid")),
 		String(diagnostic.get("message", "源码无效")),
 	]
 
@@ -67,14 +66,14 @@ func reason_text(reason: StringName) -> String:
 		&"program_capability_rejected": return "当前装配缺少程序所需能力"
 		&"statements_required": return "程序至少需要一条语句"
 		&"command_vehicle_required": return "命令缺少车辆"
-		&"move_target_required": return "MoveTo 缺少目标格"
-		&"move_target_out_of_bounds": return "MoveTo 目标超出网格"
-		&"move_target_not_walkable": return "MoveTo 目标不可通行"
-		&"turn_direction_required": return "Rotate 需要 clockwise 或 counterclockwise"
+		&"move_target_required": return "移动命令缺少目标格"
+		&"move_target_out_of_bounds": return "移动目标超出网格"
+		&"move_target_not_walkable": return "移动目标不可通行"
+		&"turn_direction_required": return "旋转命令参数必须为 clockwise（顺时针）或 counterclockwise（逆时针）"
 		&"turn_rejected": return "车辆当前无法旋转"
-		&"invalid_repeat_count": return "Repeat 次数必须为 1–100"
-		&"invalid_repeat_target": return "Repeat 需要指向之前的车辆命令"
-		&"nested_repeat_unsupported": return "DSL v2 的 Repeat 区间不能包含另一个 Repeat"
+		&"invalid_repeat_count": return "重复次数必须为 1–100"
+		&"invalid_repeat_target": return "重复命令需要指向之前的车辆命令"
+		&"nested_repeat_unsupported": return "程序语法 v2 的重复区间不能包含另一个重复命令"
 		&"program_too_large": return "程序展开后的执行步骤过多"
 		&"move_blocked": return "车辆移动被阻挡"
 		&"no_path": return "目标没有可用路径"
@@ -82,4 +81,4 @@ func reason_text(reason: StringName) -> String:
 		&"lifecycle_start_rejected": return "场景当前无法开始运行"
 		&"program_already_running": return "程序正在运行"
 		_:
-			return "GrabDrop 当前无法执行" if String(reason).begins_with("grab_drop_") else String(reason)
+			return "抓放命令当前无法执行" if String(reason).begins_with("grab_drop_") else "程序执行失败"

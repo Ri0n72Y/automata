@@ -157,7 +157,7 @@ repeat 2 1
 	_expect_true(status_label.text.contains("语法有效"), "Semantic-invalid text should only be labeled syntax-valid before Run validation.")
 	run_button.emit_signal("pressed")
 	_expect_true(status_label.text.contains("第 6 行"), "Validator rejection should map statement index back to physical source line.")
-	_expect_true(status_label.text.contains("Repeat"), "Semantic failure should preserve the useful rejection reason.")
+	_expect_true(status_label.text.contains("重复"), "Semantic failure should preserve the useful rejection reason.")
 	var missing_vehicle_source := "automata_scene01_program 2\n\n# typo\n[missing_vehicle:grabDrop]\n"
 	ui.call("set_source_text", missing_vehicle_source)
 	run_button.emit_signal("pressed")

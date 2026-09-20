@@ -120,7 +120,7 @@ func _step_body(step: int) -> String:
 	match step:
 		TutorialScript.Step.SELECT_ARM: return "左键点击机械臂小车。HUD 会显示当前车辆状态。"
 		TutorialScript.Step.MANUAL_PICKUP: return "M 选择方块堆旁目标格；A/D 每次旋转 90°；C 抓取。"
-		TutorialScript.Step.MANUAL_DROP: return "移动到 StandardBox 旁并按 C 放入方块。Tips：可从上方灵动岛切换倍速。"
+		TutorialScript.Step.MANUAL_DROP: return "移动到标准箱旁并按 C 放入方块。提示：可从上方灵动岛切换倍速。"
 		TutorialScript.Step.PROGRAM_RUN: return "打开右侧 PROGRAM，用 Arm 的 MoveTo + Rotate + GrabDrop 完成一次真实装箱。"
 		TutorialScript.Step.MULTI_VEHICLE: return "在同一成功装箱程序加入 Transport MoveTo；每条命令显式写 vehicle_id。"
 		_: return "五个教学目标均已完成；场景最终目标仍是填满 StandardBox。"

@@ -31,7 +31,7 @@ func refresh() -> void:
 		speed_button.text = _format_speed(speed)
 		speed_button.tooltip_text = "切换仿真倍速"
 	if reset_button != null:
-		reset_button.tooltip_text = "重置 Scene 01"
+		reset_button.tooltip_text = "重置场景 01"
 
 
 func _on_run_pause_pressed() -> void:

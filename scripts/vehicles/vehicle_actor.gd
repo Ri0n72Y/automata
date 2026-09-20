@@ -453,4 +453,4 @@ func _update_debug_label() -> void:
 		return
 	if definition == null or runtime_state == null:
 		return
-	_debug_label.text = "%s\n%.1f kg" % [definition.display_name, definition.total_weight]
+	_debug_label.text = "%s\n%.1f 千克" % [definition.display_name, definition.total_weight]

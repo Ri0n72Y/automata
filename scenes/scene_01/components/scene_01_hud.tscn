@@ -46,14 +46,14 @@ layout_mode = 2
 [node name="Title" type="Label" parent="RootControl/StatusPanel/Margin/VBox/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "SCENE 01 · 状态"
+text = "场景 01 · 状态"
 theme_override_font_sizes/font_size = 18
 
 [node name="PauseLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox/Header"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-text = "PAUSED"
+text = "已暂停"
 modulate = Color(1, 0.72, 0.28, 1)
 
 [node name="SelectedLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
@@ -122,7 +122,7 @@ theme_override_constants/separation = 8
 
 [node name="CompletionTitle" type="Label" parent="RootControl/CompletionPanel/Margin/VBox"]
 layout_mode = 2
-text = "MISSION COMPLETED"
+text = "任务完成"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 28
 modulate = Color(0.55, 0.95, 0.7, 1)

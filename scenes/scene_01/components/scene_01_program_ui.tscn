@@ -51,7 +51,7 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
-text = "PROGRAM"
+text = "程序"
 theme_override_font_sizes/font_size = 18
 
 [node name="WorkspaceCollapseButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/HeaderRow"]
@@ -59,7 +59,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(36, 32)
 layout_mode = 2
 focus_mode = 0
-text = "P +"
+text = "+"
 
 [node name="ExpandedContent" type="VBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox"]
 unique_name_in_owner = true
@@ -76,29 +76,29 @@ theme_override_constants/separation = 4
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Save"
+text = "保存"
 
 [node name="LoadButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/ActionRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Load"
+text = "读取"
 
 [node name="ExportButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/ActionRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Export"
+text = "复制"
 
 [node name="RunButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/ActionRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "RUN"
+text = "运行"
 
 [node name="SourceTitle" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent"]
 layout_mode = 2
-text = "SOURCE · canonical v2"
+text = "源码 · 规范 v2"
 theme_override_font_sizes/font_size = 14
 
 [node name="Hint" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent"]
@@ -131,7 +131,7 @@ modulate = Color(0.68, 0.86, 1, 1)
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
-text = "+ ADD COMMAND"
+text = "+ 添加命令"
 
 [node name="BuilderScroll" type="ScrollContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent"]
 unique_name_in_owner = true
@@ -150,7 +150,7 @@ theme_override_constants/separation = 5
 
 [node name="VehicleLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 layout_mode = 2
-text = "Command vehicle"
+text = "执行车辆"
 
 [node name="VehicleOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
@@ -158,7 +158,7 @@ layout_mode = 2
 
 [node name="MoveLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 layout_mode = 2
-text = "MoveTo target"
+text = "移动目标"
 
 [node name="MoveParams" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 layout_mode = 2
@@ -185,7 +185,7 @@ prefix = "Y "
 [node name="AddMoveButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "+ MoveTo"
+text = "+ 移动到"
 
 [node name="MoveRotateDivider" type="HSeparator" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 layout_mode = 2
@@ -202,16 +202,16 @@ size_flags_horizontal = 3
 [node name="AddRotateButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RotateRow"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "+ Rotate 90°"
+text = "+ 旋转 90°"
 
 [node name="AddGrabButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "+ GrabDrop"
+text = "+ 抓放"
 
 [node name="RepeatLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 layout_mode = 2
-text = "Repeat"
+text = "重复"
 
 [node name="RepeatParams" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 layout_mode = 2
@@ -236,9 +236,9 @@ disabled = true
 unique_name_in_owner = true
 layout_mode = 2
 disabled = true
-text = "+ Repeat"
+text = "+ 重复"
 
 [node name="ClearButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Clear All"
+text = "全部清空"
