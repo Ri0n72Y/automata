@@ -128,7 +128,7 @@ func _run() -> void:
 	test.expect_true(commands_label.text.find("M 移动 车辆忙碌") >= 0, "Planning should explain Move unavailability.")
 	test.expect_true(commands_label.text.find("C 抓放 车辆忙碌") >= 0, "Planning should explain GrabDrop unavailability.")
 	arm.runtime_state.reset()
-	test.expect_true(vehicle_state_label.text.find("WAITING") >= 0, "HUD should return to WAITING after owner reset.")
+	test.expect_true(vehicle_state_label.text.find("等待") >= 0, "HUD should return to WAITING after owner reset.")
 
 	test.expect_true(arm.runtime_state.claim_carried_item(StandardBlockScript.create()), "Arm inventory fixture should claim a block.")
 	test.expect_true(inventory_label.text.find("持有方块") >= 0, "HUD should react to arm cargo changes.")
@@ -158,7 +158,7 @@ func _run() -> void:
 	test.expect_true(bool(scene.call("reset_scene")), "Scene Reset should succeed for HUD reset binding.")
 	await process_frame
 	test.expect_false(completion_panel.visible, "Reset should hide completion panel.")
-	test.expect_true(mission_label.text.find("READY") >= 0, "Reset should restore Mission READY in HUD.")
+	test.expect_true(mission_label.text.find("就绪") >= 0, "Reset should restore Mission READY in HUD.")
 	test.expect_true(mission_label.text.find("3/8") >= 0, "Reset should restore box progress in HUD.")
 	test.expect_true(selected_label.text.find("未选择") >= 0, "Reset should clear selected vehicle in HUD.")
 	test.expect_true(inventory_label.text.find("托盘：0") >= 0, "Reset should expose cleared tray in HUD.")

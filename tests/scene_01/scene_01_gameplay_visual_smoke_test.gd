@@ -77,7 +77,7 @@ func _run() -> void:
 	await process_frame
 	if box_node != null:
 		_expect_equal(box_node.get_visible_slot_count(), 3, "Reset should restore three box slots.")
-		_expect_equal(box_node.get_capacity_label_text(), "3/8  IN", "Reset should restore box label.")
+		_expect_equal(box_node.get_capacity_label_text(), "3/8 装箱", "Reset should restore box label.")
 	if vehicle_manager != null:
 		_assert_reset_vehicle_visuals(vehicle_manager)
 	if grid_root != null and object_root != null:
