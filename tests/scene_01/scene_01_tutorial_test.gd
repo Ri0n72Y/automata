@@ -20,7 +20,6 @@ var grab_drop: Node
 var object_manager: Node
 var goal_label: Label
 var next_button: Button
-var command_trace: Array[String] = []
 
 
 func _init() -> void:
@@ -58,7 +57,6 @@ func _bind_scene() -> void:
 	goal_label = scene.get_node_or_null("TutorialUIRoot/RootControl/TutorialPanel/Margin/VBox/GoalLabel") as Label
 	next_button = scene.get_node_or_null("TutorialUIRoot/RootControl/TutorialPanel/Margin/VBox/ButtonRow/NextButton") as Button
 	arm = manager.get_vehicle_by_id(ManagerScript.ARM_VEHICLE_ID) if manager != null else null
-	runner.command_started.connect(_on_command_trace)
 	_expect_true(tutorial != null and runner != null and arm != null and goal_label != null and next_button != null, "Tutorial owner and minimal presentation controls should exist.")
 
 
@@ -127,13 +125,9 @@ func _build_delivery_program(include_transport: bool) -> Scene01Program:
 	var program := ProgramScript.new()
 	_append_move(program, ManagerScript.ARM_VEHICLE_ID, Vector2i(2, 3))
 	_append_move(program, ManagerScript.ARM_VEHICLE_ID, Vector2i(1, 3))
-	_append_rotate(program, ManagerScript.ARM_VEHICLE_ID, 1)
-	_append_rotate(program, ManagerScript.ARM_VEHICLE_ID, 1)
 	_append_grab(program, ManagerScript.ARM_VEHICLE_ID)
 	_append_move(program, ManagerScript.ARM_VEHICLE_ID, Vector2i(13, 3))
 	_append_move(program, ManagerScript.ARM_VEHICLE_ID, Vector2i(14, 3))
-	_append_rotate(program, ManagerScript.ARM_VEHICLE_ID, 1)
-	_append_rotate(program, ManagerScript.ARM_VEHICLE_ID, 1)
 	_append_grab(program, ManagerScript.ARM_VEHICLE_ID)
 	if include_transport:
 		_append_move(program, ManagerScript.TRANSPORT_VEHICLE_ID, Vector2i(8, 4))
@@ -144,12 +138,6 @@ func _append_move(program: Scene01Program, vehicle_id: StringName, target: Vecto
 	var index := program.append_statement(ProgramScript.StatementType.MOVE_TO)
 	program.set_statement_vehicle(index, vehicle_id)
 	program.set_move_target(index, target)
-
-
-func _append_rotate(program: Scene01Program, vehicle_id: StringName, direction: int) -> void:
-	var index := program.append_statement(ProgramScript.StatementType.ROTATE)
-	program.set_statement_vehicle(index, vehicle_id)
-	program.set_turn_direction(index, direction)
 
 
 func _append_grab(program: Scene01Program, vehicle_id: StringName) -> void:
@@ -168,22 +156,9 @@ func _drive_program() -> void:
 	_expect_equal(
 		runner.get_state(),
 		RunnerScript.STATE_COMPLETED,
-		"Tutorial Program fixture should complete successfully; last error=%s pc=%d anchor=%s facing=%d cargo=%s trace=%s."
-		% [
-			String(runner.get_last_error()),
-			runner.get_current_statement_index(),
-			str(arm.runtime_state.anchor_cell),
-			int(arm.runtime_state.facing),
-			str(arm.runtime_state.arm_has_item),
-			str(command_trace),
-		]
+		"Tutorial Program fixture should complete successfully; last error=%s."
+		% String(runner.get_last_error())
 	)
-
-
-func _on_command_trace(statement_index: int, command_type: int, vehicle_id: StringName) -> void:
-	var vehicle = manager.get_vehicle_by_id(vehicle_id)
-	var facing := -1 if vehicle == null or vehicle.runtime_state == null else int(vehicle.runtime_state.facing)
-	command_trace.append("%d:%d:%d" % [statement_index, command_type, facing])
 
 
 func _wait_for_vehicle(vehicle, target: Vector2i) -> void:
