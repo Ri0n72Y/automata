@@ -72,17 +72,17 @@ func _on_coordinates_pressed() -> void:
 
 func _on_rotate_left_pressed() -> void:
 	_call_scene_action("preview_rotate_grid", [-1])
-	_update_status("GridRoot 已旋转 -90°")
+	_update_status("网格已旋转 -90°")
 
 
 func _on_rotate_right_pressed() -> void:
 	_call_scene_action("preview_rotate_grid", [1])
-	_update_status("GridRoot 已旋转 +90°")
+	_update_status("网格已旋转 +90°")
 
 
 func _on_offset_pressed() -> void:
 	_call_scene_action("preview_toggle_grid_offset")
-	_update_status("GridRoot 偏移状态已切换")
+	_update_status("网格偏移状态已切换")
 
 
 func _on_reset_pressed() -> void:
@@ -92,7 +92,7 @@ func _on_reset_pressed() -> void:
 
 func _on_restore_pressed() -> void:
 	_call_scene_action("preview_restore_grid_transform")
-	_update_status("GridRoot 变换已恢复")
+	_update_status("网格变换已恢复")
 
 
 func _sync_coordinates_button() -> void:

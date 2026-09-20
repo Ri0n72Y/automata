@@ -112,7 +112,7 @@ func _resolve_repeats(
 			continue
 		var target_type := int(program.get_statement(target_index).get("type", -1))
 		if target_type != ProgramScript.StatementType.MOVE_TO and target_type != ProgramScript.StatementType.GRAB_DROP and target_type != ProgramScript.StatementType.ROTATE:
-			diagnostics.append(_diagnostic(int(repeat["line"]), &"repeat_target_source_invalid", "repeat target must reference an earlier vehicle statement."))
+			diagnostics.append(_diagnostic(int(repeat["line"]), &"repeat_target_source_invalid", "repeat 目标必须指向之前的车辆命令。"))
 			continue
 		program.set_repeat(repeat_index, int(repeat["count"]), target_index)
 

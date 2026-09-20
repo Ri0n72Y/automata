@@ -67,21 +67,21 @@ func _goal_text(step: int) -> String:
 	var state := "1/1" if _tutorial.is_goal_complete(step) else "0/1"
 	var page_goal := ""
 	match step:
-		TutorialScript.Step.SELECT_ARM: page_goal = "选择 Arm（%s）" % state
+		TutorialScript.Step.SELECT_ARM: page_goal = "选择机械臂车（%s）" % state
 		TutorialScript.Step.MANUAL_PICKUP: page_goal = "手动抓取方块（%s）" % state
 		TutorialScript.Step.MANUAL_DROP: page_goal = "箱子计数 +1（%s）" % state
-		TutorialScript.Step.PROGRAM_RUN: page_goal = "Program 自动装箱 +1（%s）" % state
-		TutorialScript.Step.MULTI_VEHICLE: page_goal = "同一 Program 控制 Arm + Transport（%s）" % state
+		TutorialScript.Step.PROGRAM_RUN: page_goal = "程序自动装箱 +1（%s）" % state
+		TutorialScript.Step.MULTI_VEHICLE: page_goal = "同一程序控制机械臂车 + 运输车（%s）" % state
 		_: page_goal = "教学目标（5/5）"
 	var current_box := _observable.get_standard_box_count() if _observable.is_configured() else 0
 	var target_box := int(_root.call("get_mission_target_count"))
-	return "本页目标：%s\n场景目标：填满 StandardBox（%d/%d）" % [page_goal, current_box, target_box]
+	return "本页目标：%s\n场景目标：填满标准箱（%d/%d）" % [page_goal, current_box, target_box]
 
 
 func _capability_summary() -> String:
 	return "%s\n%s" % [
-		_capability_line(VehicleManagerScript.ARM_VEHICLE_ID, "Arm", true),
-		_capability_line(VehicleManagerScript.TRANSPORT_VEHICLE_ID, "Transport", false),
+		_capability_line(VehicleManagerScript.ARM_VEHICLE_ID, "机械臂车", true),
+		_capability_line(VehicleManagerScript.TRANSPORT_VEHICLE_ID, "运输车", false),
 	]
 
 
@@ -118,9 +118,9 @@ func _step_title(step: int) -> String:
 
 func _step_body(step: int) -> String:
 	match step:
-		TutorialScript.Step.SELECT_ARM: return "左键点击机械臂小车。HUD 会显示当前车辆状态。"
+		TutorialScript.Step.SELECT_ARM: return "左键点击机械臂小车。状态面板会显示当前车辆状态。"
 		TutorialScript.Step.MANUAL_PICKUP: return "M 选择方块堆旁目标格；A/D 每次旋转 90°；C 抓取。"
 		TutorialScript.Step.MANUAL_DROP: return "移动到标准箱旁并按 C 放入方块。提示：可从上方灵动岛切换倍速。"
-		TutorialScript.Step.PROGRAM_RUN: return "打开右侧 PROGRAM，用 Arm 的 MoveTo + Rotate + GrabDrop 完成一次真实装箱。"
-		TutorialScript.Step.MULTI_VEHICLE: return "在同一成功装箱程序加入 Transport MoveTo；每条命令显式写 vehicle_id。"
-		_: return "五个教学目标均已完成；场景最终目标仍是填满 StandardBox。"
+		TutorialScript.Step.PROGRAM_RUN: return "打开右侧程序面板，用机械臂车的移动、旋转和抓放命令完成一次真实装箱。"
+		TutorialScript.Step.MULTI_VEHICLE: return "在同一成功装箱程序中加入运输车移动命令；每条命令都显式指定车辆 ID。"
+		_: return "五个教学目标均已完成；场景最终目标仍是填满标准箱。"

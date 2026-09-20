@@ -83,7 +83,7 @@ func _validate_repeat(
 		return
 	var target_type := int(program.get_statement(target_index).get("type", -1))
 	if target_type != ProgramScript.StatementType.MOVE_TO and target_type != ProgramScript.StatementType.GRAB_DROP and target_type != ProgramScript.StatementType.ROTATE:
-		diagnostics.append(_diagnostic(&"invalid_repeat_target", "Repeat target must reference an earlier vehicle statement.", index))
+		diagnostics.append(_diagnostic(&"invalid_repeat_target", "重复目标必须指向之前的车辆命令。", index))
 		return
 	for nested_index in range(target_index, index):
 		if int(program.get_statement(nested_index).get("type", -1)) == ProgramScript.StatementType.REPEAT:
@@ -103,7 +103,7 @@ func _validate_execution_budget(program: Scene01Program, diagnostics: Array[Dict
 		var repeat_count := int(statement.get("repeat_count", 1))
 		expanded_steps += (repeat_count - 1) * (index - target_index + 1)
 		if expanded_steps > MAX_EXPANDED_STEPS:
-			diagnostics.append(_diagnostic(&"program_too_large", "Expanded Program exceeds %d execution steps." % MAX_EXPANDED_STEPS, index))
+			diagnostics.append(_diagnostic(&"program_too_large", "程序展开后超过 %d 个执行步骤。" % MAX_EXPANDED_STEPS, index))
 			return
 
 func _append_requirement(result: Dictionary, vehicle_id: StringName, capability: StringName) -> void:
