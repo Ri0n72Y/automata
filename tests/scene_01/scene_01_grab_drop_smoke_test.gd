@@ -54,7 +54,7 @@ func _run() -> void:
 		return
 
 	_expect_true(selection.select_vehicle(arm), "Arm can be selected.")
-	_test_rotation(controller, selection, arm, transport)
+	await _test_rotation(controller, selection, arm, transport)
 	_test_interface_registry(objects, transport)
 	_test_pile_tray_box(controller, selection, arm, transport, objects)
 	_test_busy_rejection(controller, arm)
@@ -74,10 +74,12 @@ func _test_input_map() -> void:
 func _test_rotation(controller, selection, arm, transport) -> void:
 	arm.reset_actor()
 	var original: int = arm.runtime_state.facing
-	_expect_true(controller.rotate_selected_arm(-1), "Waiting arm rotates counterclockwise.")
-	_expect_equal(arm.runtime_state.facing, posmod(original - 1, 4), "CCW updates facing.")
-	_expect_true(controller.rotate_selected_arm(1), "Waiting arm rotates clockwise.")
-	_expect_equal(arm.runtime_state.facing, original, "Opposite rotations restore facing.")
+	_expect_true(controller.rotate_selected_arm(-1), "Waiting arm starts counterclockwise rotation.")
+	await _wait_for_turn(arm)
+	_expect_equal(arm.runtime_state.facing, posmod(original - 1, 4), "CCW updates facing after its animation.")
+	_expect_true(controller.rotate_selected_arm(1), "Waiting arm starts clockwise rotation.")
+	await _wait_for_turn(arm)
+	_expect_equal(arm.runtime_state.facing, original, "Opposite rotations restore facing after their animations.")
 
 	_expect_true(selection.select_vehicle(transport), "Transport can be selected.")
 	var transport_facing: int = transport.runtime_state.facing
@@ -200,6 +202,14 @@ func _move_command(target: Vector2i, path: Array[Vector2i]) -> MoveCommandScript
 		_expect_true(false, "Collision MoveCommand configures.")
 		return null
 	return command
+
+
+func _wait_for_turn(vehicle) -> void:
+	var frames := 0
+	while vehicle.is_turning() and frames < 120:
+		await physics_frame
+		frames += 1
+	_expect_true(frames < 120, "Turn animation should complete.")
 
 
 func _place_vehicle(vehicle, anchor: Vector2i, facing: int) -> void:

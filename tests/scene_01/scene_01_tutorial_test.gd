@@ -158,16 +158,24 @@ func _append_grab(program: Scene01Program, vehicle_id: StringName) -> void:
 func _drive_program() -> void:
 	var frames := 0
 	while runner.get_state() == RunnerScript.STATE_RUNNING and frames < 2400:
-		await physics_frame
+		move_controller._physics_process(0.05)
+		grab_drop._physics_process(0.05)
+		await process_frame
 		frames += 1
 	_expect_true(frames < 2400, "Program should reach a terminal state without hanging.")
-	_expect_equal(runner.get_state(), RunnerScript.STATE_COMPLETED, "Tutorial Program fixture should complete successfully.")
+	_expect_equal(
+		runner.get_state(),
+		RunnerScript.STATE_COMPLETED,
+		"Tutorial Program fixture should complete successfully; last error: %s." % String(runner.get_last_error())
+	)
 
 
 func _wait_for_vehicle(vehicle, target: Vector2i) -> void:
 	var frames := 0
 	while vehicle.runtime_state.anchor_cell != target and frames < 1200:
-		await physics_frame
+		move_controller._physics_process(0.05)
+		if frames % 20 == 0:
+			await process_frame
 		frames += 1
 	_expect_true(frames < 1200, "Vehicle should reach Tutorial target without hanging.")
 	_expect_equal(vehicle.runtime_state.anchor_cell, target, "Vehicle should reach Tutorial target %s." % str(target))
@@ -179,7 +187,8 @@ func _turn_arm_to(target_facing: int) -> void:
 		_expect_true(bool(grab_drop.call("rotate_selected_arm", 1)), "Manual facing should use the shared clockwise turn owner.")
 		var frames := 0
 		while arm.is_turning() and frames < 120:
-			await physics_frame
+			grab_drop._physics_process(0.05)
+			await process_frame
 			frames += 1
 		_expect_true(frames < 120, "Manual turn animation should complete.")
 		turns += 1

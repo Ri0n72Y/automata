@@ -106,9 +106,14 @@ func _run() -> void:
 	)
 
 	test.expect_true(grab_drop_controller.rotate_selected_arm(1), "Arm should rotate away from the pile.")
+	var turn_frames := 0
+	while arm.is_turning() and turn_frames < 120:
+		await physics_frame
+		turn_frames += 1
+	test.expect_true(turn_frames < 120, "HUD rotation fixture should complete.")
 	test.expect_true(
 		commands_label.text.find("C 抓放 无有效交互目标") >= 0,
-		"Facing changes should refresh GrabDrop availability immediately."
+		"Completed facing changes should refresh GrabDrop availability."
 	)
 
 	test.expect_true(bool(selection.call("select_vehicle", transport)), "Transport should be selectable for capability feedback.")

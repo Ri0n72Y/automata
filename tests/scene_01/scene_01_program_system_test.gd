@@ -94,7 +94,7 @@ func _test_production_runner() -> void:
 	var rotate_index := rotate_program.append_statement(ProgramScript.StatementType.ROTATE)
 	rotate_program.set_statement_vehicle(rotate_index, &"arm_vehicle")
 	rotate_program.set_turn_direction(rotate_index, -1)
-	var facing_before_rotate := arm.runtime_state.facing
+	var facing_before_rotate: int = arm.runtime_state.facing
 	_expect_true(runner.start_program(rotate_program), "Relative Rotate program should start through the shared command path.")
 	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_RUNNING, "Rotate must consume simulation time instead of completing synchronously.")
 	var rotate_frames := 0

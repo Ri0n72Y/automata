@@ -32,11 +32,13 @@ func _ready() -> void:
 	_skip_button.pressed.connect(_tutorial.skip_tutorial)
 	_reopen_button.pressed.connect(_tutorial.reopen_tutorial)
 	_tutorial.presentation_changed.connect(_refresh)
+	_observable.configured.connect(_refresh)
 	_observable.standard_box_count_changed.connect(func(_a, _b): _refresh())
 	_root.lifecycle_state_changed.connect(func(_a, _b): _refresh())
 	get_viewport().size_changed.connect(_apply_left_rail_layout)
 	_apply_left_rail_layout()
 	_refresh()
+	call_deferred("_refresh")
 
 
 func _apply_left_rail_layout() -> void:
