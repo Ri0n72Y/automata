@@ -46,7 +46,7 @@ func _refresh() -> void:
 		return
 	var step := _tutorial.get_step()
 	var progress_step := _tutorial.get_progress_step()
-	_progress_label.text = "完成" if progress_step == TutorialScript.Step.DONE else "步骤 %d / %d" % [step + 1, TutorialScript.Step.DONE]
+	_progress_label.text = "完成" if step == TutorialScript.Step.DONE else "步骤 %d / %d" % [step + 1, TutorialScript.Step.DONE]
 	_title_label.text = _step_title(step)
 	_body_label.text = _step_body(step)
 	_capability_label.text = _capability_summary()

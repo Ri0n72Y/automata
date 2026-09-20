@@ -17,8 +17,10 @@ var move_controller: Node
 var grab_drop: Node
 var object_manager: Node
 var capability_label: Label
+var progress_label: Label
 var previous_button: Button
 var next_button: Button
+var skip_button: Button
 
 func _init() -> void:
 	call_deferred("_run")
@@ -53,10 +55,12 @@ func _bind_scene() -> void:
 	grab_drop = scene.get_node_or_null("SceneRoot/GridRoot/VehicleGrabDropController")
 	object_manager = scene.get_node_or_null("SceneRoot/ObjectRoot/Scene01ObjectManager")
 	capability_label = scene.get_node_or_null("TutorialUIRoot/RootControl/TutorialPanel/Margin/VBox/CapabilityLabel") as Label
+	progress_label = scene.get_node_or_null("TutorialUIRoot/RootControl/TutorialPanel/Margin/VBox/Header/ProgressLabel") as Label
 	previous_button = scene.get_node_or_null("TutorialUIRoot/RootControl/TutorialPanel/Margin/VBox/ButtonRow/PreviousButton") as Button
 	next_button = scene.get_node_or_null("TutorialUIRoot/RootControl/TutorialPanel/Margin/VBox/ButtonRow/NextButton") as Button
+	skip_button = scene.get_node_or_null("TutorialUIRoot/RootControl/TutorialPanel/Margin/VBox/ButtonRow/SkipButton") as Button
 	arm = manager.get_vehicle_by_id(ManagerScript.ARM_VEHICLE_ID) if manager != null else null
-	_expect_true(tutorial != null and arm != null and previous_button != null and next_button != null, "Tutorial owner and navigation controls should exist.")
+	_expect_true(tutorial != null and arm != null and progress_label != null and previous_button != null and next_button != null and skip_button != null, "Tutorial owner and navigation controls should exist.")
 
 func _test_navigation_and_compile_projection() -> void:
 	_expect_equal(tutorial.get_step(), TutorialScript.Step.SELECT_ARM, "Tutorial view should start at step 1.")
@@ -106,14 +110,14 @@ func _test_event_driven_manual_progression() -> void:
 	tutorial.previous_step()
 	_expect_equal(tutorial.get_step(), TutorialScript.Step.MANUAL_DROP, "Player should be able to review Manual Drop after Program is unlocked.")
 	_expect_equal(tutorial.get_progress_step(), TutorialScript.Step.PROGRAM_RUN, "Review navigation must not change Program progress.")
-	next_button.pressed.emit()
-	_expect_equal(tutorial.get_step(), TutorialScript.Step.PROGRAM_RUN, "Next should return to the unlocked Program frontier.")
 	_expect_true(scene.call("reset_scene_state"), "Lifecycle Reset should remain the gameplay reset path.")
 	await process_frame
-	_expect_equal(tutorial.get_step(), TutorialScript.Step.PROGRAM_RUN, "Reset must preserve Tutorial view instead of resetting coaching.")
-	_expect_equal(tutorial.get_progress_step(), TutorialScript.Step.PROGRAM_RUN, "Reset must preserve Tutorial progress.")
+	_expect_equal(tutorial.get_step(), TutorialScript.Step.MANUAL_DROP, "Reset must preserve an older Tutorial review page.")
+	_expect_equal(tutorial.get_progress_step(), TutorialScript.Step.PROGRAM_RUN, "Reset must preserve the independently unlocked Tutorial progress.")
 	_expect_true(tutorial.is_visible(), "Reset must preserve Tutorial visibility.")
 	_expect_equal(object_manager.get_standard_box().get_current_count(), 3, "Reset should still restore gameplay truth independently.")
+	next_button.pressed.emit()
+	_expect_equal(tutorial.get_step(), TutorialScript.Step.PROGRAM_RUN, "Next should return to the unlocked Program frontier after Reset.")
 
 func _test_program_progression() -> void:
 	var pickup_only := ProgramScript.new()
@@ -139,10 +143,14 @@ func _test_program_progression() -> void:
 	await _drive_program()
 	_expect_equal(tutorial.get_progress_step(), TutorialScript.Step.DONE, "Program completion must advance real progress independently of the viewed page.")
 	_expect_equal(tutorial.get_step(), TutorialScript.Step.PROGRAM_RUN, "Progress events should not yank the player away from an older review page.")
+	_expect_equal(progress_label.text, "步骤 4 / 5", "Completed progress while reviewing Program should still label the viewed page.")
+	_expect_equal(skip_button.text, "跳过教学", "Completed progress while reviewing an older page should keep page-local navigation copy.")
 	next_button.pressed.emit()
 	_expect_equal(tutorial.get_step(), TutorialScript.Step.MULTI_VEHICLE, "Next should browse forward through already unlocked pages.")
 	next_button.pressed.emit()
 	_expect_equal(tutorial.get_step(), TutorialScript.Step.DONE, "Next should reach DONE only after DONE was unlocked by gameplay.")
+	_expect_equal(progress_label.text, "完成", "DONE view should switch the Tutorial page label to completion.")
+	_expect_equal(skip_button.text, "关闭教学", "DONE view should expose completion-specific close copy.")
 	_expect_true(scene.call("reset_scene_state"), "Reset should preserve completed Tutorial state.")
 	await process_frame
 	_expect_equal(tutorial.get_progress_step(), TutorialScript.Step.DONE, "Reset must preserve completed progress.")

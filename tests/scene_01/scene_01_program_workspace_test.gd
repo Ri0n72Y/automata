@@ -107,7 +107,7 @@ func _run() -> void:
 	move_key.pressed = true
 	Input.parse_input_event(move_key)
 	await process_frame
-	_expect_true(bool(grid_selection.get("_live_target_mode")), "After focus release, a real M key event should reach gameplay and activate move targeting.")
+	_expect_true(bool(grid_selection.call("is_live_target_mode")), "After focus release, a real M key event should reach gameplay and activate move targeting.")
 	target_x.value = 4
 	target_y.value = 5
 	add_move.emit_signal("pressed")
