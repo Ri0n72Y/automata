@@ -20,6 +20,7 @@ var grab_drop: Node
 var object_manager: Node
 var goal_label: Label
 var next_button: Button
+var command_trace: Array[String] = []
 
 
 func _init() -> void:
@@ -57,6 +58,7 @@ func _bind_scene() -> void:
 	goal_label = scene.get_node_or_null("TutorialUIRoot/RootControl/TutorialPanel/Margin/VBox/GoalLabel") as Label
 	next_button = scene.get_node_or_null("TutorialUIRoot/RootControl/TutorialPanel/Margin/VBox/ButtonRow/NextButton") as Button
 	arm = manager.get_vehicle_by_id(ManagerScript.ARM_VEHICLE_ID) if manager != null else null
+	runner.command_started.connect(_on_command_trace)
 	_expect_true(tutorial != null and runner != null and arm != null and goal_label != null and next_button != null, "Tutorial owner and minimal presentation controls should exist.")
 
 
@@ -166,15 +168,22 @@ func _drive_program() -> void:
 	_expect_equal(
 		runner.get_state(),
 		RunnerScript.STATE_COMPLETED,
-		"Tutorial Program fixture should complete successfully; last error=%s pc=%d anchor=%s facing=%d cargo=%s."
+		"Tutorial Program fixture should complete successfully; last error=%s pc=%d anchor=%s facing=%d cargo=%s trace=%s."
 		% [
 			String(runner.get_last_error()),
 			runner.get_current_statement_index(),
 			str(arm.runtime_state.anchor_cell),
 			int(arm.runtime_state.facing),
 			str(arm.runtime_state.arm_has_item),
+			str(command_trace),
 		]
 	)
+
+
+func _on_command_trace(statement_index: int, command_type: int, vehicle_id: StringName) -> void:
+	var vehicle = manager.get_vehicle_by_id(vehicle_id)
+	var facing := -1 if vehicle == null or vehicle.runtime_state == null else int(vehicle.runtime_state.facing)
+	command_trace.append("%d:%d:%d" % [statement_index, command_type, facing])
 
 
 func _wait_for_vehicle(vehicle, target: Vector2i) -> void:
