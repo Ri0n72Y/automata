@@ -35,7 +35,7 @@ No new global UI coordinator, layout manager, duplicated authoring state, compat
 
 Ownership remains:
 
-- `Scene01Tutorial`: tutorial progress/history only.
+- `Scene01Tutorial`: owns Tutorial `progress_step`, presentation-only `view_step`, visibility, and the current Program session's minimal attribution profile.
 - `Scene01TutorialUI`: tutorial presentation only.
 - `Scene01ManualControls`: manual guide presentation + existing input ownership.
 - `Scene01HUD`: current gameplay status presentation.
@@ -355,9 +355,16 @@ Program rail widths are the tiers defined above: 360 / 400 / 460 px. The command
 
 Tutorial exposes explicit **上一步 / 下一步** browsing controls.
 
-Lifecycle Reset resets gameplay and Program runtime state but does **not** reset Tutorial step or Tutorial visibility. Tutorial progress is presentation/history state owned by `Scene01Tutorial`.
+Tutorial has two different step semantics, both owned by `Scene01Tutorial`:
 
-Automatic Tutorial advancement is event-driven only. It reacts to the expected action event for the current step, for example:
+- `progress_step`: the furthest Tutorial stage unlocked by real gameplay actions.
+- `view_step`: the page the player is currently reading.
+
+Only expected gameplay action events may advance `progress_step`. Previous / Next modify only `view_step`, and Next cannot browse past `progress_step`. When an action advances progress while the player is viewing the current frontier, `view_step` follows the new frontier. When the player is reviewing an older page, progress may still advance without moving `view_step`.
+
+Lifecycle Reset resets gameplay and Program runtime state but preserves Tutorial `progress_step`, `view_step`, and visibility. Reopen also preserves both step values.
+
+Automatic Tutorial advancement is event-driven only. It reacts to the expected action event for the current `progress_step`, for example:
 
 - Arm selection event: SELECT_ARM -> MANUAL_PICKUP.
 - real manual Arm pickup event: MANUAL_PICKUP -> MANUAL_DROP.
@@ -365,7 +372,7 @@ Automatic Tutorial advancement is event-driven only. It reacts to the expected a
 - successful Program-owned delivery event: PROGRAM_RUN -> MULTI_VEHICLE.
 - successful delivery session that also contains Transport MoveTo: MULTI_VEHICLE -> DONE.
 
-Tutorial reopening, Reset, or reading current scene snapshots must not infer/catch up Tutorial progress.
+Tutorial reopening, Reset, Previous / Next browsing, or reading current scene snapshots must not infer or advance `progress_step`.
 
 ### Code editor focus
 
