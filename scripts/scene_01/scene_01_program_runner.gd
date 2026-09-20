@@ -26,7 +26,7 @@ var _compile_gate: CompileGateScript
 var _program: Scene01Program
 var _state := STATE_IDLE
 var _pc := 0
-var _waiting_for_move := false
+var _waiting_for_command := false
 var _repeat_remaining: Dictionary = {}
 var _requirements_vehicle_ids: Array[StringName] = []
 var _last_error: StringName = &""
@@ -39,8 +39,9 @@ func _ready() -> void:
 		get_node("../GridRoot/VehicleGrabDropController") as GrabDropControllerScript,
 		_vehicle_manager
 	)
-	_command_executor.move_completed.connect(_on_move_completed)
+	_command_executor.move_completed.connect(_on_command_completed)
 	_command_executor.move_blocked.connect(_on_move_blocked)
+	_command_executor.turn_completed.connect(_on_command_completed)
 	_scene_controller.lifecycle_state_changed.connect(_on_lifecycle_state_changed)
 	_scene_controller.lifecycle_reset_completed.connect(_on_lifecycle_reset_completed)
 func start_program(program: Scene01Program) -> bool:
@@ -85,7 +86,7 @@ func _prepare_runtime(restore_baseline_on_failure: bool) -> bool:
 		reason = &"program_capability_rejected"
 	return _fail_start(reason)
 func _drain_until_wait() -> void:
-	while _state == STATE_RUNNING and not _waiting_for_move:
+	while _state == STATE_RUNNING and not _waiting_for_command:
 		if not _scene_controller.is_gameplay_running():
 			return
 		if _pc >= _program.get_statement_count():
@@ -99,12 +100,12 @@ func _execute_statement() -> void:
 		return
 	var statement_type := int(statement.get("type", -1))
 	statement_started.emit(_pc, statement_type)
-	if statement_type == ProgramScript.StatementType.MOVE_TO or statement_type == ProgramScript.StatementType.GRAB_DROP or statement_type == ProgramScript.StatementType.FACE:
+	if statement_type == ProgramScript.StatementType.MOVE_TO or statement_type == ProgramScript.StatementType.GRAB_DROP or statement_type == ProgramScript.StatementType.ROTATE:
 		command_started.emit(_pc, statement_type, StringName(statement.get("vehicle_id", &"")))
 	match statement_type:
 		ProgramScript.StatementType.MOVE_TO: _execute_move(statement)
 		ProgramScript.StatementType.GRAB_DROP: _execute_grab_drop(statement)
-		ProgramScript.StatementType.FACE: _execute_face(statement)
+		ProgramScript.StatementType.ROTATE: _execute_rotate(statement)
 		ProgramScript.StatementType.REPEAT: _execute_repeat(statement)
 		_: _fail_execution(_pc, &"invalid_runtime_statement")
 func _execute_move(statement: Dictionary) -> void:
@@ -112,16 +113,17 @@ func _execute_move(statement: Dictionary) -> void:
 	if not bool(result.get("ok", false)):
 		_fail_execution(_pc, StringName(result.get("reason", &"move_rejected")))
 		return
-	_waiting_for_move = bool(result.get("waiting", false))
-	if not _waiting_for_move:
+	_waiting_for_command = bool(result.get("waiting", false))
+	if not _waiting_for_command:
 		_pc += 1
-func _execute_face(statement: Dictionary) -> void:
-	var result := _command_executor.execute_face(statement)
+func _execute_rotate(statement: Dictionary) -> void:
+	var result := _command_executor.execute_rotate(statement)
 	if not bool(result.get("ok", false)):
-		_fail_execution(_pc, StringName(result.get("reason", &"face_rejected")))
+		_fail_execution(_pc, StringName(result.get("reason", &"turn_rejected")))
 		return
-	_pc += 1
-
+	_waiting_for_command = bool(result.get("waiting", false))
+	if not _waiting_for_command:
+		_pc += 1
 func _execute_grab_drop(statement: Dictionary) -> void:
 	var result := _command_executor.execute_grab_drop(statement)
 	if not bool(result.get("ok", false)):
@@ -136,21 +138,21 @@ func _execute_repeat(statement: Dictionary) -> void:
 		return
 	_repeat_remaining.erase(_pc)
 	_pc += 1
-func _on_move_completed() -> void:
-	if _state != STATE_RUNNING or not _waiting_for_move:
+func _on_command_completed() -> void:
+	if _state != STATE_RUNNING or not _waiting_for_command:
 		return
-	_waiting_for_move = false
+	_waiting_for_command = false
 	_pc += 1
 	call_deferred("_drain_until_wait")
 func _on_move_blocked() -> void:
-	if _state == STATE_RUNNING and _waiting_for_move:
+	if _state == STATE_RUNNING and _waiting_for_command:
 		_fail_execution(_pc, &"move_blocked")
 func _on_lifecycle_state_changed(_previous_state: int, _current_state: int) -> void:
-	if _state == STATE_RUNNING and not _waiting_for_move and _scene_controller.is_gameplay_running():
+	if _state == STATE_RUNNING and not _waiting_for_command and _scene_controller.is_gameplay_running():
 		call_deferred("_drain_until_wait")
 func _complete_execution() -> void:
 	_state = STATE_COMPLETED
-	_waiting_for_move = false
+	_waiting_for_command = false
 	_last_error = &""
 	_command_executor.cancel()
 	execution_completed.emit()
@@ -161,7 +163,7 @@ func _fail_start(
 ) -> bool:
 	_state = STATE_FAILED
 	_last_error = reason
-	_waiting_for_move = false
+	_waiting_for_command = false
 	_command_executor.cancel()
 	_clear_requirements()
 	if restore_baseline_on_failure:
@@ -171,7 +173,7 @@ func _fail_start(
 func _fail_execution(statement_index: int, reason: StringName) -> void:
 	_state = STATE_FAILED
 	_last_error = reason
-	_waiting_for_move = false
+	_waiting_for_command = false
 	_command_executor.cancel()
 	execution_failed.emit(statement_index, reason)
 func _restore_baseline_publication() -> void:
@@ -186,7 +188,7 @@ func _clear_execution(emit_reset: bool) -> void:
 	_program = null
 	_state = STATE_IDLE
 	_pc = 0
-	_waiting_for_move = false
+	_waiting_for_command = false
 	_repeat_remaining.clear()
 	_last_error = &""
 	if emit_reset:

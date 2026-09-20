@@ -53,6 +53,10 @@ func _process(_delta: float) -> void:
 	refresh_interaction_preview()
 
 
+func _physics_process(delta: float) -> void:
+	_advance_turns(maxf(delta, 0.0))
+
+
 func configure(
 	p_vehicle_selection_controller: VehicleSelectionControllerScript,
 	p_vehicle_manager: Scene01VehicleManagerScript,
@@ -99,6 +103,13 @@ func request_vehicle_grab_drop(vehicle: VehicleActorScript) -> GrabDropResultScr
 			missing_vehicle_result.status
 		)
 		return missing_vehicle_result
+	if vehicle.is_turning():
+		var busy_result := GrabDropResultScript.rejected(
+			GrabDropResultScript.Action.DROP if vehicle.runtime_state.arm_has_item else GrabDropResultScript.Action.GRAB,
+			GrabDropResultScript.Status.BUSY
+		)
+		grab_drop_completed.emit(vehicle.get_vehicle_id(), busy_result.action, busy_result.status)
+		return busy_result
 	var target: Variant = resolve_target_for_vehicle(vehicle)
 	var result := _command.execute(vehicle.runtime_state, target)
 	vehicle.sync_from_state()
@@ -107,24 +118,35 @@ func request_vehicle_grab_drop(vehicle: VehicleActorScript) -> GrabDropResultScr
 	return result
 
 
-func request_vehicle_facing(vehicle: VehicleActorScript, target_facing: int) -> bool:
-	if not _can_rotate(vehicle) or target_facing < 0 or target_facing > 3:
+func request_vehicle_turn(vehicle: VehicleActorScript, direction: int) -> bool:
+	if not _can_rotate(vehicle):
 		return false
-	if vehicle.runtime_state.facing == target_facing:
-		return true
-	vehicle.runtime_state.facing = target_facing
-	vehicle.sync_from_state()
+	var step := clampi(direction, -1, 1)
+	if step == 0 or not vehicle.start_turn(step):
+		return false
+	var completed_callable := Callable(self, "_on_vehicle_turn_completed").bind(vehicle)
+	if not vehicle.turn_completed.is_connected(completed_callable):
+		vehicle.turn_completed.connect(completed_callable, CONNECT_ONE_SHOT)
 	refresh_interaction_preview()
-	facing_changed.emit(vehicle.get_vehicle_id(), target_facing)
 	return true
 
 
 func rotate_selected_arm(direction: int) -> bool:
-	var vehicle := _get_selected_vehicle()
-	var step := clampi(direction, -1, 1)
-	if step == 0 or vehicle == null or vehicle.runtime_state == null:
-		return false
-	return request_vehicle_facing(vehicle, posmod(vehicle.runtime_state.facing + step, 4))
+	return request_vehicle_turn(_get_selected_vehicle(), direction)
+
+
+func _advance_turns(delta: float) -> void:
+	if vehicle_manager == null or delta <= 0.0:
+		return
+	for vehicle_node in vehicle_manager.get_vehicles():
+		var vehicle := vehicle_node as VehicleActorScript
+		if vehicle != null and vehicle.is_turning():
+			vehicle.advance_turn(delta)
+
+
+func _on_vehicle_turn_completed(facing: int, vehicle: VehicleActorScript) -> void:
+	facing_changed.emit(vehicle.get_vehicle_id(), facing)
+	refresh_interaction_preview()
 
 
 func resolve_target_for_vehicle(vehicle: VehicleActorScript) -> Variant:
@@ -362,7 +384,8 @@ func _can_rotate(vehicle: VehicleActorScript) -> bool:
 	if not vehicle.definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_GRAB):
 		return false
 	return (
-		vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
+		not vehicle.is_turning()
+		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
 		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
 	)
 
@@ -375,7 +398,8 @@ func _can_preview(vehicle: VehicleActorScript) -> bool:
 	if _is_move_target_mode_active():
 		return false
 	return (
-		vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
+		not vehicle.is_turning()
+		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
 		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
 	)
 

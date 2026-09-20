@@ -35,7 +35,7 @@ No new global UI coordinator, layout manager, duplicated authoring state, compat
 
 Ownership remains:
 
-- `Scene01Tutorial`: owns Tutorial `progress_step`, presentation-only `view_step`, visibility, and the current Program session's minimal attribution profile.
+- `Scene01Tutorial`: owns five independent Tutorial goal-completion flags, presentation-only `view_step`, visibility, and the current Program session's minimal attribution profile.
 - `Scene01TutorialUI`: tutorial presentation only.
 - `Scene01ManualControls`: manual guide presentation + existing input ownership.
 - `Scene01HUD`: current gameplay status presentation.
@@ -134,10 +134,12 @@ Target:
 Content order:
 
 ```text
-SCENE 01 · 教学          步骤 n / 5
-Step title
+SCENE 01 · 教学          目标 n / 5
+Page title
 
 Short instruction, approximately <= 3 lines.
+本页目标：...（0/1）
+场景目标：填满 StandardBox（current/8）
 
 模板能力
 Arm        编译通过 · 可移动 · 可抓取
@@ -220,8 +222,8 @@ Vehicle       [Arm Vehicle]
 
 MoveTo        X [ ]  Y [ ]
               [+ MoveTo]
-
-Face          [West] [+ Face]
+────────────────────────────
+Rotate        [Clockwise ▼] [+ Rotate 90°]
 
               [+ GrabDrop]
 
@@ -304,7 +306,7 @@ Expected files:
 
 Do not modify unless a direct blocker is demonstrated:
 
-- Program parser / validator / preflight / runner. **Exception accepted 2026-09-19:** the player walkthrough demonstrated that MoveTo + GrabDrop cannot complete the taught packing task without programmable facing, so the minimal absolute `Face` statement is allowed through the existing Program chain.
+- Program parser / validator / preflight / runner. **Exception updated 2026-09-20:** the player walkthrough requires programmable relative 90° rotation with visible simulation-time cost, so the minimal `Rotate` statement is allowed through the existing Program and shared manual rotation chain.
 - Lifecycle.
 - Scoring.
 - Vehicle selection / move / grab-drop domain logic.
@@ -327,7 +329,7 @@ This layout patch is ready for #21 walkthrough when all are true:
 - Add Command does not hold a second Program state.
 - HUD remains readable.
 - Central gameplay mouse interaction is not blocked by transparent controls.
-- No gameplay / scoring / lifecycle behavior changes. Program execution changes are limited to the accepted absolute `Face` statement described below.
+- No unrelated gameplay / scoring / lifecycle behavior changes. Program execution changes are limited to the accepted relative `Rotate` command and its shared turn animation described below.
 
 ## 13. Definition of Done
 
@@ -339,9 +341,9 @@ Implementation is complete only when:
 4. Any further visual-system work is deferred to #58 rather than added to this patch.
 
 
-## 14. Player-walkthrough delta — 2026-09-19
+## 14. Player-walkthrough delta — 2026-09-19 / 2026-09-20
 
-The first graphical walkthrough exposed six direct blockers. These are accepted as part of this spec and do not expand into #58 or #62.
+The graphical walkthrough exposed direct player-facing blockers. These are accepted here without expanding into #58 or #62.
 
 ### Disclosure controls
 
@@ -349,48 +351,59 @@ Scene 01 expand/collapse controls use `+` for collapsed and `−` for expanded. 
 
 ### Program rail / builder
 
-Program rail widths are the tiers defined above: 360 / 400 / 460 px. The command builder lives inside its own vertical `ScrollContainer`, so Repeat and later controls remain reachable without increasing rail height.
+Program rail widths remain 360 / 400 / 460 px. The command builder lives inside its own vertical `ScrollContainer`.
 
-### Tutorial navigation and persistence
+MoveTo and Rotate are visually separated by a divider because MoveTo uses a multi-row parameter block while Rotate is a compact single-row command.
 
-Tutorial exposes explicit **上一步 / 下一步** browsing controls.
+### Tutorial navigation and goals
 
-Tutorial has two different step semantics, both owned by `Scene01Tutorial`:
+Tutorial pages are help/presentation, not an unlock chain. `Scene01Tutorial` owns only presentation `view_step` plus five independent historical goal flags:
 
-- `progress_step`: the furthest Tutorial stage unlocked by real gameplay actions.
-- `view_step`: the page the player is currently reading.
+1. select Arm;
+2. manually pick up a block;
+3. increase StandardBox count by one manually;
+4. complete one Program-owned StandardBox delivery;
+5. complete a successful delivery Program that also contains Transport MoveTo.
 
-Only expected gameplay action events may advance `progress_step`. Previous / Next modify only `view_step`, and Next cannot browse past `progress_step`. When an action advances progress while the player is viewing the current frontier, `view_step` follows the new frontier. When the player is reviewing an older page, progress may still advance without moving `view_step`.
+There is no prerequisite ordering among these five goals. A real gameplay event completes the matching goal whenever it occurs. Previous / Next only browse the five teaching pages. The final DONE page becomes reachable at 5/5.
 
-Lifecycle Reset resets gameplay and Program runtime state but preserves Tutorial `progress_step`, `view_step`, and visibility. Reopen also preserves both step values.
+Tutorial copy must expose explicit task progress such as `箱子计数 +1（0/1）` and the live scene goal `填满 StandardBox（4/8）`. The manual packing page includes the tip that simulation speed can be changed from the top lifecycle island.
 
-Automatic Tutorial advancement is event-driven only. It reacts to the expected action event for the current `progress_step`, for example:
+Lifecycle Reset resets gameplay and Program runtime state but preserves Tutorial goal history, current `view_step`, and visibility. Reopen and Skip do not mutate goal truth. Tutorial may read current ObservableState only for presentation such as `current/8`; snapshots must never complete historical goals.
 
-- Arm selection event: SELECT_ARM -> MANUAL_PICKUP.
-- real manual Arm pickup event: MANUAL_PICKUP -> MANUAL_DROP.
-- StandardBox count increment event: MANUAL_DROP -> PROGRAM_RUN.
-- successful Program-owned delivery event: PROGRAM_RUN -> MULTI_VEHICLE.
-- successful delivery session that also contains Transport MoveTo: MULTI_VEHICLE -> DONE.
+### Code editor focus and canonical namespace
 
-Tutorial reopening, Reset, Previous / Next browsing, or reading current scene snapshots must not infer or advance `progress_step`.
+A left mouse click outside the Program rail releases GUI focus from CodeEdit so gameplay keyboard commands such as `M` work immediately.
 
-### Code editor focus
-
-A left mouse click outside the Program rail releases GUI focus from the CodeEdit/editor. This restores gameplay keyboard commands such as `M` without requiring the Program rail to be collapsed and reopened.
-
-### Absolute Face command
-
-DSL v2 gains one minimal command:
+The first source line is the canonical namespace:
 
 ```text
-[arm_vehicle:face] north
-[arm_vehicle:face] east
-[arm_vehicle:face] south
-[arm_vehicle:face] west
+automata_scene01_program 2
 ```
 
-`Face` is absolute rather than relative so Repeat remains deterministic.
+The editor restores/protects this header when an edit attempts to remove it. CodeEdit text remains the only mutable Program authoring truth.
 
-The command must use the existing vehicle facing owner and lifecycle-aware GrabDrop/facing command path; it must not create a second rotation system. `Face` uses the existing interaction/GrabDrop capability contract because the current formal assembly model exposes no separate facing capability.
+Selecting a source line uses the built-in current-line highlight plus a gutter execution marker so the selected line has a visible line-number-area cue without introducing a second selection model.
 
-The command builder may generate `Face` source text, but CodeEdit remains the only mutable authoring truth.
+### Relative Rotate command
+
+DSL v2 uses one relative rotation command:
+
+```text
+[arm_vehicle:rotate] clockwise
+[arm_vehicle:rotate] counterclockwise
+```
+
+Each Rotate is exactly one 90° turn and matches one manual `D` / `A` action respectively. Absolute north/east/south/west facing is not part of the taught Program surface.
+
+Manual A/D and Program Rotate must call the same vehicle-turn owner. Rotation has a short visible simulation-time animation; it is not an instantaneous runtime-state write. Lifecycle pause/speed therefore also applies to rotation. MoveTo and GrabDrop must reject while that shared turn is active rather than overlapping it.
+
+The command builder may generate Rotate source text, but CodeEdit remains the only mutable authoring truth.
+
+### Deferred visual guidance
+
+Execution-preview guidance is explicitly deferred to a separate issue. No path preview, turn preview, GrabDrop preview extension, Repeat teaching layer, or dynamic command documentation is added in PR #63.
+
+### Deferred block-style command assembly
+
+Pin/slot-based command assembly is explicitly deferred to a separate low-priority issue. PR #63 keeps the current text-first builder and does not add scene-picking parameter pins or another Program model.

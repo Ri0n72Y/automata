@@ -4,10 +4,13 @@ extends Node3D
 signal move_started(target_anchor: Vector2i)
 signal move_completed(target_anchor: Vector2i)
 signal move_blocked()
+signal turn_started(direction: int)
+signal turn_completed(facing: int)
 
 const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
 const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 const MoveCommandScript := preload("res://scripts/vehicles/move_command.gd")
+const TURN_DURATION_SECONDS := 0.3
 
 @export var vehicle_selection_layer: int = 2
 @export var use_static_scene_visual: bool = false
@@ -24,6 +27,9 @@ var _debug_label: Label3D
 var _visual_parts: Dictionary = {}
 var _visual_generation: int = 0
 var _segment_progress: float = 0.0
+var _turn_progress: float = 0.0
+var _turn_direction: int = 0
+var _turn_target_facing: int = -1
 
 
 func _ready() -> void:
@@ -81,7 +87,10 @@ func sync_from_state() -> void:
 		_sync_movement_transform()
 	else:
 		global_position = _anchor_to_world(runtime_state.anchor_cell)
-		_sync_actor_basis()
+		if is_turning():
+			_sync_turn_basis()
+		else:
+			_sync_actor_basis()
 	_update_debug_label()
 
 
@@ -152,6 +161,47 @@ func advance_move(delta: float) -> void:
 		_sync_movement_transform()
 
 
+func start_turn(direction: int) -> bool:
+	if definition == null or runtime_state == null or controller == null or is_turning():
+		return false
+	if runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.PLANNING or runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING:
+		return false
+	var step := clampi(direction, -1, 1)
+	if step == 0:
+		return false
+	_turn_direction = step
+	_turn_target_facing = posmod(runtime_state.facing + step, 4)
+	_turn_progress = 0.0
+	_sync_turn_basis()
+	turn_started.emit(step)
+	return true
+
+
+func advance_turn(delta: float) -> void:
+	if not is_turning():
+		return
+	_turn_progress = minf(_turn_progress + maxf(delta, 0.0) / TURN_DURATION_SECONDS, 1.0)
+	_sync_turn_basis()
+	if _turn_progress < 0.999999:
+		return
+	runtime_state.facing = _turn_target_facing
+	var completed_facing := runtime_state.facing
+	_clear_turn()
+	_sync_actor_basis()
+	turn_completed.emit(completed_facing)
+
+
+func is_turning() -> bool:
+	return _turn_direction != 0 and _turn_target_facing >= 0
+
+
+func cancel_turn() -> void:
+	if not is_turning():
+		return
+	_clear_turn()
+	_sync_actor_basis()
+
+
 func cancel_move() -> void:
 	if runtime_state == null or runtime_state.active_move_command == null:
 		return
@@ -167,6 +217,7 @@ func reset_actor() -> void:
 		return
 	set_physics_process(false)
 	_segment_progress = 0.0
+	_clear_turn()
 	runtime_state.reset()
 	sync_from_state()
 
@@ -236,6 +287,24 @@ func _sync_actor_basis() -> void:
 		Vector3.UP,
 		-float(runtime_state.facing) * PI * 0.5
 	)
+
+
+func _sync_turn_basis() -> void:
+	if runtime_state == null or controller == null:
+		return
+	var grid_basis: Basis = controller.call("get_grid_world_basis")
+	var start_angle := -float(runtime_state.facing) * PI * 0.5
+	var target_angle := start_angle - float(_turn_direction) * PI * 0.5
+	global_basis = grid_basis * Basis(
+		Vector3.UP,
+		lerpf(start_angle, target_angle, clampf(_turn_progress, 0.0, 1.0))
+	)
+
+
+func _clear_turn() -> void:
+	_turn_progress = 0.0
+	_turn_direction = 0
+	_turn_target_facing = -1
 
 
 func _finish_move(target_anchor: Vector2i) -> void:

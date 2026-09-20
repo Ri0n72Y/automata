@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_program_ui.gd" id="1_ui"]
 [ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_program_source_editor.gd" id="3_source_editor"]
 
 [node name="ProgramUIRoot" type="CanvasLayer"]
 layer = 4
@@ -102,17 +103,20 @@ theme_override_font_sizes/font_size = 14
 
 [node name="Hint" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent"]
 layout_mode = 2
-text = "[vehicle:moveTo] x y · [vehicle:face] west · [vehicle:grabDrop]"
+text = "[vehicle:moveTo] x y · [vehicle:rotate] clockwise · [vehicle:grabDrop]"
 autowrap_mode = 2
 
 [node name="SourceEditor" type="CodeEdit" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent"]
 unique_name_in_owner = true
+script = ExtResource("3_source_editor")
 custom_minimum_size = Vector2(0, 160)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 placeholder_text = "automata_scene01_program 2"
 wrap_mode = 1
+highlight_current_line = true
+gutters_draw_executing_lines = true
 gutters_draw_line_numbers = true
 gutters_zero_pad_line_numbers = true
 
@@ -183,19 +187,22 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "+ MoveTo"
 
-[node name="FaceRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+[node name="MoveRotateDivider" type="HSeparator" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+layout_mode = 2
+
+[node name="RotateRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="FacingOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/FaceRow"]
+[node name="RotationOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RotateRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="AddFaceButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/FaceRow"]
+[node name="AddRotateButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RotateRow"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "+ Face"
+text = "+ Rotate 90°"
 
 [node name="AddGrabButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true

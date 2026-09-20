@@ -25,7 +25,7 @@ func prepare(
 	for index in range(program.get_statement_count()):
 		var statement := program.get_statement(index)
 		var statement_type := int(statement.get("type", -1))
-		if statement_type != ProgramScript.StatementType.MOVE_TO and statement_type != ProgramScript.StatementType.GRAB_DROP and statement_type != ProgramScript.StatementType.FACE:
+		if statement_type != ProgramScript.StatementType.MOVE_TO and statement_type != ProgramScript.StatementType.GRAB_DROP and statement_type != ProgramScript.StatementType.ROTATE:
 			continue
 		var vehicle_id := StringName(statement.get("vehicle_id", &""))
 		var vehicle := vehicle_manager.get_vehicle_by_id(vehicle_id)

@@ -7,7 +7,7 @@ enum StatementType {
 	MOVE_TO = 1,
 	GRAB_DROP = 2,
 	REPEAT = 3,
-	FACE = 4,
+	ROTATE = 4,
 }
 
 var _statements: Array[Dictionary] = []
@@ -26,7 +26,7 @@ func append_statement(statement_type: int) -> int:
 		"target_anchor": Vector2i(-1, -1),
 		"repeat_count": 1,
 		"repeat_target_index": NO_STATEMENT_INDEX,
-		"facing": -1,
+		"turn_direction": 0,
 	})
 	return _statements.size() - 1
 
@@ -35,7 +35,7 @@ func set_statement_vehicle(index: int, vehicle_id: StringName) -> bool:
 	if not _has_index(index):
 		return false
 	var statement_type := int(_statements[index].get("type", -1))
-	if statement_type != StatementType.MOVE_TO and statement_type != StatementType.GRAB_DROP and statement_type != StatementType.FACE:
+	if statement_type != StatementType.MOVE_TO and statement_type != StatementType.GRAB_DROP and statement_type != StatementType.ROTATE:
 		return false
 	_statements[index]["vehicle_id"] = vehicle_id
 	return true
@@ -48,10 +48,13 @@ func set_move_target(index: int, target_anchor: Vector2i) -> bool:
 	return true
 
 
-func set_facing(index: int, facing: int) -> bool:
-	if not _has_index(index) or int(_statements[index].get("type", -1)) != StatementType.FACE or facing < 0 or facing > 3:
+func set_turn_direction(index: int, direction: int) -> bool:
+	if not _has_index(index) or int(_statements[index].get("type", -1)) != StatementType.ROTATE:
 		return false
-	_statements[index]["facing"] = facing
+	var step := clampi(direction, -1, 1)
+	if step == 0:
+		return false
+	_statements[index]["turn_direction"] = step
 	return true
 
 
@@ -93,5 +96,5 @@ func _is_valid_type(statement_type: int) -> bool:
 		StatementType.MOVE_TO,
 		StatementType.GRAB_DROP,
 		StatementType.REPEAT,
-		StatementType.FACE,
+		StatementType.ROTATE,
 	]

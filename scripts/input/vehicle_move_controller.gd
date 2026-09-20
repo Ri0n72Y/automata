@@ -122,7 +122,7 @@ func request_vehicle_move(vehicle: VehicleActorScript, target_anchor: Vector2i) 
 		_reject(vehicle_id, target_anchor, REJECTION_NO_MOVE_CAPABILITY)
 		_sync_live_target_mode()
 		return false
-	if vehicle.runtime_state == null or not vehicle.runtime_state.begin_move_planning():
+	if vehicle.runtime_state == null or vehicle.is_turning() or not vehicle.runtime_state.begin_move_planning():
 		_reject(vehicle_id, target_anchor, REJECTION_BUSY)
 		refresh_target_preview()
 		return false

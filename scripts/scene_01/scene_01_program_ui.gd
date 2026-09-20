@@ -1,6 +1,7 @@
 class_name Scene01ProgramUI
 extends CanvasLayer
 const SupportScript := preload("res://scripts/scene_01/scene_01_program_workspace_support.gd")
+const SourceEditorScript := preload("res://scripts/scene_01/scene_01_program_source_editor.gd")
 const RunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
 const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
@@ -12,7 +13,7 @@ const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metric
 @onready var _builder_scroll: ScrollContainer = %BuilderScroll
 @onready var _vehicle_option: OptionButton = %VehicleOption
 @onready var _repeat_target_option: OptionButton = %RepeatTargetOption
-@onready var _source_editor: CodeEdit = %SourceEditor
+@onready var _source_editor: SourceEditorScript = %SourceEditor
 @onready var _add_repeat_button: Button = %AddRepeatButton
 @onready var _status_label: Label = %StatusLabel
 @onready var _runner: RunnerScript = get_parent().get_node("SceneRoot/Scene01ProgramRunner") as RunnerScript
@@ -21,7 +22,6 @@ var _support := SupportScript.new()
 var _program: Scene01Program
 var _statement_lines: Array[int] = []
 var _editing_enabled := true
-var _suppress_source_signal := false
 func _ready() -> void:
 	_bind_ui()
 	_bind_runner()
@@ -35,9 +35,9 @@ func _input(event: InputEvent) -> void:
 			get_viewport().gui_release_focus()
 func _initialize_editor() -> void:
 	_populate_vehicles()
-	%FacingOption.clear()
-	for facing in SupportScript.FACING_NAMES:
-		%FacingOption.add_item(String(facing).capitalize())
+	%RotationOption.clear()
+	%RotationOption.add_item("Clockwise · D · +90°")
+	%RotationOption.add_item("Counterclockwise · A · -90°")
 	_set_source_text_internal(SupportScript.HEADER + "\n")
 	_parse_current_source(false)
 func get_program() -> Scene01Program:
@@ -66,9 +66,9 @@ func _bind_ui() -> void:
 	_collapse_button.pressed.connect(func(): set_workspace_collapsed(_expanded_content.visible))
 	%BuilderToggleButton.pressed.connect(func(): set_command_builder_expanded(not _builder_scroll.visible))
 	_vehicle_option.item_selected.connect(func(_index): _status_label.text = "新增命令车辆：%s" % String(_selected_vehicle_id()))
-	_source_editor.text_changed.connect(func(): _parse_current_source(true) if not _suppress_source_signal else null)
+	_source_editor.program_text_changed.connect(func(): _parse_current_source(true))
 	%AddMoveButton.pressed.connect(_on_add_move)
-	%AddFaceButton.pressed.connect(_on_add_face)
+	%AddRotateButton.pressed.connect(_on_add_rotate)
 	%AddGrabButton.pressed.connect(_on_add_grab)
 	_add_repeat_button.pressed.connect(_on_add_repeat)
 	%ClearButton.pressed.connect(_on_clear)
@@ -95,8 +95,8 @@ func _selected_vehicle_id() -> StringName:
 	return &"" if _vehicle_option.item_count <= 0 else StringName(_vehicle_option.get_item_metadata(_vehicle_option.selected))
 func _on_add_move() -> void:
 	_append_source_line("[%s:moveTo] %d %d" % [String(_selected_vehicle_id()), int(%TargetX.value), int(%TargetY.value)])
-func _on_add_face() -> void:
-	_append_source_line("[%s:face] %s" % [String(_selected_vehicle_id()), String(SupportScript.FACING_NAMES[%FacingOption.selected])])
+func _on_add_rotate() -> void:
+	_append_source_line("[%s:rotate] %s" % [String(_selected_vehicle_id()), String(SupportScript.ROTATION_NAMES[%RotationOption.selected])])
 func _on_add_grab() -> void:
 	_append_source_line("[%s:grabDrop]" % String(_selected_vehicle_id()))
 func _on_add_repeat() -> void:
@@ -159,12 +159,7 @@ func _append_source_line(line: String) -> void:
 	_parse_current_source(false)
 	_status_label.text = "已添加：%s" % line
 func _set_source_text_internal(source: String) -> void:
-	_suppress_source_signal = true
-	_source_editor.text = source
-	_suppress_source_signal = false
-	var line_index := maxi(0, _source_editor.get_line_count() - 1)
-	_source_editor.set_caret_line(line_index)
-	_source_editor.set_caret_column(_source_editor.get_line(line_index).length())
+	_source_editor.set_program_text(source)
 func _parse_current_source(show_status: bool) -> Dictionary:
 	var parsed := _support.parse(_source_editor.text)
 	var diagnostics: Array = parsed.get("diagnostics", [])
@@ -189,11 +184,11 @@ func _refresh_repeat_controls() -> void:
 func _set_editing_enabled(enabled: bool) -> void:
 	_editing_enabled = enabled
 	_vehicle_option.disabled = not enabled
-	%FacingOption.disabled = not enabled
+	%RotationOption.disabled = not enabled
 	%TargetX.editable = enabled
 	%TargetY.editable = enabled
 	%RepeatCount.editable = enabled
 	_source_editor.editable = enabled
-	for button in [%AddMoveButton, %AddFaceButton, %AddGrabButton, %ClearButton, %SaveButton, %LoadButton, %ExportButton, %RunButton]:
+	for button in [%AddMoveButton, %AddRotateButton, %AddGrabButton, %ClearButton, %SaveButton, %LoadButton, %ExportButton, %RunButton]:
 		button.disabled = not enabled
 	_refresh_repeat_controls()

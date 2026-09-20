@@ -69,13 +69,17 @@ func _run() -> void:
 
 	var initial_facing: int = arm.runtime_state.facing
 	await _push_key(KEY_A)
+	_expect_true(arm.is_turning(), "Viewport A should start the shared counterclockwise turn animation.")
+	await _wait_for_turn(arm)
 	_expect_equal(
 		arm.runtime_state.facing,
 		posmod(initial_facing - 1, 4),
-		"Viewport A should rotate selected arm counterclockwise."
+		"Viewport A should complete one counterclockwise 90-degree turn."
 	)
 	await _push_key(KEY_D)
-	_expect_equal(arm.runtime_state.facing, initial_facing, "Viewport D should restore clockwise facing.")
+	_expect_true(arm.is_turning(), "Viewport D should start the shared clockwise turn animation.")
+	await _wait_for_turn(arm)
+	_expect_equal(arm.runtime_state.facing, initial_facing, "Viewport D should complete one clockwise 90-degree turn.")
 
 	var pile = object_manager.get_block_pile()
 	var ground_field = object_manager.get_ground_block_field()
@@ -197,6 +201,14 @@ func _key_event(
 	event.alt_pressed = alted
 	event.meta_pressed = metaed
 	return event
+
+
+func _wait_for_turn(vehicle) -> void:
+	var frames := 0
+	while vehicle.is_turning() and frames < 120:
+		await physics_frame
+		frames += 1
+	_expect_true(frames < 120, "Turn animation should complete without hanging.")
 
 
 func _place_vehicle(vehicle, anchor: Vector2i, facing: int) -> void:

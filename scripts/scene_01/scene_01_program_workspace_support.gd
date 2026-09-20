@@ -5,7 +5,7 @@ const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
 const SourceScript := preload("res://scripts/scene_01/scene_01_program_source.gd")
 const SAVE_PATH := "user://scene_01_program.txt"
 const HEADER := SourceScript.HEADER
-const FACING_NAMES := SourceScript.FACING_NAMES
+const ROTATION_NAMES := SourceScript.ROTATION_NAMES
 
 var _source_codec := SourceScript.new()
 
@@ -23,10 +23,10 @@ func repeat_options(program: Scene01Program) -> Array[Dictionary]:
 		if statement_type == ProgramScript.StatementType.REPEAT:
 			result.clear()
 			continue
-		if statement_type != ProgramScript.StatementType.MOVE_TO and statement_type != ProgramScript.StatementType.GRAB_DROP and statement_type != ProgramScript.StatementType.FACE:
+		if statement_type != ProgramScript.StatementType.MOVE_TO and statement_type != ProgramScript.StatementType.GRAB_DROP and statement_type != ProgramScript.StatementType.ROTATE:
 			continue
 		var vehicle_id := String(statement.get("vehicle_id", &""))
-		var command_name := "MoveTo" if statement_type == ProgramScript.StatementType.MOVE_TO else ("Face" if statement_type == ProgramScript.StatementType.FACE else "GrabDrop")
+		var command_name := "MoveTo" if statement_type == ProgramScript.StatementType.MOVE_TO else ("Rotate" if statement_type == ProgramScript.StatementType.ROTATE else "GrabDrop")
 		var source_number := index + 1
 		result.append({
 			"source_number": source_number,
@@ -70,8 +70,8 @@ func reason_text(reason: StringName) -> String:
 		&"move_target_required": return "MoveTo 缺少目标格"
 		&"move_target_out_of_bounds": return "MoveTo 目标超出网格"
 		&"move_target_not_walkable": return "MoveTo 目标不可通行"
-		&"face_direction_required": return "Face 需要有效朝向"
-		&"face_rejected": return "车辆当前无法调整朝向"
+		&"turn_direction_required": return "Rotate 需要 clockwise 或 counterclockwise"
+		&"turn_rejected": return "车辆当前无法旋转"
 		&"invalid_repeat_count": return "Repeat 次数必须为 1–100"
 		&"invalid_repeat_target": return "Repeat 需要指向之前的车辆命令"
 		&"nested_repeat_unsupported": return "DSL v2 的 Repeat 区间不能包含另一个 Repeat"

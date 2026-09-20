@@ -90,13 +90,19 @@ func _test_production_runner() -> void:
 	_expect_equal(box.get_current_count(), 3, "Reset should restore StandardBox.")
 	_expect_true(compile_gate.get_compile_result(&"arm_vehicle") == null, "Reset should end compile publication lifetime.")
 	var arm = manager.get_vehicle_by_id(&"arm_vehicle")
-	var face_program := ProgramScript.new()
-	var face_index := face_program.append_statement(ProgramScript.StatementType.FACE)
-	face_program.set_statement_vehicle(face_index, &"arm_vehicle")
-	face_program.set_facing(face_index, RuntimeStateScript.Facing.WEST)
-	_expect_true(runner.start_program(face_program), "Absolute Face program should start through the shared command path.")
-	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Face-only Program should complete synchronously.")
-	_expect_equal(arm.runtime_state.facing, RuntimeStateScript.Facing.WEST, "Program Face should mutate the same runtime facing truth as manual rotation.")
+	var rotate_program := ProgramScript.new()
+	var rotate_index := rotate_program.append_statement(ProgramScript.StatementType.ROTATE)
+	rotate_program.set_statement_vehicle(rotate_index, &"arm_vehicle")
+	rotate_program.set_turn_direction(rotate_index, -1)
+	var facing_before_rotate := arm.runtime_state.facing
+	_expect_true(runner.start_program(rotate_program), "Relative Rotate program should start through the shared command path.")
+	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_RUNNING, "Rotate must consume simulation time instead of completing synchronously.")
+	var rotate_frames := 0
+	while runner.get_state() == ProgramRunnerScript.STATE_RUNNING and rotate_frames < 120:
+		await physics_frame
+		rotate_frames += 1
+	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Rotate-only Program should complete after the turn animation.")
+	_expect_equal(arm.runtime_state.facing, posmod(facing_before_rotate - 1, 4), "Program Rotate should perform the same -90 degree turn as manual A.")
 	var transport_program := ProgramScript.new()
 	var transport_grab := transport_program.append_statement(ProgramScript.StatementType.GRAB_DROP)
 	transport_program.set_statement_vehicle(transport_grab, &"transport_vehicle")

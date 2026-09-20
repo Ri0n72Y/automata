@@ -28,7 +28,7 @@ func _run() -> void:
 	var lifecycle_panel := scene.get_node("LifecycleUIRoot/RootControl/Panel") as Control
 	var source_editor := ui.get_node("%SourceEditor") as CodeEdit
 	var add_move := ui.get_node("%AddMoveButton") as Button
-	var add_face := ui.get_node("%AddFaceButton") as Button
+	var add_rotate := ui.get_node("%AddRotateButton") as Button
 	var add_grab := ui.get_node("%AddGrabButton") as Button
 	var add_repeat := ui.get_node("%AddRepeatButton") as Button
 	var clear_button := ui.get_node("%ClearButton") as Button
@@ -37,7 +37,7 @@ func _run() -> void:
 	var run_button := ui.get_node("%RunButton") as Button
 	var target_x := ui.get_node("%TargetX") as SpinBox
 	var target_y := ui.get_node("%TargetY") as SpinBox
-	var facing_option := ui.get_node("%FacingOption") as OptionButton
+	var rotation_option := ui.get_node("%RotationOption") as OptionButton
 	var repeat_count := ui.get_node("%RepeatCount") as SpinBox
 	var repeat_target_option := ui.get_node("%RepeatTargetOption") as OptionButton
 	var status_label := ui.get_node("%StatusLabel") as Label
@@ -55,11 +55,14 @@ func _run() -> void:
 	var manual_root := scene.get_node("UIRoot/RootControl") as Control
 	_expect_true(source_editor != null, "Program workspace should expose one canonical SourceEditor.")
 	_expect_equal(ui.call("get_source_text"), SOURCE_HEADER, "Workspace should initialize with only the v2 source header.")
+	ui.call("set_source_text", "[arm_vehicle:grabDrop]\n")
+	_expect_true(String(ui.call("get_source_text")).begins_with(SOURCE_HEADER), "Program namespace header must be restored when an edit attempts to remove it.")
+	_expect_true(source_editor.highlight_current_line and source_editor.gutters_draw_executing_lines, "Selected source line should have both row and gutter visual cues.")
 	_expect_true(ui.find_child("ProgramList", true, false) == null, "Legacy mutable ProgramList should be removed.")
 	_expect_true(ui.find_child("ConnectButton", true, false) == null, "Legacy graph Connect control should be removed.")
 	_expect_true(ui.find_child("DeleteButton", true, false) == null, "Legacy graph Delete control should be removed.")
 	_expect_true(add_move.get_parent() is VBoxContainer, "MoveTo add button should occupy its own VBox row.")
-	_expect_true(add_face != null and facing_option != null, "Program builder should expose the absolute Face command.")
+	_expect_true(add_rotate != null and rotation_option != null, "Program builder should expose the relative 90-degree Rotate command.")
 	_expect_true(add_grab.get_parent() is VBoxContainer, "GrabDrop add button should occupy its own VBox row.")
 	_expect_true(add_repeat.get_parent() is VBoxContainer, "Repeat add button should occupy its own VBox row.")
 	_expect_true(source_editor.get_parent() is VBoxContainer, "Canonical SourceEditor should be the primary single-column workspace content.")
@@ -112,9 +115,9 @@ func _run() -> void:
 	target_y.value = 5
 	add_move.emit_signal("pressed")
 	_expect_true(String(ui.call("get_source_text")).contains("[arm_vehicle:moveTo] 4 5\n"), "Add MoveTo should write directly into source.")
-	facing_option.select(3)
-	add_face.emit_signal("pressed")
-	_expect_true(String(ui.call("get_source_text")).contains("[arm_vehicle:face] west\n"), "Add Face should write an absolute direction directly into source.")
+	rotation_option.select(0)
+	add_rotate.emit_signal("pressed")
+	_expect_true(String(ui.call("get_source_text")).contains("[arm_vehicle:rotate] clockwise\n"), "Add Rotate should write one clockwise 90-degree turn directly into source.")
 	add_grab.emit_signal("pressed")
 	_expect_true(String(ui.call("get_source_text")).contains("[arm_vehicle:grabDrop]\n"), "Add GrabDrop should write directly into source.")
 	repeat_count.value = 2
