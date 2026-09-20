@@ -166,7 +166,14 @@ func _drive_program() -> void:
 	_expect_equal(
 		runner.get_state(),
 		RunnerScript.STATE_COMPLETED,
-		"Tutorial Program fixture should complete successfully; last error: %s." % String(runner.get_last_error())
+		"Tutorial Program fixture should complete successfully; last error=%s pc=%d anchor=%s facing=%d cargo=%s."
+		% [
+			String(runner.get_last_error()),
+			runner.get_current_statement_index(),
+			str(arm.runtime_state.anchor_cell),
+			int(arm.runtime_state.facing),
+			str(arm.runtime_state.arm_has_item),
+		]
 	)
 
 
