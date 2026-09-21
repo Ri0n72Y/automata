@@ -92,7 +92,7 @@ func _run() -> void:
 	_expect_true(builder_scroll.visible and builder_body.is_visible_in_tree(), "Add Command should expand inside a bounded scroll region.")
 	_expect_true(builder_button.text.begins_with("−"), "Expanded command builder should use minus instead of a triangle arrow.")
 	_expect_true(vehicle_selection_label.text.contains("未选择车辆"), "Builder should project the real scene selection instead of owning a default vehicle.")
-	_expect_true(not add_move.visible and not add_rotate.visible and not add_grab.visible, "Vehicle commands should not remain resident when no scene vehicle is selected.")
+	_expect_true(not add_move.is_visible_in_tree() and not add_rotate.is_visible_in_tree() and not add_grab.is_visible_in_tree(), "Vehicle commands should not remain resident when no scene vehicle is selected.")
 	_expect_true(builder_scroll.get_global_rect().end.y <= program_panel.get_global_rect().end.y + 1.0, "Scrollable builder must remain inside the Program rail instead of pushing Repeat off-screen.")
 	_expect_true(not program_panel.get_global_rect().intersects(lifecycle_panel.get_global_rect()), "Program workspace must not cover lifecycle controls.")
 	_expect_true((ui as CanvasLayer).layer < hud.layer, "HUD completion results must render above the Program workspace.")
@@ -110,7 +110,7 @@ func _run() -> void:
 	_expect_true(arm != null and selection.call("select_vehicle", arm), "Input regression should select a movable vehicle through the gameplay owner.")
 	await process_frame
 	_expect_true(vehicle_selection_label.text.contains("机械臂车"), "Program builder should reflect the selected Arm without a second vehicle selector.")
-	_expect_true(add_move.visible and add_rotate.visible and add_grab.visible, "Arm palette should expose MoveTo, Rotate and GrabDrop from its real capabilities.")
+	_expect_true(add_move.is_visible_in_tree() and add_rotate.is_visible_in_tree() and add_grab.is_visible_in_tree(), "Arm palette should expose MoveTo, Rotate and GrabDrop from its real capabilities.")
 	var move_key := InputEventKey.new()
 	move_key.keycode = KEY_M
 	move_key.pressed = true
@@ -130,8 +130,8 @@ func _run() -> void:
 	_expect_true(transport != null and selection.call("select_vehicle", transport), "Builder regression should select Transport through the gameplay selection owner.")
 	await process_frame
 	_expect_true(vehicle_selection_label.text.contains("运输车"), "Program builder should follow the selected Transport.")
-	_expect_true(add_move.visible, "Transport palette should keep MoveTo.")
-	_expect_true(not add_rotate.visible and not add_grab.visible, "Transport palette must not expose Arm-only Rotate or GrabDrop.")
+	_expect_true(add_move.is_visible_in_tree(), "Transport palette should keep MoveTo.")
+	_expect_true(not add_rotate.is_visible_in_tree() and not add_grab.is_visible_in_tree(), "Transport palette must not expose Arm-only Rotate or GrabDrop.")
 	target_x.value = 8
 	target_y.value = 4
 	add_move.emit_signal("pressed")
