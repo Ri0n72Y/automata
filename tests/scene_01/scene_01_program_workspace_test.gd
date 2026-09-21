@@ -41,6 +41,7 @@ func _run() -> void:
 	var repeat_count := ui.get_node("%RepeatCount") as SpinBox
 	var repeat_target_option := ui.get_node("%RepeatTargetOption") as OptionButton
 	var status_label := ui.get_node("%StatusLabel") as Label
+	var vehicle_selection_label := ui.get_node("%VehicleSelectionLabel") as Label
 	var expanded_content := ui.get_node("%ExpandedContent") as Control
 	var builder_scroll := ui.get_node("%BuilderScroll") as ScrollContainer
 	var builder_body := ui.get_node("%BuilderBody") as Control
@@ -90,6 +91,8 @@ func _run() -> void:
 	ui.call("set_command_builder_expanded", true)
 	_expect_true(builder_scroll.visible and builder_body.is_visible_in_tree(), "Add Command should expand inside a bounded scroll region.")
 	_expect_true(builder_button.text.begins_with("−"), "Expanded command builder should use minus instead of a triangle arrow.")
+	_expect_true(vehicle_selection_label.text.contains("未选择车辆"), "Builder should project the real scene selection instead of owning a default vehicle.")
+	_expect_true(not add_move.visible and not add_rotate.visible and not add_grab.visible, "Vehicle commands should not remain resident when no scene vehicle is selected.")
 	_expect_true(builder_scroll.get_global_rect().end.y <= program_panel.get_global_rect().end.y + 1.0, "Scrollable builder must remain inside the Program rail instead of pushing Repeat off-screen.")
 	_expect_true(not program_panel.get_global_rect().intersects(lifecycle_panel.get_global_rect()), "Program workspace must not cover lifecycle controls.")
 	_expect_true((ui as CanvasLayer).layer < hud.layer, "HUD completion results must render above the Program workspace.")
@@ -105,6 +108,9 @@ func _run() -> void:
 	_expect_true(scene.get_viewport().gui_get_focus_owner() != source_editor, "A real world click through the input pipeline should release CodeEdit focus.")
 	var arm = manager.call("get_vehicle_by_id", &"arm_vehicle")
 	_expect_true(arm != null and selection.call("select_vehicle", arm), "Input regression should select a movable vehicle through the gameplay owner.")
+	await process_frame
+	_expect_true(vehicle_selection_label.text.contains("机械臂车"), "Program builder should reflect the selected Arm without a second vehicle selector.")
+	_expect_true(add_move.visible and add_rotate.visible and add_grab.visible, "Arm palette should expose MoveTo, Rotate and GrabDrop from its real capabilities.")
 	var move_key := InputEventKey.new()
 	move_key.keycode = KEY_M
 	move_key.pressed = true
@@ -120,6 +126,16 @@ func _run() -> void:
 	_expect_true(String(ui.call("get_source_text")).contains("[arm_vehicle:rotate] clockwise\n"), "Add Rotate should write one clockwise 90-degree turn directly into source.")
 	add_grab.emit_signal("pressed")
 	_expect_true(String(ui.call("get_source_text")).contains("[arm_vehicle:grabDrop]\n"), "Add GrabDrop should write directly into source.")
+	var transport = manager.call("get_vehicle_by_id", &"transport_vehicle")
+	_expect_true(transport != null and selection.call("select_vehicle", transport), "Builder regression should select Transport through the gameplay selection owner.")
+	await process_frame
+	_expect_true(vehicle_selection_label.text.contains("运输车"), "Program builder should follow the selected Transport.")
+	_expect_true(add_move.visible, "Transport palette should keep MoveTo.")
+	_expect_true(not add_rotate.visible and not add_grab.visible, "Transport palette must not expose Arm-only Rotate or GrabDrop.")
+	target_x.value = 8
+	target_y.value = 4
+	add_move.emit_signal("pressed")
+	_expect_true(String(ui.call("get_source_text")).contains("[transport_vehicle:moveTo] 8 4\n"), "Builder should bind new commands to the currently selected Transport.")
 	repeat_count.value = 2
 	_expect_equal(int(repeat_target_option.get_item_metadata(0)), 1, "First Repeat target should use the first source statement number.")
 	add_repeat.emit_signal("pressed")
