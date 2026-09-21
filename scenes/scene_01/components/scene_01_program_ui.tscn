@@ -103,7 +103,7 @@ theme_override_font_sizes/font_size = 14
 
 [node name="Hint" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent"]
 layout_mode = 2
-text = "[vehicle:moveTo] x y · [vehicle:rotate] clockwise · [vehicle:grabDrop]"
+text = "在场地选中车辆，添加命令会使用该 vehicle_id。"
 autowrap_mode = 2
 
 [node name="SourceEditor" type="CodeEdit" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent"]
@@ -150,17 +150,20 @@ theme_override_constants/separation = 5
 
 [node name="VehicleLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 layout_mode = 2
-text = "执行车辆"
+text = "当前车辆（从场地选择）"
 
-[node name="VehicleOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+[node name="VehicleSelectionLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
 layout_mode = 2
+text = "未选择车辆 · 请在场地选择"
 
 [node name="MoveLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "移动目标"
 
 [node name="MoveParams" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 4
 
@@ -188,9 +191,11 @@ layout_mode = 2
 text = "+ 移动到"
 
 [node name="MoveRotateDivider" type="HSeparator" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="RotateRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 4
 
