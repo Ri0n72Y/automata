@@ -1,6 +1,6 @@
 # Scene 01 Final QA — #22
 
-Status: **IN PROGRESS**
+Status: **AUTOMATED PASS / PLAYER WALKTHROUGH PENDING**
 Baseline: `main@0879628da869f28a19e9cc082c32bf0377a1d03d`
 Godot: **4.7.2**
 Parent: #1
@@ -54,6 +54,20 @@ Known non-blocking test teardown warnings remain in assembly-related suites:
 - 8 ObjectDB instances / 2 resources still in use
 
 These warnings predate #22, the affected suites return exit 0, and Run #290 completes successfully. They are test-hygiene debt, not a new Scene 01 product regression.
+
+#22 candidate Godot CI:
+
+- Draft PR: **#67**
+- Branch: `codex/22-scene01-final-qa`
+- Candidate head: `d63bb8b7c991e60875ecfcc322dda05ee2431f29`
+- Workflow Run: **#291**
+- Run id: `35578061082`
+- Conclusion: **SUCCESS**
+- Project Import: **PASS**
+- Runtime suites: **52 / 52 PASS**
+- Suite failures: **0**
+
+Run #291 reproduces the same known non-blocking teardown warnings and introduces no new automated regression.
 
 ## 3. Final static / Ponytail audit
 
@@ -217,11 +231,11 @@ This section must be executed against the final #22 candidate in a graphical God
 - [x] all MVP feature Issues completed
 - [x] final static audit has no Blocking / Major finding
 - [x] merged-main Godot 4.7.2 baseline passes
-- [ ] #22 candidate PR Godot 4.7.2 CI passes
+- [x] #22 candidate PR Godot 4.7.2 CI passes — Run #291 SUCCESS, 52/52
 - [ ] fresh graphical walkthrough passes
 - [ ] no regression fix remains unmerged
 - [ ] #1 can be closed as Scene 01 MVP complete
 
 ## 7. Final disposition
 
-Pending the #22 candidate CI and fresh graphical walkthrough.
+Automated Final QA is complete. Pending only the fresh graphical walkthrough and any regression fix it may require.
