@@ -4,7 +4,6 @@ extends CanvasLayer
 const SupportScript := preload("res://scripts/scene_01/scene_01_program_workspace_support.gd")
 const SourceEditorScript := preload("res://scripts/scene_01/scene_01_program_source_editor.gd")
 const RunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
-const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
 const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
 const VehicleSelectionScript := preload("res://scripts/input/vehicle_selection_controller.gd")
@@ -21,7 +20,6 @@ const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metric
 @onready var _add_repeat_button: Button = %AddRepeatButton
 @onready var _status_label: Label = %StatusLabel
 @onready var _runner: RunnerScript = get_parent().get_node("SceneRoot/Scene01ProgramRunner") as RunnerScript
-@onready var _vehicle_manager: VehicleManagerScript = get_parent().get_node("SceneRoot/RobotRoot/Scene01VehicleManager") as VehicleManagerScript
 @onready var _vehicle_selection: VehicleSelectionScript = get_parent().get_node("SceneRoot/GridRoot/VehicleSelectionController") as VehicleSelectionScript
 
 var _support := SupportScript.new()
