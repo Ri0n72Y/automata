@@ -4,6 +4,7 @@ const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
 const ValidatorScript := preload("res://scripts/scene_01/scene_01_program_validator.gd")
 const ProgramRunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
 const CompileGateScript := preload("res://scripts/scene_01/scene_01_assembly_compile_gate.gd")
+const RuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 var failures := 0
 var observed_command_vehicles: Array[StringName] = []
 var observed_player_selections: Array[StringName] = []
@@ -88,6 +89,20 @@ func _test_production_runner() -> void:
 	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_IDLE, "Reset should return runner to IDLE.")
 	_expect_equal(box.get_current_count(), 3, "Reset should restore StandardBox.")
 	_expect_true(compile_gate.get_compile_result(&"arm_vehicle") == null, "Reset should end compile publication lifetime.")
+	var arm = manager.get_vehicle_by_id(&"arm_vehicle")
+	var rotate_program := ProgramScript.new()
+	var rotate_index := rotate_program.append_statement(ProgramScript.StatementType.ROTATE)
+	rotate_program.set_statement_vehicle(rotate_index, &"arm_vehicle")
+	rotate_program.set_turn_direction(rotate_index, -1)
+	var facing_before_rotate: int = arm.runtime_state.facing
+	_expect_true(runner.start_program(rotate_program), "Relative Rotate program should start through the shared command path.")
+	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_RUNNING, "Rotate must consume simulation time instead of completing synchronously.")
+	var rotate_frames := 0
+	while runner.get_state() == ProgramRunnerScript.STATE_RUNNING and rotate_frames < 120:
+		await physics_frame
+		rotate_frames += 1
+	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Rotate-only Program should complete after the turn animation.")
+	_expect_equal(arm.runtime_state.facing, posmod(facing_before_rotate - 1, 4), "Program Rotate should perform the same -90 degree turn as manual A.")
 	var transport_program := ProgramScript.new()
 	var transport_grab := transport_program.append_statement(ProgramScript.StatementType.GRAB_DROP)
 	transport_program.set_statement_vehicle(transport_grab, &"transport_vehicle")
@@ -95,7 +110,6 @@ func _test_production_runner() -> void:
 	_expect_equal(runner.get_last_error(), &"program_capability_rejected", "Capability rejection should come from compile gate.")
 	_expect_true(bool(scene.call("reset_scene_state")), "Reset should recover from rejected start.")
 	await process_frame
-	var arm = manager.get_vehicle_by_id(&"arm_vehicle")
 	var transport = manager.get_vehicle_by_id(&"transport_vehicle")
 	_expect_true(selection.select_vehicle(transport), "Fixture should select Transport for Program Stop regression.")
 	var stopped_program := ProgramScript.new()

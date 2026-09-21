@@ -3,6 +3,7 @@ extends RefCounted
 
 signal move_completed()
 signal move_blocked()
+signal turn_completed()
 
 const MoveControllerScript := preload("res://scripts/scene_01/scene_01_lifecycle_vehicle_move_controller.gd")
 const GrabDropControllerScript := preload("res://scripts/scene_01/scene_01_lifecycle_grab_drop_controller.gd")
@@ -14,6 +15,7 @@ var _move_controller: MoveControllerScript
 var _grab_drop_controller: GrabDropControllerScript
 var _vehicle_manager: VehicleManagerScript
 var _move_vehicle: VehicleActorScript
+var _turn_vehicle: VehicleActorScript
 
 func configure(
 	move_controller: MoveControllerScript,
@@ -42,6 +44,16 @@ func execute_move(statement: Dictionary) -> Dictionary:
 		cancel()
 	return {"ok": true, "waiting": waiting, "reason": &""}
 
+func execute_rotate(statement: Dictionary) -> Dictionary:
+	var vehicle := _resolve_vehicle(statement)
+	if vehicle == null:
+		return _failure(&"program_vehicle_missing")
+	_bind_turn_vehicle(vehicle)
+	if not _grab_drop_controller.request_vehicle_turn(vehicle, int(statement.get("turn_direction", 0))):
+		cancel()
+		return _failure(&"turn_rejected")
+	return {"ok": true, "waiting": true, "reason": &""}
+
 func execute_grab_drop(statement: Dictionary) -> Dictionary:
 	var vehicle := _resolve_vehicle(statement)
 	if vehicle == null:
@@ -54,14 +66,16 @@ func execute_grab_drop(statement: Dictionary) -> Dictionary:
 	return {"ok": true, "waiting": false, "reason": &""}
 
 func cancel() -> void:
-	if _move_vehicle == null or not is_instance_valid(_move_vehicle):
-		_move_vehicle = null
-		return
-	if _move_vehicle.move_completed.is_connected(_on_vehicle_move_completed):
-		_move_vehicle.move_completed.disconnect(_on_vehicle_move_completed)
-	if _move_vehicle.move_blocked.is_connected(_on_vehicle_move_blocked):
-		_move_vehicle.move_blocked.disconnect(_on_vehicle_move_blocked)
+	if _move_vehicle != null and is_instance_valid(_move_vehicle):
+		if _move_vehicle.move_completed.is_connected(_on_vehicle_move_completed):
+			_move_vehicle.move_completed.disconnect(_on_vehicle_move_completed)
+		if _move_vehicle.move_blocked.is_connected(_on_vehicle_move_blocked):
+			_move_vehicle.move_blocked.disconnect(_on_vehicle_move_blocked)
 	_move_vehicle = null
+	if _turn_vehicle != null and is_instance_valid(_turn_vehicle):
+		if _turn_vehicle.turn_completed.is_connected(_on_vehicle_turn_completed):
+			_turn_vehicle.turn_completed.disconnect(_on_vehicle_turn_completed)
+	_turn_vehicle = null
 
 func _resolve_vehicle(statement: Dictionary) -> VehicleActorScript:
 	var vehicle_id := StringName(statement.get("vehicle_id", &""))
@@ -75,6 +89,17 @@ func _bind_move_vehicle(vehicle: VehicleActorScript) -> void:
 	_move_vehicle = vehicle
 	_move_vehicle.move_completed.connect(_on_vehicle_move_completed)
 	_move_vehicle.move_blocked.connect(_on_vehicle_move_blocked)
+
+func _bind_turn_vehicle(vehicle: VehicleActorScript) -> void:
+	cancel()
+	_turn_vehicle = vehicle
+	_turn_vehicle.turn_completed.connect(_on_vehicle_turn_completed)
+
+
+func _on_vehicle_turn_completed(_facing: int) -> void:
+	cancel()
+	turn_completed.emit()
+
 
 func _on_vehicle_move_completed(_target_anchor: Vector2i) -> void:
 	cancel()

@@ -24,7 +24,7 @@ anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 16.0
 offset_top = -214.0
-offset_right = 438.0
+offset_right = 376.0
 offset_bottom = -16.0
 grow_vertical = 0
 mouse_filter = 2
@@ -46,14 +46,14 @@ layout_mode = 2
 [node name="Title" type="Label" parent="RootControl/StatusPanel/Margin/VBox/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "SCENE 01 · 状态"
+text = "场景 01 · 状态"
 theme_override_font_sizes/font_size = 18
 
 [node name="PauseLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox/Header"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-text = "PAUSED"
+text = "已暂停"
 modulate = Color(1, 0.72, 0.28, 1)
 
 [node name="SelectedLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
@@ -70,17 +70,20 @@ text = "状态：—"
 unique_name_in_owner = true
 layout_mode = 2
 text = "机械臂：—   托盘：—   标准箱：—"
+autowrap_mode = 2
 
 [node name="MissionLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "任务：初始化中"
+autowrap_mode = 2
 
 [node name="CommandsLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "命令：M 移动 —   X 停止 —   C 抓放 —"
 modulate = Color(0.72, 0.82, 0.94, 1)
+autowrap_mode = 2
 
 [node name="FeedbackLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
 unique_name_in_owner = true
@@ -119,7 +122,7 @@ theme_override_constants/separation = 8
 
 [node name="CompletionTitle" type="Label" parent="RootControl/CompletionPanel/Margin/VBox"]
 layout_mode = 2
-text = "MISSION COMPLETED"
+text = "任务完成"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 28
 modulate = Color(0.55, 0.95, 0.7, 1)

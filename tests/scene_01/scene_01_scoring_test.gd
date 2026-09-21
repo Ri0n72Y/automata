@@ -99,7 +99,7 @@ func _run() -> void:
 	test.expect_float_approx(score.get_automated_runtime(), program_automated, "Automated runtime should freeze at completion.")
 	var final_rate := program_automated / (program_automated + 4.0)
 	test.expect_float_approx(score.get_automation_rate(), final_rate, "Completion should freeze runtime automation ratio.")
-	test.expect_true(score_label.text.contains("时间 %.1fs" % program_end_time), "Result panel should display completion time.")
+	test.expect_true(score_label.text.contains("时间 %.1f秒" % program_end_time), "Result panel should display completion time.")
 	test.expect_true(score_label.text.contains("组件 %d" % expected_components), "Result panel should display component count.")
 	test.expect_true(score_label.text.contains("自动化率 %d%%" % roundi(final_rate * 100.0)), "Result panel should display runtime automation ratio.")
 

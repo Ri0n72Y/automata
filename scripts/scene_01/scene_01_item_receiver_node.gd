@@ -83,7 +83,7 @@ func refresh_visual() -> void:
 	for index in range(_capacity_slots.size()):
 		_capacity_slots[index].visible = index < visible_count
 	if _capacity_label != null:
-		_capacity_label.text = "%d/%d  IN" % [display_count, display_capacity]
+		_capacity_label.text = "%d/%d 装箱" % [display_count, display_capacity]
 
 
 func get_visible_slot_count() -> int:

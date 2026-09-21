@@ -14,6 +14,12 @@ func _ready() -> void:
 	refresh_interaction_preview()
 
 
+func _physics_process(delta: float) -> void:
+	if not _is_lifecycle_running():
+		return
+	super._physics_process(maxf(delta, 0.0) * _get_lifecycle_speed())
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if _is_lifecycle_paused():
 		return
@@ -34,15 +40,16 @@ func request_vehicle_grab_drop(vehicle: VehicleActor) -> GrabDropResultScript:
 	return result
 
 
-func rotate_selected_arm(direction: int) -> bool:
+func request_vehicle_turn(vehicle: VehicleActor, direction: int) -> bool:
 	if _is_lifecycle_paused():
 		return false
-	var step := clampi(direction, -1, 1)
-	if step == 0 or super._get_selected_vehicle() == null:
+	if vehicle != null and not _ensure_gameplay_running():
 		return false
-	if not _ensure_gameplay_running():
-		return false
-	return super.rotate_selected_arm(direction)
+	return super.request_vehicle_turn(vehicle, direction)
+
+
+func rotate_selected_arm(direction: int) -> bool:
+	return request_vehicle_turn(super._get_selected_vehicle(), direction)
 
 
 func refresh_interaction_preview() -> void:
@@ -60,6 +67,18 @@ func _ensure_gameplay_running() -> bool:
 	if not _has_lifecycle_contract():
 		return false
 	return bool(_scene_controller.call("ensure_gameplay_running"))
+
+
+func _is_lifecycle_running() -> bool:
+	if not _has_lifecycle_contract():
+		return false
+	return bool(_scene_controller.call("is_gameplay_running"))
+
+
+func _get_lifecycle_speed() -> float:
+	if not _has_lifecycle_contract() or not _scene_controller.has_method("get_simulation_speed"):
+		return 0.0
+	return maxf(float(_scene_controller.call("get_simulation_speed")), 0.0)
 
 
 func _is_lifecycle_paused() -> bool:
