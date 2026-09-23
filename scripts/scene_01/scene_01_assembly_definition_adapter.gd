@@ -29,6 +29,8 @@ func build_definition(vehicle: VehicleActorScript) -> AssemblyDefinitionScript:
 	var capabilities: Array[StringName] = []
 	if vehicle_definition.can_move():
 		capabilities.append(AssemblyCapabilitiesScript.CAN_MOVE)
+	if vehicle_definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_ROTATE):
+		capabilities.append(AssemblyCapabilitiesScript.CAN_ROTATE)
 	if vehicle_definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_GRAB):
 		capabilities.append(AssemblyCapabilitiesScript.GRAB_DROP)
 
