@@ -4,8 +4,10 @@ extends CanvasLayer
 const SupportScript := preload("res://scripts/scene_01/scene_01_program_workspace_support.gd")
 const SourceEditorScript := preload("res://scripts/scene_01/scene_01_program_source_editor.gd")
 const RunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
+const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
+const CommandCapabilityScript := preload("res://scripts/scene_01/scene_01_program_command_capability.gd")
+const CompileGateScript := preload("res://scripts/scene_01/scene_01_assembly_compile_gate.gd")
 const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
-const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
 const VehicleSelectionScript := preload("res://scripts/input/vehicle_selection_controller.gd")
 const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metrics.gd")
 
@@ -20,6 +22,7 @@ const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metric
 @onready var _add_repeat_button: Button = %AddRepeatButton
 @onready var _status_label: Label = %StatusLabel
 @onready var _runner: RunnerScript = get_parent().get_node("SceneRoot/Scene01ProgramRunner") as RunnerScript
+@onready var _compile_gate: CompileGateScript = get_parent().get_node("SceneRoot/Scene01AssemblyCompileGate") as CompileGateScript
 @onready var _vehicle_selection: VehicleSelectionScript = get_parent().get_node("SceneRoot/GridRoot/VehicleSelectionController") as VehicleSelectionScript
 
 var _support := SupportScript.new()
@@ -110,18 +113,27 @@ func _on_vehicle_selection_changed(_vehicle_id: StringName, _has_selection: bool
 
 func _sync_builder_vehicle() -> void:
 	var vehicle := _selected_vehicle()
-	var can_move := vehicle != null and vehicle.definition != null and vehicle.definition.can_move()
-	var can_grab := (
-		vehicle != null
-		and vehicle.definition != null
-		and vehicle.definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_GRAB)
+	var capabilities: Array[StringName] = []
+	if vehicle != null and _compile_gate != null:
+		capabilities = _compile_gate.get_vehicle_capabilities(vehicle.get_vehicle_id())
+	var can_move := CommandCapabilityScript.supports(
+		capabilities,
+		ProgramScript.StatementType.MOVE_TO
+	)
+	var can_rotate := CommandCapabilityScript.supports(
+		capabilities,
+		ProgramScript.StatementType.ROTATE
+	)
+	var can_grab := CommandCapabilityScript.supports(
+		capabilities,
+		ProgramScript.StatementType.GRAB_DROP
 	)
 	_vehicle_label.text = vehicle.definition.display_name if vehicle != null and vehicle.definition != null else "未选择车辆 · 请在场地选择"
 	%MoveLabel.visible = can_move
 	%MoveParams.visible = can_move
 	%AddMoveButton.visible = can_move
-	%MoveRotateDivider.visible = can_move and can_grab
-	%RotateRow.visible = can_grab
+	%MoveRotateDivider.visible = can_move and (can_rotate or can_grab)
+	%RotateRow.visible = can_rotate
 	%AddGrabButton.visible = can_grab
 
 func _on_add_move() -> void:
