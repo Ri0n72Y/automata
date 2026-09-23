@@ -381,7 +381,7 @@ func _get_selected_vehicle() -> VehicleActorScript:
 func _can_rotate(vehicle: VehicleActorScript) -> bool:
 	if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
 		return false
-	if not vehicle.definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_GRAB):
+	if not vehicle.definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_ROTATE):
 		return false
 	return (
 		not vehicle.is_turning()
