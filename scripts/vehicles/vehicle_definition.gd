@@ -7,6 +7,7 @@ enum VehicleKind {
 }
 
 const CAPABILITY_CAN_MOVE := "can_move"
+const CAPABILITY_CAN_ROTATE := "can_rotate"
 const CAPABILITY_CAN_GRAB := "can_grab"
 const CAPABILITY_CAN_CARRY := "can_carry"
 const CAPABILITY_HAS_TRAY := "has_tray"
