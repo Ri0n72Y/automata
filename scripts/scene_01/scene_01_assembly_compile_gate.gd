@@ -155,6 +155,26 @@ func has_vehicle_capability(vehicle_id: StringName, capability: StringName) -> b
 	return result != null and result.is_success() and result.has_capability(capability)
 
 
+func get_vehicle_capabilities(vehicle_id: StringName) -> Array[StringName]:
+	var empty: Array[StringName] = []
+	if _vehicle_manager == null or not is_instance_valid(_vehicle_manager):
+		return empty
+	if not _vehicle_manager.has_method("get_vehicle_by_id"):
+		return empty
+	var vehicle := _vehicle_manager.call("get_vehicle_by_id", vehicle_id) as VehicleActorScript
+	if vehicle == null or vehicle.definition == null or not vehicle.definition.is_configured():
+		return empty
+	var assembly_definition = _adapter.build_definition(vehicle)
+	if assembly_definition == null:
+		return empty
+	var compile_result = _compiler.compile(
+		AssemblyCompileRequestScript.new(assembly_definition)
+	)
+	if compile_result == null or not compile_result.is_success():
+		return empty
+	return compile_result.get_capabilities()
+
+
 func get_last_diagnostics() -> Array:
 	var result: Array = []
 	for diagnostic in _last_diagnostics:
