@@ -2,7 +2,7 @@ class_name Scene01ProgramValidator
 extends RefCounted
 
 const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
-const AssemblyCapabilitiesScript := preload("res://scripts/assembly/assembly_capabilities.gd")
+const CommandCapabilityScript := preload("res://scripts/scene_01/scene_01_program_command_capability.gd")
 
 const MAX_REPEAT_COUNT := 100
 const MAX_EXPANDED_STEPS := 10000
@@ -34,11 +34,11 @@ func required_capabilities_by_vehicle(program: Scene01Program) -> Dictionary:
 		return result
 	for statement in program.get_statements():
 		var vehicle_id := StringName(statement.get("vehicle_id", &""))
-		match int(statement.get("type", -1)):
-			ProgramScript.StatementType.MOVE_TO:
-				_append_requirement(result, vehicle_id, AssemblyCapabilitiesScript.CAN_MOVE)
-			ProgramScript.StatementType.GRAB_DROP, ProgramScript.StatementType.ROTATE:
-				_append_requirement(result, vehicle_id, AssemblyCapabilitiesScript.GRAB_DROP)
+		var capability := CommandCapabilityScript.required_capability(
+			int(statement.get("type", -1))
+		)
+		if capability != &"":
+			_append_requirement(result, vehicle_id, capability)
 	return result
 
 func _validate_statement(
