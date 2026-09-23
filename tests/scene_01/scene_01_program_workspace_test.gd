@@ -130,12 +130,15 @@ func _run() -> void:
 	_expect_true(transport != null and selection.call("select_vehicle", transport), "Builder regression should select Transport through the gameplay selection owner.")
 	await process_frame
 	_expect_true(vehicle_selection_label.text.contains("运输车"), "Program builder should follow the selected Transport.")
-	_expect_true(add_move.is_visible_in_tree(), "Transport palette should keep MoveTo.")
-	_expect_true(not add_rotate.is_visible_in_tree() and not add_grab.is_visible_in_tree(), "Transport palette must not expose Arm-only Rotate or GrabDrop.")
+	_expect_true(add_move.is_visible_in_tree() and add_rotate.is_visible_in_tree(), "Transport palette should expose MoveTo and its independent Rotate capability.")
+	_expect_true(not add_grab.is_visible_in_tree(), "Transport palette must not expose claw-only GrabDrop.")
 	target_x.value = 8
 	target_y.value = 4
 	add_move.emit_signal("pressed")
 	_expect_true(String(ui.call("get_source_text")).contains("[transport_vehicle:moveTo] 8 4\n"), "Builder should bind new commands to the currently selected Transport.")
+	rotation_option.select(1)
+	add_rotate.emit_signal("pressed")
+	_expect_true(String(ui.call("get_source_text")).contains("[transport_vehicle:rotate] counterclockwise\n"), "Transport Rotate should be authored from the same compiled capability projection.")
 	repeat_count.value = 2
 	_expect_equal(int(repeat_target_option.get_item_metadata(0)), 1, "First Repeat target should use the first source statement number.")
 	add_repeat.emit_signal("pressed")
