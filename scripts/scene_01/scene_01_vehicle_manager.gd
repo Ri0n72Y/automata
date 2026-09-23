@@ -133,6 +133,7 @@ func _create_arm_definition() -> VehicleDefinitionScript:
 		30.0,
 		PackedStringArray([
 			VehicleDefinitionScript.CAPABILITY_CAN_MOVE,
+			VehicleDefinitionScript.CAPABILITY_CAN_ROTATE,
 			VehicleDefinitionScript.CAPABILITY_CAN_GRAB,
 			VehicleDefinitionScript.CAPABILITY_CAN_CARRY,
 		]),
@@ -156,6 +157,7 @@ func _create_transport_definition() -> VehicleDefinitionScript:
 		36.0,
 		PackedStringArray([
 			VehicleDefinitionScript.CAPABILITY_CAN_MOVE,
+			VehicleDefinitionScript.CAPABILITY_CAN_ROTATE,
 			VehicleDefinitionScript.CAPABILITY_CAN_CARRY,
 			VehicleDefinitionScript.CAPABILITY_HAS_TRAY,
 		]),
