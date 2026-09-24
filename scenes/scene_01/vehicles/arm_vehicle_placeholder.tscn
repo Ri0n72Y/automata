@@ -1,7 +1,8 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scripts/vehicles/vehicle_actor.gd" id="1_actor"]
 [ext_resource type="Script" path="res://scripts/vehicles/vehicle_state_visual.gd" id="2_state"]
+[ext_resource type="Resource" path="res://scenes/scene_01/vehicles/definitions/arm_vehicle_definition.tres" id="3_definition"]
 
 [sub_resource type="StandardMaterial3D" id="ChassisMaterial"]
 albedo_color = Color(0.06, 0.22, 0.46, 1)
@@ -57,7 +58,7 @@ size = Vector3(0.91, 1.7, 0.91)
 [node name="ArmVehicle" type="Node3D"]
 script = ExtResource("1_actor")
 use_static_scene_visual = true
-vehicle_preset_id = &"arm_vehicle"
+definition = ExtResource("3_definition")
 
 [node name="VisualRoot" type="Node3D" parent="."]
 unique_name_in_owner = true
