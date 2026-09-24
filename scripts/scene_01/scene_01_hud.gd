@@ -60,8 +60,11 @@ func _ready() -> void:
 
 
 func _apply_status_layout() -> void:
-	var viewport_width := float(get_viewport().get_visible_rect().size.x)
-	status_panel.offset_right = status_panel.offset_left + LayoutMetrics.left_rail_width(viewport_width)
+	var viewport_size := get_viewport().get_visible_rect().size
+	status_panel.offset_left = LayoutMetrics.EDGE_MARGIN
+	status_panel.offset_top = LayoutMetrics.CONTENT_TOP
+	status_panel.offset_right = status_panel.offset_left + LayoutMetrics.left_rail_width(float(viewport_size.x))
+	status_panel.offset_bottom = status_panel.offset_top + LayoutMetrics.LEFT_STATUS_HEIGHT
 
 
 func _bind_signals() -> void:
