@@ -131,6 +131,7 @@ func _command_availability_text(motion_state: int, selected_id: StringName) -> S
 
 	var vehicle = _vehicle_manager.get_vehicle_by_id(selected_id)
 	var definition = vehicle.definition if vehicle != null else null
+	var turning := vehicle != null and vehicle.is_turning()
 	var busy := (
 		motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
 		or motion_state == VehicleRuntimeStateScript.MotionState.MOVING
@@ -151,7 +152,7 @@ func _command_availability_text(motion_state: int, selected_id: StringName) -> S
 	var move_text := "可用"
 	if not can_move:
 		move_text = "车辆无移动能力"
-	elif busy:
+	elif busy or turning:
 		move_text = "车辆忙碌"
 	elif _grid_selection.is_live_target_mode():
 		move_text = "选择目标中"
@@ -159,7 +160,7 @@ func _command_availability_text(motion_state: int, selected_id: StringName) -> S
 	var rotate_text := "可用"
 	if not can_rotate:
 		rotate_text = "车辆无旋转能力"
-	elif vehicle != null and vehicle.is_turning():
+	elif turning:
 		rotate_text = "旋转中"
 	elif busy:
 		rotate_text = "车辆忙碌"
@@ -175,7 +176,7 @@ func _command_availability_text(motion_state: int, selected_id: StringName) -> S
 	var grab_text := "无有效交互目标"
 	if not can_grab:
 		grab_text = "车辆无机械臂"
-	elif vehicle != null and vehicle.is_turning():
+	elif turning:
 		grab_text = "车辆忙碌"
 	elif busy:
 		grab_text = "车辆忙碌"
