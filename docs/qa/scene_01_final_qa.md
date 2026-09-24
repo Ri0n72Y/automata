@@ -64,13 +64,13 @@ These warnings predate #22, the affected suites return exit 0, and Run #290 comp
 - Run id: `35989511772`
 - Conclusion: **SUCCESS**
 - Project Import: **PASS**
-- Runtime suites: **53 / 53 PASS**
+- Runtime suites: **54 / 54 PASS**
 - Suite failures: **0**
 - `scene_01_program_workspace_test.gd`: **PASS**
 - `scene_01_tutorial_test.gd`: **PASS**
 - `scene_01_ui_information_architecture_test.gd`: **PASS**
 
-Run #338 validates the unified Program capability contract plus the #58 UI information-architecture fold-in. Rotate now suppresses Move target availability/preview through the existing selected-vehicle turn truth, HUD reflects Move as busy during a turn, and the lifecycle selected-vehicle rotate API has no stale Arm-only alias.
+Run #349 validates the complete current production candidate, including unified Program capabilities, #58 UI information architecture, Rotate→Move exclusion, and static resource ownership.
 
 ## 3. Final static / Ponytail audit
 
@@ -140,6 +140,7 @@ Current-main review focuses on the final MVP contracts rather than introducing a
 - [x] current vehicle presentation is one line: `当前车辆：未选择车辆`
 - [x] runtime creation is retained only for mutable runtime state / source-derived projections / gameplay-spawned content
 - [x] Run #349: Project Import PASS, 54/54 runtime suites PASS
+- [x] latest docs-only head Run #350: 54/54 PASS
 
 ### Deferred boundaries
 
@@ -158,7 +159,7 @@ Major:    0
 
 ## 4. Automated acceptance coverage
 
-The current 53-suite matrix includes direct coverage for:
+The current 54-suite matrix includes direct coverage for:
 
 - production Scene 01 E2E
 - lifecycle state / pause / resume / reset
@@ -178,6 +179,7 @@ The current 53-suite matrix includes direct coverage for:
 - Tutorial
 - vehicle state machine / movement execution / visual contracts
 - Scene 01 UI information architecture / supported desktop layout tiers
+- Scene 01 static resource ownership / editor-visible vehicle definitions
 
 ## 5. Fresh player-visible walkthrough
 
