@@ -105,7 +105,7 @@ func _run() -> void:
 		"Leaving Move target mode should restore current GrabDrop availability."
 	)
 
-	test.expect_true(grab_drop_controller.rotate_selected_arm(1), "Arm should rotate away from the pile.")
+	test.expect_true(grab_drop_controller.rotate_selected_vehicle(1), "Arm should rotate away from the pile.")
 	var turn_frames := 0
 	while arm.is_turning() and turn_frames < 120:
 		await physics_frame
