@@ -316,6 +316,14 @@ func _on_observed_vehicle_move_blocked() -> void:
 	_sync_live_target_mode()
 
 
+func _on_observed_vehicle_turn_started(_direction: int) -> void:
+	_sync_live_target_mode()
+
+
+func _on_observed_vehicle_turn_completed(_facing: int) -> void:
+	_sync_live_target_mode()
+
+
 func _sync_live_target_mode() -> void:
 	if grid_selection_controller == null:
 		return
@@ -326,6 +334,7 @@ func _sync_live_target_mode() -> void:
 		and not _vehicle_ui_open
 		and _vehicle_has_move_capability(vehicle)
 		and vehicle.runtime_state != null
+		and not vehicle.is_turning()
 		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
 		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
 	)
@@ -342,7 +351,7 @@ func _sync_live_target_mode() -> void:
 func _can_show_prediction(vehicle: VehicleActorScript) -> bool:
 	if vehicle == null or _vehicle_ui_open or not _vehicle_has_move_capability(vehicle):
 		return false
-	if vehicle.definition == null or vehicle.runtime_state == null:
+	if vehicle.definition == null or vehicle.runtime_state == null or vehicle.is_turning():
 		return false
 	return (
 		vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
@@ -366,6 +375,12 @@ func _replace_observed_vehicle(vehicle: VehicleActorScript) -> void:
 	var blocked_callable := Callable(self, "_on_observed_vehicle_move_blocked")
 	if not _observed_vehicle.move_blocked.is_connected(blocked_callable):
 		_observed_vehicle.move_blocked.connect(blocked_callable)
+	var turn_started_callable := Callable(self, "_on_observed_vehicle_turn_started")
+	if not _observed_vehicle.turn_started.is_connected(turn_started_callable):
+		_observed_vehicle.turn_started.connect(turn_started_callable)
+	var turn_completed_callable := Callable(self, "_on_observed_vehicle_turn_completed")
+	if not _observed_vehicle.turn_completed.is_connected(turn_completed_callable):
+		_observed_vehicle.turn_completed.connect(turn_completed_callable)
 
 
 func _disconnect_observed_vehicle() -> void:
@@ -381,6 +396,12 @@ func _disconnect_observed_vehicle() -> void:
 	var blocked_callable := Callable(self, "_on_observed_vehicle_move_blocked")
 	if _observed_vehicle.move_blocked.is_connected(blocked_callable):
 		_observed_vehicle.move_blocked.disconnect(blocked_callable)
+	var turn_started_callable := Callable(self, "_on_observed_vehicle_turn_started")
+	if _observed_vehicle.turn_started.is_connected(turn_started_callable):
+		_observed_vehicle.turn_started.disconnect(turn_started_callable)
+	var turn_completed_callable := Callable(self, "_on_observed_vehicle_turn_completed")
+	if _observed_vehicle.turn_completed.is_connected(turn_completed_callable):
+		_observed_vehicle.turn_completed.disconnect(turn_completed_callable)
 	_observed_vehicle = null
 
 
