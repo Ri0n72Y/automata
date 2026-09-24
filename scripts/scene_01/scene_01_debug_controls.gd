@@ -1,7 +1,7 @@
 class_name Scene01DebugControls
 extends CanvasLayer
 
-const COLLAPSED_SIZE := Vector2(250.0, 52.0)
+const COLLAPSED_SIZE := Vector2(132.0, 48.0)
 const EXPANDED_SIZE := Vector2(360.0, 292.0)
 const BODY_PATHS := [
 	NodePath("RootControl/Panel/Margin/VBox/CoordinatesRow"),
