@@ -26,17 +26,20 @@ func _run() -> void:
 	var debug_view := scene.get_node_or_null(
 		"SceneRoot/GridRoot/GridDebugView"
 	) as GRID_DEBUG_VIEW_SCRIPT
+	var debug_panel := scene.get_node_or_null("DebugUIRoot/RootControl/Panel") as Control
 	var coordinates_button := scene.get_node_or_null(
 		"DebugUIRoot/RootControl/Panel/Margin/VBox/CoordinatesRow/CoordinatesButton"
 	) as Button
 
 	_expect_true(debug_ui != null, "Scene 01 should contain the separate Debug UI.")
 	_expect_true(debug_view != null, "Debug UI test requires GridDebugView.")
+	_expect_true(debug_panel != null, "Debug UI should expose its disclosure panel.")
 	_expect_true(coordinates_button != null, "Debug UI should expose its coordinate toggle button.")
-	if debug_ui == null or debug_view == null or coordinates_button == null:
+	if debug_ui == null or debug_view == null or debug_panel == null or coordinates_button == null:
 		await _finish_scene(scene)
 		return
 
+	_expect_true(debug_panel.size.x <= 140.0 and debug_panel.size.y <= 50.0, "Collapsed Debug entry should remain visually secondary to player controls.")
 	_expect_false(debug_view.show_coordinates, "Coordinates should start hidden.")
 	_expect_equal(debug_view.get_debug_label_count(), 0, "Hidden coordinates should create no labels.")
 	_expect_equal(coordinates_button.text, "显示场地坐标", "Debug button should initially offer to show coordinates.")
