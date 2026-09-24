@@ -27,9 +27,16 @@ func _run() -> void:
 	var program_panel := ui.get_node("RootControl/ProgramPanel") as Control
 	var lifecycle_panel := scene.get_node("LifecycleUIRoot/RootControl/Panel") as Control
 	var source_editor := ui.get_node("%SourceEditor") as CodeEdit
+	var move_row := ui.get_node("%MoveRow") as HBoxContainer
+	var move_divider := ui.get_node("%MoveDivider") as HSeparator
 	var add_move := ui.get_node("%AddMoveButton") as Button
+	var rotate_row := ui.get_node("%RotateRow") as HBoxContainer
+	var rotate_divider := ui.get_node("%RotateDivider") as HSeparator
 	var add_rotate := ui.get_node("%AddRotateButton") as Button
+	var grab_row := ui.get_node("%GrabRow") as HBoxContainer
+	var grab_divider := ui.get_node("%GrabDivider") as HSeparator
 	var add_grab := ui.get_node("%AddGrabButton") as Button
+	var repeat_row := ui.get_node("%RepeatRow") as HBoxContainer
 	var add_repeat := ui.get_node("%AddRepeatButton") as Button
 	var clear_button := ui.get_node("%ClearButton") as Button
 	var save_button := ui.get_node("%SaveButton") as Button
@@ -68,10 +75,11 @@ func _run() -> void:
 	_expect_true(ui.find_child("ProgramList", true, false) == null, "Legacy mutable ProgramList should be removed.")
 	_expect_true(ui.find_child("ConnectButton", true, false) == null, "Legacy graph Connect control should be removed.")
 	_expect_true(ui.find_child("DeleteButton", true, false) == null, "Legacy graph Delete control should be removed.")
-	_expect_true(add_move.get_parent() is VBoxContainer, "MoveTo add button should occupy its own VBox row.")
-	_expect_true(add_rotate != null and rotation_option != null, "Program builder should expose the relative 90-degree Rotate command.")
-	_expect_true(add_grab.get_parent() is VBoxContainer, "GrabDrop add button should occupy its own VBox row.")
-	_expect_true(add_repeat.get_parent() is VBoxContainer, "Repeat add button should occupy its own VBox row.")
+	_expect_true(move_row != null and add_move.get_parent() == move_row and target_x.get_parent() == move_row and target_y.get_parent() == move_row, "MoveTo title, parameters and add button should share one static HBox row.")
+	_expect_true(rotate_row != null and add_rotate.get_parent() == rotate_row and rotation_option.get_parent() == rotate_row, "Rotate controls should share one static HBox row.")
+	_expect_true(grab_row != null and add_grab.get_parent() == grab_row, "GrabDrop should occupy one static command row.")
+	_expect_true(repeat_row != null and add_repeat.get_parent() == repeat_row and repeat_count.get_parent() == repeat_row and repeat_target_option.get_parent() == repeat_row, "Repeat title, count, target and add button should share one static HBox row.")
+	_expect_true(move_divider != null and rotate_divider != null and grab_divider != null, "Vehicle command groups should own static separators.")
 	_expect_true(source_editor.get_parent() is VBoxContainer, "Canonical SourceEditor should be the primary single-column workspace content.")
 	_expect_true(ui.find_child("Workspace", true, false) == null, "Legacy side-by-side workspace container should be removed.")
 	_expect_true(not expanded_content.visible, "Program rail should start collapsed so gameplay remains visible.")
@@ -98,7 +106,9 @@ func _run() -> void:
 	_expect_true(builder_scroll.visible and builder_body.is_visible_in_tree(), "Add Command should expand inside a bounded scroll region.")
 	_expect_true(builder_button.text.begins_with("−"), "Expanded command builder should use minus instead of a triangle arrow.")
 	_expect_true(vehicle_selection_label.text.contains("未选择车辆"), "Builder should project the real scene selection instead of owning a default vehicle.")
-	_expect_true(not add_move.is_visible_in_tree() and not add_rotate.is_visible_in_tree() and not add_grab.is_visible_in_tree(), "Vehicle commands should not remain resident when no scene vehicle is selected.")
+	_expect_true(not move_row.is_visible_in_tree() and not rotate_row.is_visible_in_tree() and not grab_row.is_visible_in_tree(), "Vehicle command rows should not remain resident when no scene vehicle is selected.")
+	_expect_true(not move_divider.is_visible_in_tree() and not rotate_divider.is_visible_in_tree() and not grab_divider.is_visible_in_tree(), "Hidden vehicle command rows should not leave orphan separators.")
+	_expect_true(repeat_row.is_visible_in_tree(), "Repeat should remain a Program control row independent of vehicle selection.")
 	_expect_true(builder_scroll.get_global_rect().end.y <= program_panel.get_global_rect().end.y + 1.0, "Scrollable builder must remain inside the Program rail instead of pushing Repeat off-screen.")
 	_expect_true(not program_panel.get_global_rect().intersects(lifecycle_panel.get_global_rect()), "Program workspace must not cover lifecycle controls.")
 	_expect_true((ui as CanvasLayer).layer < hud.layer, "HUD completion results must render above the Program workspace.")
@@ -116,7 +126,8 @@ func _run() -> void:
 	_expect_true(arm != null and selection.call("select_vehicle", arm), "Input regression should select a movable vehicle through the gameplay owner.")
 	await process_frame
 	_expect_equal(vehicle_selection_label.text, "当前车辆：机械臂车", "Program builder should keep the selected Arm on the same current-vehicle line.")
-	_expect_true(add_move.is_visible_in_tree() and add_rotate.is_visible_in_tree() and add_grab.is_visible_in_tree(), "Arm palette should expose MoveTo, Rotate and GrabDrop from its real capabilities.")
+	_expect_true(move_row.is_visible_in_tree() and rotate_row.is_visible_in_tree() and grab_row.is_visible_in_tree(), "Arm palette should expose MoveTo, Rotate and GrabDrop rows from its real capabilities.")
+	_expect_true(move_divider.is_visible_in_tree() and rotate_divider.is_visible_in_tree() and grab_divider.is_visible_in_tree(), "Arm command rows should be visually separated.")
 	var move_key := InputEventKey.new()
 	move_key.keycode = KEY_M
 	move_key.pressed = true
@@ -136,8 +147,9 @@ func _run() -> void:
 	_expect_true(transport != null and selection.call("select_vehicle", transport), "Builder regression should select Transport through the gameplay selection owner.")
 	await process_frame
 	_expect_equal(vehicle_selection_label.text, "当前车辆：运输车", "Program builder should keep the selected Transport on the same current-vehicle line.")
-	_expect_true(add_move.is_visible_in_tree() and add_rotate.is_visible_in_tree(), "Transport palette should expose MoveTo and its independent Rotate capability.")
-	_expect_true(not add_grab.is_visible_in_tree(), "Transport palette must not expose claw-only GrabDrop.")
+	_expect_true(move_row.is_visible_in_tree() and rotate_row.is_visible_in_tree(), "Transport palette should expose MoveTo and its independent Rotate capability.")
+	_expect_true(move_divider.is_visible_in_tree() and rotate_divider.is_visible_in_tree(), "Visible Transport command rows should retain separators.")
+	_expect_true(not grab_row.is_visible_in_tree() and not grab_divider.is_visible_in_tree(), "Transport palette must hide claw-only GrabDrop and its separator.")
 	target_x.value = 8
 	target_y.value = 4
 	add_move.emit_signal("pressed")
