@@ -88,12 +88,17 @@ func _run() -> void:
 	test.expect_true(selected_label.text.find("机械臂车") >= 0, "HUD should show selected vehicle display name.")
 	test.expect_true(vehicle_state_label.text.find("等待") >= 0, "HUD should show selected vehicle state.")
 	test.expect_true(commands_label.text.find("M 移动 可用") >= 0, "Waiting movable vehicle should expose Move as available.")
+	test.expect_true(commands_label.text.find("A/D 旋转 可用") >= 0, "Waiting rotatable vehicle should expose Rotate as available.")
 	test.expect_true(commands_label.text.find("X 停止 车辆未移动") >= 0, "Waiting vehicle should explain why Stop is unavailable.")
 	test.expect_true(commands_label.text.find("C 抓放 可用") >= 0, "Arm facing the pile should expose GrabDrop as available.")
 
 	test.expect_true(
 		bool(grid_selection.call("activate_live_target_mode")),
 		"Move target mode should activate for HUD availability transition."
+	)
+	test.expect_true(
+		commands_label.text.find("A/D 旋转 移动选点中") >= 0,
+		"Move target mode should disable Rotate in HUD."
 	)
 	test.expect_true(
 		commands_label.text.find("C 抓放 移动选点中") >= 0,
@@ -106,17 +111,20 @@ func _run() -> void:
 	)
 
 	test.expect_true(grab_drop_controller.rotate_selected_vehicle(1), "Arm should rotate away from the pile.")
+	test.expect_true(commands_label.text.find("A/D 旋转 旋转中") >= 0, "HUD should expose in-flight Rotate state from the real vehicle owner.")
 	var turn_frames := 0
 	while arm.is_turning() and turn_frames < 120:
 		await physics_frame
 		turn_frames += 1
 	test.expect_true(turn_frames < 120, "HUD rotation fixture should complete.")
+	test.expect_true(commands_label.text.find("A/D 旋转 可用") >= 0, "Completed turn should restore Rotate availability.")
 	test.expect_true(
 		commands_label.text.find("C 抓放 无有效交互目标") >= 0,
 		"Completed facing changes should refresh GrabDrop availability."
 	)
 
 	test.expect_true(bool(selection.call("select_vehicle", transport)), "Transport should be selectable for capability feedback.")
+	test.expect_true(commands_label.text.find("A/D 旋转 可用") >= 0, "Transport should expose its independent Rotate capability in HUD.")
 	test.expect_true(
 		commands_label.text.find("C 抓放 车辆无机械臂") >= 0,
 		"HUD should explain GrabDrop capability absence."
@@ -141,6 +149,7 @@ func _run() -> void:
 	scene.call("pause_scene")
 	test.expect_true(pause_label.visible, "HUD should show an explicit PAUSED indicator.")
 	test.expect_true(commands_label.text.find("M 移动 暂停") >= 0, "Pause should explain Move unavailability.")
+	test.expect_true(commands_label.text.find("A/D 旋转 暂停") >= 0, "Pause should explain Rotate unavailability.")
 	test.expect_true(commands_label.text.find("X 停止 暂停") >= 0, "Pause should explain Stop unavailability.")
 	test.expect_true(commands_label.text.find("C 抓放 暂停") >= 0, "Pause should explain GrabDrop unavailability.")
 	scene.call("run_scene")
