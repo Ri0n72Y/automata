@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="VehicleDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_definition.gd" id="1_definition"]
+
+[resource]
+script = ExtResource("1_definition")
+assembly_id = &"transport_vehicle"
+display_name = "运输车"
+vehicle_kind = 1
+footprint = Vector2i(1, 1)
+base_speed = 2.4
+carrying_speed_multiplier = 1.0
+total_weight = 16.0
+recommended_payload = 24.0
+max_payload = 36.0
+capability_tags = PackedStringArray("can_move", "can_rotate", "can_carry", "has_tray")
+tray_capacity = 8
