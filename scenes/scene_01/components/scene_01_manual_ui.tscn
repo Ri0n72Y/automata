@@ -68,7 +68,7 @@ size_flags_vertical = 3
 [node name="Text" type="Label" parent="RootControl/Panel/Margin/VBox/Instructions"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "▶/⏸ 播放/暂停 · 倍速 0.5×/1×/2×/4× · ↺ 重置\n左键选择车辆；M 进入移动目标模式，左键确认\nM / Esc / 右键退出目标模式；X 停止车辆任务\n机械臂：A / D 调整朝向，C 抓取或放置\nEsc / 右键取消车辆选择；Q / E 旋转相机"
+text = "▶/⏸ 播放/暂停 · 倍速 0.5×/1×/2×/4× · ↺ 重置\n左键选择车辆；M 进入移动目标模式，左键确认\nM / Esc / 右键退出目标模式；X 停止车辆任务\n车辆：A / D 调整朝向；机械臂：C 抓取或放置\nEsc / 右键取消车辆选择；Q / E 旋转相机"
 autowrap_mode = 2
 
 [node name="ScopeNote" type="RichTextLabel" parent="RootControl/Panel/Margin/VBox"]
