@@ -59,9 +59,9 @@ These warnings predate #22, the affected suites return exit 0, and Run #290 comp
 
 - Draft PR: **#67**
 - Branch: `codex/22-scene01-final-qa`
-- Candidate head: `6541cccd20eb77559938405d0a10f0dd4c59b048`
-- Workflow Run: **#322**
-- Run id: `35950827162`
+- Production candidate head: `04a1ac06a48bce573e39343c911f72158ed35a4a`
+- Workflow Run: **#326**
+- Run id: `35951272983`
 - Conclusion: **SUCCESS**
 - Project Import: **PASS**
 - Runtime suites: **53 / 53 PASS**
@@ -70,7 +70,7 @@ These warnings predate #22, the affected suites return exit 0, and Run #290 comp
 - `scene_01_tutorial_test.gd`: **PASS**
 - `scene_01_ui_information_architecture_test.gd`: **PASS**
 
-Run #322 validates the unified Program capability contract plus the #58 UI information-architecture fold-in.
+Run #326 validates the unified Program capability contract plus the #58 UI information-architecture fold-in, including the selected-vehicle Rotate API rename and player-facing A / D help copy.
 
 ## 3. Final static / Ponytail audit
 
@@ -258,7 +258,7 @@ Automated geometry is green at 1280×720 / 1600×900 / 1920×1080; the items bel
 - [x] all MVP feature Issues completed
 - [x] final static audit has no Blocking / Major finding
 - [x] merged-main Godot 4.7.2 baseline passes
-- [x] #22 candidate PR Godot 4.7.2 CI passes — Run #322 SUCCESS, 53/53
+- [x] #22 production candidate Godot 4.7.2 CI passes — Run #326 SUCCESS, 53/53
 - [ ] fresh graphical walkthrough passes
 - [ ] no regression fix remains unmerged
 - [ ] #1 can be closed as Scene 01 MVP complete
@@ -287,6 +287,6 @@ The follow-up code review found and fixed two capability-contract defects: Rotat
 
 The graphical walkthrough scope was then expanded to include #58 UI information architecture. The candidate now uses a shared content frame: lifecycle at the top, HUD + Tutorial/guide on the left, Program on the right, and Debug as an auxiliary developer surface. Tutorial implementation-detail capability copy was removed, and all main Scene 01 UI surfaces use the same explicit theme.
 
-Automated regression after the UI fold-in: Run #322 **SUCCESS**, 53/53, including the dedicated SubViewport information-architecture suite.
+Automated regression after the UI fold-in: Run #326 **SUCCESS**, 53/53, including the dedicated SubViewport information-architecture suite. The shared manual Rotate API is now named `rotate_selected_vehicle()`, and the operation guide correctly distinguishes A / D rotation from Arm-only C GrabDrop.
 
 Pending the continued real graphical walkthrough; structural layout automation is not treated as a substitute for player-visible acceptance.
