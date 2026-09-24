@@ -3,7 +3,7 @@ extends CanvasLayer
 
 const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metrics.gd")
 const COLLAPSED_HEIGHT := 52.0
-const EXPANDED_HEIGHT := 280.0
+const EXPANDED_HEIGHT := 260.0
 const BODY_PATHS := [
 	NodePath("RootControl/Panel/Margin/VBox/Instructions"),
 	NodePath("RootControl/Panel/Margin/VBox/ScopeNote"),
