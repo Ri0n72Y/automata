@@ -59,16 +59,16 @@ These warnings predate #22, the affected suites return exit 0, and Run #290 comp
 
 - Draft PR: **#67**
 - Branch: `codex/22-scene01-final-qa`
-- Candidate head: `50580c3553aa85e2f59130e5b82bdc587b37f8c6`
-- Workflow Run: **#297**
-- Run id: `35580797462`
+- Candidate head: `3c822eff843fbf26bc63f198031cd8fd6d8418fb`
+- Workflow Run: **#306**
+- Run id: `35873749506`
 - Conclusion: **SUCCESS**
 - Project Import: **PASS**
 - Runtime suites: **52 / 52 PASS**
 - Suite failures: **0**
 - `scene_01_program_workspace_test.gd`: **PASS**
 
-Run #297 validates the Final QA Program palette fix and reproduces only the previously known non-blocking teardown warnings.
+Run #306 validates the unified Program command capability contract and reproduces only the previously known non-blocking teardown warnings.
 
 ## 3. Final static / Ponytail audit
 
@@ -95,8 +95,10 @@ Current-main review focuses on the final MVP contracts rather than introducing a
 ### Program authoring
 
 - [x] scene vehicle selection is the only vehicle-selection truth used by the Builder
-- [x] Builder command availability is a read-only projection of the selected vehicle definition capabilities
-- [x] Arm exposes MoveTo / Rotate / GrabDrop; Transport does not expose Arm-only Rotate / GrabDrop
+- [x] Builder command availability is a read-only projection of the selected vehicle compiled Assembly capabilities
+- [x] MoveTo / Rotate / GrabDrop share one command → required capability contract with Program validation
+- [x] Rotate has an independent `can_rotate` capability rather than piggybacking on GrabDrop
+- [x] Arm exposes MoveTo / Rotate / GrabDrop; Transport exposes MoveTo / Rotate but not GrabDrop
 - [x] generated vehicle commands still write explicit `vehicle_id` into canonical source
 - [x] CodeEdit source remains the only mutable Program authoring truth
 - [x] Builder writes source instead of owning a second statement model
@@ -181,7 +183,7 @@ This section must be executed against the final #22 candidate in a graphical God
 
 - [ ] with no vehicle selected, vehicle-specific command buttons are not shown
 - [ ] selecting Arm in the world shows MoveTo / Rotate / GrabDrop
-- [ ] selecting Transport in the world shows MoveTo and hides Rotate / GrabDrop
+- [ ] selecting Transport in the world shows MoveTo / Rotate and hides GrabDrop
 - [ ] added commands use the currently selected vehicle's explicit `vehicle_id`
 - [ ] namespace cannot be permanently removed or corrupted
 - [ ] direct source typing works
@@ -240,7 +242,7 @@ This section must be executed against the final #22 candidate in a graphical God
 - [x] all MVP feature Issues completed
 - [x] final static audit has no Blocking / Major finding
 - [x] merged-main Godot 4.7.2 baseline passes
-- [x] #22 candidate PR Godot 4.7.2 CI passes — Run #297 SUCCESS, 52/52
+- [x] #22 candidate PR Godot 4.7.2 CI passes — Run #306 SUCCESS, 52/52
 - [ ] fresh graphical walkthrough passes
 - [ ] no regression fix remains unmerged
 - [ ] #1 can be closed as Scene 01 MVP complete
@@ -254,13 +256,19 @@ The #22 candidate now fixes this without adding Program selection state:
 ```text
 scene VehicleSelectionController
         ↓
-selected VehicleDefinition capabilities
+selected vehicle
+        ↓
+Assembly Compile capability snapshot
+        ↓
+shared command → capability policy
         ↓
 read-only Builder command palette
         ↓
 canonical source with explicit vehicle_id
 ```
 
-Automated regression after the fix: Run #297 **SUCCESS**, 52/52.
+The follow-up code review found and fixed two capability-contract defects: Rotate no longer reuses GrabDrop, and Builder/runtime no longer maintain separate command-capability mappings.
+
+Automated regression after the fix: Run #306 **SUCCESS**, 52/52.
 
 Pending the continued fresh graphical walkthrough; any further blocker remains inside #22 until resolved.
