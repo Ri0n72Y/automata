@@ -124,7 +124,7 @@ func _run() -> void:
 	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable for rejecting gate coverage.")
 	var facing_before_rejection: int = arm.runtime_state.facing
 	var grab_drop_controller := scene.get_node("SceneRoot/GridRoot/VehicleGrabDropController")
-	_expect_false(bool(grab_drop_controller.call("rotate_selected_arm", 1)), "Rejected run preparation should block arm rotation.")
+	_expect_false(bool(grab_drop_controller.call("rotate_selected_vehicle", 1)), "Rejected run preparation should block arm rotation.")
 	_expect_equal(arm.runtime_state.facing, facing_before_rejection, "Rejected run preparation must not mutate arm state.")
 	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.READY, "Rejected run preparation should keep READY.")
 	_expect_equal(rejecting_gate.call_count, 1, "One rotation attempt should invoke one gate call.")
