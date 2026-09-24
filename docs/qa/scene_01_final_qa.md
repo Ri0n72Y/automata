@@ -59,9 +59,9 @@ These warnings predate #22, the affected suites return exit 0, and Run #290 comp
 
 - Draft PR: **#67**
 - Branch: `codex/22-scene01-final-qa`
-- Production candidate head: `5516d805512f89d8c143363c483fb6dd44d0c629`
-- Workflow Run: **#338**
-- Run id: `35959467308`
+- Production candidate head: `91ddc9b8198d060cecd04dcc9ef3fe452a98e676`
+- Workflow Run: **#349**
+- Run id: `35989511772`
 - Conclusion: **SUCCESS**
 - Project Import: **PASS**
 - Runtime suites: **53 / 53 PASS**
@@ -129,6 +129,17 @@ Current-main review focuses on the final MVP contracts rather than introducing a
 - [x] HUD reports Move busy during Rotate and restores availability after completion
 - [x] stale `rotate_selected_arm()` lifecycle alias removed; selected-vehicle API is `rotate_selected_vehicle()`
 - [x] Run #338: 53/53 PASS
+
+### Static resource ownership
+
+- [x] Scene 01 Arm / Transport definitions are editor-visible `.tres` resources
+- [x] vehicle scenes bind those definitions directly through exported `VehicleActor.definition`
+- [x] Scene01VehicleManager no longer constructs preset definitions from script
+- [x] vehicle id has one definition-resource truth; stale `vehicle_preset_id` duplicate removed
+- [x] Program initial namespace, status text, Rotate options and no-selection command visibility are serialized in `.tscn`
+- [x] current vehicle presentation is one line: `当前车辆：未选择车辆`
+- [x] runtime creation is retained only for mutable runtime state / source-derived projections / gameplay-spawned content
+- [x] Run #349: Project Import PASS, 54/54 runtime suites PASS
 
 ### Deferred boundaries
 
@@ -266,7 +277,7 @@ Automated geometry is green at 1280×720 / 1600×900 / 1920×1080; the items bel
 - [x] all MVP feature Issues completed
 - [x] final static audit has no Blocking / Major finding
 - [x] merged-main Godot 4.7.2 baseline passes
-- [x] #22 production candidate Godot 4.7.2 CI passes — Run #338 SUCCESS, 53/53
+- [x] #22 production candidate Godot 4.7.2 CI passes — Run #349 SUCCESS, 54/54
 - [ ] fresh graphical walkthrough passes
 - [ ] no regression fix remains unmerged
 - [ ] #1 can be closed as Scene 01 MVP complete
