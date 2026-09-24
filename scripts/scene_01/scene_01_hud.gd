@@ -82,12 +82,7 @@ func _bind_signals() -> void:
 	_move_controller.move_stopped.connect(_on_move_stopped)
 	_grab_drop_controller.grab_drop_completed.connect(_on_grab_drop_completed)
 	_grab_drop_controller.facing_changed.connect(_on_arm_facing_changed)
-	for vehicle_node in _vehicle_manager.get_vehicles():
-		var vehicle := vehicle_node as VehicleActorScript
-		if vehicle == null:
-			continue
-		vehicle.turn_started.connect(_on_vehicle_turn_started)
-		vehicle.turn_completed.connect(_on_vehicle_turn_completed)
+	_bind_vehicle_turn_signals(_vehicle_selection.get_selected_vehicle_id())
 	_scene_controller.lifecycle_state_changed.connect(_on_lifecycle_changed)
 	_scene_controller.lifecycle_reset_completed.connect(_on_reset_completed)
 
@@ -238,8 +233,24 @@ func _on_observable_changed(_a = null, _b = null, _c = null) -> void:
 	_refresh()
 
 
-func _on_selection_changed(_vehicle_id: StringName, _has_selection: bool) -> void:
+func _on_selection_changed(vehicle_id: StringName, has_selection: bool) -> void:
+	if has_selection:
+		_bind_vehicle_turn_signals(vehicle_id)
 	_refresh()
+
+
+func _bind_vehicle_turn_signals(vehicle_id: StringName) -> void:
+	if vehicle_id == &"":
+		return
+	var vehicle := _vehicle_manager.get_vehicle_by_id(vehicle_id) as VehicleActorScript
+	if vehicle == null:
+		return
+	var started_callable := Callable(self, "_on_vehicle_turn_started")
+	if not vehicle.turn_started.is_connected(started_callable):
+		vehicle.turn_started.connect(started_callable)
+	var completed_callable := Callable(self, "_on_vehicle_turn_completed")
+	if not vehicle.turn_completed.is_connected(completed_callable):
+		vehicle.turn_completed.connect(completed_callable)
 
 
 func _on_target_mode_changed(_active: bool) -> void:
