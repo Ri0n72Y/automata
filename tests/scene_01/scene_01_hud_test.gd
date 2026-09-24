@@ -112,12 +112,20 @@ func _run() -> void:
 
 	test.expect_true(grab_drop_controller.rotate_selected_vehicle(1), "Arm should rotate away from the pile.")
 	test.expect_true(commands_label.text.find("A/D 旋转 旋转中") >= 0, "HUD should expose in-flight Rotate state from the real vehicle owner.")
+	test.expect_true(commands_label.text.find("M 移动 车辆忙碌") >= 0, "HUD Move availability should follow the same turn-busy owner contract.")
+	test.expect_false(bool(grid_selection.call("is_live_target_available")), "Rotate should disable Move target availability while the turn is in flight.")
+	test.expect_false(bool(grid_selection.call("activate_live_target_mode")), "Pressing M during Rotate must not enter Move target mode.")
+	test.expect_false(bool(grid_selection.call("is_live_target_mode")), "Rotate must keep Move target mode inactive.")
+	test.expect_false(bool(move_controller.call("is_target_preview_visible")), "Rotate must not expose a Move target preview.")
+	test.expect_false(bool(move_controller.call("is_path_preview_visible")), "Rotate must not expose a Move path preview.")
 	var turn_frames := 0
 	while arm.is_turning() and turn_frames < 120:
 		await physics_frame
 		turn_frames += 1
 	test.expect_true(turn_frames < 120, "HUD rotation fixture should complete.")
 	test.expect_true(commands_label.text.find("A/D 旋转 可用") >= 0, "Completed turn should restore Rotate availability.")
+	test.expect_true(commands_label.text.find("M 移动 可用") >= 0, "Completed turn should restore Move availability.")
+	test.expect_true(bool(grid_selection.call("is_live_target_available")), "Completed turn should restore Move target availability.")
 	test.expect_true(
 		commands_label.text.find("C 抓放 无有效交互目标") >= 0,
 		"Completed facing changes should refresh GrabDrop availability."
