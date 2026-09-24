@@ -20,13 +20,12 @@ theme = ExtResource("2_theme")
 
 [node name="StatusPanel" type="PanelContainer" parent="RootControl"]
 layout_mode = 0
-anchor_top = 1.0
-anchor_bottom = 1.0
+anchor_top = 0.0
+anchor_bottom = 0.0
 offset_left = 16.0
-offset_top = -214.0
-offset_right = 376.0
-offset_bottom = -16.0
-grow_vertical = 0
+offset_top = 82.0
+offset_right = 316.0
+offset_bottom = 280.0
 mouse_filter = 2
 
 [node name="Margin" type="MarginContainer" parent="RootControl/StatusPanel"]
@@ -46,7 +45,7 @@ layout_mode = 2
 [node name="Title" type="Label" parent="RootControl/StatusPanel/Margin/VBox/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "场景 01 · 状态"
+text = "任务状态"
 theme_override_font_sizes/font_size = 18
 
 [node name="PauseLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox/Header"]
