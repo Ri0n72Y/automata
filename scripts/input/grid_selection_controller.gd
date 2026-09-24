@@ -324,7 +324,8 @@ func _selected_vehicle_is_busy() -> bool:
 	if vehicle == null or vehicle.runtime_state == null:
 		return true
 	return (
-		vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
+		vehicle.is_turning()
+		or vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
 		or vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING
 	)
 
