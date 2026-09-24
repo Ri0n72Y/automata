@@ -20,9 +20,9 @@ theme = ExtResource("2_theme")
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 16.0
-offset_top = 82.0
-offset_right = 376.0
-offset_bottom = 134.0
+offset_top = 292.0
+offset_right = 316.0
+offset_bottom = 344.0
 mouse_filter = 0
 
 [node name="Margin" type="MarginContainer" parent="RootControl/Panel"]
@@ -43,7 +43,7 @@ theme_override_constants/separation = 8
 [node name="Title" type="Label" parent="RootControl/Panel/Margin/VBox/HeaderRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "场景 01 · 操作指南"
+text = "操作指南"
 theme_override_font_sizes/font_size = 18
 
 [node name="TutorialButton" type="Button" parent="RootControl/Panel/Margin/VBox/HeaderRow"]
@@ -51,7 +51,7 @@ unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
 text = "教学"
-tooltip_text = "打开场景 01 教学"
+tooltip_text = "打开教学"
 
 [node name="CollapseButton" type="Button" parent="RootControl/Panel/Margin/VBox/HeaderRow"]
 unique_name_in_owner = true
@@ -78,7 +78,7 @@ custom_minimum_size = Vector2(0, 54)
 fit_content = false
 scroll_active = true
 bbcode_enabled = false
-text = "状态面板显示车辆、库存、任务和命令反馈。\n绿色机械臂工作区表示存在可执行交互。\n暂停会冻结玩法命令但仍可观察；调试面板位于右上角。"
+text = "左上状态卡显示任务、车辆、库存和命令反馈。\n绿色机械臂工作区表示当前存在可执行交互。\n暂停会冻结玩法命令，但仍可观察当前状态。"
 modulate = Color(0.72, 0.8, 0.9, 1)
 
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/HeaderRow/CollapseButton" to="." method="_on_collapse_pressed"]
