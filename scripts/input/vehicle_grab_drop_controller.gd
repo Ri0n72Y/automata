@@ -79,11 +79,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed(ROTATE_COUNTERCLOCKWISE_ACTION):
-		if rotate_selected_arm(-1):
+		if rotate_selected_vehicle(-1):
 			get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed(ROTATE_CLOCKWISE_ACTION):
-		if rotate_selected_arm(1):
+		if rotate_selected_vehicle(1):
 			get_viewport().set_input_as_handled()
 
 
@@ -131,7 +131,7 @@ func request_vehicle_turn(vehicle: VehicleActorScript, direction: int) -> bool:
 	return true
 
 
-func rotate_selected_arm(direction: int) -> bool:
+func rotate_selected_vehicle(direction: int) -> bool:
 	return request_vehicle_turn(_get_selected_vehicle(), direction)
 
 
