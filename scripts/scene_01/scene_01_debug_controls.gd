@@ -99,8 +99,8 @@ func _sync_coordinates_button() -> void:
 	if coordinates_button == null:
 		return
 	var debug_view := _get_grid_debug_view()
-	var visible := debug_view != null and bool(debug_view.get("show_coordinates"))
-	coordinates_button.text = "隐藏场地坐标" if visible else "显示场地坐标"
+	var coordinates_visible := debug_view != null and bool(debug_view.get("show_coordinates"))
+	coordinates_button.text = "隐藏场地坐标" if coordinates_visible else "显示场地坐标"
 
 
 func _call_scene_action(method_name: StringName, args: Array = []) -> void:
