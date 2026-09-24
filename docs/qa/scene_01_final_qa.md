@@ -10,7 +10,7 @@ Issue: #22
 
 This is the final Scene 01 MVP completion gate.
 
-No new product capability is introduced here. Any failure found by this QA must be fixed with the smallest change that restores the already accepted Scene 01 contract. Post-MVP work remains in #17, #34, #49, #58, #62, #64, #65 and #66.
+No new product capability is introduced here. Any failure found by this QA must be fixed with the smallest change that restores the already accepted Scene 01 contract. #58 UI information architecture was explicitly folded into this Final QA; remaining post-MVP work stays in #17, #34, #49, #62, #64, #65 and #66.
 
 ## 2. Automated baseline
 
@@ -59,16 +59,18 @@ These warnings predate #22, the affected suites return exit 0, and Run #290 comp
 
 - Draft PR: **#67**
 - Branch: `codex/22-scene01-final-qa`
-- Candidate head: `3c822eff843fbf26bc63f198031cd8fd6d8418fb`
-- Workflow Run: **#306**
-- Run id: `35873749506`
+- Candidate head: `6541cccd20eb77559938405d0a10f0dd4c59b048`
+- Workflow Run: **#322**
+- Run id: `35950827162`
 - Conclusion: **SUCCESS**
 - Project Import: **PASS**
-- Runtime suites: **52 / 52 PASS**
+- Runtime suites: **53 / 53 PASS**
 - Suite failures: **0**
 - `scene_01_program_workspace_test.gd`: **PASS**
+- `scene_01_tutorial_test.gd`: **PASS**
+- `scene_01_ui_information_architecture_test.gd`: **PASS**
 
-Run #306 validates the unified Program command capability contract and reproduces only the previously known non-blocking teardown warnings.
+Run #322 validates the unified Program capability contract plus the #58 UI information-architecture fold-in.
 
 ## 3. Final static / Ponytail audit
 
@@ -108,10 +110,21 @@ Current-main review focuses on the final MVP contracts rather than introducing a
 - [x] no legacy absolute `Face north/east/south/west` path found
 - [x] Rotate uses `clockwise` / `counterclockwise`
 
+### UI information architecture
+
+- [x] #58 is intentionally folded into #22 without introducing a UI state coordinator
+- [x] HUD is the primary left-rail status card
+- [x] Tutorial / operation guide share the auxiliary left-rail slot
+- [x] Program remains the dedicated right rail
+- [x] lifecycle controls remain in the top band
+- [x] Debug remains a developer auxiliary surface
+- [x] Tutorial no longer depends on or displays Assembly Compile implementation details
+- [x] Scene 01 player UI surfaces share one explicit theme
+- [x] 1280×720 / 1600×900 / 1920×1080 geometry is covered by a real SubViewport layout regression
+
 ### Deferred boundaries
 
 - [x] #49 dynamic GroundBlock occupancy remains explicitly P3 / non-blocking
-- [x] #58 global UI redesign is not pulled into Final QA
 - [x] #62 controller refactor is not pulled into Final QA
 - [x] #64 visual command preview is not required for MVP
 - [x] #65 structured parameter picking is not required for MVP
@@ -126,7 +139,7 @@ Major:    0
 
 ## 4. Automated acceptance coverage
 
-The current 52-suite matrix includes direct coverage for:
+The current 53-suite matrix includes direct coverage for:
 
 - production Scene 01 E2E
 - lifecycle state / pause / resume / reset
@@ -145,12 +158,15 @@ The current 52-suite matrix includes direct coverage for:
 - Scoring
 - Tutorial
 - vehicle state machine / movement execution / visual contracts
+- Scene 01 UI information architecture / supported desktop layout tiers
 
 ## 5. Fresh player-visible walkthrough
 
 This section must be executed against the final #22 candidate in a graphical Godot 4.7.2 client.
 
 ### A. Scene entry / UI
+
+Automated geometry is green at 1280×720 / 1600×900 / 1920×1080; the items below still require a real graphical client.
 
 - [ ] Scene 01 enters without visible errors
 - [ ] Chinese canonical UI is readable
@@ -242,7 +258,7 @@ This section must be executed against the final #22 candidate in a graphical God
 - [x] all MVP feature Issues completed
 - [x] final static audit has no Blocking / Major finding
 - [x] merged-main Godot 4.7.2 baseline passes
-- [x] #22 candidate PR Godot 4.7.2 CI passes — Run #306 SUCCESS, 52/52
+- [x] #22 candidate PR Godot 4.7.2 CI passes — Run #322 SUCCESS, 53/53
 - [ ] fresh graphical walkthrough passes
 - [ ] no regression fix remains unmerged
 - [ ] #1 can be closed as Scene 01 MVP complete
@@ -269,6 +285,8 @@ canonical source with explicit vehicle_id
 
 The follow-up code review found and fixed two capability-contract defects: Rotate no longer reuses GrabDrop, and Builder/runtime no longer maintain separate command-capability mappings.
 
-Automated regression after the fix: Run #306 **SUCCESS**, 52/52.
+The graphical walkthrough scope was then expanded to include #58 UI information architecture. The candidate now uses a shared content frame: lifecycle at the top, HUD + Tutorial/guide on the left, Program on the right, and Debug as an auxiliary developer surface. Tutorial implementation-detail capability copy was removed, and all main Scene 01 UI surfaces use the same explicit theme.
 
-Pending the continued fresh graphical walkthrough; any further blocker remains inside #22 until resolved.
+Automated regression after the UI fold-in: Run #322 **SUCCESS**, 53/53, including the dedicated SubViewport information-architecture suite.
+
+Pending the continued real graphical walkthrough; structural layout automation is not treated as a substitute for player-visible acceptance.
