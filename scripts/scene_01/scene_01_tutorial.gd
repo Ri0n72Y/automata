@@ -10,7 +10,7 @@ const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_m
 
 enum Step { SELECT_ARM, MANUAL_PICKUP, MANUAL_DROP, PROGRAM_RUN, MULTI_VEHICLE, DONE }
 
-var _view_step := Step.SELECT_ARM
+var _view_step: int = Step.SELECT_ARM
 var _visible := true
 var _goals := {
 	Step.SELECT_ARM: false,
