@@ -150,12 +150,12 @@ theme_override_constants/separation = 5
 
 [node name="VehicleLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 layout_mode = 2
-text = "当前车辆（从场地选择）"
+text = "当前车辆"
 
 [node name="VehicleSelectionLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "未选择车辆 · 请在场地选择"
+text = "请在场地选择"
 
 [node name="MoveLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
