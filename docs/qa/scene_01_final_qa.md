@@ -59,9 +59,9 @@ These warnings predate #22, the affected suites return exit 0, and Run #290 comp
 
 - Draft PR: **#67**
 - Branch: `codex/22-scene01-final-qa`
-- Production candidate head: `0c077076af17ff078e241978798f945945b420aa`
-- Workflow Run: **#334**
-- Run id: `35952809715`
+- Production candidate head: `5516d805512f89d8c143363c483fb6dd44d0c629`
+- Workflow Run: **#338**
+- Run id: `35959467308`
 - Conclusion: **SUCCESS**
 - Project Import: **PASS**
 - Runtime suites: **53 / 53 PASS**
@@ -70,7 +70,7 @@ These warnings predate #22, the affected suites return exit 0, and Run #290 comp
 - `scene_01_tutorial_test.gd`: **PASS**
 - `scene_01_ui_information_architecture_test.gd`: **PASS**
 
-Run #334 validates the unified Program capability contract plus the #58 UI information-architecture fold-in. HUD command feedback now exposes the existing A / D Rotate truth (including move-target, in-flight turn and pause states), and the collapsed Debug entry is reduced to an auxiliary disclosure footprint.
+Run #338 validates the unified Program capability contract plus the #58 UI information-architecture fold-in. Rotate now suppresses Move target availability/preview through the existing selected-vehicle turn truth, HUD reflects Move as busy during a turn, and the lifecycle selected-vehicle rotate API has no stale Arm-only alias.
 
 ## 3. Final static / Ponytail audit
 
@@ -121,6 +121,14 @@ Current-main review focuses on the final MVP contracts rather than introducing a
 - [x] Tutorial no longer depends on or displays Assembly Compile implementation details
 - [x] Scene 01 player UI surfaces share one explicit theme
 - [x] 1280×720 / 1600×900 / 1920×1080 geometry is covered by a real SubViewport layout regression
+
+### Pre-walkthrough review fixes
+
+- [x] Rotate-in-flight uses existing `VehicleActor.is_turning()` as the Move busy truth
+- [x] Move target mode and target/path preview are unavailable during Rotate
+- [x] HUD reports Move busy during Rotate and restores availability after completion
+- [x] stale `rotate_selected_arm()` lifecycle alias removed; selected-vehicle API is `rotate_selected_vehicle()`
+- [x] Run #338: 53/53 PASS
 
 ### Deferred boundaries
 
@@ -258,7 +266,7 @@ Automated geometry is green at 1280×720 / 1600×900 / 1920×1080; the items bel
 - [x] all MVP feature Issues completed
 - [x] final static audit has no Blocking / Major finding
 - [x] merged-main Godot 4.7.2 baseline passes
-- [x] #22 production candidate Godot 4.7.2 CI passes — Run #334 SUCCESS, 53/53
+- [x] #22 production candidate Godot 4.7.2 CI passes — Run #338 SUCCESS, 53/53
 - [ ] fresh graphical walkthrough passes
 - [ ] no regression fix remains unmerged
 - [ ] #1 can be closed as Scene 01 MVP complete
@@ -287,6 +295,6 @@ The follow-up code review found and fixed two capability-contract defects: Rotat
 
 The graphical walkthrough scope was then expanded to include #58 UI information architecture. The candidate now uses a shared content frame: lifecycle at the top, HUD + Tutorial/guide on the left, Program on the right, and Debug as an auxiliary developer surface. Tutorial implementation-detail capability copy was removed, and all main Scene 01 UI surfaces use the same explicit theme.
 
-Automated regression after the latest UI pass: Run #334 **SUCCESS**, 53/53. The dedicated SubViewport information-architecture suite, HUD suite and Debug smoke suite all pass. The shared manual Rotate API is `rotate_selected_vehicle()`, HUD presents A / D availability from existing vehicle truth, and Debug remains a compact auxiliary surface.
+Automated regression after the pre-walkthrough review fixes: Run #338 **SUCCESS**, 53/53. The HUD suite now covers Rotate → M exclusion and recovery; lifecycle smoke covers the renamed `rotate_selected_vehicle()` API.
 
 Pending the continued real graphical walkthrough; structural layout automation is not treated as a substitute for player-visible acceptance.
