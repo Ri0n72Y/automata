@@ -76,9 +76,16 @@ func set_command_builder_expanded(expanded: bool) -> void:
 	%BuilderToggleButton.text = "− 添加命令" if expanded else "+ 添加命令"
 
 func _apply_workspace_layout() -> void:
-	var viewport_width := float(get_viewport().get_visible_rect().size.x)
-	var width := LayoutMetrics.program_rail_width(viewport_width) if _expanded_content.visible else LayoutMetrics.PROGRAM_COLLAPSED_WIDTH
+	var viewport_size := get_viewport().get_visible_rect().size
+	var width := (
+		LayoutMetrics.program_rail_width(float(viewport_size.x))
+		if _expanded_content.visible
+		else LayoutMetrics.PROGRAM_COLLAPSED_WIDTH
+	)
+	_program_panel.offset_top = LayoutMetrics.CONTENT_TOP
+	_program_panel.offset_right = -LayoutMetrics.EDGE_MARGIN
 	_program_panel.offset_left = _program_panel.offset_right - width
+	_program_panel.offset_bottom = -LayoutMetrics.CONTENT_BOTTOM_MARGIN
 
 func _bind_ui() -> void:
 	_collapse_button.pressed.connect(func(): set_workspace_collapsed(_expanded_content.visible))
