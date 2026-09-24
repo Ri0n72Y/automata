@@ -134,12 +134,12 @@ func _sync_builder_vehicle() -> void:
 		if vehicle != null and vehicle.definition != null
 		else "未选择车辆"
 	)
-	%MoveLabel.visible = can_move
-	%MoveParams.visible = can_move
-	%AddMoveButton.visible = can_move
-	%MoveRotateDivider.visible = can_move and (can_rotate or can_grab)
+	%MoveRow.visible = can_move
+	%MoveDivider.visible = can_move
 	%RotateRow.visible = can_rotate
-	%AddGrabButton.visible = can_grab
+	%RotateDivider.visible = can_rotate
+	%GrabRow.visible = can_grab
+	%GrabDivider.visible = can_grab
 
 func _on_add_move() -> void:
 	var vehicle_id := _selected_vehicle_id()
