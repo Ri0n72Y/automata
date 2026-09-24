@@ -6,6 +6,7 @@ const MissionControllerScript := preload("res://scripts/scene_01/scene_01_missio
 const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
+const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
 const VehicleSelectionControllerScript := preload("res://scripts/input/vehicle_selection_controller.gd")
 const GridSelectionControllerScript := preload("res://scripts/input/grid_selection_controller.gd")
 const VehicleMoveControllerScript := preload("res://scripts/input/vehicle_move_controller.gd")
@@ -82,7 +83,7 @@ func _bind_signals() -> void:
 	_grab_drop_controller.grab_drop_completed.connect(_on_grab_drop_completed)
 	_grab_drop_controller.facing_changed.connect(_on_arm_facing_changed)
 	for vehicle_node in _vehicle_manager.get_vehicles():
-		var vehicle = vehicle_node
+		var vehicle := vehicle_node as VehicleActorScript
 		if vehicle == null:
 			continue
 		vehicle.turn_started.connect(_on_vehicle_turn_started)
