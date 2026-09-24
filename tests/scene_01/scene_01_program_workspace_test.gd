@@ -71,7 +71,7 @@ func _run() -> void:
 	_expect_true(not expanded_content.visible, "Program rail should start collapsed so gameplay remains visible.")
 	_expect_true(not builder_scroll.visible, "Add Command should start collapsed behind its accordion.")
 	_expect_true(workspace_button.text.contains("+"), "Collapsed Program disclosure should use plus instead of a triangle arrow.")
-	_expect_true(program_panel.size.x <= 53.0, "Collapsed Program rail should stay near the 52px spec width.")
+	_expect_true(absf(program_panel.size.x - LayoutMetrics.PROGRAM_COLLAPSED_WIDTH) <= 2.0, "Collapsed Program rail should match the shared compact width metric.")
 	ui.call("set_workspace_collapsed", false)
 	await process_frame
 	_expect_true(expanded_content.visible, "Program rail should expand on explicit player action.")
