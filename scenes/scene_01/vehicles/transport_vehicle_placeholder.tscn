@@ -1,8 +1,9 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scripts/vehicles/vehicle_actor.gd" id="1_actor"]
 [ext_resource type="PackedScene" path="res://scenes/scene_01/objects/standard_block_placeholder.tscn" id="2_block"]
 [ext_resource type="Script" path="res://scripts/vehicles/vehicle_state_visual.gd" id="3_state"]
+[ext_resource type="Resource" path="res://scenes/scene_01/vehicles/definitions/transport_vehicle_definition.tres" id="4_definition"]
 
 [sub_resource type="StandardMaterial3D" id="ChassisMaterial"]
 albedo_color = Color(0.04, 0.38, 0.26, 1)
@@ -55,7 +56,7 @@ size = Vector3(0.91, 1.15, 0.91)
 [node name="TransportVehicle" type="Node3D"]
 script = ExtResource("1_actor")
 use_static_scene_visual = true
-vehicle_preset_id = &"transport_vehicle"
+definition = ExtResource("4_definition")
 
 [node name="VisualRoot" type="Node3D" parent="."]
 unique_name_in_owner = true
