@@ -56,7 +56,6 @@ func _test_selection_contract(scene: Node, selection, manager, camera_rig) -> vo
 			emitted.append({"vehicle_id": vehicle_id, "has_selection": has_selection})
 	)
 	var unmanaged := VEHICLE_ACTOR.new()
-	unmanaged.vehicle_preset_id = &"unmanaged"
 	test.expect_false(selection.select_vehicle(unmanaged), "Unmanaged Actors should be rejected.")
 	unmanaged.free()
 
