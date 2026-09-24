@@ -154,19 +154,17 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "当前车辆：未选择车辆"
 
-[node name="MoveLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-text = "移动目标"
-
-[node name="MoveParams" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+[node name="MoveRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="TargetX" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/MoveParams"]
+[node name="MoveLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/MoveRow"]
+layout_mode = 2
+text = "移动到"
+
+[node name="TargetX" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/MoveRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -175,7 +173,7 @@ max_value = 255.0
 value = 1.0
 prefix = "X "
 
-[node name="TargetY" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/MoveParams"]
+[node name="TargetY" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/MoveRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -184,13 +182,12 @@ max_value = 255.0
 value = 3.0
 prefix = "Y "
 
-[node name="AddMoveButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+[node name="AddMoveButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/MoveRow"]
 unique_name_in_owner = true
-visible = false
 layout_mode = 2
-text = "+ 移动到"
+text = "+ 添加"
 
-[node name="MoveRotateDivider" type="HSeparator" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+[node name="MoveDivider" type="HSeparator" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -200,6 +197,10 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 4
+
+[node name="RotateLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RotateRow"]
+layout_mode = 2
+text = "旋转"
 
 [node name="RotationOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RotateRow"]
 unique_name_in_owner = true
@@ -214,23 +215,44 @@ popup/item_1/id = 1
 [node name="AddRotateButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RotateRow"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "+ 旋转 90°"
+text = "+ 添加"
 
-[node name="AddGrabButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+[node name="RotateDivider" type="HSeparator" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-text = "+ 抓放"
 
-[node name="RepeatLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
-layout_mode = 2
-text = "重复"
-
-[node name="RepeatParams" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+[node name="GrabRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="RepeatCount" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RepeatParams"]
+[node name="GrabLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/GrabRow"]
+layout_mode = 2
+text = "抓放"
+
+[node name="AddGrabButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/GrabRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "+ 添加"
+
+[node name="GrabDivider" type="HSeparator" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="RepeatRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="RepeatLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RepeatRow"]
+layout_mode = 2
+text = "重复"
+
+[node name="RepeatCount" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RepeatRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 1
@@ -239,17 +261,17 @@ max_value = 100.0
 value = 2.0
 prefix = "× "
 
-[node name="RepeatTargetOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RepeatParams"]
+[node name="RepeatTargetOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RepeatRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 
-[node name="AddRepeatButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+[node name="AddRepeatButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RepeatRow"]
 unique_name_in_owner = true
 layout_mode = 2
 disabled = true
-text = "+ 重复"
+text = "+ 添加"
 
 [node name="ClearButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
