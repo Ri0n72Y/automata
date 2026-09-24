@@ -35,8 +35,6 @@ func _ready() -> void:
 	_bind_runner()
 	_vehicle_selection.selection_changed.connect(_on_vehicle_selection_changed)
 	get_viewport().size_changed.connect(_apply_workspace_layout)
-	set_command_builder_expanded(false)
-	set_workspace_collapsed(true)
 	call_deferred("_initialize_editor")
 
 func _input(event: InputEvent) -> void:
@@ -45,10 +43,6 @@ func _input(event: InputEvent) -> void:
 			get_viewport().gui_release_focus()
 
 func _initialize_editor() -> void:
-	%RotationOption.clear()
-	%RotationOption.add_item("顺时针 · D · +90°")
-	%RotationOption.add_item("逆时针 · A · -90°")
-	_set_source_text_internal(SupportScript.HEADER + "\n")
 	_parse_current_source(false)
 	_sync_builder_vehicle()
 
@@ -135,7 +129,11 @@ func _sync_builder_vehicle() -> void:
 		capabilities,
 		ProgramScript.StatementType.GRAB_DROP
 	)
-	_vehicle_label.text = vehicle.definition.display_name if vehicle != null and vehicle.definition != null else "未选择车辆 · 请在场地选择"
+	_vehicle_label.text = "当前车辆：%s" % (
+		vehicle.definition.display_name
+		if vehicle != null and vehicle.definition != null
+		else "未选择车辆"
+	)
 	%MoveLabel.visible = can_move
 	%MoveParams.visible = can_move
 	%AddMoveButton.visible = can_move
