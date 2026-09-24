@@ -17,9 +17,11 @@ func _run() -> void:
 		_finish()
 		return
 
-	var original_size := root.size
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(1280, 720)
+	root.add_child(viewport)
 	var scene := packed.instantiate()
-	root.add_child(scene)
+	viewport.add_child(scene)
 	await process_frame
 	await process_frame
 
@@ -56,7 +58,7 @@ func _run() -> void:
 		or lifecycle_panel == null
 		or debug_panel == null
 	):
-		await _cleanup(scene, original_size)
+		await _cleanup(scene, viewport)
 		return
 
 	_expect_true(
@@ -90,7 +92,7 @@ func _run() -> void:
 		Vector2i(1600, 900),
 		Vector2i(1920, 1080),
 	]:
-		root.size = viewport_size
+		viewport.size = viewport_size
 		await process_frame
 		await process_frame
 		_assert_layout(viewport_size, hud_panel, tutorial_panel, manual_panel, program_panel, lifecycle_panel, debug_panel)
@@ -106,7 +108,7 @@ func _run() -> void:
 		"Guide should reuse the shared auxiliary left-rail top."
 	)
 
-	await _cleanup(scene, original_size)
+	await _cleanup(scene, viewport)
 
 
 func _assert_layout(
@@ -157,10 +159,12 @@ func _assert_layout(
 	)
 
 
-func _cleanup(scene: Node, original_size: Vector2i) -> void:
-	root.size = original_size
+func _cleanup(scene: Node, viewport: SubViewport) -> void:
 	if scene != null and is_instance_valid(scene):
 		scene.queue_free()
+		await process_frame
+	if viewport != null and is_instance_valid(viewport):
+		viewport.queue_free()
 		await process_frame
 	_finish()
 
