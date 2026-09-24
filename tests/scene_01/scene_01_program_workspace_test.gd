@@ -55,7 +55,13 @@ func _run() -> void:
 	var hud_root := scene.get_node("HUDRoot/RootControl") as Control
 	var manual_root := scene.get_node("UIRoot/RootControl") as Control
 	_expect_true(source_editor != null, "Program workspace should expose one canonical SourceEditor.")
-	_expect_equal(ui.call("get_source_text"), SOURCE_HEADER, "Workspace should initialize with only the v2 source header.")
+	_expect_equal(ui.call("get_source_text"), SOURCE_HEADER, "Workspace should initialize from the scene-authored v2 source header.")
+	_expect_equal(status_label.text, "语法有效 · 0 条语句", "Initial Program status should be serialized in the scene instead of rebuilt at runtime.")
+	_expect_equal(vehicle_selection_label.text, "当前车辆：未选择车辆", "Vehicle selection should read as one static line before a world selection.")
+	_expect_true(ui.find_child("VehicleLabel", true, false) == null, "Program builder should not split the current-vehicle sentence across two labels.")
+	_expect_equal(rotation_option.item_count, 2, "Rotate options should be serialized in the Program scene.")
+	_expect_equal(rotation_option.get_item_text(0), "顺时针 · D · +90°", "Clockwise option should come from static scene data.")
+	_expect_equal(rotation_option.get_item_text(1), "逆时针 · A · -90°", "Counterclockwise option should come from static scene data.")
 	ui.call("set_source_text", "[arm_vehicle:grabDrop]\n")
 	_expect_true(String(ui.call("get_source_text")).begins_with(SOURCE_HEADER), "Program namespace header must be restored when an edit attempts to remove it.")
 	_expect_true(source_editor.highlight_current_line and source_editor.gutters_draw_executing_lines, "Selected source line should have both row and gutter visual cues.")
@@ -109,7 +115,7 @@ func _run() -> void:
 	var arm = manager.call("get_vehicle_by_id", &"arm_vehicle")
 	_expect_true(arm != null and selection.call("select_vehicle", arm), "Input regression should select a movable vehicle through the gameplay owner.")
 	await process_frame
-	_expect_true(vehicle_selection_label.text.contains("机械臂车"), "Program builder should reflect the selected Arm without a second vehicle selector.")
+	_expect_equal(vehicle_selection_label.text, "当前车辆：机械臂车", "Program builder should keep the selected Arm on the same current-vehicle line.")
 	_expect_true(add_move.is_visible_in_tree() and add_rotate.is_visible_in_tree() and add_grab.is_visible_in_tree(), "Arm palette should expose MoveTo, Rotate and GrabDrop from its real capabilities.")
 	var move_key := InputEventKey.new()
 	move_key.keycode = KEY_M
@@ -129,7 +135,7 @@ func _run() -> void:
 	var transport = manager.call("get_vehicle_by_id", &"transport_vehicle")
 	_expect_true(transport != null and selection.call("select_vehicle", transport), "Builder regression should select Transport through the gameplay selection owner.")
 	await process_frame
-	_expect_true(vehicle_selection_label.text.contains("运输车"), "Program builder should follow the selected Transport.")
+	_expect_equal(vehicle_selection_label.text, "当前车辆：运输车", "Program builder should keep the selected Transport on the same current-vehicle line.")
 	_expect_true(add_move.is_visible_in_tree() and add_rotate.is_visible_in_tree(), "Transport palette should expose MoveTo and its independent Rotate capability.")
 	_expect_true(not add_grab.is_visible_in_tree(), "Transport palette must not expose claw-only GrabDrop.")
 	target_x.value = 8
