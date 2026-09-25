@@ -202,9 +202,9 @@ func _refresh_vehicle_status(selected_id: StringName, motion_state: int) -> void
 		cargo_value_label.text = "—"
 
 	var statuses := _availability_statuses(vehicle, motion_state)
-	_set_availability(move_value_label, String(statuses.move))
-	_set_availability(rotate_value_label, String(statuses.rotate))
-	_set_availability(grab_value_label, String(statuses.grab))
+	_set_availability(move_value_label, String(statuses["move"]))
+	_set_availability(rotate_value_label, String(statuses["rotate"]))
+	_set_availability(grab_value_label, String(statuses["grab"]))
 
 
 func _availability_statuses(vehicle: VehicleActorScript, motion_state: int) -> Dictionary:
@@ -291,34 +291,6 @@ func _selected_vehicle_name(vehicle_id: StringName) -> String:
 	if vehicle == null or vehicle.definition == null:
 		return String(vehicle_id)
 	return vehicle.definition.display_name
-
-
-func _motion_state_text(state: int) -> String:
-	match state:
-		VehicleRuntimeStateScript.MotionState.WAITING:
-			return "等待"
-		VehicleRuntimeStateScript.MotionState.PLANNING:
-			return "规划中"
-		VehicleRuntimeStateScript.MotionState.MOVING:
-			return "移动中"
-		VehicleRuntimeStateScript.MotionState.BLOCKED:
-			return "受阻"
-		_:
-			return "—"
-
-
-func _mission_state_text(state: int) -> String:
-	match state:
-		MissionStateScript.State.READY:
-			return "就绪"
-		MissionStateScript.State.RUNNING:
-			return "运行中"
-		MissionStateScript.State.PAUSED:
-			return "已暂停"
-		MissionStateScript.State.COMPLETED:
-			return "已完成"
-		_:
-			return "—"
 
 
 func _on_observable_changed(_a = null, _b = null, _c = null) -> void:
