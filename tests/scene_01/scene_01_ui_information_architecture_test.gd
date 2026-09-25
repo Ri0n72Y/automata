@@ -34,6 +34,9 @@ func _run() -> void:
 	var program_ui := scene.get_node("ProgramUIRoot")
 	var program_panel := scene.get_node("ProgramUIRoot/RootControl/ProgramPanel") as Control
 	var lifecycle_panel := scene.get_node("LifecycleUIRoot/RootControl/Panel") as Control
+	var lifecycle_state := scene.get_node("LifecycleUIRoot/RootControl/Panel/Margin/Controls/StatusGroup/StateLabel") as Label
+	var lifecycle_time := scene.get_node("LifecycleUIRoot/RootControl/Panel/Margin/Controls/TimeLabel") as Label
+	var lifecycle_speed := scene.get_node("LifecycleUIRoot/RootControl/Panel/Margin/Controls/SpeedOption") as OptionButton
 	var debug_panel := scene.get_node("DebugUIRoot/RootControl/Panel") as Control
 	var hud_root := scene.get_node("HUDRoot/RootControl") as Control
 	var program_root := scene.get_node("ProgramUIRoot/RootControl") as Control
@@ -44,6 +47,11 @@ func _run() -> void:
 		sidebar != null and status_section != null and tutorial_section != null and guide_section != null,
 		"Scene 01 should expose one main sidebar with status and learning sections."
 	)
+	_expect_true(
+		lifecycle_state != null and lifecycle_time != null and lifecycle_speed != null,
+		"Lifecycle capsule should expose state, simulation time, and explicit speed selection."
+	)
+	_expect_true(lifecycle_panel.size.y <= 56.0, "Lifecycle capsule should stay visually compact.")
 	_expect_true(scene.get_node_or_null("TutorialUIRoot") == null, "Tutorial should no longer own a separate floating panel.")
 	_expect_true(scene.get_node_or_null("UIRoot/RootControl/Panel") == null, "Guide should no longer own a separate floating panel.")
 	_expect_true(status_section.get_parent() == tutorial_section.get_parent(), "Status and Tutorial must be sibling sections in the same sidebar.")
