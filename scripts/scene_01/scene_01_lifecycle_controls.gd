@@ -55,7 +55,7 @@ func _refresh_state(state: int) -> void:
 			state_label.add_theme_color_override("font_color", Color(0.7, 0.42, 0.07, 1))
 			status_dot.add_theme_color_override("font_color", Color(0.9, 0.58, 0.1, 1))
 		_:
-			state_label.text = "准备就绪"
+			state_label.text = "就绪"
 			state_label.add_theme_color_override("font_color", Color(0.17, 0.34, 0.52, 1))
 			status_dot.add_theme_color_override("font_color", Color(0.23, 0.58, 0.9, 1))
 

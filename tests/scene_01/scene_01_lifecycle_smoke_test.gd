@@ -49,7 +49,7 @@ func _run() -> void:
 	var lifecycle_ui := scene.get_node_or_null("LifecycleUIRoot") as LifecycleControlsScript
 	var state_label := scene.get_node_or_null("LifecycleUIRoot/RootControl/Panel/Margin/Controls/StatusGroup/StateLabel") as Label
 	var time_label := scene.get_node_or_null("LifecycleUIRoot/RootControl/Panel/Margin/Controls/TimeLabel") as Label
-	var run_pause_button := scene.get_node_or_null("LifecycleUIRoot/RootControl/Panel/Margin/Controls/RunPauseButton") as Button
+	var run_pause_button := scene.get_node_or_null("LifecycleUIRoot/RootControl/Panel/Margin/Controls/RunResetGroup/Controls/RunPauseButton") as Button
 	var speed_option := scene.get_node_or_null("LifecycleUIRoot/RootControl/Panel/Margin/Controls/SpeedOption") as OptionButton
 	var vehicle_manager := scene.get_node_or_null("SceneRoot/RobotRoot/Scene01VehicleManager") as VehicleManagerScript
 	var vehicle_selection := scene.get_node_or_null("SceneRoot/GridRoot/VehicleSelectionController") as VehicleSelectionScript
@@ -74,7 +74,7 @@ func _run() -> void:
 	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.READY, "Scene should start READY.")
 	_expect_equal(scene.get_simulation_speed(), 1.0, "Scene should start at 1x.")
 	_expect_equal(run_pause_button.text, "▶", "READY should show play icon.")
-	_expect_equal(state_label.text, "准备就绪", "READY should expose a readable lifecycle state.")
+	_expect_equal(state_label.text, "就绪", "READY should expose a compact readable lifecycle state.")
 	_expect_equal(time_label.text, "00:00.0", "READY should expose zero simulation time.")
 	_expect_equal(speed_option.selected, 1, "READY should select the 1x speed option.")
 
