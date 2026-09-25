@@ -32,6 +32,25 @@ func _run() -> void:
 	root.add_child(scene)
 	await process_frame
 
+	var grid_selection := scene.get_node_or_null("SceneRoot/GridRoot/GridSelectionController")
+	var move_controller := scene.get_node_or_null("SceneRoot/GridRoot/VehicleMoveController")
+	var hover_highlight := scene.get_node_or_null("SceneRoot/GridRoot/GridSelectionController/GridSelectionVisuals/HoverHighlight") as MeshInstance3D
+	var selected_highlight := scene.get_node_or_null("SceneRoot/GridRoot/GridSelectionController/GridSelectionVisuals/SelectedHighlight") as MeshInstance3D
+	var target_preview := scene.get_node_or_null("SceneRoot/GridRoot/VehicleMoveController/VehicleMovePreview/VehicleTargetFootprintPreview") as MeshInstance3D
+	var path_preview_root := scene.get_node_or_null("SceneRoot/GridRoot/VehicleMoveController/VehicleMovePreview/VehiclePathPreview") as Node3D
+	var valid_path_source := scene.get_node_or_null("SceneRoot/GridRoot/VehicleMoveController/VehicleMovePreview/ValidPathMaterialSource") as MeshInstance3D
+	var invalid_path_source := scene.get_node_or_null("SceneRoot/GridRoot/VehicleMoveController/VehicleMovePreview/InvalidPathMaterialSource") as MeshInstance3D
+	_expect_true(grid_selection != null and move_controller != null, "Scene 01 should expose selection and move controllers.")
+	_expect_true(hover_highlight != null and selected_highlight != null, "Grid selection highlights should exist as static scene nodes.")
+	_expect_true(target_preview != null and path_preview_root != null, "Move target and path roots should exist as static scene nodes.")
+	_expect_true(
+		valid_path_source != null
+		and valid_path_source.material_override != null
+		and invalid_path_source != null
+		and invalid_path_source.material_override != null,
+		"Move preview path materials should be static scene resources."
+	)
+
 	var manager := scene.get_node_or_null("SceneRoot/RobotRoot/Scene01VehicleManager") as ManagerScript
 	_expect_true(manager != null, "Scene 01 should expose the static vehicle manager.")
 	if manager != null:
