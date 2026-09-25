@@ -14,18 +14,25 @@ const VehicleGrabDropControllerScript := preload("res://scripts/input/vehicle_gr
 const MissionStateScript := preload("res://scripts/scene_01/scene_01_mission_state.gd")
 const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.gd")
 const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metrics.gd")
+const CHEVRON_DOWN_ICON: Texture2D = preload("res://assets/ui/icons/chevron_down.svg")
+const CHEVRON_RIGHT_ICON: Texture2D = preload("res://assets/ui/icons/chevron_right.svg")
 
 @onready var selected_label: Label = %SelectedLabel
 @onready var vehicle_state_label: Label = %VehicleStateLabel
 @onready var inventory_label: Label = %InventoryLabel
 @onready var mission_label: Label = %MissionLabel
+@onready var mission_value_label: Label = %MissionValueLabel
+@onready var mission_progress: ProgressBar = %MissionProgress
 @onready var pointer_label: Label = %PointerLabel
-@onready var pause_label: Label = %PauseLabel
 @onready var commands_label: Label = %CommandsLabel
 @onready var feedback_label: Label = %FeedbackLabel
 @onready var completion_panel: PanelContainer = %CompletionPanel
 @onready var completion_summary_label: Label = %CompletionSummaryLabel
 @onready var sidebar_panel: PanelContainer = %SidebarPanel
+@onready var status_card: PanelContainer = %StatusCard
+@onready var status_collapse_button: Button = %StatusCollapseButton
+
+var _status_collapsed := false
 
 var _scene_controller: MissionControllerScript
 var _observable: ObservableStateScript
@@ -55,6 +62,8 @@ func _ready() -> void:
 		"SceneRoot/GridRoot/VehicleGrabDropController"
 	) as VehicleGrabDropControllerScript
 	_bind_signals()
+	status_collapse_button.pressed.connect(_on_status_collapse_pressed)
+	set_status_collapsed(false)
 	get_viewport().size_changed.connect(_apply_sidebar_layout)
 	_apply_sidebar_layout()
 	_refresh()
@@ -67,6 +76,25 @@ func _apply_sidebar_layout() -> void:
 	sidebar_panel.offset_top = LayoutMetrics.CONTENT_TOP
 	sidebar_panel.offset_right = sidebar_panel.offset_left + LayoutMetrics.left_rail_width(float(viewport_size.x))
 	sidebar_panel.offset_bottom = sidebar_panel.offset_top
+
+
+func set_status_collapsed(collapsed: bool) -> void:
+	_status_collapsed = collapsed
+	if status_card != null:
+		status_card.visible = not _status_collapsed
+	if status_collapse_button != null:
+		status_collapse_button.icon = CHEVRON_RIGHT_ICON if _status_collapsed else CHEVRON_DOWN_ICON
+		status_collapse_button.tooltip_text = "展开状态" if _status_collapsed else "折叠状态"
+	if _status_collapsed:
+		get_viewport().gui_release_focus()
+
+
+func is_status_collapsed() -> bool:
+	return _status_collapsed
+
+
+func _on_status_collapse_pressed() -> void:
+	set_status_collapsed(not _status_collapsed)
 
 
 func _bind_signals() -> void:
@@ -93,35 +121,39 @@ func _refresh() -> void:
 	var observable_ready := _observable.is_configured()
 	var selected_id := _vehicle_selection.get_selected_vehicle_id()
 	var has_selection := selected_id != &""
-	selected_label.text = "当前车辆：%s" % _selected_vehicle_name(selected_id)
+	selected_label.text = _selected_vehicle_name(selected_id)
 
 	var motion_state := -1
 	if observable_ready and has_selection:
 		motion_state = _observable.get_vehicle_state(selected_id)
-	vehicle_state_label.text = "运行状态：%s" % _motion_state_text(motion_state)
+	vehicle_state_label.text = _motion_state_text(motion_state)
 
 	if observable_ready:
 		var target_count := _scene_controller.get_mission_target_count()
 		var box_text := str(_observable.get_standard_box_count())
 		if target_count > 0:
 			box_text = "%d/%d" % [_observable.get_standard_box_count(), target_count]
-		inventory_label.text = "机械臂：%s   托盘：%d   标准箱：%s" % [
+		inventory_label.text = "机械臂：%s   托盘：%d" % [
 			"持有方块" if _observable.get_arm_has_item() else "空",
 			_observable.get_tray_count(),
-			box_text,
 		]
 		var mission_state := _observable.get_mission_state()
-		mission_label.text = "任务：%s   ·   标准箱 %s" % [_mission_state_text(mission_state), box_text]
+		mission_label.text = "标准箱"
+		mission_value_label.text = box_text.replace("/", " / ")
+		mission_progress.max_value = maxf(float(target_count), 1.0)
+		mission_progress.value = float(_observable.get_standard_box_count())
 		completion_panel.visible = mission_state == MissionStateScript.State.COMPLETED
 		if completion_panel.visible:
 			completion_summary_label.text = "标准箱 %s · 任务已完成" % box_text
 	else:
-		inventory_label.text = "机械臂：—   托盘：—   标准箱：—"
-		mission_label.text = "任务：初始化中"
+		inventory_label.text = "机械臂：—   托盘：—"
+		mission_label.text = "标准箱"
+		mission_value_label.text = "—"
+		mission_progress.max_value = 1.0
+		mission_progress.value = 0.0
 		completion_panel.visible = false
 
 	_refresh_pointer_label()
-	pause_label.visible = _scene_controller.is_scene_paused()
 	_grab_drop_controller.refresh_interaction_preview()
 	commands_label.text = _command_availability_text(motion_state, selected_id)
 
@@ -129,16 +161,16 @@ func _refresh() -> void:
 func _refresh_pointer_label() -> void:
 	if _grid_selection != null and _grid_selection.has_hovered_cell():
 		var cell := _grid_selection.hovered_cell
-		pointer_label.text = "指针位置：X %d   Y %d" % [cell.x, cell.y]
+		pointer_label.text = "X %d   Y %d" % [cell.x, cell.y]
 	else:
-		pointer_label.text = "指针位置：—"
+		pointer_label.text = "X —   Y —"
 
 
 func _command_availability_text(motion_state: int, selected_id: StringName) -> String:
 	if selected_id == &"":
-		return "操作：M 移动 未选择车辆 · A/D 旋转 未选择车辆\nX 停止 未选择车辆 · C 抓放 未选择车辆"
+		return "M 移动 未选择车辆 · A/D 旋转 未选择车辆\nX 停止 未选择车辆 · C 抓放 未选择车辆"
 	if _scene_controller.is_scene_paused():
-		return "操作：M 移动 暂停 · A/D 旋转 暂停\nX 停止 暂停 · C 抓放 暂停"
+		return "M 移动 暂停 · A/D 旋转 暂停\nX 停止 暂停 · C 抓放 暂停"
 
 	var vehicle = _vehicle_manager.get_vehicle_by_id(selected_id)
 	var definition = vehicle.definition if vehicle != null else null
@@ -196,7 +228,7 @@ func _command_availability_text(motion_state: int, selected_id: StringName) -> S
 	elif _grab_drop_controller.is_interaction_preview_valid():
 		grab_text = "可用"
 
-	return "操作：M 移动 %s · A/D 旋转 %s\nX 停止 %s · C 抓放 %s" % [
+	return "M 移动 %s · A/D 旋转 %s\nX 停止 %s · C 抓放 %s" % [
 		move_text,
 		rotate_text,
 		stop_text,

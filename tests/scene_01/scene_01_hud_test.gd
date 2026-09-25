@@ -53,17 +53,19 @@ func _run() -> void:
 		test.finish(self, "Scene 01 HUD tests")
 		return
 
-	var selected_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/SelectedLabel") as Label
-	var vehicle_state_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/VehicleStateLabel") as Label
-	var inventory_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/InventoryLabel") as Label
-	var mission_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/MissionLabel") as Label
-	var pause_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/Header/PauseLabel") as Label
-	var commands_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/CommandsLabel") as Label
-	var feedback_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/FeedbackLabel") as Label
+	var selected_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/VehicleSection/Card/Margin/SelectedLabel") as Label
+	var vehicle_state_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/StatusCard/Margin/StatusBody/RuntimeRow/VehicleStateLabel") as Label
+	var inventory_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/StatusCard/Margin/StatusBody/InventoryLabel") as Label
+	var mission_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/MissionSection/Card/Margin/VBox/Row/MissionLabel") as Label
+	var commands_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/StatusCard/Margin/StatusBody/CommandsLabel") as Label
+	var feedback_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/StatusCard/Margin/StatusBody/FeedbackLabel") as Label
 	var completion_panel := hud.get_node("RootControl/CompletionPanel") as PanelContainer
 
-	test.expect_true(mission_label.text.find("就绪") >= 0, "HUD should expose initial Mission READY.")
-	test.expect_true(mission_label.text.find("3/8") >= 0, "HUD should expose initial box progress.")
+	var mission_value_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/MissionSection/Card/Margin/VBox/Row/MissionValueLabel") as Label
+	var mission_progress := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/MissionSection/Card/Margin/VBox/MissionProgress") as ProgressBar
+	test.expect_equal(mission_label.text, "标准箱", "HUD mission card should label the StandardBox target.")
+	test.expect_true(mission_value_label.text.find("3") >= 0 and mission_value_label.text.find("8") >= 0, "HUD should expose initial box progress.")
+	test.expect_equal(int(mission_progress.value), 3, "HUD mission progress bar should project the real StandardBox count.")
 	test.expect_true(commands_label.text.find("未选择车辆") >= 0, "HUD should explain unavailable commands before selection.")
 	test.expect_false(completion_panel.visible, "Completion panel should start hidden.")
 
@@ -155,13 +157,11 @@ func _run() -> void:
 	test.expect_true(inventory_label.text.find("托盘：1") >= 0, "HUD should react to tray count changes.")
 
 	scene.call("pause_scene")
-	test.expect_true(pause_label.visible, "HUD should show an explicit PAUSED indicator.")
 	test.expect_true(commands_label.text.find("M 移动 暂停") >= 0, "Pause should explain Move unavailability.")
 	test.expect_true(commands_label.text.find("A/D 旋转 暂停") >= 0, "Pause should explain Rotate unavailability.")
 	test.expect_true(commands_label.text.find("X 停止 暂停") >= 0, "Pause should explain Stop unavailability.")
 	test.expect_true(commands_label.text.find("C 抓放 暂停") >= 0, "Pause should explain GrabDrop unavailability.")
 	scene.call("run_scene")
-	test.expect_false(pause_label.visible, "HUD pause indicator should clear after Resume.")
 
 	var box = object_manager.get_standard_box()
 	while box.get_current_count() < box.get_capacity():
@@ -170,13 +170,13 @@ func _run() -> void:
 			"HUD completion fixture should fill StandardBox."
 		)
 	test.expect_true(completion_panel.visible, "HUD should show completion panel from Mission COMPLETED.")
-	test.expect_true(mission_label.text.find("已完成") >= 0, "HUD should expose Mission COMPLETED explicitly.")
+	test.expect_equal(int(mission_progress.value), 8, "HUD mission progress should reach the real completed target.")
 
 	test.expect_true(bool(scene.call("reset_scene")), "Scene Reset should succeed for HUD reset binding.")
 	await process_frame
 	test.expect_false(completion_panel.visible, "Reset should hide completion panel.")
-	test.expect_true(mission_label.text.find("就绪") >= 0, "Reset should restore Mission READY in HUD.")
-	test.expect_true(mission_label.text.find("3/8") >= 0, "Reset should restore box progress in HUD.")
+	test.expect_true(mission_value_label.text.find("3") >= 0 and mission_value_label.text.find("8") >= 0, "Reset should restore box progress in HUD.")
+	test.expect_equal(int(mission_progress.value), 3, "Reset should restore mission progress bar.")
 	test.expect_true(selected_label.text.find("未选择") >= 0, "Reset should clear selected vehicle in HUD.")
 	test.expect_true(inventory_label.text.find("托盘：0") >= 0, "Reset should expose cleared tray in HUD.")
 	test.expect_true(inventory_label.text.find("机械臂：空") >= 0, "Reset should expose cleared arm cargo in HUD.")

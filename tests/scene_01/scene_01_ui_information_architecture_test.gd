@@ -26,7 +26,12 @@ func _run() -> void:
 	await process_frame
 
 	var sidebar := scene.get_node("HUDRoot/RootControl/SidebarPanel") as Control
+	var mission_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/MissionSection") as Control
+	var vehicle_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/VehicleSection") as Control
 	var status_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/StatusSection") as Control
+	var status_card := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/StatusSection/StatusCard") as Control
+	var pointer_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/PointerSection") as Control
+	var status_collapse := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/StatusSection/Header/Margin/Row/StatusCollapseButton") as Button
 	var tutorial_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/TutorialSection") as Control
 	var tutorial_body := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/TutorialSection/TutorialBody") as Control
 	var guide_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/GuideSection") as Control
@@ -45,8 +50,14 @@ func _run() -> void:
 	var debug_root := scene.get_node("DebugUIRoot/RootControl") as Control
 
 	_expect_true(
-		sidebar != null and status_section != null and tutorial_section != null and guide_section != null,
-		"Scene 01 should expose one main sidebar with status and learning sections."
+		sidebar != null
+		and mission_section != null
+		and vehicle_section != null
+		and status_section != null
+		and pointer_section != null
+		and tutorial_section != null
+		and guide_section != null,
+		"Scene 01 should expose one main sidebar with mission, vehicle, status, pointer, and learning sections."
 	)
 	_expect_true(
 		lifecycle_dot != null and lifecycle_state != null and lifecycle_time != null and lifecycle_speed != null,
@@ -90,9 +101,17 @@ func _run() -> void:
 	_expect_true(run_button.icon_alignment == HORIZONTAL_ALIGNMENT_CENTER and reset_button.icon_alignment == HORIZONTAL_ALIGNMENT_CENTER, "Lifecycle SVG actions should remain centered across interaction states.")
 	_expect_true(scene.get_node_or_null("TutorialUIRoot") == null, "Tutorial should no longer own a separate floating panel.")
 	_expect_true(scene.get_node_or_null("UIRoot/RootControl/Panel") == null, "Guide should no longer own a separate floating panel.")
-	_expect_true(status_section.get_parent() == tutorial_section.get_parent(), "Status and Tutorial must be sibling sections in the same sidebar.")
 	_expect_true(
-		scene.get_node_or_null("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/StatusSection/PointerLabel") != null,
+		mission_section.get_parent() == status_section.get_parent()
+		and vehicle_section.get_parent() == status_section.get_parent()
+		and pointer_section.get_parent() == status_section.get_parent()
+		and tutorial_section.get_parent() == status_section.get_parent(),
+		"Primary information blocks must be sibling sections in the same sidebar."
+	)
+	_expect_true(status_collapse != null and status_collapse.icon != null, "Status section should expose a chevron disclosure control.")
+	_expect_true(status_collapse.text.is_empty(), "Status disclosure should use an icon instead of +/- text.")
+	_expect_true(
+		scene.get_node_or_null("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/PointerSection/Card/Margin/PointerLabel") != null,
 		"Grid coordinates should be lightweight player-facing status."
 	)
 	_expect_true(
@@ -123,6 +142,16 @@ func _run() -> void:
 		_expect_false(program_panel.get_global_rect().intersects(lifecycle_panel.get_global_rect()), "Program rail must stay below the lifecycle controls.")
 		_expect_false(debug_panel.get_global_rect().intersects(program_panel.get_global_rect()), "Collapsed Debug entry must stay above the Program rail.")
 		_expect_true(program_panel.get_global_rect().position.x - sidebar.get_global_rect().end.x >= 400.0, "Supported desktop sizes should preserve at least 400px of central gameplay width.")
+
+	var hud_ui := scene.get_node("HUDRoot")
+	hud_ui.call("set_status_collapsed", true)
+	await process_frame
+	_expect_true(bool(hud_ui.call("is_status_collapsed")), "Status section should support presentation-only collapse.")
+	_expect_false(status_card.visible, "Collapsed Status should hide only its card body.")
+	_expect_true(mission_section.visible and vehicle_section.visible and pointer_section.visible, "Collapsing Status must not affect sibling information sections.")
+	hud_ui.call("set_status_collapsed", false)
+	await process_frame
+	_expect_true(status_card.visible, "Expanded Status should restore its card body.")
 
 	tutorial_section.call("set_collapsed", true)
 	await process_frame
