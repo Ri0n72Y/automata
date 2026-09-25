@@ -6,7 +6,7 @@ const ObservableScript := preload("res://scripts/scene_01/scene_01_observable_st
 
 @onready var _progress_label: Label = %ProgressLabel
 @onready var _collapse_button: Button = %CollapseButton
-@onready var _body: VBoxContainer = %TutorialBody
+@onready var _body: Control = %TutorialBody
 @onready var _title_label: Label = %StepTitle
 @onready var _body_label: Label = %StepBody
 @onready var _goal_label: Label = %GoalLabel
