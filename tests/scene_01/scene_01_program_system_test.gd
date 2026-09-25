@@ -235,7 +235,19 @@ repeat 5 13
 		frames += 1
 
 	var box := object_manager.get_standard_box()
-	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Transport-assisted walkthrough source should complete.")
+	_expect_equal(
+		runner.get_state(),
+		ProgramRunnerScript.STATE_COMPLETED,
+		"Transport-assisted walkthrough source should complete. pc=%d error=%s box=%d tray=%d arm_has_item=%s arm_facing=%d"
+		% [
+			runner.get_current_statement_index(),
+			String(runner.get_last_error()),
+			box.get_current_count() if box != null else -1,
+			transport.runtime_state.tray_count if transport != null else -1,
+			str(arm.runtime_state.arm_has_item) if arm != null else "missing",
+			arm.runtime_state.facing if arm != null else -1,
+		]
+	)
 	_expect_true(bool(logistics_probe["transport_departed_with_five"]), "Transport should begin the long haul with all five new blocks in its tray and the Arm empty.")
 	_expect_true(bool(logistics_probe["arm_departed_empty"]), "Arm should begin its long cross-map move empty instead of carrying the fifth block.")
 	_expect_true(box != null and box.get_current_count() == 8, "Transport-assisted walkthrough should fill StandardBox from 3/8 to 8/8.")
