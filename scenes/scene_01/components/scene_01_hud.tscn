@@ -108,11 +108,11 @@ vertical_scroll_mode = 1
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="MissionSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
 layout_mode = 2
-theme_override_constants/separation = 3
+theme_override_constants/separation = 2
 
 [node name="Header" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection"]
 layout_mode = 2
@@ -121,9 +121,9 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_section_header")
 [node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Header"]
 layout_mode = 2
 theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 4
+theme_override_constants/margin_top = 3
 theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 4
+theme_override_constants/margin_bottom = 3
 
 [node name="Title" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Header/Margin"]
 layout_mode = 2
@@ -177,7 +177,7 @@ theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
 
 [node name="VehicleSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
 layout_mode = 2
-theme_override_constants/separation = 3
+theme_override_constants/separation = 2
 
 [node name="Header" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/VehicleSection"]
 layout_mode = 2
@@ -186,9 +186,9 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_section_header")
 [node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/VehicleSection/Header"]
 layout_mode = 2
 theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 4
+theme_override_constants/margin_top = 3
 theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 4
+theme_override_constants/margin_bottom = 3
 
 [node name="Title" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/VehicleSection/Header/Margin"]
 layout_mode = 2
@@ -217,7 +217,7 @@ theme_override_font_sizes/font_size = 15
 [node name="StatusSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 3
+theme_override_constants/separation = 2
 
 [node name="Header" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection"]
 layout_mode = 2
@@ -226,9 +226,9 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_section_header")
 [node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/Header"]
 layout_mode = 2
 theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 4
+theme_override_constants/margin_top = 3
 theme_override_constants/margin_right = 6
-theme_override_constants/margin_bottom = 4
+theme_override_constants/margin_bottom = 3
 
 [node name="Row" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/Header/Margin"]
 layout_mode = 2
@@ -373,7 +373,7 @@ theme_override_colors/font_color = Color(0.29, 0.36, 0.44, 1)
 
 [node name="PointerSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
 layout_mode = 2
-theme_override_constants/separation = 3
+theme_override_constants/separation = 2
 
 [node name="Header" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/PointerSection"]
 layout_mode = 2
@@ -382,9 +382,9 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_section_header")
 [node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/PointerSection/Header"]
 layout_mode = 2
 theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 4
+theme_override_constants/margin_top = 3
 theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 4
+theme_override_constants/margin_bottom = 3
 
 [node name="Title" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/PointerSection/Header/Margin"]
 layout_mode = 2
@@ -413,7 +413,7 @@ theme_override_font_sizes/font_size = 15
 [node name="TutorialSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 3
+theme_override_constants/separation = 2
 script = ExtResource("4_tutorial_ui")
 
 [node name="Header" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection"]
@@ -423,9 +423,9 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_section_header")
 [node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/Header"]
 layout_mode = 2
 theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 4
+theme_override_constants/margin_top = 3
 theme_override_constants/margin_right = 6
-theme_override_constants/margin_bottom = 4
+theme_override_constants/margin_bottom = 3
 
 [node name="HeaderRow" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/Header/Margin"]
 layout_mode = 2
@@ -518,7 +518,7 @@ text = "跳过教学"
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-theme_override_constants/separation = 3
+theme_override_constants/separation = 2
 
 [node name="Header" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/GuideSection"]
 layout_mode = 2
@@ -527,9 +527,9 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_section_header")
 [node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/GuideSection/Header"]
 layout_mode = 2
 theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 4
+theme_override_constants/margin_top = 3
 theme_override_constants/margin_right = 6
-theme_override_constants/margin_bottom = 4
+theme_override_constants/margin_bottom = 3
 
 [node name="HeaderRow" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/GuideSection/Header/Margin"]
 layout_mode = 2

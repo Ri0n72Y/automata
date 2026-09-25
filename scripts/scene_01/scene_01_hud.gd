@@ -14,6 +14,7 @@ const VehicleGrabDropControllerScript := preload("res://scripts/input/vehicle_gr
 const MissionStateScript := preload("res://scripts/scene_01/scene_01_mission_state.gd")
 const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.gd")
 const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metrics.gd")
+const SIDEBAR_SCROLL_THEME: Theme = preload("res://scenes/scene_01/components/scene_01_sidebar_scroll_theme.tres")
 const CHEVRON_DOWN_ICON: Texture2D = preload("res://assets/ui/icons/chevron_down.svg")
 const CHEVRON_RIGHT_ICON: Texture2D = preload("res://assets/ui/icons/chevron_right.svg")
 
@@ -69,6 +70,7 @@ func _ready() -> void:
 	) as VehicleGrabDropControllerScript
 	_bind_signals()
 	status_collapse_button.pressed.connect(_on_status_collapse_pressed)
+	sidebar_scroll.get_v_scroll_bar().theme = SIDEBAR_SCROLL_THEME
 	set_status_collapsed(false)
 	sidebar_content.minimum_size_changed.connect(_queue_sidebar_layout)
 	get_viewport().size_changed.connect(_apply_sidebar_layout)

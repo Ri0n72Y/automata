@@ -28,6 +28,7 @@ func _run() -> void:
 	var sidebar := scene.get_node("HUDRoot/RootControl/SidebarPanel") as Control
 	var sidebar_scroll := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll") as ScrollContainer
 	var sidebar_content := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar") as VBoxContainer
+	var sidebar_vscroll := sidebar_scroll.get_v_scroll_bar()
 	var mission_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection") as Control
 	var vehicle_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/VehicleSection") as Control
 	var status_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection") as Control
@@ -72,6 +73,15 @@ func _run() -> void:
 		sidebar_scroll.vertical_scroll_mode,
 		ScrollContainer.SCROLL_MODE_AUTO,
 		"Main sidebar should scroll vertically only when content exceeds its design cap."
+	)
+	_expect_true(
+		sidebar_vscroll.get_theme_constant("scroll_size") <= 6,
+		"Sidebar scrollbar should stay visually thin."
+	)
+	var sidebar_grabber := sidebar_vscroll.get_theme_stylebox("grabber") as StyleBoxFlat
+	_expect_true(
+		sidebar_grabber != null and sidebar_grabber.bg_color.a <= 0.3,
+		"Sidebar scrollbar should remain visually quiet until interaction."
 	)
 	_expect_true(
 		lifecycle_dot != null and lifecycle_state != null and lifecycle_time != null and lifecycle_speed != null,
@@ -155,6 +165,12 @@ func _run() -> void:
 		_expect_near(sidebar.position.x, LayoutMetrics.EDGE_MARGIN, 1.0, "Main sidebar should align to the common edge margin.")
 		_expect_near(sidebar.position.y, LayoutMetrics.CONTENT_TOP, 1.0, "Main sidebar should begin below the lifecycle control.")
 		var expected_sidebar_max := LayoutMetrics.left_sidebar_max_height(float(viewport_size.y))
+		_expect_near(
+			expected_sidebar_max,
+			float(viewport_size.y) - LayoutMetrics.CONTENT_TOP - LayoutMetrics.CONTENT_BOTTOM_MARGIN,
+			1.0,
+			"Sidebar maximum height should use the full available viewport height."
+		)
 		_expect_true(
 			sidebar.size.y <= expected_sidebar_max + 1.0,
 			"Main sidebar should never exceed its design maximum height."
