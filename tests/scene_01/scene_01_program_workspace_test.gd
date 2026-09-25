@@ -55,7 +55,7 @@ func _run() -> void:
 	var workspace_button := ui.get_node("%WorkspaceCollapseButton") as Button
 	var builder_button := ui.get_node("%BuilderToggleButton") as Button
 	var sidebar_panel := scene.get_node("HUDRoot/RootControl/SidebarPanel") as Control
-	var tutorial_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/TutorialSection") as Control
+	var tutorial_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection") as Control
 	var program_root := ui.get_node("RootControl") as Control
 	var hud_root := scene.get_node("HUDRoot/RootControl") as Control
 	_expect_true(source_editor != null, "Program workspace should expose one canonical SourceEditor.")
@@ -96,7 +96,7 @@ func _run() -> void:
 	_expect_true(central_width > 0.0, "Program rail and main sidebar must leave a non-overlapping central gameplay region.")
 	var wide_central_width := 1920.0 - 16.0 - LayoutMetrics.program_rail_width(1920.0) - (16.0 + LayoutMetrics.left_rail_width(1920.0))
 	_expect_true(wide_central_width >= 900.0, "1920px spec tier should protect at least 900px of central gameplay width.")
-	_expect_true(tutorial_section.is_ancestor_of(scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/TutorialSection/TutorialBody")), "Tutorial must be a section inside the single main sidebar.")
+	_expect_true(tutorial_section.is_ancestor_of(scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody")), "Tutorial must be a section inside the single main sidebar.")
 	_expect_true(program_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and hud_root.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Fullscreen presentation roots must not intercept central gameplay input.")
 	_expect_true(sidebar_panel.mouse_filter == Control.MOUSE_FILTER_STOP, "The visible main sidebar must stop clicks from leaking into gameplay.")
 	ui.call("set_command_builder_expanded", true)

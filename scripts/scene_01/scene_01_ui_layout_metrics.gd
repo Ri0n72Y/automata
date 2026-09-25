@@ -11,6 +11,8 @@ const CONTENT_BOTTOM_MARGIN := 16.0
 const LEFT_NARROW_WIDTH := 320.0
 const LEFT_COMPACT_WIDTH := 336.0
 const LEFT_WIDE_WIDTH := 352.0
+const LEFT_SIDEBAR_MAX_HEIGHT := 760.0
+const LEFT_SIDEBAR_VERTICAL_PADDING := 16.0
 
 const PROGRAM_COLLAPSED_WIDTH := 56.0
 const PROGRAM_NARROW_WIDTH := 360.0
@@ -21,6 +23,13 @@ const PROGRAM_WIDE_WIDTH := 460.0
 static func left_rail_width(viewport_width: float) -> float:
 	return LEFT_WIDE_WIDTH if viewport_width >= WIDE_BREAKPOINT else (
 		LEFT_COMPACT_WIDTH if viewport_width >= COMPACT_BREAKPOINT else LEFT_NARROW_WIDTH
+	)
+
+
+static func left_sidebar_max_height(viewport_height: float) -> float:
+	return minf(
+		LEFT_SIDEBAR_MAX_HEIGHT,
+		maxf(viewport_height - CONTENT_TOP - CONTENT_BOTTOM_MARGIN, 0.0)
 	)
 
 

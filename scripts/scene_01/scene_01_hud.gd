@@ -33,6 +33,8 @@ const CHEVRON_RIGHT_ICON: Texture2D = preload("res://assets/ui/icons/chevron_rig
 @onready var completion_panel: PanelContainer = %CompletionPanel
 @onready var completion_summary_label: Label = %CompletionSummaryLabel
 @onready var sidebar_panel: PanelContainer = %SidebarPanel
+@onready var sidebar_scroll: ScrollContainer = %SidebarScroll
+@onready var sidebar_content: VBoxContainer = %Sidebar
 @onready var status_card: PanelContainer = %StatusCard
 @onready var status_collapse_button: Button = %StatusCollapseButton
 
@@ -68,6 +70,7 @@ func _ready() -> void:
 	_bind_signals()
 	status_collapse_button.pressed.connect(_on_status_collapse_pressed)
 	set_status_collapsed(false)
+	sidebar_content.minimum_size_changed.connect(_queue_sidebar_layout)
 	get_viewport().size_changed.connect(_apply_sidebar_layout)
 	_apply_sidebar_layout()
 	_refresh()
@@ -78,8 +81,20 @@ func _apply_sidebar_layout() -> void:
 	var viewport_size := get_viewport().get_visible_rect().size
 	sidebar_panel.offset_left = LayoutMetrics.EDGE_MARGIN
 	sidebar_panel.offset_top = LayoutMetrics.CONTENT_TOP
-	sidebar_panel.offset_right = sidebar_panel.offset_left + LayoutMetrics.left_rail_width(float(viewport_size.x))
-	sidebar_panel.offset_bottom = sidebar_panel.offset_top
+	sidebar_panel.offset_right = (
+		sidebar_panel.offset_left + LayoutMetrics.left_rail_width(float(viewport_size.x))
+	)
+	var content_height := (
+		sidebar_content.get_combined_minimum_size().y
+		+ LayoutMetrics.LEFT_SIDEBAR_VERTICAL_PADDING
+	)
+	var max_height := LayoutMetrics.left_sidebar_max_height(float(viewport_size.y))
+	var target_height := minf(content_height, max_height)
+	sidebar_panel.offset_bottom = sidebar_panel.offset_top + target_height
+
+
+func _queue_sidebar_layout() -> void:
+	call_deferred("_apply_sidebar_layout")
 
 
 func set_status_collapsed(collapsed: bool) -> void:
@@ -91,6 +106,7 @@ func set_status_collapsed(collapsed: bool) -> void:
 		status_collapse_button.tooltip_text = "展开状态" if _status_collapsed else "折叠状态"
 	if _status_collapsed:
 		get_viewport().gui_release_focus()
+	_queue_sidebar_layout()
 
 
 func is_status_collapsed() -> bool:

@@ -59,40 +59,40 @@ func _run() -> void:
 		return
 
 	var selected_label := hud.get_node(
-		"RootControl/SidebarPanel/Margin/Sidebar/VehicleSection/Card/Margin/SelectedLabel"
+		"RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/VehicleSection/Card/Margin/SelectedLabel"
 	) as Label
 	var mission_label := hud.get_node(
-		"RootControl/SidebarPanel/Margin/Sidebar/MissionSection/Card/Margin/VBox/Row/MissionLabel"
+		"RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Card/Margin/VBox/Row/MissionLabel"
 	) as Label
 	var mission_value_label := hud.get_node(
-		"RootControl/SidebarPanel/Margin/Sidebar/MissionSection/Card/Margin/VBox/Row/MissionValueLabel"
+		"RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Card/Margin/VBox/Row/MissionValueLabel"
 	) as Label
 	var mission_progress := hud.get_node(
-		"RootControl/SidebarPanel/Margin/Sidebar/MissionSection/Card/Margin/VBox/MissionProgress"
+		"RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Card/Margin/VBox/MissionProgress"
 	) as ProgressBar
 	var position_value := hud.get_node(
-		"RootControl/SidebarPanel/Margin/Sidebar/StatusSection/StatusCard/Margin/StatusBody/PositionRow/PositionValueLabel"
+		"RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/PositionRow/PositionValueLabel"
 	) as Label
 	var facing_value := hud.get_node(
-		"RootControl/SidebarPanel/Margin/Sidebar/StatusSection/StatusCard/Margin/StatusBody/FacingRow/FacingValueLabel"
+		"RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/FacingRow/FacingValueLabel"
 	) as Label
 	var cargo_name := hud.get_node(
-		"RootControl/SidebarPanel/Margin/Sidebar/StatusSection/StatusCard/Margin/StatusBody/CargoRow/CargoNameLabel"
+		"RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/CargoRow/CargoNameLabel"
 	) as Label
 	var cargo_value := hud.get_node(
-		"RootControl/SidebarPanel/Margin/Sidebar/StatusSection/StatusCard/Margin/StatusBody/CargoRow/CargoValueLabel"
+		"RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/CargoRow/CargoValueLabel"
 	) as Label
 	var move_value := hud.get_node(
-		"RootControl/SidebarPanel/Margin/Sidebar/StatusSection/StatusCard/Margin/StatusBody/MoveRow/MoveValueLabel"
+		"RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/MoveRow/MoveValueLabel"
 	) as Label
 	var rotate_value := hud.get_node(
-		"RootControl/SidebarPanel/Margin/Sidebar/StatusSection/StatusCard/Margin/StatusBody/RotateRow/RotateValueLabel"
+		"RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/RotateRow/RotateValueLabel"
 	) as Label
 	var grab_value := hud.get_node(
-		"RootControl/SidebarPanel/Margin/Sidebar/StatusSection/StatusCard/Margin/StatusBody/GrabRow/GrabValueLabel"
+		"RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/GrabRow/GrabValueLabel"
 	) as Label
 	var feedback_label := hud.get_node(
-		"RootControl/SidebarPanel/Margin/Sidebar/StatusSection/FeedbackLabel"
+		"RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/FeedbackLabel"
 	) as Label
 	var completion_panel := hud.get_node("RootControl/CompletionPanel") as PanelContainer
 

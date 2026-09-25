@@ -26,15 +26,17 @@ func _run() -> void:
 	await process_frame
 
 	var sidebar := scene.get_node("HUDRoot/RootControl/SidebarPanel") as Control
-	var mission_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/MissionSection") as Control
-	var vehicle_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/VehicleSection") as Control
-	var status_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/StatusSection") as Control
-	var status_card := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/StatusSection/StatusCard") as Control
-	var pointer_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/PointerSection") as Control
-	var status_collapse := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/StatusSection/Header/Margin/Row/StatusCollapseButton") as Button
-	var tutorial_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/TutorialSection") as Control
-	var tutorial_body := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/TutorialSection/TutorialBody") as Control
-	var guide_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/GuideSection") as Control
+	var sidebar_scroll := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll") as ScrollContainer
+	var sidebar_content := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar") as VBoxContainer
+	var mission_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection") as Control
+	var vehicle_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/VehicleSection") as Control
+	var status_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection") as Control
+	var status_card := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard") as Control
+	var pointer_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/PointerSection") as Control
+	var status_collapse := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/Header/Margin/Row/StatusCollapseButton") as Button
+	var tutorial_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection") as Control
+	var tutorial_body := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody") as Control
+	var guide_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/GuideSection") as Control
 	var tutorial_owner := scene.get_node("SceneRoot/Scene01Tutorial")
 	var program_ui := scene.get_node("ProgramUIRoot")
 	var program_panel := scene.get_node("ProgramUIRoot/RootControl/ProgramPanel") as Control
@@ -51,6 +53,8 @@ func _run() -> void:
 
 	_expect_true(
 		sidebar != null
+		and sidebar_scroll != null
+		and sidebar_content != null
 		and mission_section != null
 		and vehicle_section != null
 		and status_section != null
@@ -58,6 +62,16 @@ func _run() -> void:
 		and tutorial_section != null
 		and guide_section != null,
 		"Scene 01 should expose one main sidebar with mission, vehicle, status, pointer, and learning sections."
+	)
+	_expect_equal(
+		sidebar_scroll.horizontal_scroll_mode,
+		ScrollContainer.SCROLL_MODE_DISABLED,
+		"Main sidebar should never scroll horizontally."
+	)
+	_expect_equal(
+		sidebar_scroll.vertical_scroll_mode,
+		ScrollContainer.SCROLL_MODE_AUTO,
+		"Main sidebar should scroll vertically only when content exceeds its design cap."
 	)
 	_expect_true(
 		lifecycle_dot != null and lifecycle_state != null and lifecycle_time != null and lifecycle_speed != null,
@@ -111,7 +125,7 @@ func _run() -> void:
 	_expect_true(status_collapse != null and status_collapse.icon != null, "Status section should expose a chevron disclosure control.")
 	_expect_true(status_collapse.text.is_empty(), "Status disclosure should use an icon instead of +/- text.")
 	_expect_true(
-		scene.get_node_or_null("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/PointerSection/Card/Margin/PointerLabel") != null,
+		scene.get_node_or_null("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/PointerSection/Card/Margin/PointerLabel") != null,
 		"Grid coordinates should be lightweight player-facing status."
 	)
 	_expect_true(
@@ -140,8 +154,16 @@ func _run() -> void:
 		_expect_near(program_panel.size.x, expected_program_width, 2.0, "Expanded Program width should follow its existing right-rail tier.")
 		_expect_near(sidebar.position.x, LayoutMetrics.EDGE_MARGIN, 1.0, "Main sidebar should align to the common edge margin.")
 		_expect_near(sidebar.position.y, LayoutMetrics.CONTENT_TOP, 1.0, "Main sidebar should begin below the lifecycle control.")
-		_expect_true(sidebar.get_global_rect().end.y <= float(viewport_size.y) - LayoutMetrics.CONTENT_BOTTOM_MARGIN + 1.0, "Main sidebar should fit the supported viewport height.")
-		_expect_true(sidebar.size.y <= float(viewport_size.y) * 0.84, "Default sidebar should remain compact instead of filling the screen vertically.")
+		var expected_sidebar_max := LayoutMetrics.left_sidebar_max_height(float(viewport_size.y))
+		_expect_true(
+			sidebar.size.y <= expected_sidebar_max + 1.0,
+			"Main sidebar should never exceed its design maximum height."
+		)
+		_expect_true(
+			sidebar.get_global_rect().end.y
+			<= float(viewport_size.y) - LayoutMetrics.CONTENT_BOTTOM_MARGIN + 1.0,
+			"Main sidebar should fit the supported viewport height."
+		)
 		_expect_false(program_panel.get_global_rect().intersects(lifecycle_panel.get_global_rect()), "Program rail must stay below the lifecycle controls.")
 		_expect_false(debug_panel.get_global_rect().intersects(program_panel.get_global_rect()), "Collapsed Debug entry must stay above the Program rail.")
 		_expect_true(program_panel.get_global_rect().position.x - sidebar.get_global_rect().end.x >= 400.0, "Supported desktop sizes should preserve at least 400px of central gameplay width.")
@@ -163,7 +185,12 @@ func _run() -> void:
 	_expect_true(status_section.visible, "Collapsing Tutorial must not affect Status.")
 	tutorial_section.call("set_collapsed", false)
 	await process_frame
+	await process_frame
 	_expect_true(tutorial_body.visible, "Expanded Tutorial should restore its body.")
+	_expect_true(
+		sidebar.size.y <= LayoutMetrics.left_sidebar_max_height(float(viewport.size.y)) + 1.0,
+		"Expanded Tutorial must scroll inside the sidebar instead of growing the outer shell past its cap."
+	)
 
 	tutorial_owner.call("skip_tutorial")
 	await process_frame
