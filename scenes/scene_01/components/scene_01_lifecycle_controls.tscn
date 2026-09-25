@@ -13,8 +13,8 @@ corner_radius_top_left = 22
 corner_radius_top_right = 22
 corner_radius_bottom_right = 22
 corner_radius_bottom_left = 22
-shadow_color = Color(0.11, 0.17, 0.24, 0.3)
-shadow_size = 4
+shadow_color = Color(0.11, 0.17, 0.24, 0.17)
+shadow_size = 7
 shadow_offset = Vector2(0, 2)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_control_group"]
@@ -23,6 +23,9 @@ corner_radius_top_left = 16
 corner_radius_top_right = 16
 corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
+shadow_color = Color(0.11, 0.17, 0.24, 0.13)
+shadow_size = 3
+shadow_offset = Vector2(0, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_action_normal"]
 bg_color = Color(1, 1, 1, 0)

@@ -58,6 +58,24 @@ func _run() -> void:
 	var run_button := scene.get_node("LifecycleUIRoot/RootControl/Panel/Margin/Controls/RunResetGroup/Controls/RunPauseButton") as Button
 	var reset_button := scene.get_node("LifecycleUIRoot/RootControl/Panel/Margin/Controls/RunResetGroup/Controls/ResetButton") as Button
 	_expect_true(run_reset_group != null and run_button != null and reset_button != null, "Play/Pause and Reset should share one compact control group.")
+	var capsule_style := lifecycle_panel.get_theme_stylebox("panel") as StyleBoxFlat
+	var control_group_style := run_reset_group.get_theme_stylebox("panel") as StyleBoxFlat
+	_expect_true(capsule_style != null and capsule_style.shadow_size >= 6, "Lifecycle capsule boundary should come from a soft outer shadow.")
+	_expect_true(control_group_style != null and control_group_style.shadow_size >= 2, "Run/Reset group should use a lighter nested shadow.")
+	_expect_true(
+		capsule_style.border_width_left == 0
+		and capsule_style.border_width_top == 0
+		and capsule_style.border_width_right == 0
+		and capsule_style.border_width_bottom == 0,
+		"Lifecycle capsule should not reintroduce a hard border."
+	)
+	_expect_true(
+		control_group_style.border_width_left == 0
+		and control_group_style.border_width_top == 0
+		and control_group_style.border_width_right == 0
+		and control_group_style.border_width_bottom == 0,
+		"Run/Reset group should also rely on shadow rather than border."
+	)
 	_expect_true(not lifecycle_speed.fit_to_longest_item, "Speed selector should stay compact instead of reserving long dropdown width.")
 	_expect_true(lifecycle_dot.custom_minimum_size.x >= 12.0, "Status dot should keep the larger design-reference size.")
 	_expect_equal(lifecycle_dot.size_flags_vertical, Control.SIZE_SHRINK_CENTER, "Status dot should not stretch to the lifecycle row height.")
