@@ -170,14 +170,15 @@ func _test_transport_assisted_walkthrough_source() -> void:
 [arm_vehicle:rotate] clockwise
 [arm_vehicle:grabDrop]
 repeat 4 4
+[arm_vehicle:rotate] counterclockwise
+[arm_vehicle:grabDrop]
 [transport_vehicle:moveTo] 14 4
 [arm_vehicle:moveTo] 14 3
 [arm_vehicle:grabDrop]
-[arm_vehicle:rotate] clockwise
-[arm_vehicle:grabDrop]
 [arm_vehicle:rotate] counterclockwise
 [arm_vehicle:grabDrop]
-repeat 4 12
+[arm_vehicle:rotate] clockwise
+repeat 5 13
 """
 	var parsed := ProgramSourceScript.new().parse(source)
 	var diagnostics: Array = parsed.get("diagnostics", [])
@@ -205,6 +206,27 @@ repeat 4 12
 		await process_frame
 		return
 
+	var arm = manager.get_vehicle_by_id(&"arm_vehicle")
+	var transport = manager.get_vehicle_by_id(&"transport_vehicle")
+	var logistics_probe := {
+		"transport_departed_with_five": false,
+		"arm_departed_empty": false,
+	}
+	runner.command_started.connect(
+		func(statement_index: int, _command_type: int, vehicle_id: StringName) -> void:
+			if statement_index == 10 and vehicle_id == &"transport_vehicle":
+				logistics_probe["transport_departed_with_five"] = (
+					transport != null
+					and transport.runtime_state.tray_count == 5
+					and arm != null
+					and not arm.runtime_state.arm_has_item
+				)
+			elif statement_index == 11 and vehicle_id == &"arm_vehicle":
+				logistics_probe["arm_departed_empty"] = (
+					arm != null and not arm.runtime_state.arm_has_item
+				)
+	)
+
 	_expect_true(bool(scene.call("set_simulation_speed", 4.0)), "Walkthrough regression should run at 4x without changing simulation semantics.")
 	_expect_true(runner.start_program(program), "Transport-assisted walkthrough source should pass production preflight.")
 	var frames := 0
@@ -213,9 +235,9 @@ repeat 4 12
 		frames += 1
 
 	var box := object_manager.get_standard_box()
-	var arm = manager.get_vehicle_by_id(&"arm_vehicle")
-	var transport = manager.get_vehicle_by_id(&"transport_vehicle")
 	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Transport-assisted walkthrough source should complete.")
+	_expect_true(bool(logistics_probe["transport_departed_with_five"]), "Transport should begin the long haul with all five new blocks in its tray and the Arm empty.")
+	_expect_true(bool(logistics_probe["arm_departed_empty"]), "Arm should begin its long cross-map move empty instead of carrying the fifth block.")
 	_expect_true(box != null and box.get_current_count() == 8, "Transport-assisted walkthrough should fill StandardBox from 3/8 to 8/8.")
 	_expect_true(bool(scene.call("is_mission_completed")), "Transport-assisted walkthrough should complete the mission.")
 	_expect_true(transport != null and transport.runtime_state.tray_count == 0, "Walkthrough should actually use and fully unload the Transport tray.")
