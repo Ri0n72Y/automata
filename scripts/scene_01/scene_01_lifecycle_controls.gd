@@ -3,6 +3,8 @@ extends CanvasLayer
 
 const LifecycleStateScript := preload("res://scripts/scene_01/scene_01_lifecycle_state.gd")
 const SPEED_VALUES := [0.5, 1.0, 2.0, 4.0]
+const PLAY_ICON: Texture2D = preload("res://assets/ui/icons/play.svg")
+const PAUSE_ICON: Texture2D = preload("res://assets/ui/icons/pause.svg")
 
 @export var scene_controller_path: NodePath = NodePath("..")
 
@@ -40,7 +42,7 @@ func refresh() -> void:
 
 func _refresh_state(state: int) -> void:
 	if run_pause_button != null:
-		run_pause_button.text = "Ⅱ" if state == LifecycleStateScript.State.RUNNING else "▶"
+		run_pause_button.icon = PAUSE_ICON if state == LifecycleStateScript.State.RUNNING else PLAY_ICON
 		run_pause_button.tooltip_text = "暂停" if state == LifecycleStateScript.State.RUNNING else "播放 / 继续"
 
 	if state_label == null or status_dot == null:

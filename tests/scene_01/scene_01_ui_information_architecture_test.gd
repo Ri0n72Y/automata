@@ -51,13 +51,16 @@ func _run() -> void:
 		lifecycle_state != null and lifecycle_time != null and lifecycle_speed != null,
 		"Lifecycle capsule should expose state, simulation time, and explicit speed selection."
 	)
-	_expect_true(lifecycle_panel.size.x <= 356.0, "Lifecycle capsule should match the compact design-width contract.")
-	_expect_true(lifecycle_panel.size.y <= 46.0, "Lifecycle capsule should match the compact design-height contract.")
+	_expect_true(lifecycle_panel.size.x <= 342.0, "Lifecycle capsule should match the compact design-width contract.")
+	_expect_true(lifecycle_panel.size.y <= 44.0, "Lifecycle capsule should match the compact design-height contract.")
 	var run_reset_group := scene.get_node("LifecycleUIRoot/RootControl/Panel/Margin/Controls/RunResetGroup") as PanelContainer
 	var run_button := scene.get_node("LifecycleUIRoot/RootControl/Panel/Margin/Controls/RunResetGroup/Controls/RunPauseButton") as Button
 	var reset_button := scene.get_node("LifecycleUIRoot/RootControl/Panel/Margin/Controls/RunResetGroup/Controls/ResetButton") as Button
 	_expect_true(run_reset_group != null and run_button != null and reset_button != null, "Play/Pause and Reset should share one compact control group.")
 	_expect_true(lifecycle_speed.flat, "Speed selection should read as lightweight text plus chevron rather than a full button.")
+	_expect_true(not lifecycle_speed.fit_to_longest_item, "Speed selector should stay compact instead of reserving long dropdown width.")
+	_expect_true(run_button.text.is_empty() and reset_button.text.is_empty(), "Lifecycle actions should use SVG icons rather than font glyphs.")
+	_expect_true(run_button.icon != null and reset_button.icon != null, "Lifecycle action SVG icons should be present.")
 	_expect_true(scene.get_node_or_null("TutorialUIRoot") == null, "Tutorial should no longer own a separate floating panel.")
 	_expect_true(scene.get_node_or_null("UIRoot/RootControl/Panel") == null, "Guide should no longer own a separate floating panel.")
 	_expect_true(status_section.get_parent() == tutorial_section.get_parent(), "Status and Tutorial must be sibling sections in the same sidebar.")

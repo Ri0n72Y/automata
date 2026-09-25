@@ -1,54 +1,48 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_lifecycle_controls.gd" id="1_controls"]
 [ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/play.svg" id="3_play"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/reset.svg" id="4_reset"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/chevron_down.svg" id="5_chevron"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_capsule"]
-bg_color = Color(0.985, 0.992, 0.998, 0.97)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.78, 0.83, 0.88, 0.84)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
-shadow_color = Color(0.08, 0.12, 0.17, 0.13)
-shadow_size = 5
+bg_color = Color(0.975, 0.988, 1, 0.93)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0.09, 0.15, 0.22, 0.19)
+shadow_size = 8
+shadow_offset = Vector2(0, 2)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_control_group"]
-bg_color = Color(0.91, 0.955, 0.995, 0.96)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.75, 0.82, 0.89, 0.9)
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
+bg_color = Color(0.91, 0.955, 0.995, 0.94)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_control_hover"]
-bg_color = Color(0.84, 0.92, 0.99, 0.92)
-corner_radius_top_left = 11
-corner_radius_top_right = 11
-corner_radius_bottom_right = 11
-corner_radius_bottom_left = 11
+bg_color = Color(0.83, 0.92, 0.99, 0.92)
+corner_radius_top_left = 13
+corner_radius_top_right = 13
+corner_radius_bottom_right = 13
+corner_radius_bottom_left = 13
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_control_pressed"]
-bg_color = Color(0.76, 0.88, 0.98, 1)
-corner_radius_top_left = 11
-corner_radius_top_right = 11
-corner_radius_bottom_right = 11
-corner_radius_bottom_left = 11
+bg_color = Color(0.75, 0.87, 0.98, 1)
+corner_radius_top_left = 13
+corner_radius_top_right = 13
+corner_radius_bottom_right = 13
+corner_radius_bottom_left = 13
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_speed_hover"]
-bg_color = Color(0.92, 0.96, 0.995, 0.9)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.91, 0.96, 1, 0.78)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
 
 [node name="LifecycleUIRoot" type="CanvasLayer"]
 script = ExtResource("1_controls")
@@ -68,40 +62,40 @@ unique_name_in_owner = true
 layout_mode = 0
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -176.0
+offset_left = -169.0
 offset_top = 12.0
-offset_right = 176.0
-offset_bottom = 56.0
+offset_right = 169.0
+offset_bottom = 54.0
 grow_horizontal = 2
 mouse_filter = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_capsule")
 
 [node name="Margin" type="MarginContainer" parent="RootControl/Panel"]
 layout_mode = 2
-theme_override_constants/margin_left = 14
+theme_override_constants/margin_left = 15
 theme_override_constants/margin_top = 5
-theme_override_constants/margin_right = 12
+theme_override_constants/margin_right = 11
 theme_override_constants/margin_bottom = 5
 
 [node name="Controls" type="HBoxContainer" parent="RootControl/Panel/Margin"]
 layout_mode = 2
 alignment = 1
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
 [node name="StatusGroup" type="HBoxContainer" parent="RootControl/Panel/Margin/Controls"]
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 6
 
 [node name="StatusDot" type="Label" parent="RootControl/Panel/Margin/Controls/StatusGroup"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "●"
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 15
 theme_override_colors/font_color = Color(0.23, 0.58, 0.9, 1)
 
 [node name="StateLabel" type="Label" parent="RootControl/Panel/Margin/Controls/StatusGroup"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(44, 0)
+custom_minimum_size = Vector2(42, 0)
 layout_mode = 2
 text = "就绪"
 theme_override_font_sizes/font_size = 14
@@ -109,7 +103,7 @@ theme_override_colors/font_color = Color(0.17, 0.34, 0.52, 1)
 
 [node name="TimeLabel" type="Label" parent="RootControl/Panel/Margin/Controls"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 0)
+custom_minimum_size = Vector2(61, 0)
 layout_mode = 2
 text = "00:00.0"
 horizontal_alignment = 1
@@ -126,39 +120,41 @@ theme_override_constants/separation = 0
 
 [node name="RunPauseButton" type="Button" parent="RootControl/Panel/Margin/Controls/RunResetGroup/Controls"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(38, 32)
+custom_minimum_size = Vector2(31, 30)
 layout_mode = 2
 focus_mode = 0
 flat = true
-text = "▶"
+icon = ExtResource("3_play")
 tooltip_text = "播放 / 继续"
-theme_override_font_sizes/font_size = 15
 theme_override_styles/hover = SubResource("StyleBoxFlat_control_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_control_pressed")
 
 [node name="Divider" type="VSeparator" parent="RootControl/Panel/Margin/Controls/RunResetGroup/Controls"]
 layout_mode = 2
+modulate = Color(1, 1, 1, 0.48)
 
 [node name="ResetButton" type="Button" parent="RootControl/Panel/Margin/Controls/RunResetGroup/Controls"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(36, 32)
+custom_minimum_size = Vector2(31, 30)
 layout_mode = 2
 focus_mode = 0
 flat = true
-text = "↺"
+icon = ExtResource("4_reset")
 tooltip_text = "重置场景"
-theme_override_font_sizes/font_size = 15
 theme_override_styles/hover = SubResource("StyleBoxFlat_control_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_control_pressed")
 
 [node name="SpeedOption" type="OptionButton" parent="RootControl/Panel/Margin/Controls"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(60, 32)
+custom_minimum_size = Vector2(50, 30)
 layout_mode = 2
 focus_mode = 0
 flat = true
+fit_to_longest_item = false
 tooltip_text = "仿真倍速"
 theme_override_font_sizes/font_size = 14
+theme_override_constants/arrow_margin = 2
+theme_override_icons/arrow = ExtResource("5_chevron")
 theme_override_styles/hover = SubResource("StyleBoxFlat_speed_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_speed_hover")
 item_count = 4

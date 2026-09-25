@@ -213,6 +213,43 @@
 
 ---
 
+## 6.1 Icon / Glyph 也属于 design contract
+
+高保真复刻时，不要默认使用 Unicode 字符充当按钮图标。
+
+例如：
+
+- `▶`；
+- `Ⅱ`；
+- `↺`；
+- `+` / `−`；
+- 文本箭头。
+
+它们的实际形状会受系统字体、fallback font、字重和平台影响，很难稳定接近设计稿。
+
+对于主要 UI action，优先使用：
+
+- 项目内 SVG；
+- 统一 viewBox；
+- 统一 stroke / fill；
+- 固定视觉尺寸；
+- hover / pressed 由按钮容器负责，而不是换字符。
+
+Unicode glyph 更适合真正属于文字内容的符号，而不是需要像素级复刻的 control icon。
+
+设计记录里应增加：
+
+- icon source；
+- viewBox / nominal size；
+- stroke width；
+- fill / stroke color；
+- icon-to-container ratio；
+- 是否随 semantic state 改色。
+
+如果设计稿里的 chevron、play、pause、reset 是视觉语言的一部分，就应当把它们作为资产复刻，而不是让字体替你决定外观。
+
+---
+
 ## 7. 写成 Design Contract 后再实现
 
 每个组件在编码前写一个小 contract。
