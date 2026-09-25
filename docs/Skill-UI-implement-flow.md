@@ -286,6 +286,54 @@ Unicode glyph 更适合真正属于文字内容的符号，而不是需要像素
 
 ---
 
+## 7.1 Interaction state 必须几何稳定
+
+高保真 UI 中，hover / pressed / focus 只能改变视觉反馈，不应偷偷改变控件几何。
+
+常见的 1px 位移来自：
+
+- normal / hover 使用不同 border width；
+- StyleBox 的 content margin 不一致；
+- flat control 的 normal state 使用默认 EmptyStyleBox，而 hover 使用自定义 StyleBox；
+- focus style 额外增加 outline / margin；
+- OptionButton 在不同 state 下继承不同 font color 或 padding。
+
+因此同一个 control 的：
+
+- normal；
+- hover；
+- pressed；
+- hover_pressed；
+- focus；
+
+必须显式检查：
+
+- content margin 一致；
+- border width 一致；
+- minimum size 一致；
+- icon alignment 一致；
+- font metrics / font color 不意外切换。
+
+如果需要 hover feedback，优先只改变：
+
+- background alpha；
+- background color；
+- shadow；
+- semantic color。
+
+不要通过改变 padding、border 或尺寸制造 hover。
+
+对于轻量 selector（例如 `4× ⌄`），还要显式锁定：
+
+- `font_color`；
+- `font_hover_color`；
+- `font_pressed_color`；
+- `font_focus_color`；
+
+避免 Theme fallback 在 hover 时把主文本改成不符合设计稿的颜色。
+
+---
+
 ## 8. 实现时优先改 presentation tree，不复制 domain state
 
 UI 复刻允许重组场景树，但不要因此复制业务 truth。

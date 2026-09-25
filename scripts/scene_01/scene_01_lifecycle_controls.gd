@@ -8,7 +8,7 @@ const PAUSE_ICON: Texture2D = preload("res://assets/ui/icons/pause.svg")
 
 @export var scene_controller_path: NodePath = NodePath("..")
 
-@onready var status_dot: Label = %StatusDot
+@onready var status_dot: TextureRect = %StatusDot
 @onready var state_label: Label = %StateLabel
 @onready var time_label: Label = %TimeLabel
 @onready var run_pause_button: Button = %RunPauseButton
@@ -51,15 +51,15 @@ func _refresh_state(state: int) -> void:
 		LifecycleStateScript.State.RUNNING:
 			state_label.text = "运行中"
 			state_label.add_theme_color_override("font_color", Color(0.04, 0.55, 0.39, 1))
-			status_dot.add_theme_color_override("font_color", Color(0.04, 0.72, 0.49, 1))
+			status_dot.modulate = Color(0.04, 0.72, 0.49, 1)
 		LifecycleStateScript.State.PAUSED:
 			state_label.text = "已暂停"
 			state_label.add_theme_color_override("font_color", Color(0.7, 0.42, 0.07, 1))
-			status_dot.add_theme_color_override("font_color", Color(0.9, 0.58, 0.1, 1))
+			status_dot.modulate = Color(0.9, 0.58, 0.1, 1)
 		_:
 			state_label.text = "就绪"
 			state_label.add_theme_color_override("font_color", Color(0.17, 0.34, 0.52, 1))
-			status_dot.add_theme_color_override("font_color", Color(0.23, 0.58, 0.9, 1))
+			status_dot.modulate = Color(0.23, 0.58, 0.9, 1)
 
 
 func _refresh_speed(controller: Node) -> void:

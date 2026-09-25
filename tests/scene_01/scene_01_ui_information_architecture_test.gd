@@ -34,6 +34,7 @@ func _run() -> void:
 	var program_ui := scene.get_node("ProgramUIRoot")
 	var program_panel := scene.get_node("ProgramUIRoot/RootControl/ProgramPanel") as Control
 	var lifecycle_panel := scene.get_node("LifecycleUIRoot/RootControl/Panel") as Control
+	var lifecycle_dot := scene.get_node("LifecycleUIRoot/RootControl/Panel/Margin/Controls/StatusGroup/StatusDot") as TextureRect
 	var lifecycle_state := scene.get_node("LifecycleUIRoot/RootControl/Panel/Margin/Controls/StatusGroup/StateLabel") as Label
 	var lifecycle_time := scene.get_node("LifecycleUIRoot/RootControl/Panel/Margin/Controls/TimeLabel") as Label
 	var lifecycle_speed := scene.get_node("LifecycleUIRoot/RootControl/Panel/Margin/Controls/SpeedOption") as OptionButton
@@ -48,8 +49,8 @@ func _run() -> void:
 		"Scene 01 should expose one main sidebar with status and learning sections."
 	)
 	_expect_true(
-		lifecycle_state != null and lifecycle_time != null and lifecycle_speed != null,
-		"Lifecycle capsule should expose state, simulation time, and explicit speed selection."
+		lifecycle_dot != null and lifecycle_state != null and lifecycle_time != null and lifecycle_speed != null,
+		"Lifecycle capsule should expose a real status dot, state, simulation time, and explicit speed selection."
 	)
 	_expect_true(lifecycle_panel.size.x <= 342.0, "Lifecycle capsule should match the compact design-width contract.")
 	_expect_true(lifecycle_panel.size.y <= 44.0, "Lifecycle capsule should match the compact design-height contract.")
@@ -57,10 +58,11 @@ func _run() -> void:
 	var run_button := scene.get_node("LifecycleUIRoot/RootControl/Panel/Margin/Controls/RunResetGroup/Controls/RunPauseButton") as Button
 	var reset_button := scene.get_node("LifecycleUIRoot/RootControl/Panel/Margin/Controls/RunResetGroup/Controls/ResetButton") as Button
 	_expect_true(run_reset_group != null and run_button != null and reset_button != null, "Play/Pause and Reset should share one compact control group.")
-	_expect_true(lifecycle_speed.flat, "Speed selection should read as lightweight text plus chevron rather than a full button.")
 	_expect_true(not lifecycle_speed.fit_to_longest_item, "Speed selector should stay compact instead of reserving long dropdown width.")
+	_expect_true(lifecycle_dot.custom_minimum_size.x >= 12.0, "Status dot should keep the larger design-reference size.")
 	_expect_true(run_button.text.is_empty() and reset_button.text.is_empty(), "Lifecycle actions should use SVG icons rather than font glyphs.")
 	_expect_true(run_button.icon != null and reset_button.icon != null, "Lifecycle action SVG icons should be present.")
+	_expect_true(run_button.icon_alignment == HORIZONTAL_ALIGNMENT_CENTER and reset_button.icon_alignment == HORIZONTAL_ALIGNMENT_CENTER, "Lifecycle SVG actions should remain centered across interaction states.")
 	_expect_true(scene.get_node_or_null("TutorialUIRoot") == null, "Tutorial should no longer own a separate floating panel.")
 	_expect_true(scene.get_node_or_null("UIRoot/RootControl/Panel") == null, "Guide should no longer own a separate floating panel.")
 	_expect_true(status_section.get_parent() == tutorial_section.get_parent(), "Status and Tutorial must be sibling sections in the same sidebar.")
