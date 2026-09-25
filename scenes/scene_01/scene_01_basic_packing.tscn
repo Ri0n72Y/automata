@@ -1,4 +1,4 @@
-[gd_scene load_steps=32 format=3 uid="uid://scene01basicpacking"]
+[gd_scene load_steps=31 format=3 uid="uid://scene01basicpacking"]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_mission_controller.gd" id="1_controller"]
 [ext_resource type="Script" path="res://scripts/grid/grid_debug_view.gd" id="2_grid_debug"]
@@ -27,7 +27,6 @@
 [ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_program_ui.tscn" id="25_program_ui"]
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_score_tracker.gd" id="26_scoring"]
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_tutorial.gd" id="27_tutorial"]
-[ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_tutorial_ui.tscn" id="28_tutorial_ui"]
 [ext_resource type="PackedScene" path="res://scenes/scene_01/components/grid_selection_visuals.tscn" id="29_grid_selection_visuals"]
 [ext_resource type="PackedScene" path="res://scenes/scene_01/components/vehicle_move_preview.tscn" id="30_vehicle_move_preview"]
 
@@ -144,8 +143,6 @@ position = Vector3(8, 0, 5)
 [node name="HUDRoot" parent="." instance=ExtResource("23_hud")]
 unique_name_in_owner = true
 
-[node name="TutorialUIRoot" parent="." instance=ExtResource("28_tutorial_ui")]
-unique_name_in_owner = true
 
 [node name="ProgramUIRoot" parent="." instance=ExtResource("25_program_ui")]
 unique_name_in_owner = true
@@ -161,4 +158,3 @@ scene_controller_path = NodePath("..")
 [node name="DebugUIRoot" parent="." instance=ExtResource("20_debug_ui")]
 unique_name_in_owner = true
 scene_controller_path = NodePath("..")
-grid_debug_view_path = NodePath("../SceneRoot/GridRoot/GridDebugView")

@@ -53,13 +53,13 @@ func _run() -> void:
 		test.finish(self, "Scene 01 HUD tests")
 		return
 
-	var selected_label := hud.get_node("RootControl/StatusPanel/Margin/VBox/SelectedLabel") as Label
-	var vehicle_state_label := hud.get_node("RootControl/StatusPanel/Margin/VBox/VehicleStateLabel") as Label
-	var inventory_label := hud.get_node("RootControl/StatusPanel/Margin/VBox/InventoryLabel") as Label
-	var mission_label := hud.get_node("RootControl/StatusPanel/Margin/VBox/MissionLabel") as Label
-	var pause_label := hud.get_node("RootControl/StatusPanel/Margin/VBox/Header/PauseLabel") as Label
-	var commands_label := hud.get_node("RootControl/StatusPanel/Margin/VBox/CommandsLabel") as Label
-	var feedback_label := hud.get_node("RootControl/StatusPanel/Margin/VBox/FeedbackLabel") as Label
+	var selected_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/SelectedLabel") as Label
+	var vehicle_state_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/VehicleStateLabel") as Label
+	var inventory_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/InventoryLabel") as Label
+	var mission_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/MissionLabel") as Label
+	var pause_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/Header/PauseLabel") as Label
+	var commands_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/CommandsLabel") as Label
+	var feedback_label := hud.get_node("RootControl/SidebarPanel/Margin/Sidebar/StatusSection/FeedbackLabel") as Label
 	var completion_panel := hud.get_node("RootControl/CompletionPanel") as PanelContainer
 
 	test.expect_true(mission_label.text.find("就绪") >= 0, "HUD should expose initial Mission READY.")

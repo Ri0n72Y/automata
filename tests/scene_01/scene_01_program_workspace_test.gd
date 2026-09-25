@@ -54,13 +54,10 @@ func _run() -> void:
 	var builder_body := ui.get_node("%BuilderBody") as Control
 	var workspace_button := ui.get_node("%WorkspaceCollapseButton") as Button
 	var builder_button := ui.get_node("%BuilderToggleButton") as Button
-	var tutorial_panel := scene.get_node("TutorialUIRoot/RootControl/TutorialPanel") as Control
-	var manual_panel := scene.get_node("UIRoot/RootControl/Panel") as Control
-	var hud_panel := scene.get_node("HUDRoot/RootControl/StatusPanel") as Control
+	var sidebar_panel := scene.get_node("HUDRoot/RootControl/SidebarPanel") as Control
+	var tutorial_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/TutorialSection") as Control
 	var program_root := ui.get_node("RootControl") as Control
-	var tutorial_root := scene.get_node("TutorialUIRoot/RootControl") as Control
 	var hud_root := scene.get_node("HUDRoot/RootControl") as Control
-	var manual_root := scene.get_node("UIRoot/RootControl") as Control
 	_expect_true(source_editor != null, "Program workspace should expose one canonical SourceEditor.")
 	_expect_equal(ui.call("get_source_text"), SOURCE_HEADER, "Workspace should initialize from the scene-authored v2 source header.")
 	_expect_equal(status_label.text, "语法有效 · 0 条语句", "Initial Program status should be serialized in the scene instead of rebuilt at runtime.")
@@ -94,14 +91,14 @@ func _run() -> void:
 	var expected_program_width := LayoutMetrics.program_rail_width(viewport_width)
 	var expected_left_width := LayoutMetrics.left_rail_width(viewport_width)
 	_expect_true(absf(program_panel.size.x - expected_program_width) <= 2.0, "Expanded Program rail should follow the shared desktop width tier.")
-	_expect_true(absf(tutorial_panel.size.x - expected_left_width) <= 2.0 and absf(manual_panel.size.x - expected_left_width) <= 2.0 and absf(hud_panel.size.x - expected_left_width) <= 2.0, "All left-rail panels should use the shared immutable width metric.")
-	var central_width := program_panel.get_global_rect().position.x - (tutorial_panel.get_global_rect().position.x + tutorial_panel.get_global_rect().size.x)
-	_expect_true(central_width > 0.0, "Program and left rails must leave a non-overlapping central gameplay region.")
+	_expect_true(absf(sidebar_panel.size.x - expected_left_width) <= 2.0, "Main sidebar should use the shared immutable left-rail width metric.")
+	var central_width := program_panel.get_global_rect().position.x - sidebar_panel.get_global_rect().end.x
+	_expect_true(central_width > 0.0, "Program rail and main sidebar must leave a non-overlapping central gameplay region.")
 	var wide_central_width := 1920.0 - 16.0 - LayoutMetrics.program_rail_width(1920.0) - (16.0 + LayoutMetrics.left_rail_width(1920.0))
 	_expect_true(wide_central_width >= 900.0, "1920px spec tier should protect at least 900px of central gameplay width.")
-	_expect_true(not tutorial_panel.get_global_rect().intersects(hud_panel.get_global_rect()), "Tutorial and HUD must occupy separate vertical slots in the left rail.")
-	_expect_true(program_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and tutorial_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and hud_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and manual_root.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Fullscreen presentation roots must not intercept central gameplay input.")
-	_expect_true(tutorial_panel.mouse_filter == Control.MOUSE_FILTER_STOP and manual_panel.mouse_filter == Control.MOUSE_FILTER_STOP, "Visible left-rail panels must stop clicks from leaking into gameplay.")
+	_expect_true(tutorial_section.is_ancestor_of(scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/TutorialSection/TutorialBody")), "Tutorial must be a section inside the single main sidebar.")
+	_expect_true(program_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and hud_root.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Fullscreen presentation roots must not intercept central gameplay input.")
+	_expect_true(sidebar_panel.mouse_filter == Control.MOUSE_FILTER_STOP, "The visible main sidebar must stop clicks from leaking into gameplay.")
 	ui.call("set_command_builder_expanded", true)
 	_expect_true(builder_scroll.visible and builder_body.is_visible_in_tree(), "Add Command should expand inside a bounded scroll region.")
 	_expect_true(builder_button.text.begins_with("−"), "Expanded command builder should use minus instead of a triangle arrow.")

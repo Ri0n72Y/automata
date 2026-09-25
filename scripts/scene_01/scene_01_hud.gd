@@ -25,7 +25,7 @@ const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metric
 @onready var feedback_label: Label = %FeedbackLabel
 @onready var completion_panel: PanelContainer = %CompletionPanel
 @onready var completion_summary_label: Label = %CompletionSummaryLabel
-@onready var status_panel: PanelContainer = $RootControl/StatusPanel
+@onready var sidebar_panel: PanelContainer = %SidebarPanel
 
 var _scene_controller: MissionControllerScript
 var _observable: ObservableStateScript
@@ -55,18 +55,18 @@ func _ready() -> void:
 		"SceneRoot/GridRoot/VehicleGrabDropController"
 	) as VehicleGrabDropControllerScript
 	_bind_signals()
-	get_viewport().size_changed.connect(_apply_status_layout)
-	_apply_status_layout()
+	get_viewport().size_changed.connect(_apply_sidebar_layout)
+	_apply_sidebar_layout()
 	_refresh()
 	call_deferred("_refresh")
 
 
-func _apply_status_layout() -> void:
+func _apply_sidebar_layout() -> void:
 	var viewport_size := get_viewport().get_visible_rect().size
-	status_panel.offset_left = LayoutMetrics.EDGE_MARGIN
-	status_panel.offset_top = LayoutMetrics.CONTENT_TOP
-	status_panel.offset_right = status_panel.offset_left + LayoutMetrics.left_rail_width(float(viewport_size.x))
-	status_panel.offset_bottom = status_panel.offset_top + LayoutMetrics.LEFT_STATUS_HEIGHT
+	sidebar_panel.offset_left = LayoutMetrics.EDGE_MARGIN
+	sidebar_panel.offset_top = LayoutMetrics.CONTENT_TOP
+	sidebar_panel.offset_right = sidebar_panel.offset_left + LayoutMetrics.left_rail_width(float(viewport_size.x))
+	sidebar_panel.offset_bottom = sidebar_panel.offset_top
 
 
 func _bind_signals() -> void:
@@ -290,23 +290,23 @@ func _on_lifecycle_changed(_previous_state: int, _current_state: int) -> void:
 
 
 func _on_reset_completed() -> void:
-	feedback_label.text = "场景已重置"
+	_set_feedback("场景已重置", false)
 	_refresh()
 
 
 func _on_move_accepted(vehicle_id: StringName, _target_anchor: Vector2i) -> void:
-	feedback_label.text = "%s：移动命令已接受" % _selected_vehicle_name(vehicle_id)
+	_set_feedback("%s：移动命令已接受" % _selected_vehicle_name(vehicle_id), false)
 	_refresh()
 
 
 func _on_move_rejected(vehicle_id: StringName, _target_anchor: Vector2i, reason: StringName) -> void:
 	var prefix := _selected_vehicle_name(vehicle_id) if vehicle_id != &"" else "移动"
-	feedback_label.text = "%s：%s" % [prefix, _move_rejection_text(reason)]
+	_set_feedback("%s：%s" % [prefix, _move_rejection_text(reason)], true)
 	_refresh()
 
 
 func _on_move_stopped(vehicle_id: StringName) -> void:
-	feedback_label.text = "%s：移动已停止" % _selected_vehicle_name(vehicle_id)
+	_set_feedback("%s：移动已停止" % _selected_vehicle_name(vehicle_id), false)
 	_refresh()
 
 
@@ -315,14 +315,22 @@ func _on_grab_drop_completed(vehicle_id: StringName, action: int, status: int) -
 	if action == GrabDropResultScript.Action.NONE:
 		action_name = "抓放"
 	if status == GrabDropResultScript.Status.ACCEPTED:
-		feedback_label.text = "%s：%s成功" % [_selected_vehicle_name(vehicle_id), action_name]
+		_set_feedback("%s：%s成功" % [_selected_vehicle_name(vehicle_id), action_name], false)
 	else:
-		feedback_label.text = "%s：%s失败 · %s" % [
+		_set_feedback("%s：%s失败 · %s" % [
 			_selected_vehicle_name(vehicle_id),
 			action_name,
 			_grab_drop_status_text(status),
-		]
+		], true)
 	_refresh()
+
+
+func _set_feedback(message: String, is_error: bool) -> void:
+	feedback_label.text = message
+	feedback_label.add_theme_color_override(
+		"font_color",
+		Color(0.72, 0.16, 0.16, 1) if is_error else Color(0.08, 0.48, 0.34, 1)
+	)
 
 
 func _move_rejection_text(reason: StringName) -> String:
