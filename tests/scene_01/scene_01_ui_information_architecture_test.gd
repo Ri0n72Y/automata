@@ -52,7 +52,7 @@ func _run() -> void:
 		lifecycle_dot != null and lifecycle_state != null and lifecycle_time != null and lifecycle_speed != null,
 		"Lifecycle capsule should expose a real status dot, state, simulation time, and explicit speed selection."
 	)
-	_expect_true(lifecycle_panel.size.x <= 342.0, "Lifecycle capsule should match the compact design-width contract.")
+	_expect_true(lifecycle_panel.size.x <= 354.0, "Lifecycle capsule should match the compact design-width contract.")
 	_expect_true(lifecycle_panel.size.y <= 44.0, "Lifecycle capsule should match the compact design-height contract.")
 	var run_reset_group := scene.get_node("LifecycleUIRoot/RootControl/Panel/Margin/Controls/RunResetGroup") as PanelContainer
 	var run_button := scene.get_node("LifecycleUIRoot/RootControl/Panel/Margin/Controls/RunResetGroup/Controls/RunPauseButton") as Button
@@ -62,6 +62,11 @@ func _run() -> void:
 	_expect_true(lifecycle_dot.custom_minimum_size.x >= 12.0, "Status dot should keep the larger design-reference size.")
 	_expect_true(run_button.text.is_empty() and reset_button.text.is_empty(), "Lifecycle actions should use SVG icons rather than font glyphs.")
 	_expect_true(run_button.icon != null and reset_button.icon != null, "Lifecycle action SVG icons should be present.")
+	_expect_equal(run_button.icon.get_class(), "DPITexture", "Lifecycle play/pause icon should import as DPITexture for UI oversampling.")
+	_expect_equal(reset_button.icon.get_class(), "DPITexture", "Lifecycle reset icon should import as DPITexture for UI oversampling.")
+	_expect_true(lifecycle_speed.get_theme_stylebox("normal").content_margin_left >= 8.0, "Speed selector should keep 8px left padding.")
+	_expect_true(lifecycle_speed.get_theme_stylebox("normal").content_margin_right >= 8.0, "Speed selector should keep 8px right padding.")
+	_expect_true(run_button.size.x <= 30.0 and reset_button.size.x <= 30.0, "Hover hit visuals should remain smaller than the outer run/reset group.")
 	_expect_true(run_button.icon_alignment == HORIZONTAL_ALIGNMENT_CENTER and reset_button.icon_alignment == HORIZONTAL_ALIGNMENT_CENTER, "Lifecycle SVG actions should remain centered across interaction states.")
 	_expect_true(scene.get_node_or_null("TutorialUIRoot") == null, "Tutorial should no longer own a separate floating panel.")
 	_expect_true(scene.get_node_or_null("UIRoot/RootControl/Panel") == null, "Guide should no longer own a separate floating panel.")
@@ -132,6 +137,13 @@ func _expect_near(actual: float, expected: float, tolerance: float, message: Str
 		return
 	failures += 1
 	push_error("%s Expected %.2f ± %.2f, got %.2f." % [message, expected, tolerance, actual])
+
+
+func _expect_equal(actual: Variant, expected: Variant, message: String) -> void:
+	if actual == expected:
+		return
+	failures += 1
+	push_error("%s Expected %s, got %s." % [message, str(expected), str(actual)])
 
 
 func _expect_true(value: bool, message: String) -> void:

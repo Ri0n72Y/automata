@@ -250,6 +250,26 @@ Unicode glyph 更适合真正属于文字内容的符号，而不是需要像素
 
 ---
 
+## 6.2 Godot 图标格式选择
+
+对于 Godot 4.6+ / 4.7 的 UI 图标：
+
+1. 简单矢量图标优先保留 SVG 源；
+2. 不要默认以普通 Texture2D 导入 SVG，因为普通 SVG 会在 import-time 栅格化；
+3. 对需要适配 DPI / `canvas_items` oversampling 的 UI 图标，优先将 SVG 导入为 `DPITexture`；
+4. 将生成的 `<asset>.import` 配置提交到版本库，确保 CI 和其他开发机使用同一 import contract；
+5. 如果图形复杂、ThorVG 支持不完整，或固定尺寸下仍有采样问题，再使用按目标最高分辨率输出的 PNG 作为 fallback。
+
+对小尺寸 UI icon，还应：
+
+- 避免依赖非整数 scale；
+- 尽量让 nominal SVG size 与控件实际 logical size 接近；
+- 使用整数 viewBox / path / stroke；
+- 不在 TextureRect 上做不必要的 stretch；
+- hover/pressed 不改变 icon rect。
+
+---
+
 ## 7. 写成 Design Contract 后再实现
 
 每个组件在编码前写一个小 contract。
