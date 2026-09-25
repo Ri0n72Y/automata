@@ -174,10 +174,10 @@ repeat 4 4
 [arm_vehicle:grabDrop]
 [transport_vehicle:moveTo] 14 4
 [arm_vehicle:moveTo] 14 3
+[arm_vehicle:rotate] clockwise
 [arm_vehicle:grabDrop]
 [arm_vehicle:rotate] counterclockwise
 [arm_vehicle:grabDrop]
-[arm_vehicle:rotate] clockwise
 repeat 5 13
 """
 	var parsed := ProgramSourceScript.new().parse(source)
