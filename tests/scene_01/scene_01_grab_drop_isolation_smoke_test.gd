@@ -36,10 +36,10 @@ func _run() -> void:
 	) as VEHICLE_MANAGER_SCRIPT
 	var first_selection = first_scene.get_node_or_null("SceneRoot/GridRoot/VehicleSelectionController")
 	var first_status = first_scene.get_node_or_null(
-		"HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/StatusSection/StatusCard/Margin/StatusBody/FeedbackLabel"
+		"HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/StatusSection/FeedbackLabel"
 	) as Label
 	var second_status = second_scene.get_node_or_null(
-		"HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/StatusSection/StatusCard/Margin/StatusBody/FeedbackLabel"
+		"HUDRoot/RootControl/SidebarPanel/Margin/Sidebar/StatusSection/FeedbackLabel"
 	) as Label
 
 	_expect_true(first_manager != null and second_manager != null, "Both Scene01 instances need object managers.")

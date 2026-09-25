@@ -38,7 +38,7 @@ func _ready() -> void:
 	_observable.configured.connect(_refresh)
 	_observable.standard_box_count_changed.connect(func(_a, _b): _refresh())
 	_root.lifecycle_state_changed.connect(func(_a, _b): _refresh())
-	set_collapsed(false)
+	set_collapsed(true)
 	_refresh()
 	call_deferred("_refresh")
 

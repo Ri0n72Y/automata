@@ -118,6 +118,8 @@ func _run() -> void:
 		scene.get_node_or_null("DebugUIRoot/RootControl/Panel/Margin/VBox/CoordinatesRow") == null,
 		"Grid coordinates should not be a Debug UI toggle."
 	)
+	_expect_true(bool(tutorial_section.call("is_collapsed")), "Tutorial should start collapsed in the compact main-sidebar state.")
+	_expect_false(tutorial_body.visible, "Default collapsed Tutorial should not lengthen the main sidebar.")
 
 	for ui_root in [hud_root, program_root, lifecycle_root, debug_root]:
 		_expect_true(ui_root != null and ui_root.theme != null, "Every visible Scene 01 UI surface should use the shared explicit theme.")
@@ -139,6 +141,7 @@ func _run() -> void:
 		_expect_near(sidebar.position.x, LayoutMetrics.EDGE_MARGIN, 1.0, "Main sidebar should align to the common edge margin.")
 		_expect_near(sidebar.position.y, LayoutMetrics.CONTENT_TOP, 1.0, "Main sidebar should begin below the lifecycle control.")
 		_expect_true(sidebar.get_global_rect().end.y <= float(viewport_size.y) - LayoutMetrics.CONTENT_BOTTOM_MARGIN + 1.0, "Main sidebar should fit the supported viewport height.")
+		_expect_true(sidebar.size.y <= float(viewport_size.y) * 0.84, "Default sidebar should remain compact instead of filling the screen vertically.")
 		_expect_false(program_panel.get_global_rect().intersects(lifecycle_panel.get_global_rect()), "Program rail must stay below the lifecycle controls.")
 		_expect_false(debug_panel.get_global_rect().intersects(program_panel.get_global_rect()), "Collapsed Debug entry must stay above the Program rail.")
 		_expect_true(program_panel.get_global_rect().position.x - sidebar.get_global_rect().end.x >= 400.0, "Supported desktop sizes should preserve at least 400px of central gameplay width.")
