@@ -14,8 +14,6 @@ const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runti
 @export_range(1.0, 1000.0, 1.0) var ray_length: float = 200.0
 @export_range(0.01, 0.2, 0.01) var highlight_height: float = 0.03
 @export_range(0.5, 1.0, 0.01) var highlight_scale: float = 0.88
-@export var hover_color: Color = Color(0.25, 0.75, 1.0, 0.18)
-@export var selected_color: Color = Color(1.0, 0.68, 0.1, 0.26)
 
 var controller: Node
 var camera: Camera3D
@@ -32,10 +30,10 @@ var _selected_highlight: MeshInstance3D
 
 
 func _ready() -> void:
-	_hover_highlight = _create_highlight("HoverHighlight", hover_color)
-	_selected_highlight = _create_highlight("SelectedHighlight", selected_color)
-	add_child(_hover_highlight)
-	add_child(_selected_highlight)
+	_hover_highlight = get_node_or_null("GridSelectionVisuals/HoverHighlight") as MeshInstance3D
+	_selected_highlight = get_node_or_null("GridSelectionVisuals/SelectedHighlight") as MeshInstance3D
+	if _hover_highlight == null or _selected_highlight == null:
+		push_error("GridSelectionController requires static GridSelectionVisuals.")
 	_update_highlight_sizes()
 	_connect_vehicle_selection_lifecycle()
 
@@ -413,24 +411,6 @@ func _raycast_ground(screen_position: Vector2) -> Dictionary:
 	query.collide_with_areas = false
 	query.collide_with_bodies = true
 	return get_world_3d().direct_space_state.intersect_ray(query)
-
-
-func _create_highlight(node_name: String, color: Color) -> MeshInstance3D:
-	var highlight := MeshInstance3D.new()
-	highlight.name = node_name
-	highlight.visible = false
-	highlight.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-
-	var mesh := BoxMesh.new()
-	highlight.mesh = mesh
-
-	var material := StandardMaterial3D.new()
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.albedo_color = color
-	material.no_depth_test = false
-	highlight.material_override = material
-	return highlight
 
 
 func _update_highlight_sizes() -> void:
