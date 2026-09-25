@@ -27,34 +27,29 @@ func _run() -> void:
 		"SceneRoot/GridRoot/GridDebugView"
 	) as GRID_DEBUG_VIEW_SCRIPT
 	var debug_panel := scene.get_node_or_null("DebugUIRoot/RootControl/Panel") as Control
-	var coordinates_button := scene.get_node_or_null(
-		"DebugUIRoot/RootControl/Panel/Margin/VBox/CoordinatesRow/CoordinatesButton"
-	) as Button
+	var coordinates_row := scene.get_node_or_null(
+		"DebugUIRoot/RootControl/Panel/Margin/VBox/CoordinatesRow"
+	)
 
 	_expect_true(debug_ui != null, "Scene 01 should contain the separate Debug UI.")
 	_expect_true(debug_view != null, "Debug UI test requires GridDebugView.")
 	_expect_true(debug_panel != null, "Debug UI should expose its disclosure panel.")
-	_expect_true(coordinates_button != null, "Debug UI should expose its coordinate toggle button.")
-	if debug_ui == null or debug_view == null or debug_panel == null or coordinates_button == null:
+	_expect_true(coordinates_row == null, "Player-facing coordinates should not remain a Debug UI control.")
+	if debug_ui == null or debug_view == null or debug_panel == null:
 		await _finish_scene(scene)
 		return
 
-	_expect_true(debug_panel.size.x <= 140.0 and debug_panel.size.y <= 50.0, "Collapsed Debug entry should remain visually secondary to player controls.")
-	_expect_false(debug_view.show_coordinates, "Coordinates should start hidden.")
-	_expect_equal(debug_view.get_debug_label_count(), 0, "Hidden coordinates should create no labels.")
-	_expect_equal(coordinates_button.text, "显示场地坐标", "Debug button should initially offer to show coordinates.")
+	_expect_true(
+		debug_panel.size.x <= 140.0 and debug_panel.size.y <= 50.0,
+		"Collapsed Debug entry should remain visually secondary to player controls."
+	)
+	_expect_false(debug_view.show_coordinates, "Legacy world-coordinate labels should remain disabled.")
+	_expect_equal(debug_view.get_debug_label_count(), 0, "Disabled legacy coordinate labels should create no world text.")
 
-	debug_ui._on_coordinates_pressed()
+	debug_ui.set_collapsed(false)
 	await process_frame
-	_expect_true(debug_view.show_coordinates, "Debug button should enable coordinates.")
-	_expect_equal(debug_view.get_debug_label_count(), 160, "Enabling coordinates should draw the 16 x 10 label set.")
-	_expect_equal(coordinates_button.text, "隐藏场地坐标", "Debug button should switch to the hide action.")
-
-	debug_ui._on_coordinates_pressed()
-	await process_frame
-	_expect_false(debug_view.show_coordinates, "Second Debug button press should hide coordinates.")
-	_expect_equal(debug_view.get_debug_label_count(), 0, "Hiding coordinates should clear all labels.")
-	_expect_equal(coordinates_button.text, "显示场地坐标", "Debug button should return to the show action.")
+	_expect_true(debug_ui.get_node_or_null("RootControl/Panel/Margin/VBox/RotateRow") != null, "Debug should retain grid transform tools.")
+	debug_ui.set_collapsed(true)
 
 	await _finish_scene(scene)
 

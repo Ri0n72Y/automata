@@ -1,8 +1,71 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_hud.gd" id="1_hud"]
 [ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_score_presenter.gd" id="3_score_presenter"]
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_tutorial_ui.gd" id="4_tutorial_ui"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/chevron_down.svg" id="5_chevron_down"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/chevron_right.svg" id="6_chevron_right"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sidebar_shell"]
+bg_color = Color(0.975, 0.986, 0.996, 0.92)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.08, 0.14, 0.2, 0.16)
+shadow_size = 7
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_section_header"]
+bg_color = Color(0.91, 0.945, 0.975, 0.88)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_section_body"]
+bg_color = Color(0.99, 0.995, 1, 0.78)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_header_button_normal"]
+bg_color = Color(1, 1, 1, 0)
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+corner_radius_top_left = 11
+corner_radius_top_right = 11
+corner_radius_bottom_right = 11
+corner_radius_bottom_left = 11
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_header_button_hover"]
+bg_color = Color(0.82, 0.9, 0.97, 0.74)
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+corner_radius_top_left = 11
+corner_radius_top_right = 11
+corner_radius_bottom_right = 11
+corner_radius_bottom_left = 11
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_bg"]
+bg_color = Color(0.81, 0.86, 0.91, 0.8)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_fill"]
+bg_color = Color(0.12, 0.53, 0.95, 0.92)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [node name="HUDRoot" type="CanvasLayer"]
 layer = 5
@@ -18,78 +81,490 @@ grow_vertical = 2
 mouse_filter = 2
 theme = ExtResource("2_theme")
 
-[node name="StatusPanel" type="PanelContainer" parent="RootControl"]
+[node name="SidebarPanel" type="PanelContainer" parent="RootControl"]
+unique_name_in_owner = true
 layout_mode = 0
-anchor_top = 0.0
-anchor_bottom = 0.0
 offset_left = 16.0
 offset_top = 82.0
-offset_right = 356.0
-offset_bottom = 314.0
-mouse_filter = 2
+offset_right = 336.0
+offset_bottom = 82.0
+mouse_filter = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_sidebar_shell")
 
-[node name="Margin" type="MarginContainer" parent="RootControl/StatusPanel"]
+[node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
 
-[node name="VBox" type="VBoxContainer" parent="RootControl/StatusPanel/Margin"]
+[node name="SidebarScroll" type="ScrollContainer" parent="RootControl/SidebarPanel/Margin"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+
+[node name="Sidebar" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="MissionSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Header" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_section_header")
+
+[node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Header"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 3
+
+[node name="Title" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Header/Margin"]
+layout_mode = 2
+text = "任务"
+theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="Card" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_section_body")
+
+[node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 7
+
+[node name="VBox" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Card/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Row" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Card/Margin/VBox"]
+layout_mode = 2
+
+[node name="MissionLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Card/Margin/VBox/Row"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "标准箱"
+theme_override_colors/font_color = Color(0.11, 0.18, 0.26, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="MissionValueLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Card/Margin/VBox/Row"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "3 / 8"
+theme_override_colors/font_color = Color(0.26, 0.36, 0.48, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="MissionProgress" type="ProgressBar" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Card/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+mouse_filter = 2
+show_percentage = false
+max_value = 8.0
+value = 3.0
+theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
+
+[node name="VehicleSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Header" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/VehicleSection"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_section_header")
+
+[node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/VehicleSection/Header"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 3
+
+[node name="Title" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/VehicleSection/Header/Margin"]
+layout_mode = 2
+text = "当前车辆"
+theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="Card" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/VehicleSection"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_section_body")
+
+[node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/VehicleSection/Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 7
+
+[node name="SelectedLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/VehicleSection/Card/Margin"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "未选择"
+theme_override_colors/font_color = Color(0.11, 0.18, 0.26, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="StatusSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Header" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_section_header")
+
+[node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/Header"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 3
+
+[node name="Row" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/Header/Margin"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/Header/Margin/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "状态"
+theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="StatusCollapseButton" type="Button" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/Header/Margin/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+focus_mode = 0
+icon = ExtResource("5_chevron_down")
+icon_alignment = 1
+tooltip_text = "折叠状态"
+theme_override_styles/normal = SubResource("StyleBoxFlat_header_button_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_header_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_header_button_hover")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_header_button_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_header_button_normal")
+
+[node name="StatusCard" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_section_body")
+
+[node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 7
+
+[node name="StatusBody" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="Header" type="HBoxContainer" parent="RootControl/StatusPanel/Margin/VBox"]
+[node name="PositionRow" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody"]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="RootControl/StatusPanel/Margin/VBox/Header"]
+[node name="Label" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/PositionRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "任务状态"
-theme_override_font_sizes/font_size = 18
+text = "位置"
+theme_override_colors/font_color = Color(0.38, 0.46, 0.55, 1)
 
-[node name="PauseLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox/Header"]
+[node name="PositionValueLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/PositionRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "—"
+theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+
+[node name="FacingRow" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/FacingRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "朝向"
+theme_override_colors/font_color = Color(0.38, 0.46, 0.55, 1)
+
+[node name="FacingValueLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/FacingRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "—"
+theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+
+[node name="CargoRow" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody"]
+layout_mode = 2
+
+[node name="CargoNameLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/CargoRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "载荷"
+theme_override_colors/font_color = Color(0.38, 0.46, 0.55, 1)
+
+[node name="CargoValueLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/CargoRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "—"
+theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+
+[node name="MoveRow" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/MoveRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "移动"
+theme_override_colors/font_color = Color(0.38, 0.46, 0.55, 1)
+
+[node name="MoveValueLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/MoveRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "—"
+theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+
+[node name="RotateRow" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/RotateRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "旋转"
+theme_override_colors/font_color = Color(0.38, 0.46, 0.55, 1)
+
+[node name="RotateValueLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/RotateRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "—"
+theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+
+[node name="GrabRow" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/GrabRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "抓放"
+theme_override_colors/font_color = Color(0.38, 0.46, 0.55, 1)
+
+[node name="GrabValueLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/GrabRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "—"
+theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+
+[node name="FeedbackLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-text = "已暂停"
-modulate = Color(1, 0.72, 0.28, 1)
+text = ""
+clip_text = true
+text_overrun_behavior = 3
+theme_override_colors/font_color = Color(0.29, 0.36, 0.44, 1)
 
-[node name="SelectedLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
+[node name="PointerSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Header" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/PointerSection"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_section_header")
+
+[node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/PointerSection/Header"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 3
+
+[node name="Title" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/PointerSection/Header/Margin"]
+layout_mode = 2
+text = "指针"
+theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="Card" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/PointerSection"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_section_body")
+
+[node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/PointerSection/Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 7
+
+[node name="PointerLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/PointerSection/Card/Margin"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "选中：未选择"
+text = "X —   Y —"
+theme_override_colors/font_color = Color(0.26, 0.36, 0.48, 1)
+theme_override_font_sizes/font_size = 15
 
-[node name="VehicleStateLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
+[node name="TutorialSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "状态：—"
+theme_override_constants/separation = 2
+script = ExtResource("4_tutorial_ui")
 
-[node name="InventoryLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
+[node name="Header" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_section_header")
+
+[node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/Header"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 3
+
+[node name="HeaderRow" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/Header/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/Header/Margin/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "教学"
+theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="ProgressLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/Header/Margin/HeaderRow"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "机械臂：—   托盘：—   标准箱：—"
+text = "目标 0 / 5"
+theme_override_colors/font_color = Color(0.25, 0.42, 0.61, 1)
+
+[node name="CollapseButton" type="Button" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/Header/Margin/HeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 26)
+layout_mode = 2
+focus_mode = 0
+text = "−"
+tooltip_text = "折叠教学"
+
+[node name="TutorialBody" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_section_body")
+
+[node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 7
+
+[node name="VBox" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="StepTitle" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "1 · 选择机械臂"
+theme_override_font_sizes/font_size = 15
+
+[node name="StepBody" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "左键点击机械臂小车。"
 autowrap_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.34, 0.39, 1)
 
-[node name="MissionLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
+[node name="GoalLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "任务：初始化中"
+text = "本页目标：选择机械臂车（0/1）\n场景目标：填满标准箱（3/8）"
 autowrap_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.48, 0.34, 1)
 
-[node name="CommandsLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
+[node name="Rule" type="HSeparator" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin/VBox"]
+layout_mode = 2
+
+[node name="ButtonRow" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PreviousButton" type="Button" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin/VBox/ButtonRow"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "命令：M 移动 —   X 停止 —   C 抓放 —"
-modulate = Color(0.72, 0.82, 0.94, 1)
-autowrap_mode = 2
+text = "上一步"
 
-[node name="FeedbackLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
+[node name="NextButton" type="Button" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin/VBox/ButtonRow"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "选择车辆后使用 M / X / C"
+text = "下一步"
+
+[node name="Spacer" type="Control" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin/VBox/ButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SkipButton" type="Button" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin/VBox/ButtonRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "跳过教学"
+
+[node name="GuideSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Header" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/GuideSection"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_section_header")
+
+[node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/GuideSection/Header"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 3
+
+[node name="HeaderRow" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/GuideSection/Header/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/GuideSection/Header/Margin/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "操作指南"
+theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="TutorialButton" type="Button" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/GuideSection/Header/Margin/HeaderRow"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "打开教学"
+
+[node name="Card" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/GuideSection"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_section_body")
+
+[node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/GuideSection/Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 7
+
+[node name="Text" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/GuideSection/Card/Margin"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "左键选择车辆 · M 移动 · X 停止\nA / D 旋转 · 机械臂 C 抓放 · Q / E 旋转相机"
 autowrap_mode = 2
-modulate = Color(0.55, 0.88, 0.72, 1)
+theme_override_colors/font_color = Color(0.32, 0.37, 0.43, 1)
 
 [node name="CompletionPanel" type="PanelContainer" parent="RootControl"]
 unique_name_in_owner = true
@@ -124,7 +599,7 @@ layout_mode = 2
 text = "任务完成"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 28
-modulate = Color(0.55, 0.95, 0.7, 1)
+theme_override_colors/font_color = Color(0.06, 0.48, 0.34, 1)
 
 [node name="CompletionSummaryLabel" type="Label" parent="RootControl/CompletionPanel/Margin/VBox"]
 unique_name_in_owner = true
@@ -136,7 +611,7 @@ horizontal_alignment = 1
 layout_mode = 2
 text = "时间 —   组件 —   自动化率 —"
 horizontal_alignment = 1
-modulate = Color(0.68, 0.74, 0.82, 1)
+theme_override_colors/font_color = Color(0.38, 0.43, 0.49, 1)
 
 [node name="ScorePresenter" type="Node" parent="."]
 script = ExtResource("3_score_presenter")

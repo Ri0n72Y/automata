@@ -48,7 +48,7 @@ theme_override_constants/separation = 8
 layout_mode = 2
 size_flags_horizontal = 3
 text = "调试"
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 16
 
 [node name="CollapseButton" type="Button" parent="RootControl/Panel/Margin/VBox/HeaderRow"]
 unique_name_in_owner = true
@@ -56,17 +56,6 @@ custom_minimum_size = Vector2(36, 30)
 layout_mode = 2
 focus_mode = 0
 text = "+"
-
-[node name="CoordinatesRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
-visible = false
-layout_mode = 2
-
-[node name="CoordinatesButton" type="Button" parent="RootControl/Panel/Margin/VBox/CoordinatesRow"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-text = "显示场地坐标"
 
 [node name="RotateRow" type="HBoxContainer" parent="RootControl/Panel/Margin/VBox"]
 visible = false
@@ -117,7 +106,7 @@ visible = false
 layout_mode = 2
 text = "快捷键：Shift+Q/E 旋转网格 · G 切换偏移 · R 重置 · Home 恢复"
 autowrap_mode = 2
-modulate = Color(0.72, 0.8, 0.9, 1)
+theme_override_colors/font_color = Color(0.36, 0.45, 0.56, 1)
 
 [node name="StatusLabel" type="Label" parent="RootControl/Panel/Margin/VBox"]
 unique_name_in_owner = true
@@ -125,10 +114,9 @@ visible = false
 layout_mode = 2
 text = "调试面板已就绪"
 autowrap_mode = 2
-modulate = Color(0.55, 0.88, 0.72, 1)
+theme_override_colors/font_color = Color(0.09, 0.55, 0.39, 1)
 
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/HeaderRow/CollapseButton" to="." method="_on_collapse_pressed"]
-[connection signal="pressed" from="RootControl/Panel/Margin/VBox/CoordinatesRow/CoordinatesButton" to="." method="_on_coordinates_pressed"]
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/RotateRow/RotateLeft" to="." method="_on_rotate_left_pressed"]
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/RotateRow/RotateRight" to="." method="_on_rotate_right_pressed"]
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/TransformRow/Offset" to="." method="_on_offset_pressed"]

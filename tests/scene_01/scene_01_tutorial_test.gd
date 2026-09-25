@@ -54,8 +54,8 @@ func _bind_scene() -> void:
 	move_controller = scene.get_node_or_null("SceneRoot/GridRoot/VehicleMoveController")
 	grab_drop = scene.get_node_or_null("SceneRoot/GridRoot/VehicleGrabDropController")
 	object_manager = scene.get_node_or_null("SceneRoot/ObjectRoot/Scene01ObjectManager")
-	goal_label = scene.get_node_or_null("TutorialUIRoot/RootControl/TutorialPanel/Margin/VBox/GoalLabel") as Label
-	next_button = scene.get_node_or_null("TutorialUIRoot/RootControl/TutorialPanel/Margin/VBox/ButtonRow/NextButton") as Button
+	goal_label = scene.get_node_or_null("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin/VBox/GoalLabel") as Label
+	next_button = scene.get_node_or_null("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin/VBox/ButtonRow/NextButton") as Button
 	arm = manager.get_vehicle_by_id(ManagerScript.ARM_VEHICLE_ID) if manager != null else null
 	_expect_true(tutorial != null and runner != null and arm != null and goal_label != null and next_button != null, "Tutorial owner and minimal presentation controls should exist.")
 

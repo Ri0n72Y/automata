@@ -2,9 +2,8 @@ class_name Scene01DebugControls
 extends CanvasLayer
 
 const COLLAPSED_SIZE := Vector2(132.0, 48.0)
-const EXPANDED_SIZE := Vector2(360.0, 292.0)
+const EXPANDED_SIZE := Vector2(360.0, 244.0)
 const BODY_PATHS := [
-	NodePath("RootControl/Panel/Margin/VBox/CoordinatesRow"),
 	NodePath("RootControl/Panel/Margin/VBox/RotateRow"),
 	NodePath("RootControl/Panel/Margin/VBox/TransformRow"),
 	NodePath("RootControl/Panel/Margin/VBox/ResetRow"),
@@ -14,11 +13,9 @@ const BODY_PATHS := [
 
 @export var start_collapsed: bool = true
 @export var scene_controller_path: NodePath = NodePath("..")
-@export var grid_debug_view_path: NodePath = NodePath("../SceneRoot/GridRoot/GridDebugView")
 
 @onready var panel: PanelContainer = %Panel
 @onready var collapse_button: Button = %CollapseButton
-@onready var coordinates_button: Button = %CoordinatesButton
 @onready var status_label: Label = %StatusLabel
 
 var _collapsed: bool = true
@@ -27,7 +24,6 @@ var _collapsed: bool = true
 func _ready() -> void:
 	_disable_button_focus(panel)
 	set_collapsed(start_collapsed)
-	_sync_coordinates_button()
 	_update_status("调试面板已就绪")
 
 
@@ -55,21 +51,6 @@ func _on_collapse_pressed() -> void:
 	set_collapsed(not _collapsed)
 
 
-func _on_coordinates_pressed() -> void:
-	var debug_view := _get_grid_debug_view()
-	var scene_controller := _get_scene_controller()
-	if debug_view == null or scene_controller == null:
-		_update_status("无法访问场地坐标调试视图")
-		return
-	var coordinates_visible := bool(debug_view.get("show_coordinates"))
-	debug_view.set("show_coordinates", not coordinates_visible)
-	var grid_model: Variant = scene_controller.get("grid_model")
-	debug_view.call("draw", grid_model)
-	_sync_coordinates_button()
-	var current_visibility := bool(debug_view.get("show_coordinates"))
-	_update_status("场地坐标已%s" % ("显示" if current_visibility else "隐藏"))
-
-
 func _on_rotate_left_pressed() -> void:
 	_call_scene_action("preview_rotate_grid", [-1])
 	_update_status("网格已旋转 -90°")
@@ -95,14 +76,6 @@ func _on_restore_pressed() -> void:
 	_update_status("网格变换已恢复")
 
 
-func _sync_coordinates_button() -> void:
-	if coordinates_button == null:
-		return
-	var debug_view := _get_grid_debug_view()
-	var coordinates_visible := debug_view != null and bool(debug_view.get("show_coordinates"))
-	coordinates_button.text = "隐藏场地坐标" if coordinates_visible else "显示场地坐标"
-
-
 func _call_scene_action(method_name: StringName, args: Array = []) -> void:
 	var scene_controller := _get_scene_controller()
 	if scene_controller == null or not scene_controller.has_method(method_name):
@@ -115,12 +88,6 @@ func _get_scene_controller() -> Node:
 	if scene_controller_path.is_empty():
 		return null
 	return get_node_or_null(scene_controller_path)
-
-
-func _get_grid_debug_view() -> Node:
-	if grid_debug_view_path.is_empty():
-		return null
-	return get_node_or_null(grid_debug_view_path)
 
 
 func _disable_button_focus(node: Node) -> void:
