@@ -136,7 +136,9 @@ theme_override_constants/separation = 6
 unique_name_in_owner = true
 custom_minimum_size = Vector2(12, 12)
 layout_mode = 2
+size_flags_vertical = 4
 texture = ExtResource("6_dot")
+stretch_mode = 5
 modulate = Color(0.23, 0.58, 0.9, 1)
 
 [node name="StateLabel" type="Label" parent="RootControl/Panel/Margin/Controls/StatusGroup"]

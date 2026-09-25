@@ -60,6 +60,8 @@ func _run() -> void:
 	_expect_true(run_reset_group != null and run_button != null and reset_button != null, "Play/Pause and Reset should share one compact control group.")
 	_expect_true(not lifecycle_speed.fit_to_longest_item, "Speed selector should stay compact instead of reserving long dropdown width.")
 	_expect_true(lifecycle_dot.custom_minimum_size.x >= 12.0, "Status dot should keep the larger design-reference size.")
+	_expect_equal(lifecycle_dot.size_flags_vertical, Control.SIZE_SHRINK_CENTER, "Status dot should not stretch to the lifecycle row height.")
+	_expect_equal(lifecycle_dot.stretch_mode, TextureRect.STRETCH_KEEP_ASPECT_CENTERED, "Status dot texture should preserve a circular aspect ratio.")
 	_expect_true(run_button.text.is_empty() and reset_button.text.is_empty(), "Lifecycle actions should use SVG icons rather than font glyphs.")
 	_expect_true(run_button.icon != null and reset_button.icon != null, "Lifecycle action SVG icons should be present.")
 	_expect_equal(run_button.icon.get_class(), "DPITexture", "Lifecycle play/pause icon should import as DPITexture for UI oversampling.")
