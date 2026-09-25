@@ -22,10 +22,6 @@ const REJECTION_NO_PATH := &"no_path"
 const REJECTION_START_FAILED := &"start_failed"
 const MOTION_EPSILON := 0.000001
 
-@export var valid_target_color: Color = Color(0.2, 0.9, 0.35, 0.20)
-@export var invalid_target_color: Color = Color(1.0, 0.2, 0.18, 0.23)
-@export var valid_path_color: Color = Color(0.2, 0.95, 0.42, 0.88)
-@export var invalid_path_color: Color = Color(1.0, 0.28, 0.22, 0.82)
 @export_range(0.01, 0.2, 0.01) var preview_height: float = 0.05
 @export_range(0.8, 1.0, 0.01) var preview_scale: float = 0.94
 @export_range(0.02, 0.2, 0.01) var path_line_width: float = 0.07
@@ -45,18 +41,31 @@ var _last_rejection_reason: StringName = &""
 var _vehicle_ui_open: bool = false
 var _observed_vehicle: VehicleActorScript
 var _managed_vehicles: Array[VehicleActorScript] = []
+var _valid_target_material: StandardMaterial3D
+var _invalid_target_material: StandardMaterial3D
 var _valid_path_material: StandardMaterial3D
 var _invalid_path_material: StandardMaterial3D
 
 
 func _ready() -> void:
-	_target_preview = _create_target_preview()
-	add_child(_target_preview)
-	_path_preview_root = Node3D.new()
-	_path_preview_root.name = "VehiclePathPreview"
-	add_child(_path_preview_root)
-	_valid_path_material = _create_path_material(valid_path_color)
-	_invalid_path_material = _create_path_material(invalid_path_color)
+	_target_preview = get_node_or_null("VehicleMovePreview/VehicleTargetFootprintPreview") as MeshInstance3D
+	_path_preview_root = get_node_or_null("VehicleMovePreview/VehiclePathPreview") as Node3D
+	var invalid_target_source := get_node_or_null("VehicleMovePreview/InvalidTargetMaterialSource") as MeshInstance3D
+	var valid_path_source := get_node_or_null("VehicleMovePreview/ValidPathMaterialSource") as MeshInstance3D
+	var invalid_path_source := get_node_or_null("VehicleMovePreview/InvalidPathMaterialSource") as MeshInstance3D
+	if (
+		_target_preview == null
+		or _path_preview_root == null
+		or invalid_target_source == null
+		or valid_path_source == null
+		or invalid_path_source == null
+	):
+		push_error("VehicleMoveController requires static VehicleMovePreview resources.")
+		return
+	_valid_target_material = _target_preview.material_override as StandardMaterial3D
+	_invalid_target_material = invalid_target_source.material_override as StandardMaterial3D
+	_valid_path_material = valid_path_source.material_override as StandardMaterial3D
+	_invalid_path_material = invalid_path_source.material_override as StandardMaterial3D
 
 
 func _physics_process(delta: float) -> void:
@@ -209,8 +218,9 @@ func refresh_target_preview() -> void:
 		footprint
 	)
 	_target_preview.position = to_local(world_center) + Vector3.UP * preview_height
-	var target_material := _target_preview.material_override as StandardMaterial3D
-	target_material.albedo_color = valid_target_color if _preview_is_valid else invalid_target_color
+	_target_preview.material_override = (
+		_valid_target_material if _preview_is_valid else _invalid_target_material
+	)
 	_target_preview.visible = true
 	_update_path_preview(path, footprint, _preview_is_valid)
 
@@ -939,27 +949,3 @@ func _hide_path_segments() -> void:
 	for segment in _path_segments:
 		if segment != null:
 			segment.visible = false
-
-
-func _create_target_preview() -> MeshInstance3D:
-	var preview := MeshInstance3D.new()
-	preview.name = "VehicleTargetFootprintPreview"
-	preview.visible = false
-	preview.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	preview.mesh = BoxMesh.new()
-	var material := StandardMaterial3D.new()
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.no_depth_test = false
-	material.albedo_color = valid_target_color
-	preview.material_override = material
-	return preview
-
-
-func _create_path_material(color: Color) -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.no_depth_test = false
-	material.albedo_color = color
-	return material
