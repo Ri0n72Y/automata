@@ -5,6 +5,7 @@ const ValidatorScript := preload("res://scripts/scene_01/scene_01_program_valida
 const ProgramRunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
 const CompileGateScript := preload("res://scripts/scene_01/scene_01_assembly_compile_gate.gd")
 const RuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
+const ProgramSourceScript := preload("res://scripts/scene_01/scene_01_program_source.gd")
 var failures := 0
 var observed_command_vehicles: Array[StringName] = []
 var observed_player_selections: Array[StringName] = []
@@ -14,6 +15,7 @@ func _init() -> void:
 func _run() -> void:
 	_test_linear_model_validation()
 	await _test_production_runner()
+	await _test_transport_assisted_walkthrough_source()
 	_finish()
 func _test_linear_model_validation() -> void:
 	var program := _build_cycle_program(&"arm_vehicle")
@@ -103,6 +105,19 @@ func _test_production_runner() -> void:
 		rotate_frames += 1
 	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Rotate-only Program should complete after the turn animation.")
 	_expect_equal(arm.runtime_state.facing, posmod(facing_before_rotate - 1, 4), "Program Rotate should perform the same -90 degree turn as manual A.")
+	var transport = manager.get_vehicle_by_id(&"transport_vehicle")
+	var transport_rotate_program := ProgramScript.new()
+	var transport_rotate := transport_rotate_program.append_statement(ProgramScript.StatementType.ROTATE)
+	transport_rotate_program.set_statement_vehicle(transport_rotate, &"transport_vehicle")
+	transport_rotate_program.set_turn_direction(transport_rotate, 1)
+	var transport_facing_before_rotate: int = transport.runtime_state.facing
+	_expect_true(runner.start_program(transport_rotate_program), "Transport Rotate should pass the independent Rotate capability preflight.")
+	var transport_rotate_frames := 0
+	while runner.get_state() == ProgramRunnerScript.STATE_RUNNING and transport_rotate_frames < 120:
+		await physics_frame
+		transport_rotate_frames += 1
+	_expect_equal(runner.get_state(), ProgramRunnerScript.STATE_COMPLETED, "Transport Rotate should complete through the shared turn owner.")
+	_expect_equal(transport.runtime_state.facing, posmod(transport_facing_before_rotate + 1, 4), "Transport Rotate should use the same +90 degree turn contract without gaining GrabDrop.")
 	var transport_program := ProgramScript.new()
 	var transport_grab := transport_program.append_statement(ProgramScript.StatementType.GRAB_DROP)
 	transport_program.set_statement_vehicle(transport_grab, &"transport_vehicle")
@@ -110,7 +125,6 @@ func _test_production_runner() -> void:
 	_expect_equal(runner.get_last_error(), &"program_capability_rejected", "Capability rejection should come from compile gate.")
 	_expect_true(bool(scene.call("reset_scene_state")), "Reset should recover from rejected start.")
 	await process_frame
-	var transport = manager.get_vehicle_by_id(&"transport_vehicle")
 	_expect_true(selection.select_vehicle(transport), "Fixture should select Transport for Program Stop regression.")
 	var stopped_program := ProgramScript.new()
 	_append_move(stopped_program, &"transport_vehicle", Vector2i(8, 4))
@@ -146,6 +160,109 @@ func _test_production_runner() -> void:
 	_expect_equal(selection.get_selected_vehicle(), arm, "Program commands must not mutate player selection.")
 	scene.queue_free()
 	await process_frame
+func _test_transport_assisted_walkthrough_source() -> void:
+	var source := """automata_scene01_program 2
+[transport_vehicle:moveTo] 1 4
+[arm_vehicle:moveTo] 1 3
+[arm_vehicle:grabDrop]
+[arm_vehicle:rotate] counterclockwise
+[arm_vehicle:grabDrop]
+[arm_vehicle:rotate] clockwise
+[arm_vehicle:grabDrop]
+repeat 4 4
+[arm_vehicle:rotate] counterclockwise
+[arm_vehicle:grabDrop]
+[transport_vehicle:moveTo] 14 4
+[arm_vehicle:moveTo] 14 3
+[arm_vehicle:rotate] clockwise
+[arm_vehicle:grabDrop]
+[arm_vehicle:rotate] counterclockwise
+[arm_vehicle:grabDrop]
+repeat 5 13
+"""
+	var parsed := ProgramSourceScript.new().parse(source)
+	var diagnostics: Array = parsed.get("diagnostics", [])
+	_expect_true(diagnostics.is_empty(), "Transport-assisted walkthrough source should parse exactly as player-authored text.")
+	var program := parsed.get("program") as Scene01Program
+	_expect_true(program != null, "Transport-assisted walkthrough source should produce a Program snapshot.")
+	if program == null:
+		return
+
+	var packed := load(SCENE_PATH) as PackedScene
+	_expect_true(packed != null, "Transport-assisted walkthrough should load production Scene 01.")
+	if packed == null:
+		return
+	var scene := packed.instantiate()
+	root.add_child(scene)
+	await process_frame
+	await physics_frame
+
+	var runner := scene.get_node_or_null("SceneRoot/Scene01ProgramRunner") as ProgramRunnerScript
+	var manager := scene.get_node_or_null("SceneRoot/RobotRoot/Scene01VehicleManager") as Scene01VehicleManager
+	var object_manager := scene.get_node_or_null("SceneRoot/ObjectRoot/Scene01ObjectManager") as Scene01ObjectManager
+	_expect_true(runner != null and manager != null and object_manager != null, "Transport-assisted walkthrough should use production Program dependencies.")
+	if runner == null or manager == null or object_manager == null:
+		scene.queue_free()
+		await process_frame
+		return
+
+	var arm = manager.get_vehicle_by_id(&"arm_vehicle")
+	var transport = manager.get_vehicle_by_id(&"transport_vehicle")
+	var logistics_probe := {
+		"transport_departed_with_five": false,
+		"arm_departed_empty": false,
+	}
+	runner.command_started.connect(
+		func(statement_index: int, _command_type: int, vehicle_id: StringName) -> void:
+			if statement_index == 10 and vehicle_id == &"transport_vehicle":
+				logistics_probe["transport_departed_with_five"] = (
+					transport != null
+					and transport.runtime_state.tray_count == 5
+					and arm != null
+					and not arm.runtime_state.arm_has_item
+				)
+			elif statement_index == 11 and vehicle_id == &"arm_vehicle":
+				logistics_probe["arm_departed_empty"] = (
+					arm != null and not arm.runtime_state.arm_has_item
+				)
+	)
+
+	_expect_true(bool(scene.call("set_simulation_speed", 4.0)), "Walkthrough regression should run at 4x without changing simulation semantics.")
+	_expect_true(runner.start_program(program), "Transport-assisted walkthrough source should pass production preflight.")
+	var frames := 0
+	while runner.get_state() == ProgramRunnerScript.STATE_RUNNING and frames < 3000:
+		await physics_frame
+		frames += 1
+
+	var box := object_manager.get_standard_box()
+	_expect_equal(
+		runner.get_state(),
+		ProgramRunnerScript.STATE_COMPLETED,
+		"Transport-assisted walkthrough source should complete. pc=%d error=%s box=%d tray=%d arm_has_item=%s arm_facing=%d"
+		% [
+			runner.get_current_statement_index(),
+			String(runner.get_last_error()),
+			box.get_current_count() if box != null else -1,
+			transport.runtime_state.tray_count if transport != null else -1,
+			str(arm.runtime_state.arm_has_item) if arm != null else "missing",
+			arm.runtime_state.facing if arm != null else -1,
+		]
+	)
+	_expect_true(bool(logistics_probe["transport_departed_with_five"]), "Transport should begin the long haul with all five new blocks in its tray and the Arm empty.")
+	_expect_true(bool(logistics_probe["arm_departed_empty"]), "Arm should begin its long cross-map move empty instead of carrying the fifth block.")
+	_expect_true(box != null and box.get_current_count() == 8, "Transport-assisted walkthrough should fill StandardBox from 3/8 to 8/8.")
+	_expect_true(bool(scene.call("is_mission_completed")), "Transport-assisted walkthrough should complete the mission.")
+	_expect_true(transport != null and transport.runtime_state.tray_count == 0, "Walkthrough should actually use and fully unload the Transport tray.")
+	_expect_true(arm != null and not arm.runtime_state.arm_has_item, "Arm should finish empty after unloading Transport cargo.")
+	if transport != null:
+		_expect_equal(transport.runtime_state.anchor_cell, Vector2i(14, 4), "Transport should finish at the box-side staging cell.")
+	if arm != null:
+		_expect_equal(arm.runtime_state.anchor_cell, Vector2i(14, 3), "Arm should finish at the box interaction cell.")
+
+	scene.queue_free()
+	await process_frame
+
+
 func _build_cycle_program(vehicle_id: StringName) -> Scene01Program:
 	var program := ProgramScript.new()
 	var first_move := _append_move(program, vehicle_id, Vector2i(3, 5))

@@ -69,4 +69,4 @@ func _calculate_sample_step(model: GridModelScript, label_limit: int) -> int:
 
 
 func _ceil_div(value: int, divisor: int) -> int:
-	return int((value + divisor - 1) / divisor)
+	return ceili(float(value) / float(divisor))

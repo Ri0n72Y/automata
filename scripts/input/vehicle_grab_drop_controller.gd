@@ -79,11 +79,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed(ROTATE_COUNTERCLOCKWISE_ACTION):
-		if rotate_selected_arm(-1):
+		if rotate_selected_vehicle(-1):
 			get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed(ROTATE_CLOCKWISE_ACTION):
-		if rotate_selected_arm(1):
+		if rotate_selected_vehicle(1):
 			get_viewport().set_input_as_handled()
 
 
@@ -131,7 +131,7 @@ func request_vehicle_turn(vehicle: VehicleActorScript, direction: int) -> bool:
 	return true
 
 
-func rotate_selected_arm(direction: int) -> bool:
+func rotate_selected_vehicle(direction: int) -> bool:
 	return request_vehicle_turn(_get_selected_vehicle(), direction)
 
 
@@ -293,35 +293,35 @@ func _is_action_compatible(runtime: VehicleRuntimeStateScript, target: Variant) 
 	if runtime == null:
 		return false
 	if runtime.arm_has_item:
-		var receiver := target as ItemReceiverInterfaceScript
+		var carried_item_receiver := target as ItemReceiverInterfaceScript
 		return (
-			receiver != null
+			carried_item_receiver != null
 			and runtime.carried_item != null
-			and receiver.accepts_item_type(runtime.carried_item.get_item_type())
+			and carried_item_receiver.accepts_item_type(runtime.carried_item.get_item_type())
 		)
 	var source := target as ItemSourceInterfaceScript
 	if source != null:
 		return true
-	var receiver := target as ItemReceiverInterfaceScript
-	return receiver != null and receiver.can_take_item()
+	var pickup_receiver := target as ItemReceiverInterfaceScript
+	return pickup_receiver != null and pickup_receiver.can_take_item()
 
 
 func _is_target_ready(runtime: VehicleRuntimeStateScript, target: Variant) -> bool:
 	if runtime == null or target == null:
 		return false
 	if runtime.arm_has_item:
-		var receiver := target as ItemReceiverInterfaceScript
-		if receiver == null or runtime.carried_item == null:
+		var drop_receiver := target as ItemReceiverInterfaceScript
+		if drop_receiver == null or runtime.carried_item == null:
 			return false
-		if not receiver.accepts_item_type(runtime.carried_item.get_item_type()):
+		if not drop_receiver.accepts_item_type(runtime.carried_item.get_item_type()):
 			return false
-		var capacity := receiver.get_capacity()
-		return capacity <= 0 or receiver.get_current_count() < capacity
+		var capacity := drop_receiver.get_capacity()
+		return capacity <= 0 or drop_receiver.get_current_count() < capacity
 	var source := target as ItemSourceInterfaceScript
 	if source != null:
 		return source.is_available()
-	var receiver := target as ItemReceiverInterfaceScript
-	return receiver != null and receiver.can_take_item() and receiver.get_current_count() > 0
+	var pickup_receiver := target as ItemReceiverInterfaceScript
+	return pickup_receiver != null and pickup_receiver.can_take_item() and pickup_receiver.get_current_count() > 0
 
 
 func _get_interaction_cells(target: Variant) -> Array[Vector2i]:
@@ -381,7 +381,7 @@ func _get_selected_vehicle() -> VehicleActorScript:
 func _can_rotate(vehicle: VehicleActorScript) -> bool:
 	if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
 		return false
-	if not vehicle.definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_GRAB):
+	if not vehicle.definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_ROTATE):
 		return false
 	return (
 		not vehicle.is_turning()

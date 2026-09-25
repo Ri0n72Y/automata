@@ -21,9 +21,9 @@ theme = ExtResource("2_theme")
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 16.0
-offset_top = 82.0
-offset_right = 376.0
-offset_bottom = 390.0
+offset_top = 326.0
+offset_right = 356.0
+offset_bottom = 586.0
 mouse_filter = 0
 
 [node name="Margin" type="MarginContainer" parent="RootControl/TutorialPanel"]
@@ -44,7 +44,7 @@ theme_override_constants/separation = 8
 [node name="Title" type="Label" parent="RootControl/TutorialPanel/Margin/VBox/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "场景 01 · 教学"
+text = "教学"
 theme_override_font_sizes/font_size = 18
 
 [node name="ProgressLabel" type="Label" parent="RootControl/TutorialPanel/Margin/VBox/Header"]
@@ -74,17 +74,6 @@ modulate = Color(0.58, 0.9, 0.72, 1)
 
 [node name="Rule" type="HSeparator" parent="RootControl/TutorialPanel/Margin/VBox"]
 layout_mode = 2
-
-[node name="CapabilityHeader" type="Label" parent="RootControl/TutorialPanel/Margin/VBox"]
-layout_mode = 2
-text = "模板能力 · 装配编译"
-modulate = Color(0.72, 0.8, 0.9, 1)
-
-[node name="CapabilityLabel" type="Label" parent="RootControl/TutorialPanel/Margin/VBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "机械臂车：首次运行后确认\n运输车：首次运行后确认"
-autowrap_mode = 2
 
 [node name="ButtonRow" type="HBoxContainer" parent="RootControl/TutorialPanel/Margin/VBox"]
 layout_mode = 2

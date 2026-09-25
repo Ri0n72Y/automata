@@ -6,6 +6,7 @@ const MissionControllerScript := preload("res://scripts/scene_01/scene_01_missio
 const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
+const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
 const VehicleSelectionControllerScript := preload("res://scripts/input/vehicle_selection_controller.gd")
 const GridSelectionControllerScript := preload("res://scripts/input/grid_selection_controller.gd")
 const VehicleMoveControllerScript := preload("res://scripts/input/vehicle_move_controller.gd")
@@ -60,8 +61,11 @@ func _ready() -> void:
 
 
 func _apply_status_layout() -> void:
-	var viewport_width := float(get_viewport().get_visible_rect().size.x)
-	status_panel.offset_right = status_panel.offset_left + LayoutMetrics.left_rail_width(viewport_width)
+	var viewport_size := get_viewport().get_visible_rect().size
+	status_panel.offset_left = LayoutMetrics.EDGE_MARGIN
+	status_panel.offset_top = LayoutMetrics.CONTENT_TOP
+	status_panel.offset_right = status_panel.offset_left + LayoutMetrics.left_rail_width(float(viewport_size.x))
+	status_panel.offset_bottom = status_panel.offset_top + LayoutMetrics.LEFT_STATUS_HEIGHT
 
 
 func _bind_signals() -> void:
@@ -78,6 +82,7 @@ func _bind_signals() -> void:
 	_move_controller.move_stopped.connect(_on_move_stopped)
 	_grab_drop_controller.grab_drop_completed.connect(_on_grab_drop_completed)
 	_grab_drop_controller.facing_changed.connect(_on_arm_facing_changed)
+	_bind_vehicle_turn_signals(_vehicle_selection.get_selected_vehicle_id())
 	_scene_controller.lifecycle_state_changed.connect(_on_lifecycle_changed)
 	_scene_controller.lifecycle_reset_completed.connect(_on_reset_completed)
 
@@ -120,12 +125,13 @@ func _refresh() -> void:
 
 func _command_availability_text(motion_state: int, selected_id: StringName) -> String:
 	if selected_id == &"":
-		return "命令：M 移动 未选择车辆   X 停止 未选择车辆   C 抓放 未选择车辆"
+		return "命令：M 移动 未选择车辆 · A/D 旋转 未选择车辆\nX 停止 未选择车辆 · C 抓放 未选择车辆"
 	if _scene_controller.is_scene_paused():
-		return "命令：M 移动 暂停   X 停止 暂停   C 抓放 暂停"
+		return "命令：M 移动 暂停 · A/D 旋转 暂停\nX 停止 暂停 · C 抓放 暂停"
 
 	var vehicle = _vehicle_manager.get_vehicle_by_id(selected_id)
 	var definition = vehicle.definition if vehicle != null else null
+	var turning := vehicle != null and vehicle.is_turning()
 	var busy := (
 		motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
 		or motion_state == VehicleRuntimeStateScript.MotionState.MOVING
@@ -133,6 +139,10 @@ func _command_availability_text(motion_state: int, selected_id: StringName) -> S
 	var can_move: bool = (
 		definition != null
 		and definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_MOVE)
+	)
+	var can_rotate: bool = (
+		definition != null
+		and definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_ROTATE)
 	)
 	var can_grab: bool = (
 		definition != null
@@ -142,10 +152,20 @@ func _command_availability_text(motion_state: int, selected_id: StringName) -> S
 	var move_text := "可用"
 	if not can_move:
 		move_text = "车辆无移动能力"
-	elif busy:
+	elif busy or turning:
 		move_text = "车辆忙碌"
 	elif _grid_selection.is_live_target_mode():
 		move_text = "选择目标中"
+
+	var rotate_text := "可用"
+	if not can_rotate:
+		rotate_text = "车辆无旋转能力"
+	elif turning:
+		rotate_text = "旋转中"
+	elif busy:
+		rotate_text = "车辆忙碌"
+	elif _grid_selection.is_live_target_mode():
+		rotate_text = "移动选点中"
 
 	var stop_text := (
 		"可用"
@@ -156,6 +176,8 @@ func _command_availability_text(motion_state: int, selected_id: StringName) -> S
 	var grab_text := "无有效交互目标"
 	if not can_grab:
 		grab_text = "车辆无机械臂"
+	elif turning:
+		grab_text = "车辆忙碌"
 	elif busy:
 		grab_text = "车辆忙碌"
 	elif _grid_selection.is_live_target_mode():
@@ -163,8 +185,9 @@ func _command_availability_text(motion_state: int, selected_id: StringName) -> S
 	elif _grab_drop_controller.is_interaction_preview_valid():
 		grab_text = "可用"
 
-	return "命令：M 移动 %s   X 停止 %s   C 抓放 %s" % [
+	return "命令：M 移动 %s · A/D 旋转 %s\nX 停止 %s · C 抓放 %s" % [
 		move_text,
+		rotate_text,
 		stop_text,
 		grab_text,
 	]
@@ -211,8 +234,24 @@ func _on_observable_changed(_a = null, _b = null, _c = null) -> void:
 	_refresh()
 
 
-func _on_selection_changed(_vehicle_id: StringName, _has_selection: bool) -> void:
+func _on_selection_changed(vehicle_id: StringName, has_selection: bool) -> void:
+	if has_selection:
+		_bind_vehicle_turn_signals(vehicle_id)
 	_refresh()
+
+
+func _bind_vehicle_turn_signals(vehicle_id: StringName) -> void:
+	if vehicle_id == &"":
+		return
+	var vehicle := _vehicle_manager.get_vehicle_by_id(vehicle_id) as VehicleActorScript
+	if vehicle == null:
+		return
+	var started_callable := Callable(self, "_on_vehicle_turn_started")
+	if not vehicle.turn_started.is_connected(started_callable):
+		vehicle.turn_started.connect(started_callable)
+	var completed_callable := Callable(self, "_on_vehicle_turn_completed")
+	if not vehicle.turn_completed.is_connected(completed_callable):
+		vehicle.turn_completed.connect(completed_callable)
 
 
 func _on_target_mode_changed(_active: bool) -> void:
@@ -220,6 +259,14 @@ func _on_target_mode_changed(_active: bool) -> void:
 
 
 func _on_arm_facing_changed(_vehicle_id: StringName, _facing: int) -> void:
+	_refresh()
+
+
+func _on_vehicle_turn_started(_direction: int) -> void:
+	_refresh()
+
+
+func _on_vehicle_turn_completed(_facing: int) -> void:
 	_refresh()
 
 

@@ -1,0 +1,35 @@
+[gd_scene load_steps=5 format=3]
+
+[sub_resource type="BoxMesh" id="BoxMesh_hover"]
+resource_local_to_scene = true
+size = Vector3(0.88, 0.015, 0.88)
+
+[sub_resource type="BoxMesh" id="BoxMesh_selected"]
+resource_local_to_scene = true
+size = Vector3(0.88, 0.015, 0.88)
+
+[sub_resource type="StandardMaterial3D" id="Material_hover"]
+resource_local_to_scene = true
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.25, 0.75, 1, 0.18)
+
+[sub_resource type="StandardMaterial3D" id="Material_selected"]
+resource_local_to_scene = true
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 0.68, 0.1, 0.26)
+
+[node name="GridSelectionVisuals" type="Node3D"]
+
+[node name="HoverHighlight" type="MeshInstance3D" parent="."]
+visible = false
+cast_shadow = 0
+mesh = SubResource("BoxMesh_hover")
+material_override = SubResource("Material_hover")
+
+[node name="SelectedHighlight" type="MeshInstance3D" parent="."]
+visible = false
+cast_shadow = 0
+mesh = SubResource("BoxMesh_selected")
+material_override = SubResource("Material_selected")

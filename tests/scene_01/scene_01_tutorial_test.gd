@@ -175,7 +175,7 @@ func _wait_for_vehicle(vehicle, target: Vector2i) -> void:
 func _turn_arm_to(target_facing: int) -> void:
 	var turns := 0
 	while arm.runtime_state.facing != target_facing and turns < 4:
-		_expect_true(bool(grab_drop.call("rotate_selected_arm", 1)), "Manual facing should use the shared clockwise turn owner.")
+		_expect_true(bool(grab_drop.call("rotate_selected_vehicle", 1)), "Manual facing should use the shared clockwise turn owner.")
 		var frames := 0
 		while arm.is_turning() and frames < 120:
 			grab_drop._physics_process(0.05)

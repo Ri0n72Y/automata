@@ -14,9 +14,8 @@ const TURN_DURATION_SECONDS := 0.3
 
 @export var vehicle_selection_layer: int = 2
 @export var use_static_scene_visual: bool = false
-@export var vehicle_preset_id: StringName = &""
+@export var definition: VehicleDefinitionScript
 
-var definition: VehicleDefinitionScript
 var runtime_state: VehicleRuntimeStateScript
 var controller: Node
 var cell_size: float = 1.0
@@ -58,7 +57,6 @@ func configure(
 	runtime_state = p_runtime_state
 	controller = p_controller
 	cell_size = maxf(p_cell_size, 0.01)
-	vehicle_preset_id = definition.assembly_id
 	if not use_static_scene_visual:
 		name = "Vehicle_%s" % String(definition.assembly_id)
 
@@ -225,7 +223,7 @@ func reset_actor() -> void:
 func get_vehicle_id() -> StringName:
 	if definition != null:
 		return definition.assembly_id
-	return vehicle_preset_id
+	return &""
 
 
 func get_occupied_cells() -> Array[Vector2i]:

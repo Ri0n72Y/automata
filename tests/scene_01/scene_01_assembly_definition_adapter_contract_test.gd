@@ -30,6 +30,7 @@ func _test_arm_preset_maps_to_compile_input() -> void:
 	var component = components[0]
 	test.expect_equal(component.occupied_cells.size(), 4, "2x2 arm preset should compile a four-cell envelope source.")
 	test.expect_true(component.capabilities.has(ASSEMBLY_CAPABILITIES_SCRIPT.CAN_MOVE), "Arm preset should publish move capability.")
+	test.expect_true(component.capabilities.has(ASSEMBLY_CAPABILITIES_SCRIPT.CAN_ROTATE), "Arm preset should publish rotate capability independently.")
 	test.expect_true(component.capabilities.has(ASSEMBLY_CAPABILITIES_SCRIPT.GRAB_DROP), "Arm preset should publish GrabDrop capability.")
 	test.expect_equal(component.mass, 18.0, "Preset mass should map from VehicleDefinition total weight.")
 	test.expect_equal(component.interaction_interfaces.size(), 1, "Arm preset should publish one GrabDrop interface template.")
@@ -52,6 +53,7 @@ func _test_transport_preset_maps_tray_interface_without_grab_drop() -> void:
 		return
 	var component = components[0]
 	test.expect_true(component.capabilities.has(ASSEMBLY_CAPABILITIES_SCRIPT.CAN_MOVE), "Transport preset should publish move capability.")
+	test.expect_true(component.capabilities.has(ASSEMBLY_CAPABILITIES_SCRIPT.CAN_ROTATE), "Transport preset should publish rotate capability without gaining GrabDrop.")
 	test.expect_false(component.capabilities.has(ASSEMBLY_CAPABILITIES_SCRIPT.GRAB_DROP), "Transport preset should not invent GrabDrop capability.")
 	test.expect_equal(component.interaction_interfaces.size(), 1, "Transport preset should publish its tray interaction interface.")
 	if component.interaction_interfaces.size() == 1:
@@ -85,6 +87,7 @@ func _make_arm_definition():
 		30.0,
 		PackedStringArray([
 			VEHICLE_DEFINITION_SCRIPT.CAPABILITY_CAN_MOVE,
+			VEHICLE_DEFINITION_SCRIPT.CAPABILITY_CAN_ROTATE,
 			VEHICLE_DEFINITION_SCRIPT.CAPABILITY_CAN_GRAB,
 			VEHICLE_DEFINITION_SCRIPT.CAPABILITY_CAN_CARRY,
 		]),
@@ -107,6 +110,7 @@ func _make_transport_definition():
 		36.0,
 		PackedStringArray([
 			VEHICLE_DEFINITION_SCRIPT.CAPABILITY_CAN_MOVE,
+			VEHICLE_DEFINITION_SCRIPT.CAPABILITY_CAN_ROTATE,
 			VEHICLE_DEFINITION_SCRIPT.CAPABILITY_CAN_CARRY,
 			VEHICLE_DEFINITION_SCRIPT.CAPABILITY_HAS_TRAY,
 		]),

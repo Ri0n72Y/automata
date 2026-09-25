@@ -48,7 +48,7 @@ func request_vehicle_turn(vehicle: VehicleActor, direction: int) -> bool:
 	return super.request_vehicle_turn(vehicle, direction)
 
 
-func rotate_selected_arm(direction: int) -> bool:
+func rotate_selected_vehicle(direction: int) -> bool:
 	return request_vehicle_turn(super._get_selected_vehicle(), direction)
 
 

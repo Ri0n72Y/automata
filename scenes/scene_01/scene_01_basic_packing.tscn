@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3 uid="uid://scene01basicpacking"]
+[gd_scene load_steps=32 format=3 uid="uid://scene01basicpacking"]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_mission_controller.gd" id="1_controller"]
 [ext_resource type="Script" path="res://scripts/grid/grid_debug_view.gd" id="2_grid_debug"]
@@ -28,6 +28,8 @@
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_score_tracker.gd" id="26_scoring"]
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_tutorial.gd" id="27_tutorial"]
 [ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_tutorial_ui.tscn" id="28_tutorial_ui"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/grid_selection_visuals.tscn" id="29_grid_selection_visuals"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/vehicle_move_preview.tscn" id="30_vehicle_move_preview"]
 
 [sub_resource type="Resource" id="Resource_ground_field"]
 resource_local_to_scene = true
@@ -81,6 +83,8 @@ script = ExtResource("10_vehicle_selection")
 unique_name_in_owner = true
 script = ExtResource("11_vehicle_move")
 
+[node name="VehicleMovePreview" parent="SceneRoot/GridRoot/VehicleMoveController" instance=ExtResource("30_vehicle_move_preview")]
+
 [node name="VehicleGrabDropController" type="Node3D" parent="SceneRoot/GridRoot"]
 unique_name_in_owner = true
 script = ExtResource("16_grab_drop")
@@ -90,6 +94,8 @@ script = ExtResource("16_grab_drop")
 [node name="GridSelectionController" type="Node3D" parent="SceneRoot/GridRoot"]
 unique_name_in_owner = true
 script = ExtResource("4_grid_selection")
+
+[node name="GridSelectionVisuals" parent="SceneRoot/GridRoot/GridSelectionController" instance=ExtResource("29_grid_selection_visuals")]
 
 [node name="RobotRoot" type="Node3D" parent="SceneRoot"]
 unique_name_in_owner = true

@@ -201,8 +201,8 @@ func _expect_state(
 
 
 func _expect_single_cell_highlights_hidden(grid_selection, context: String) -> void:
-	var hover := grid_selection.get_node_or_null("HoverHighlight") as MeshInstance3D
-	var selected := grid_selection.get_node_or_null("SelectedHighlight") as MeshInstance3D
+	var hover := grid_selection.get_node_or_null("GridSelectionVisuals/HoverHighlight") as MeshInstance3D
+	var selected := grid_selection.get_node_or_null("GridSelectionVisuals/SelectedHighlight") as MeshInstance3D
 	test.expect_true(hover != null and not hover.visible, "%s should hide the single-cell hover fill." % context)
 	test.expect_true(selected != null and not selected.visible, "%s should hide the single-cell selected fill." % context)
 

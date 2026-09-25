@@ -24,7 +24,7 @@ anchor_left = 1.0
 anchor_top = 0.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -68.0
+offset_left = -72.0
 offset_top = 82.0
 offset_right = -16.0
 offset_bottom = -16.0
@@ -103,7 +103,7 @@ theme_override_font_sizes/font_size = 14
 
 [node name="Hint" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent"]
 layout_mode = 2
-text = "[vehicle:moveTo] x y · [vehicle:rotate] clockwise · [vehicle:grabDrop]"
+text = "在场地选中车辆，添加命令会使用该 vehicle_id。"
 autowrap_mode = 2
 
 [node name="SourceEditor" type="CodeEdit" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent"]
@@ -111,6 +111,7 @@ unique_name_in_owner = true
 script = ExtResource("3_source_editor")
 custom_minimum_size = Vector2(0, 160)
 layout_mode = 2
+text = "automata_scene01_program 2\n"
 size_flags_horizontal = 3
 size_flags_vertical = 3
 placeholder_text = "automata_scene01_program 2"
@@ -123,7 +124,7 @@ gutters_zero_pad_line_numbers = true
 [node name="StatusLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "源码初始化中"
+text = "语法有效 · 0 条语句"
 autowrap_mode = 2
 modulate = Color(0.68, 0.86, 1, 1)
 
@@ -148,23 +149,22 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 5
 
-[node name="VehicleLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
-layout_mode = 2
-text = "执行车辆"
-
-[node name="VehicleOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+[node name="VehicleSelectionLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
 layout_mode = 2
+text = "当前车辆：未选择车辆"
 
-[node name="MoveLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
-layout_mode = 2
-text = "移动目标"
-
-[node name="MoveParams" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+[node name="MoveRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="TargetX" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/MoveParams"]
+[node name="MoveLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/MoveRow"]
+layout_mode = 2
+text = "移动到"
+
+[node name="TargetX" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/MoveRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -173,7 +173,7 @@ max_value = 255.0
 value = 1.0
 prefix = "X "
 
-[node name="TargetY" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/MoveParams"]
+[node name="TargetY" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/MoveRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -182,42 +182,77 @@ max_value = 255.0
 value = 3.0
 prefix = "Y "
 
-[node name="AddMoveButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+[node name="AddMoveButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/MoveRow"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "+ 移动到"
+text = "+ 添加"
 
-[node name="MoveRotateDivider" type="HSeparator" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+[node name="MoveDivider" type="HSeparator" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+unique_name_in_owner = true
+visible = false
 layout_mode = 2
 
 [node name="RotateRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 4
+
+[node name="RotateLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RotateRow"]
+layout_mode = 2
+text = "旋转"
 
 [node name="RotationOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RotateRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+item_count = 2
+popup/item_0/text = "顺时针 · D · +90°"
+popup/item_0/id = 0
+popup/item_1/text = "逆时针 · A · -90°"
+popup/item_1/id = 1
 
 [node name="AddRotateButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RotateRow"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "+ 旋转 90°"
+text = "+ 添加"
 
-[node name="AddGrabButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+[node name="RotateDivider" type="HSeparator" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
-text = "+ 抓放"
 
-[node name="RepeatLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
-layout_mode = 2
-text = "重复"
-
-[node name="RepeatParams" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+[node name="GrabRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="RepeatCount" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RepeatParams"]
+[node name="GrabLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/GrabRow"]
+layout_mode = 2
+text = "抓放"
+
+[node name="AddGrabButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/GrabRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "+ 添加"
+
+[node name="GrabDivider" type="HSeparator" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="RepeatRow" type="HBoxContainer" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="RepeatLabel" type="Label" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RepeatRow"]
+layout_mode = 2
+text = "重复"
+
+[node name="RepeatCount" type="SpinBox" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RepeatRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 1
@@ -226,17 +261,17 @@ max_value = 100.0
 value = 2.0
 prefix = "× "
 
-[node name="RepeatTargetOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RepeatParams"]
+[node name="RepeatTargetOption" type="OptionButton" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RepeatRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 
-[node name="AddRepeatButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
+[node name="AddRepeatButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody/RepeatRow"]
 unique_name_in_owner = true
 layout_mode = 2
 disabled = true
-text = "+ 重复"
+text = "+ 添加"
 
 [node name="ClearButton" type="Button" parent="RootControl/ProgramPanel/Margin/VBox/ExpandedContent/BuilderScroll/BuilderBody"]
 unique_name_in_owner = true

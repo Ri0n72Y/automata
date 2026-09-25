@@ -74,17 +74,18 @@ func _test_input_map() -> void:
 func _test_rotation(controller, selection, arm, transport) -> void:
 	arm.reset_actor()
 	var original: int = arm.runtime_state.facing
-	_expect_true(controller.rotate_selected_arm(-1), "Waiting arm starts counterclockwise rotation.")
+	_expect_true(controller.rotate_selected_vehicle(-1), "Waiting arm starts counterclockwise rotation.")
 	await _wait_for_turn(arm)
 	_expect_equal(arm.runtime_state.facing, posmod(original - 1, 4), "CCW updates facing after its animation.")
-	_expect_true(controller.rotate_selected_arm(1), "Waiting arm starts clockwise rotation.")
+	_expect_true(controller.rotate_selected_vehicle(1), "Waiting arm starts clockwise rotation.")
 	await _wait_for_turn(arm)
 	_expect_equal(arm.runtime_state.facing, original, "Opposite rotations restore facing after their animations.")
 
 	_expect_true(selection.select_vehicle(transport), "Transport can be selected.")
 	var transport_facing: int = transport.runtime_state.facing
-	_expect_false(controller.rotate_selected_arm(1), "Transport rejects arm rotation.")
-	_expect_equal(transport.runtime_state.facing, transport_facing, "Rejected rotation preserves transport facing.")
+	_expect_true(controller.rotate_selected_vehicle(1), "Transport starts rotation through the shared vehicle turn owner.")
+	await _wait_for_turn(transport)
+	_expect_equal(transport.runtime_state.facing, posmod(transport_facing + 1, 4), "Transport rotation uses the same +90 degree facing contract without GrabDrop.")
 	_expect_true(selection.select_vehicle(arm), "Arm selection restored.")
 
 

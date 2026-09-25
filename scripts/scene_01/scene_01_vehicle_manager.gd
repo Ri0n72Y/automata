@@ -60,9 +60,11 @@ func _configure_static_scene_children(p_controller: Node, p_cell_size: float) ->
 	if arm_actor == null or transport_actor == null:
 		return false
 
-	var arm_definition: VehicleDefinitionScript = _create_arm_definition()
-	var transport_definition: VehicleDefinitionScript = _create_transport_definition()
-	if arm_definition == null or transport_definition == null:
+	var arm_definition: VehicleDefinitionScript = arm_actor.definition
+	var transport_definition: VehicleDefinitionScript = transport_actor.definition
+	if not _is_static_definition_valid(arm_definition, ARM_VEHICLE_ID):
+		return false
+	if not _is_static_definition_valid(transport_definition, TRANSPORT_VEHICLE_ID):
 		return false
 	if not _is_start_footprint_valid(p_controller, arm_definition, arm_start_cell):
 		return false
@@ -120,47 +122,18 @@ func _is_start_footprint_valid(
 	return false
 
 
-func _create_arm_definition() -> VehicleDefinitionScript:
-	var definition := VehicleDefinitionScript.new()
-	if not definition.configure(
-		ARM_VEHICLE_ID,
-		"机械臂车",
-		VehicleDefinitionScript.VehicleKind.ARM,
-		Vector2i.ONE,
-		2.0,
-		18.0,
-		20.0,
-		30.0,
-		PackedStringArray([
-			VehicleDefinitionScript.CAPABILITY_CAN_MOVE,
-			VehicleDefinitionScript.CAPABILITY_CAN_GRAB,
-			VehicleDefinitionScript.CAPABILITY_CAN_CARRY,
-		]),
-		0.25,
-		0
-	):
-		return null
-	return definition
 
-
-func _create_transport_definition() -> VehicleDefinitionScript:
-	var definition := VehicleDefinitionScript.new()
-	if not definition.configure(
-		TRANSPORT_VEHICLE_ID,
-		"运输车",
-		VehicleDefinitionScript.VehicleKind.TRANSPORT,
-		Vector2i.ONE,
-		2.4,
-		16.0,
-		24.0,
-		36.0,
-		PackedStringArray([
-			VehicleDefinitionScript.CAPABILITY_CAN_MOVE,
-			VehicleDefinitionScript.CAPABILITY_CAN_CARRY,
-			VehicleDefinitionScript.CAPABILITY_HAS_TRAY,
-		]),
-		1.0,
-		8
-	):
-		return null
-	return definition
+func _is_static_definition_valid(
+	definition: VehicleDefinitionScript,
+	expected_id: StringName
+) -> bool:
+	if definition == null or not definition.is_configured():
+		push_error("Static vehicle scene requires a configured VehicleDefinition resource.")
+		return false
+	if definition.assembly_id != expected_id:
+		push_error(
+			"Static vehicle definition id %s does not match expected id %s."
+			% [String(definition.assembly_id), String(expected_id)]
+		)
+		return false
+	return true

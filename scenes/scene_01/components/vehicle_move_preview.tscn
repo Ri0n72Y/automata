@@ -1,0 +1,54 @@
+[gd_scene load_steps=6 format=3]
+
+[sub_resource type="BoxMesh" id="BoxMesh_target"]
+resource_local_to_scene = true
+size = Vector3(0.94, 0.02, 0.94)
+
+[sub_resource type="StandardMaterial3D" id="Material_target_valid"]
+resource_local_to_scene = true
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.2, 0.9, 0.35, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="Material_target_invalid"]
+resource_local_to_scene = true
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 0.2, 0.18, 0.23)
+
+[sub_resource type="StandardMaterial3D" id="Material_path_valid"]
+resource_local_to_scene = true
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.2, 0.95, 0.42, 0.88)
+
+[sub_resource type="StandardMaterial3D" id="Material_path_invalid"]
+resource_local_to_scene = true
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 0.28, 0.22, 0.82)
+
+[node name="VehicleMovePreview" type="Node3D"]
+
+[node name="VehicleTargetFootprintPreview" type="MeshInstance3D" parent="."]
+visible = false
+cast_shadow = 0
+mesh = SubResource("BoxMesh_target")
+material_override = SubResource("Material_target_valid")
+
+[node name="InvalidTargetMaterialSource" type="MeshInstance3D" parent="."]
+visible = false
+cast_shadow = 0
+material_override = SubResource("Material_target_invalid")
+
+[node name="ValidPathMaterialSource" type="MeshInstance3D" parent="."]
+visible = false
+cast_shadow = 0
+material_override = SubResource("Material_path_valid")
+
+[node name="InvalidPathMaterialSource" type="MeshInstance3D" parent="."]
+visible = false
+cast_shadow = 0
+material_override = SubResource("Material_path_invalid")
+
+[node name="VehiclePathPreview" type="Node3D" parent="."]

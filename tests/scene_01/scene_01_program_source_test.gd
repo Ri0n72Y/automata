@@ -100,8 +100,10 @@ func _test_requirements_follow_command_vehicle() -> void:
 	_expect_true(requirements.has(&"arm_vehicle"), "Arm requirements should be published.")
 	_expect_true(requirements.has(&"transport_vehicle"), "Transport requirements should be published.")
 	_expect_true(requirements[&"arm_vehicle"].has(AssemblyCapabilitiesScript.CAN_MOVE), "Arm should require Move capability.")
+	_expect_true(requirements[&"arm_vehicle"].has(AssemblyCapabilitiesScript.CAN_ROTATE), "Arm Rotate should require the independent Rotate capability.")
 	_expect_true(requirements[&"arm_vehicle"].has(AssemblyCapabilitiesScript.GRAB_DROP), "Arm should require GrabDrop capability.")
 	_expect_true(requirements[&"transport_vehicle"].has(AssemblyCapabilitiesScript.CAN_MOVE), "Transport should require Move capability.")
+	_expect_false(requirements[&"transport_vehicle"].has(AssemblyCapabilitiesScript.CAN_ROTATE), "Transport should not inherit Rotate unless its Program contains Rotate.")
 	_expect_false(requirements[&"transport_vehicle"].has(AssemblyCapabilitiesScript.GRAB_DROP), "Transport should not inherit Arm GrabDrop requirements.")
 
 func _has_diagnostic(diagnostics: Array[Dictionary], code: StringName) -> bool:
