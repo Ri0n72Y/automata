@@ -21,21 +21,21 @@ theme = ExtResource("2_theme")
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 16.0
-offset_top = 326.0
+offset_top = 334.0
 offset_right = 356.0
-offset_bottom = 586.0
+offset_bottom = 594.0
 mouse_filter = 0
 
 [node name="Margin" type="MarginContainer" parent="RootControl/TutorialPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
 
 [node name="VBox" type="VBoxContainer" parent="RootControl/TutorialPanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 7
 
 [node name="Header" type="HBoxContainer" parent="RootControl/TutorialPanel/Margin/VBox"]
 layout_mode = 2
@@ -45,13 +45,22 @@ theme_override_constants/separation = 8
 layout_mode = 2
 size_flags_horizontal = 3
 text = "教学"
+theme_override_colors/font_color = Color(0.075, 0.15, 0.24, 1)
 theme_override_font_sizes/font_size = 18
 
 [node name="ProgressLabel" type="Label" parent="RootControl/TutorialPanel/Margin/VBox/Header"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "目标 0 / 5"
-modulate = Color(0.68, 0.82, 0.94, 1)
+theme_override_colors/font_color = Color(0.22, 0.47, 0.72, 1)
+
+[node name="CollapseButton" type="Button" parent="RootControl/TutorialPanel/Margin/VBox/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(34, 30)
+layout_mode = 2
+focus_mode = 0
+text = "−"
+tooltip_text = "折叠教学"
 
 [node name="StepTitle" type="Label" parent="RootControl/TutorialPanel/Margin/VBox"]
 unique_name_in_owner = true
@@ -64,13 +73,14 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "左键点击机械臂小车。"
 autowrap_mode = 2
+theme_override_colors/font_color = Color(0.27, 0.34, 0.43, 1)
 
 [node name="GoalLabel" type="Label" parent="RootControl/TutorialPanel/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "本页目标：选择机械臂车（0/1）\n场景目标：填满标准箱（3/8）"
 autowrap_mode = 2
-modulate = Color(0.58, 0.9, 0.72, 1)
+theme_override_colors/font_color = Color(0.08, 0.55, 0.39, 1)
 
 [node name="Rule" type="HSeparator" parent="RootControl/TutorialPanel/Margin/VBox"]
 layout_mode = 2

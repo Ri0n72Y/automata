@@ -4,9 +4,18 @@ extends CanvasLayer
 const TutorialScript := preload("res://scripts/scene_01/scene_01_tutorial.gd")
 const ObservableScript := preload("res://scripts/scene_01/scene_01_observable_state.gd")
 const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metrics.gd")
+const COLLAPSED_HEIGHT := 54.0
+const BODY_PATHS := [
+	NodePath("RootControl/TutorialPanel/Margin/VBox/StepTitle"),
+	NodePath("RootControl/TutorialPanel/Margin/VBox/StepBody"),
+	NodePath("RootControl/TutorialPanel/Margin/VBox/GoalLabel"),
+	NodePath("RootControl/TutorialPanel/Margin/VBox/Rule"),
+	NodePath("RootControl/TutorialPanel/Margin/VBox/ButtonRow"),
+]
 
 @onready var _panel: PanelContainer = %TutorialPanel
 @onready var _progress_label: Label = %ProgressLabel
+@onready var _collapse_button: Button = %CollapseButton
 @onready var _title_label: Label = %StepTitle
 @onready var _body_label: Label = %StepBody
 @onready var _goal_label: Label = %GoalLabel
@@ -19,30 +28,57 @@ const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metric
 @onready var _manual_guide: Control = _root.get_node("UIRoot/RootControl") as Control
 @onready var _reopen_button: Button = _root.get_node("UIRoot/RootControl/Panel/Margin/VBox/HeaderRow/TutorialButton") as Button
 
+var _collapsed := false
+
 
 func _ready() -> void:
 	_previous_button.pressed.connect(_tutorial.previous_step)
 	_next_button.pressed.connect(_tutorial.next_step)
 	_skip_button.pressed.connect(_tutorial.skip_tutorial)
+	_collapse_button.pressed.connect(_on_collapse_pressed)
 	_reopen_button.pressed.connect(_tutorial.reopen_tutorial)
 	_tutorial.presentation_changed.connect(_refresh)
 	_observable.configured.connect(_refresh)
 	_observable.standard_box_count_changed.connect(func(_a, _b): _refresh())
 	_root.lifecycle_state_changed.connect(func(_a, _b): _refresh())
 	get_viewport().size_changed.connect(_apply_left_rail_layout)
-	_apply_left_rail_layout()
+	set_collapsed(false)
 	_refresh()
 	call_deferred("_refresh")
 
 
+func set_collapsed(collapsed: bool) -> void:
+	_collapsed = collapsed
+	for path in BODY_PATHS:
+		var control := get_node_or_null(path) as Control
+		if control != null:
+			control.visible = not _collapsed
+	if _collapse_button != null:
+		_collapse_button.text = "+" if _collapsed else "−"
+		_collapse_button.tooltip_text = "展开教学" if _collapsed else "折叠教学"
+	_apply_left_rail_layout()
+	if _collapsed:
+		get_viewport().gui_release_focus()
+
+
+func is_collapsed() -> bool:
+	return _collapsed
+
+
+func _on_collapse_pressed() -> void:
+	set_collapsed(not _collapsed)
+
+
 func _apply_left_rail_layout() -> void:
 	var viewport_size := get_viewport().get_visible_rect().size
-	var height := LayoutMetrics.clamped_panel_height(
-		float(viewport_size.y),
-		LayoutMetrics.LEFT_AUX_TOP,
-		LayoutMetrics.TUTORIAL_TARGET_HEIGHT,
-		220.0
-	)
+	var height := COLLAPSED_HEIGHT
+	if not _collapsed:
+		height = LayoutMetrics.clamped_panel_height(
+			float(viewport_size.y),
+			LayoutMetrics.LEFT_AUX_TOP,
+			LayoutMetrics.TUTORIAL_TARGET_HEIGHT,
+			220.0
+		)
 	_panel.offset_left = LayoutMetrics.EDGE_MARGIN
 	_panel.offset_top = LayoutMetrics.LEFT_AUX_TOP
 	_panel.offset_right = _panel.offset_left + LayoutMetrics.left_rail_width(float(viewport_size.x))
@@ -119,7 +155,7 @@ func _step_title(step: int) -> String:
 func _step_body(step: int) -> String:
 	match step:
 		TutorialScript.Step.SELECT_ARM:
-			return "左键点击机械臂车。左上状态卡会显示当前选中车辆。"
+			return "左键点击机械臂车。左侧状态查看会显示当前车辆。"
 		TutorialScript.Step.MANUAL_PICKUP:
 			return "按 M 选择方块堆旁目标格；A / D 每次旋转 90°；C 抓取。"
 		TutorialScript.Step.MANUAL_DROP:

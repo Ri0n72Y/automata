@@ -27,6 +27,7 @@ func _run() -> void:
 
 	var hud_panel := scene.get_node("HUDRoot/RootControl/StatusPanel") as Control
 	var tutorial_panel := scene.get_node("TutorialUIRoot/RootControl/TutorialPanel") as Control
+	var tutorial_ui := scene.get_node("TutorialUIRoot")
 	var manual_ui := scene.get_node("UIRoot")
 	var manual_root := scene.get_node("UIRoot/RootControl") as Control
 	var manual_panel := scene.get_node("UIRoot/RootControl/Panel") as Control
@@ -67,8 +68,16 @@ func _run() -> void:
 	)
 	_expect_equal(
 		(scene.get_node("HUDRoot/RootControl/StatusPanel/Margin/VBox/Header/Title") as Label).text,
-		"任务状态",
-		"HUD title should express the player-facing information role."
+		"状态查看",
+		"HUD title should express the player-facing inspection role."
+	)
+	_expect_true(
+		scene.get_node_or_null("HUDRoot/RootControl/StatusPanel/Margin/VBox/PointerLabel") != null,
+		"Grid coordinates should be available as lightweight player-facing pointer state."
+	)
+	_expect_true(
+		scene.get_node_or_null("DebugUIRoot/RootControl/Panel/Margin/VBox/CoordinatesRow") == null,
+		"Grid coordinates should no longer be presented as a debug toggle."
 	)
 	_expect_equal(
 		(scene.get_node("TutorialUIRoot/RootControl/TutorialPanel/Margin/VBox/Header/Title") as Label).text,
@@ -96,6 +105,13 @@ func _run() -> void:
 		await process_frame
 		await process_frame
 		_assert_layout(viewport_size, hud_panel, tutorial_panel, manual_panel, program_panel, lifecycle_panel, debug_panel)
+
+	tutorial_ui.call("set_collapsed", true)
+	await process_frame
+	_expect_true(bool(tutorial_ui.call("is_collapsed")), "Tutorial should support presentation-only collapse.")
+	_expect_near(tutorial_panel.size.y, 54.0, 2.0, "Collapsed Tutorial should reduce to a compact header.")
+	tutorial_ui.call("set_collapsed", false)
+	await process_frame
 
 	_expect_true(tutorial_panel.visible, "Tutorial should own the auxiliary left-rail slot while Tutorial presentation is visible.")
 	_expect_false(manual_root.visible, "Guide presentation should stay hidden while Tutorial owns the auxiliary slot.")

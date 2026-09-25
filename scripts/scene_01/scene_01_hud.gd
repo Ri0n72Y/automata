@@ -19,6 +19,7 @@ const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metric
 @onready var vehicle_state_label: Label = %VehicleStateLabel
 @onready var inventory_label: Label = %InventoryLabel
 @onready var mission_label: Label = %MissionLabel
+@onready var pointer_label: Label = %PointerLabel
 @onready var pause_label: Label = %PauseLabel
 @onready var commands_label: Label = %CommandsLabel
 @onready var feedback_label: Label = %FeedbackLabel
@@ -76,6 +77,7 @@ func _bind_signals() -> void:
 	_observable.standard_box_count_changed.connect(_on_observable_changed)
 	_observable.mission_state_changed.connect(_on_observable_changed)
 	_vehicle_selection.selection_changed.connect(_on_selection_changed)
+	_grid_selection.hover_changed.connect(_on_hover_changed)
 	_grid_selection.live_target_mode_changed.connect(_on_target_mode_changed)
 	_move_controller.move_accepted.connect(_on_move_accepted)
 	_move_controller.move_rejected.connect(_on_move_rejected)
@@ -91,12 +93,12 @@ func _refresh() -> void:
 	var observable_ready := _observable.is_configured()
 	var selected_id := _vehicle_selection.get_selected_vehicle_id()
 	var has_selection := selected_id != &""
-	selected_label.text = "选中：%s" % _selected_vehicle_name(selected_id)
+	selected_label.text = "当前车辆：%s" % _selected_vehicle_name(selected_id)
 
 	var motion_state := -1
 	if observable_ready and has_selection:
 		motion_state = _observable.get_vehicle_state(selected_id)
-	vehicle_state_label.text = "状态：%s" % _motion_state_text(motion_state)
+	vehicle_state_label.text = "运行状态：%s" % _motion_state_text(motion_state)
 
 	if observable_ready:
 		var target_count := _scene_controller.get_mission_target_count()
@@ -109,7 +111,7 @@ func _refresh() -> void:
 			box_text,
 		]
 		var mission_state := _observable.get_mission_state()
-		mission_label.text = "任务：%s   进度：%s" % [_mission_state_text(mission_state), box_text]
+		mission_label.text = "任务：%s   ·   标准箱 %s" % [_mission_state_text(mission_state), box_text]
 		completion_panel.visible = mission_state == MissionStateScript.State.COMPLETED
 		if completion_panel.visible:
 			completion_summary_label.text = "标准箱 %s · 任务已完成" % box_text
@@ -118,16 +120,25 @@ func _refresh() -> void:
 		mission_label.text = "任务：初始化中"
 		completion_panel.visible = false
 
+	_refresh_pointer_label()
 	pause_label.visible = _scene_controller.is_scene_paused()
 	_grab_drop_controller.refresh_interaction_preview()
 	commands_label.text = _command_availability_text(motion_state, selected_id)
 
 
+func _refresh_pointer_label() -> void:
+	if _grid_selection != null and _grid_selection.has_hovered_cell():
+		var cell := _grid_selection.hovered_cell
+		pointer_label.text = "指针位置：X %d   Y %d" % [cell.x, cell.y]
+	else:
+		pointer_label.text = "指针位置：—"
+
+
 func _command_availability_text(motion_state: int, selected_id: StringName) -> String:
 	if selected_id == &"":
-		return "命令：M 移动 未选择车辆 · A/D 旋转 未选择车辆\nX 停止 未选择车辆 · C 抓放 未选择车辆"
+		return "操作：M 移动 未选择车辆 · A/D 旋转 未选择车辆\nX 停止 未选择车辆 · C 抓放 未选择车辆"
 	if _scene_controller.is_scene_paused():
-		return "命令：M 移动 暂停 · A/D 旋转 暂停\nX 停止 暂停 · C 抓放 暂停"
+		return "操作：M 移动 暂停 · A/D 旋转 暂停\nX 停止 暂停 · C 抓放 暂停"
 
 	var vehicle = _vehicle_manager.get_vehicle_by_id(selected_id)
 	var definition = vehicle.definition if vehicle != null else null
@@ -185,7 +196,7 @@ func _command_availability_text(motion_state: int, selected_id: StringName) -> S
 	elif _grab_drop_controller.is_interaction_preview_valid():
 		grab_text = "可用"
 
-	return "命令：M 移动 %s · A/D 旋转 %s\nX 停止 %s · C 抓放 %s" % [
+	return "操作：M 移动 %s · A/D 旋转 %s\nX 停止 %s · C 抓放 %s" % [
 		move_text,
 		rotate_text,
 		stop_text,
@@ -238,6 +249,10 @@ func _on_selection_changed(vehicle_id: StringName, has_selection: bool) -> void:
 	if has_selection:
 		_bind_vehicle_turn_signals(vehicle_id)
 	_refresh()
+
+
+func _on_hover_changed(_cell: Vector2i, _has_hover: bool) -> void:
+	_refresh_pointer_label()
 
 
 func _bind_vehicle_turn_signals(vehicle_id: StringName) -> void:

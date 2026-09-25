@@ -25,19 +25,19 @@ anchor_bottom = 0.0
 offset_left = 16.0
 offset_top = 82.0
 offset_right = 356.0
-offset_bottom = 314.0
+offset_bottom = 322.0
 mouse_filter = 2
 
 [node name="Margin" type="MarginContainer" parent="RootControl/StatusPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
 
 [node name="VBox" type="VBoxContainer" parent="RootControl/StatusPanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 4
+theme_override_constants/separation = 6
 
 [node name="Header" type="HBoxContainer" parent="RootControl/StatusPanel/Margin/VBox"]
 layout_mode = 2
@@ -45,7 +45,8 @@ layout_mode = 2
 [node name="Title" type="Label" parent="RootControl/StatusPanel/Margin/VBox/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "任务状态"
+text = "状态查看"
+theme_override_colors/font_color = Color(0.075, 0.15, 0.24, 1)
 theme_override_font_sizes/font_size = 18
 
 [node name="PauseLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox/Header"]
@@ -53,7 +54,17 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 text = "已暂停"
-modulate = Color(1, 0.72, 0.28, 1)
+theme_override_colors/font_color = Color(0.78, 0.45, 0.08, 1)
+
+[node name="MissionLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "任务：初始化中"
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.34, 0.66, 1)
+
+[node name="RuleMission" type="HSeparator" parent="RootControl/StatusPanel/Margin/VBox"]
+layout_mode = 2
 
 [node name="SelectedLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
 unique_name_in_owner = true
@@ -71,17 +82,20 @@ layout_mode = 2
 text = "机械臂：—   托盘：—   标准箱：—"
 autowrap_mode = 2
 
-[node name="MissionLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
+[node name="PointerLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "任务：初始化中"
-autowrap_mode = 2
+text = "指针：—"
+theme_override_colors/font_color = Color(0.36, 0.45, 0.56, 1)
+
+[node name="RuleCommands" type="HSeparator" parent="RootControl/StatusPanel/Margin/VBox"]
+layout_mode = 2
 
 [node name="CommandsLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "命令：M 移动 —   X 停止 —   C 抓放 —"
-modulate = Color(0.72, 0.82, 0.94, 1)
+theme_override_colors/font_color = Color(0.27, 0.39, 0.54, 1)
 autowrap_mode = 2
 
 [node name="FeedbackLabel" type="Label" parent="RootControl/StatusPanel/Margin/VBox"]
@@ -89,7 +103,7 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "选择车辆后使用 M / X / C"
 autowrap_mode = 2
-modulate = Color(0.55, 0.88, 0.72, 1)
+theme_override_colors/font_color = Color(0.09, 0.55, 0.39, 1)
 
 [node name="CompletionPanel" type="PanelContainer" parent="RootControl"]
 unique_name_in_owner = true
@@ -124,7 +138,7 @@ layout_mode = 2
 text = "任务完成"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 28
-modulate = Color(0.55, 0.95, 0.7, 1)
+theme_override_colors/font_color = Color(0.08, 0.58, 0.38, 1)
 
 [node name="CompletionSummaryLabel" type="Label" parent="RootControl/CompletionPanel/Margin/VBox"]
 unique_name_in_owner = true
@@ -136,7 +150,7 @@ horizontal_alignment = 1
 layout_mode = 2
 text = "时间 —   组件 —   自动化率 —"
 horizontal_alignment = 1
-modulate = Color(0.68, 0.74, 0.82, 1)
+theme_override_colors/font_color = Color(0.36, 0.43, 0.52, 1)
 
 [node name="ScorePresenter" type="Node" parent="."]
 script = ExtResource("3_score_presenter")
