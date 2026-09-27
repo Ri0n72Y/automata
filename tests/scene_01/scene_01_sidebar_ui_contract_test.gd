@@ -39,7 +39,7 @@ func _run() -> void:
 	var feedback := hud.get_node_or_null("%FeedbackLabel") as Label if hud != null else null
 	var tutorial := hud.get_node_or_null("%TutorialSection") as Control if hud != null else null
 	var tutorial_body := hud.get_node_or_null("%TutorialBody") as Control if hud != null else null
-	var tutorial_content_margin := tutorial_body.get_node_or_null("Margin") as MarginContainer if tutorial_body != null else null
+	var tutorial_content_margin := hud.get_node_or_null("%TutorialContentMargin") as MarginContainer if hud != null else null
 	var tutorial_collapse := hud.get_node_or_null("%CollapseButton") as Button if hud != null else null
 	var tutorial_previous := hud.get_node_or_null("%PreviousButton") as Button if hud != null else null
 	var tutorial_next := hud.get_node_or_null("%NextButton") as Button if hud != null else null
