@@ -3,6 +3,8 @@ extends VBoxContainer
 
 const TutorialScript := preload("res://scripts/scene_01/scene_01_tutorial.gd")
 const ObservableScript := preload("res://scripts/scene_01/scene_01_observable_state.gd")
+const CHEVRON_DOWN_ICON: Texture2D = preload("res://assets/ui/icons/chevron_down.svg")
+const CHEVRON_RIGHT_ICON: Texture2D = preload("res://assets/ui/icons/chevron_right.svg")
 
 @onready var _progress_label: Label = %ProgressLabel
 @onready var _collapse_button: Button = %CollapseButton
@@ -48,7 +50,8 @@ func set_collapsed(collapsed: bool) -> void:
 	if _body != null:
 		_body.visible = not _collapsed
 	if _collapse_button != null:
-		_collapse_button.text = "+" if _collapsed else "−"
+		_collapse_button.text = ""
+		_collapse_button.icon = CHEVRON_RIGHT_ICON if _collapsed else CHEVRON_DOWN_ICON
 		_collapse_button.tooltip_text = "展开教学" if _collapsed else "折叠教学"
 	if _collapsed:
 		get_viewport().gui_release_focus()

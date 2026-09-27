@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_hud.gd" id="1_hud"]
 [ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
@@ -53,6 +53,70 @@ corner_radius_top_left = 11
 corner_radius_top_right = 11
 corner_radius_bottom_right = 11
 corner_radius_bottom_left = 11
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tutorial_button_normal"]
+bg_color = Color(0.985, 0.991, 0.997, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.76, 0.81, 0.86, 0.9)
+content_margin_left = 10.0
+content_margin_top = 5.0
+content_margin_right = 10.0
+content_margin_bottom = 5.0
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tutorial_button_hover"]
+bg_color = Color(0.91, 0.96, 1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.26, 0.61, 0.92, 0.95)
+content_margin_left = 10.0
+content_margin_top = 5.0
+content_margin_right = 10.0
+content_margin_bottom = 5.0
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tutorial_button_pressed"]
+bg_color = Color(0.82, 0.91, 0.99, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.1, 0.47, 0.86, 1)
+content_margin_left = 10.0
+content_margin_top = 5.0
+content_margin_right = 10.0
+content_margin_bottom = 5.0
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tutorial_button_disabled"]
+bg_color = Color(0.94, 0.95, 0.96, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.84, 0.86, 0.89, 0.75)
+content_margin_left = 10.0
+content_margin_top = 5.0
+content_margin_right = 10.0
+content_margin_bottom = 5.0
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_bg"]
 bg_color = Color(0.81, 0.86, 0.91, 0.8)
@@ -451,11 +515,17 @@ theme_override_colors/font_color = Color(0.25, 0.42, 0.61, 1)
 
 [node name="CollapseButton" type="Button" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/Header/Margin/HeaderRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(30, 26)
+custom_minimum_size = Vector2(26, 26)
 layout_mode = 2
 focus_mode = 0
-text = "−"
+icon = ExtResource("5_chevron_down")
+icon_alignment = 1
 tooltip_text = "折叠教学"
+theme_override_styles/normal = SubResource("StyleBoxFlat_header_button_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_header_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_header_button_hover")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_header_button_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_header_button_normal")
 
 [node name="TutorialBody" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection"]
 unique_name_in_owner = true
@@ -464,14 +534,14 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_section_body")
 
 [node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 7
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 7
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 10
 
 [node name="VBox" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 7
+theme_override_constants/separation = 8
 
 [node name="StepTitle" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin/VBox"]
 unique_name_in_owner = true
@@ -491,6 +561,7 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "本页目标：选择机械臂车（0/1）\n场景目标：填满标准箱（3/8）"
 autowrap_mode = 2
+theme_override_constants/line_spacing = 3
 theme_override_colors/font_color = Color(0.08, 0.48, 0.34, 1)
 
 [node name="Rule" type="HSeparator" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin/VBox"]
@@ -502,13 +573,25 @@ theme_override_constants/separation = 6
 
 [node name="PreviousButton" type="Button" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin/VBox/ButtonRow"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 32)
 layout_mode = 2
 text = "上一步"
+theme_override_styles/normal = SubResource("StyleBoxFlat_tutorial_button_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tutorial_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tutorial_button_pressed")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_tutorial_button_pressed")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_tutorial_button_disabled")
 
 [node name="NextButton" type="Button" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin/VBox/ButtonRow"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 32)
 layout_mode = 2
 text = "下一步"
+theme_override_styles/normal = SubResource("StyleBoxFlat_tutorial_button_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tutorial_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tutorial_button_pressed")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_tutorial_button_pressed")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_tutorial_button_disabled")
 
 [node name="Spacer" type="Control" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin/VBox/ButtonRow"]
 layout_mode = 2
@@ -516,8 +599,14 @@ size_flags_horizontal = 3
 
 [node name="SkipButton" type="Button" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/Margin/VBox/ButtonRow"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(88, 32)
 layout_mode = 2
 text = "跳过教学"
+theme_override_styles/normal = SubResource("StyleBoxFlat_tutorial_button_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tutorial_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tutorial_button_pressed")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_tutorial_button_pressed")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_tutorial_button_disabled")
 
 [node name="GuideSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
 unique_name_in_owner = true

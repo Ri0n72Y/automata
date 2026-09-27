@@ -39,6 +39,10 @@ func _run() -> void:
 	var feedback := hud.get_node_or_null("%FeedbackLabel") as Label if hud != null else null
 	var tutorial := hud.get_node_or_null("%TutorialSection") as Control if hud != null else null
 	var tutorial_body := hud.get_node_or_null("%TutorialBody") as Control if hud != null else null
+	var tutorial_collapse := hud.get_node_or_null("%CollapseButton") as Button if hud != null else null
+	var tutorial_previous := hud.get_node_or_null("%PreviousButton") as Button if hud != null else null
+	var tutorial_next := hud.get_node_or_null("%NextButton") as Button if hud != null else null
+	var tutorial_skip := hud.get_node_or_null("%SkipButton") as Button if hud != null else null
 	var guide := hud.get_node_or_null("%GuideSection") as Control if hud != null else null
 	var tutorial_owner := scene.get_node_or_null("SceneRoot/Scene01Tutorial")
 
@@ -57,6 +61,10 @@ func _run() -> void:
 		and feedback != null
 		and tutorial != null
 		and tutorial_body != null
+		and tutorial_collapse != null
+		and tutorial_previous != null
+		and tutorial_next != null
+		and tutorial_skip != null
 		and guide != null
 		and tutorial_owner != null
 	)
@@ -96,6 +104,25 @@ func _run() -> void:
 
 	_expect_true(bool(tutorial.call("is_collapsed")), "Tutorial should start collapsed in the compact main state.")
 	_expect_false(tutorial_body.visible, "Default collapsed Tutorial should not lengthen the Sidebar.")
+	_expect_true(
+		tutorial_collapse.text.is_empty() and tutorial_collapse.icon != null,
+		"Tutorial disclosure should use the shared chevron icon language instead of +/- glyphs."
+	)
+	_expect_equal(
+		tutorial_collapse.icon.get_class(),
+		"DPITexture",
+		"Tutorial disclosure SVG should import as DPITexture."
+	)
+	for button in [tutorial_previous, tutorial_next, tutorial_skip]:
+		_expect_true(button.custom_minimum_size.y >= 32.0, "Tutorial navigation buttons should keep a padded minimum height.")
+		var normal_style := button.get_theme_stylebox("normal")
+		_expect_true(
+			normal_style.content_margin_left >= 10.0
+			and normal_style.content_margin_right >= 10.0
+			and normal_style.content_margin_top >= 5.0
+			and normal_style.content_margin_bottom >= 5.0,
+			"Tutorial navigation button text should have stable internal padding."
+		)
 
 	hud.call("set_status_collapsed", true)
 	await process_frame
@@ -110,6 +137,10 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	_expect_true(tutorial_body.visible, "Expanded Tutorial should restore its body.")
+	_expect_true(
+		tutorial_collapse.text.is_empty() and tutorial_collapse.icon != null,
+		"Expanded Tutorial should keep icon-only disclosure geometry."
+	)
 	_expect_true(sidebar.size.y <= LayoutMetrics.left_sidebar_max_height(float(viewport.size.y)) + 1.0, "Expanded Tutorial should scroll inside the capped Sidebar.")
 
 	tutorial_owner.call("skip_tutorial")
