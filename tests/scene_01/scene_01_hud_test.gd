@@ -92,7 +92,7 @@ func _run() -> void:
 		"RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/GrabRow/GrabValueLabel"
 	) as Label
 	var feedback_label := hud.get_node(
-		"RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/FeedbackLabel"
+		"RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/FeedbackLabel"
 	) as Label
 	var completion_panel := hud.get_node("RootControl/CompletionPanel") as PanelContainer
 

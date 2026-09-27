@@ -11,6 +11,8 @@ const StandardBlockScript := preload("res://scripts/objects/standard_block.gd")
 var test := ContractTestScript.new()
 var configured_events: int = 0
 var vehicle_events: Array[Array] = []
+var pose_events: Array[StringName] = []
+var turning_events: Array[Array] = []
 var arm_item_events: Array[Array] = []
 var tray_events: Array[Vector2i] = []
 var box_events: Array[Vector2i] = []
@@ -56,7 +58,8 @@ func _run() -> void:
 		return
 
 	_bind_events(observable)
-	_test_initial_reads(observable)
+	_test_initial_reads(observable, arm, transport)
+	_test_vehicle_pose_projection(observable, arm)
 	_test_vehicle_and_arm_notifications(observable, arm)
 	_test_tray_notification(observable, transport)
 	_test_box_notification(observable, scene)
@@ -75,6 +78,14 @@ func _bind_events(observable: ObservableStateScript) -> void:
 	observable.vehicle_state_changed.connect(
 		func(vehicle_id: StringName, previous_state: int, current_state: int) -> void:
 			vehicle_events.append([vehicle_id, previous_state, current_state])
+	)
+	observable.vehicle_pose_changed.connect(
+		func(vehicle_id: StringName) -> void:
+			pose_events.append(vehicle_id)
+	)
+	observable.vehicle_turning_changed.connect(
+		func(vehicle_id: StringName, is_turning: bool) -> void:
+			turning_events.append([vehicle_id, is_turning])
 	)
 	observable.arm_has_item_changed.connect(
 		func(previous_value: bool, current_value: bool) -> void:
@@ -96,7 +107,7 @@ func _bind_events(observable: ObservableStateScript) -> void:
 	)
 
 
-func _test_initial_reads(observable: ObservableStateScript) -> void:
+func _test_initial_reads(observable: ObservableStateScript, arm, transport) -> void:
 	test.expect_equal(
 		observable.get_vehicle_state(VehicleManagerScript.ARM_VEHICLE_ID),
 		RuntimeStateScript.MotionState.WAITING,
@@ -108,10 +119,69 @@ func _test_initial_reads(observable: ObservableStateScript) -> void:
 		"Transport observable state should start WAITING."
 	)
 	test.expect_equal(observable.get_vehicle_state(&"unsupported"), -1, "Unsupported vehicle id should fail with the invalid state sentinel.")
+	test.expect_equal(
+		observable.get_vehicle_anchor_cell(VehicleManagerScript.ARM_VEHICLE_ID),
+		arm.runtime_state.anchor_cell,
+		"Arm observable pose should read the runtime owner's anchor."
+	)
+	test.expect_equal(
+		observable.get_vehicle_facing(VehicleManagerScript.ARM_VEHICLE_ID),
+		arm.runtime_state.facing,
+		"Arm observable pose should read the runtime owner's facing."
+	)
+	test.expect_equal(
+		observable.get_vehicle_anchor_cell(VehicleManagerScript.TRANSPORT_VEHICLE_ID),
+		transport.runtime_state.anchor_cell,
+		"Transport observable pose should read the runtime owner's anchor."
+	)
+	test.expect_equal(observable.get_vehicle_anchor_cell(&"unsupported"), Vector2i(-1, -1), "Unsupported vehicle anchor should use the invalid sentinel.")
+	test.expect_equal(observable.get_vehicle_facing(&"unsupported"), -1, "Unsupported vehicle facing should use the invalid sentinel.")
 	test.expect_false(observable.get_arm_has_item(), "Arm observable cargo should start empty.")
 	test.expect_equal(observable.get_tray_count(), 0, "Tray observable count should start at zero.")
 	test.expect_equal(observable.get_standard_box_count(), 3, "Box observable count should start at 3.")
 	test.expect_equal(observable.get_mission_state(), MissionStateScript.State.READY, "Mission observable state should start READY.")
+
+
+func _test_vehicle_pose_projection(observable: ObservableStateScript, arm) -> void:
+	pose_events.clear()
+	turning_events.clear()
+	arm.runtime_state.anchor_cell = Vector2i(4, 4)
+	arm.move_completed.emit(Vector2i(4, 4))
+	test.expect_equal(
+		observable.get_vehicle_anchor_cell(VehicleManagerScript.ARM_VEHICLE_ID),
+		Vector2i(4, 4),
+		"Observable pose should read the moved owner anchor."
+	)
+	test.expect_equal(
+		pose_events,
+		[VehicleManagerScript.ARM_VEHICLE_ID],
+		"Move completion should publish one pose change."
+	)
+
+	arm.turn_started.emit(1)
+	arm.runtime_state.facing = RuntimeStateScript.Facing.EAST
+	arm.turn_completed.emit(RuntimeStateScript.Facing.EAST)
+	test.expect_equal(
+		observable.get_vehicle_facing(VehicleManagerScript.ARM_VEHICLE_ID),
+		RuntimeStateScript.Facing.EAST,
+		"Observable pose should read the turned owner facing."
+	)
+	test.expect_equal(
+		turning_events,
+		[
+			[VehicleManagerScript.ARM_VEHICLE_ID, true],
+			[VehicleManagerScript.ARM_VEHICLE_ID, false],
+		],
+		"Turn lifecycle should publish start and completion."
+	)
+	test.expect_equal(
+		pose_events,
+		[
+			VehicleManagerScript.ARM_VEHICLE_ID,
+			VehicleManagerScript.ARM_VEHICLE_ID,
+		],
+		"Turn completion should publish the second pose change."
+	)
 
 
 func _test_vehicle_and_arm_notifications(observable: ObservableStateScript, arm) -> void:
