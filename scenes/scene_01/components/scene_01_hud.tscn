@@ -582,7 +582,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_tutorial_button_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_tutorial_button_pressed")
 theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_tutorial_button_pressed")
 theme_override_styles/disabled = SubResource("StyleBoxFlat_tutorial_button_disabled")
-theme_override_styles/focus = SubResource("StyleBoxFlat_tutorial_button_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_tutorial_button_hover")
 
 [node name="NextButton" type="Button" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/TutorialContentMargin/VBox/ButtonRow"]
 unique_name_in_owner = true
@@ -594,7 +594,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_tutorial_button_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_tutorial_button_pressed")
 theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_tutorial_button_pressed")
 theme_override_styles/disabled = SubResource("StyleBoxFlat_tutorial_button_disabled")
-theme_override_styles/focus = SubResource("StyleBoxFlat_tutorial_button_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_tutorial_button_hover")
 
 [node name="Spacer" type="Control" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/TutorialContentMargin/VBox/ButtonRow"]
 layout_mode = 2
@@ -610,7 +610,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_tutorial_button_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_tutorial_button_pressed")
 theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_tutorial_button_pressed")
 theme_override_styles/disabled = SubResource("StyleBoxFlat_tutorial_button_disabled")
-theme_override_styles/focus = SubResource("StyleBoxFlat_tutorial_button_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_tutorial_button_hover")
 
 [node name="GuideSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
 unique_name_in_owner = true

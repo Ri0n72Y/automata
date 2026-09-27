@@ -53,8 +53,10 @@ func set_collapsed(collapsed: bool) -> void:
 		_collapse_button.text = ""
 		_collapse_button.icon = CHEVRON_RIGHT_ICON if _collapsed else CHEVRON_DOWN_ICON
 		_collapse_button.tooltip_text = "展开教学" if _collapsed else "折叠教学"
-	if _collapsed:
-		get_viewport().gui_release_focus()
+	if _collapsed and _body != null:
+		var focus_owner := get_viewport().gui_get_focus_owner()
+		if focus_owner != null and _body.is_ancestor_of(focus_owner):
+			get_viewport().gui_release_focus()
 
 
 func is_collapsed() -> bool:

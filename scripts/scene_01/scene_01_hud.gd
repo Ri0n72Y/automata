@@ -105,8 +105,10 @@ func set_status_collapsed(collapsed: bool) -> void:
 	if status_collapse_button != null:
 		status_collapse_button.icon = CHEVRON_RIGHT_ICON if _status_collapsed else CHEVRON_DOWN_ICON
 		status_collapse_button.tooltip_text = "展开状态" if _status_collapsed else "折叠状态"
-	if _status_collapsed:
-		get_viewport().gui_release_focus()
+	if _status_collapsed and status_card != null:
+		var focus_owner := get_viewport().gui_get_focus_owner()
+		if focus_owner != null and status_card.is_ancestor_of(focus_owner):
+			get_viewport().gui_release_focus()
 	_queue_sidebar_layout()
 
 

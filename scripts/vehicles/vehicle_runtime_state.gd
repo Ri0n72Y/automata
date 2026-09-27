@@ -63,6 +63,8 @@ var motion_state: int:
 			return
 		var previous_state := _motion_state
 		_motion_state = value
+		if _motion_state != MotionState.PLANNING and _motion_state != MotionState.MOVING:
+			_sync_tray_interaction_cells()
 		motion_state_changed.emit(previous_state, _motion_state)
 
 var _anchor_cell: Vector2i = Vector2i.ZERO
@@ -76,6 +78,7 @@ var anchor_cell: Vector2i:
 			return
 		var previous_cell := _anchor_cell
 		_anchor_cell = value
+		_sync_tray_interaction_cells()
 		anchor_cell_changed.emit(previous_cell, _anchor_cell)
 
 var facing: int:
@@ -119,6 +122,7 @@ func configure(
 	_initial_anchor_cell = p_anchor_cell
 	_initial_facing = p_facing
 	reset()
+	_sync_tray_interaction_cells()
 	return true
 
 
@@ -215,12 +219,16 @@ func release_carried_item() -> StandardBlockScript:
 
 
 func get_item_interaction_interfaces(interaction_cells: Array[Vector2i]) -> Array[Variant]:
-	var interfaces: Array[Variant] = []
-	if not is_tray_interaction_available(_tray_state):
-		_clear_item_interaction_cells()
-		return interfaces
 	if _tray_state != null:
 		_tray_state.set_interaction_cells(interaction_cells)
+	return get_item_interaction_interfaces_readonly()
+
+
+func get_item_interaction_interfaces_readonly() -> Array[Variant]:
+	var interfaces: Array[Variant] = []
+	if not is_tray_interaction_available(_tray_state):
+		return interfaces
+	if _tray_state != null:
 		interfaces.append(_tray_state)
 	return interfaces
 
@@ -238,6 +246,16 @@ func _clear_item_interaction_cells() -> void:
 		return
 	var empty_cells: Array[Vector2i] = []
 	_tray_state.set_interaction_cells(empty_cells)
+
+
+func _sync_tray_interaction_cells() -> void:
+	if _tray_state == null or _definition == null:
+		return
+	var occupied_cells: Array[Vector2i] = []
+	for offset_y in range(_definition.footprint.y):
+		for offset_x in range(_definition.footprint.x):
+			occupied_cells.append(_anchor_cell + Vector2i(offset_x, offset_y))
+	_tray_state.set_interaction_cells(occupied_cells)
 
 
 func _clear_carried_item() -> void:

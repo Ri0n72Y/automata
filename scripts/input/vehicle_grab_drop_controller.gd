@@ -303,9 +303,7 @@ func _collect_item_interaction_interfaces() -> Array[Variant]:
 			var actor := vehicle_node as VehicleActorScript
 			if actor == null or actor.runtime_state == null:
 				continue
-			for interaction_interface in actor.runtime_state.get_item_interaction_interfaces(
-				actor.get_occupied_cells()
-			):
+			for interaction_interface in actor.runtime_state.get_item_interaction_interfaces_readonly():
 				if interaction_interface != null and not interfaces.has(interaction_interface):
 					interfaces.append(interaction_interface)
 	return interfaces
