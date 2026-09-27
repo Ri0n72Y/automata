@@ -146,7 +146,6 @@ func _test_vehicle_pose_projection(observable: ObservableStateScript, arm) -> vo
 	pose_events.clear()
 	turning_events.clear()
 	arm.runtime_state.anchor_cell = Vector2i(4, 4)
-	arm.move_completed.emit(Vector2i(4, 4))
 	test.expect_equal(
 		observable.get_vehicle_anchor_cell(VehicleManagerScript.ARM_VEHICLE_ID),
 		Vector2i(4, 4),
@@ -155,7 +154,7 @@ func _test_vehicle_pose_projection(observable: ObservableStateScript, arm) -> vo
 	test.expect_equal(
 		pose_events,
 		[VehicleManagerScript.ARM_VEHICLE_ID],
-		"Move completion should publish one pose change."
+		"Each discrete anchor-cell change should publish one pose change immediately."
 	)
 
 	arm.turn_started.emit(1)
@@ -180,7 +179,7 @@ func _test_vehicle_pose_projection(observable: ObservableStateScript, arm) -> vo
 			VehicleManagerScript.ARM_VEHICLE_ID,
 			VehicleManagerScript.ARM_VEHICLE_ID,
 		],
-		"Turn completion should publish the second pose change."
+		"Facing changes should publish the second pose change independently of preview/controller events."
 	)
 
 

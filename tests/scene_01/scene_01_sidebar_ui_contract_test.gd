@@ -25,30 +25,46 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 
-	var hud := scene.get_node("HUDRoot")
-	var sidebar := hud.get_node("%SidebarPanel") as Control
-	var scroll := hud.get_node("%SidebarScroll") as ScrollContainer
-	var content := hud.get_node("%Sidebar") as VBoxContainer
-	var mission := hud.get_node("%MissionSection") as Control
-	var vehicle := hud.get_node("%VehicleSection") as Control
-	var status := hud.get_node("%StatusSection") as Control
-	var status_card := hud.get_node("%StatusCard") as Control
-	var status_collapse := hud.get_node("%StatusCollapseButton") as Button
-	var pointer := hud.get_node("%PointerSection") as Control
-	var pointer_label := hud.get_node("%PointerLabel") as Label
-	var feedback := hud.get_node("%FeedbackLabel") as Label
-	var tutorial := hud.get_node("%TutorialSection") as Control
-	var tutorial_body := hud.get_node("%TutorialBody") as Control
-	var guide := hud.get_node("%GuideSection") as Control
-	var tutorial_owner := scene.get_node("SceneRoot/Scene01Tutorial")
+	var hud := scene.get_node_or_null("HUDRoot")
+	var sidebar := hud.get_node_or_null("%SidebarPanel") as Control if hud != null else null
+	var scroll := hud.get_node_or_null("%SidebarScroll") as ScrollContainer if hud != null else null
+	var content := hud.get_node_or_null("%Sidebar") as VBoxContainer if hud != null else null
+	var mission := hud.get_node_or_null("%MissionSection") as Control if hud != null else null
+	var vehicle := hud.get_node_or_null("%VehicleSection") as Control if hud != null else null
+	var status := hud.get_node_or_null("%StatusSection") as Control if hud != null else null
+	var status_card := hud.get_node_or_null("%StatusCard") as Control if hud != null else null
+	var status_collapse := hud.get_node_or_null("%StatusCollapseButton") as Button if hud != null else null
+	var pointer := hud.get_node_or_null("%PointerSection") as Control if hud != null else null
+	var pointer_label := hud.get_node_or_null("%PointerLabel") as Label if hud != null else null
+	var feedback := hud.get_node_or_null("%FeedbackLabel") as Label if hud != null else null
+	var tutorial := hud.get_node_or_null("%TutorialSection") as Control if hud != null else null
+	var tutorial_body := hud.get_node_or_null("%TutorialBody") as Control if hud != null else null
+	var guide := hud.get_node_or_null("%GuideSection") as Control if hud != null else null
+	var tutorial_owner := scene.get_node_or_null("SceneRoot/Scene01Tutorial")
 
-	_expect_true(
-		sidebar != null and scroll != null and content != null
-		and mission != null and vehicle != null and status != null
-		and pointer != null and tutorial != null and guide != null,
-		"Sidebar should expose mission, vehicle, status, pointer, and learning sections."
+	var dependencies_ready := (
+		hud != null
+		and sidebar != null
+		and scroll != null
+		and content != null
+		and mission != null
+		and vehicle != null
+		and status != null
+		and status_card != null
+		and status_collapse != null
+		and pointer != null
+		and pointer_label != null
+		and feedback != null
+		and tutorial != null
+		and tutorial_body != null
+		and guide != null
+		and tutorial_owner != null
 	)
-	if sidebar == null or scroll == null or status == null or status_card == null or tutorial == null:
+	_expect_true(
+		dependencies_ready,
+		"Sidebar contract dependencies should resolve through stable unique names."
+	)
+	if not dependencies_ready:
 		await _cleanup(scene, viewport)
 		return
 
@@ -66,6 +82,7 @@ func _run() -> void:
 	_expect_true(pointer_label != null, "Pointer coordinates should be lightweight player-facing state.")
 	_expect_true(scene.get_node_or_null("DebugUIRoot/RootControl/Panel/Margin/VBox/CoordinatesRow") == null, "Pointer coordinates should not return to Debug.")
 
+	_expect_true(scroll.theme != null, "Sidebar scroll styling should be assigned statically by the scene resource.")
 	_expect_equal(scroll.horizontal_scroll_mode, ScrollContainer.SCROLL_MODE_DISABLED, "Sidebar should never scroll horizontally.")
 	_expect_equal(scroll.vertical_scroll_mode, ScrollContainer.SCROLL_MODE_AUTO, "Sidebar should scroll vertically only when required.")
 	var vscroll := scroll.get_v_scroll_bar()

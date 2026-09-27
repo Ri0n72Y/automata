@@ -25,22 +25,38 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 
-	var hud := scene.get_node("HUDRoot")
-	var program_ui := scene.get_node("ProgramUIRoot")
-	var lifecycle_ui := scene.get_node("LifecycleUIRoot")
-	var sidebar := hud.get_node("%SidebarPanel") as Control
-	var program_panel := program_ui.get_node("RootControl/ProgramPanel") as Control
-	var lifecycle_panel := lifecycle_ui.get_node("%Panel") as Control
-	var debug_panel := scene.get_node("DebugUIRoot/RootControl/Panel") as Control
-	var roots := [
-		scene.get_node("HUDRoot/RootControl") as Control,
-		scene.get_node("ProgramUIRoot/RootControl") as Control,
-		scene.get_node("LifecycleUIRoot/RootControl") as Control,
-		scene.get_node("DebugUIRoot/RootControl") as Control,
-	]
+	var hud := scene.get_node_or_null("HUDRoot")
+	var program_ui := scene.get_node_or_null("ProgramUIRoot")
+	var lifecycle_ui := scene.get_node_or_null("LifecycleUIRoot")
+	var sidebar := hud.get_node_or_null("%SidebarPanel") as Control if hud != null else null
+	var program_panel := program_ui.get_node_or_null("RootControl/ProgramPanel") as Control if program_ui != null else null
+	var lifecycle_panel := lifecycle_ui.get_node_or_null("%Panel") as Control if lifecycle_ui != null else null
+	var debug_panel := scene.get_node_or_null("DebugUIRoot/RootControl/Panel") as Control
+	var hud_root := scene.get_node_or_null("HUDRoot/RootControl") as Control
+	var program_root := scene.get_node_or_null("ProgramUIRoot/RootControl") as Control
+	var lifecycle_root := scene.get_node_or_null("LifecycleUIRoot/RootControl") as Control
+	var debug_root := scene.get_node_or_null("DebugUIRoot/RootControl") as Control
 
-	for ui_root in roots:
-		_expect_true(ui_root != null and ui_root.theme != null, "Every visible Scene 01 UI surface should use the shared explicit theme.")
+	var dependencies_ready := (
+		hud != null
+		and program_ui != null
+		and lifecycle_ui != null
+		and sidebar != null
+		and program_panel != null
+		and lifecycle_panel != null
+		and debug_panel != null
+		and hud_root != null
+		and program_root != null
+		and lifecycle_root != null
+		and debug_root != null
+	)
+	_expect_true(dependencies_ready, "Cross-rail UI contract dependencies should resolve before layout assertions.")
+	if not dependencies_ready:
+		await _cleanup(scene, viewport)
+		return
+
+	for ui_root in [hud_root, program_root, lifecycle_root, debug_root]:
+		_expect_true(ui_root.theme != null, "Every visible Scene 01 UI surface should use the shared explicit theme.")
 
 	program_ui.call("set_workspace_collapsed", false)
 

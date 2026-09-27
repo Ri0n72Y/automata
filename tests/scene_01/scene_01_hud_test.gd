@@ -135,6 +135,14 @@ func _run() -> void:
 		"HUD should show selected vehicle display name."
 	)
 	test.expect_equal(position_value.text, "1, 3", "HUD should project the selected vehicle position.")
+	arm.runtime_state.anchor_cell = Vector2i(2, 3)
+	test.expect_equal(
+		position_value.text,
+		"2, 3",
+		"HUD position should update at each discrete runtime anchor instead of waiting for MoveTo completion."
+	)
+	arm.runtime_state.anchor_cell = Vector2i(1, 3)
+	test.expect_equal(position_value.text, "1, 3", "HUD position should follow the owner back to the fixture anchor.")
 	test.expect_equal(facing_value.text, "西", "HUD should project the selected vehicle facing.")
 	test.expect_equal(move_value.text, "可用", "Waiting movable vehicle should expose Move as available.")
 	test.expect_equal(rotate_value.text, "可用", "Waiting rotatable vehicle should expose Rotate as available.")

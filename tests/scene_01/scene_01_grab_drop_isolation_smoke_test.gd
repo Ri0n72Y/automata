@@ -5,6 +5,7 @@ const VEHICLE_MANAGER_SCRIPT := preload("res://scripts/scene_01/scene_01_vehicle
 const VEHICLE_RUNTIME_STATE_SCRIPT := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 const MOVE_COMMAND_SCRIPT := preload("res://scripts/vehicles/move_command.gd")
 const STANDARD_BLOCK_SCRIPT := preload("res://scripts/objects/standard_block.gd")
+const AVAILABILITY_SCRIPT := preload("res://scripts/input/vehicle_command_availability.gd")
 
 var failures: int = 0
 
@@ -60,6 +61,7 @@ func _run() -> void:
 	_test_static_scene_resources(first_manager, second_manager, first_grab_drop, second_grab_drop)
 	_test_ground_policy_and_instance_isolation(first_scene, second_scene, first_manager, second_manager)
 	_test_moving_tray_is_not_interactable(first_grab_drop, first_selection, first_vehicle_manager)
+	_test_availability_is_independent_from_preview(first_grab_drop, first_selection, first_vehicle_manager)
 	_test_feedback_is_instance_local(first_grab_drop, first_selection, first_vehicle_manager, first_status, second_status)
 
 	await _finish_scenes(first_scene, second_scene)
@@ -180,6 +182,27 @@ func _test_moving_tray_is_not_interactable(controller, selection, vehicle_manage
 		transport.get_occupied_cells()
 	)
 	_expect_true(blocked_interfaces.has(transport.runtime_state.tray_state), "Blocked stationary transport should expose tray again.")
+
+
+func _test_availability_is_independent_from_preview(controller, selection, vehicle_manager) -> void:
+	var arm = vehicle_manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.ARM_VEHICLE_ID)
+	if arm == null or arm.runtime_state == null:
+		return
+	arm.reset_actor()
+	arm.runtime_state.anchor_cell = Vector2i(1, 3)
+	arm.runtime_state.facing = VEHICLE_RUNTIME_STATE_SCRIPT.Facing.WEST
+	arm.sync_from_state()
+	_expect_true(selection.select_vehicle(arm), "Availability fixture should select the arm.")
+	controller.call("_hide_interaction_preview")
+	_expect_false(
+		controller.is_interaction_preview_valid(),
+		"Fixture should prove the visual preview is hidden before availability is read."
+	)
+	_expect_equal(
+		controller.get_selected_grab_drop_availability(),
+		AVAILABILITY_SCRIPT.AVAILABLE,
+		"GrabDrop availability should derive from command target truth, not preview visibility."
+	)
 
 
 func _test_feedback_is_instance_local(controller, selection, vehicle_manager, first_status: Label, second_status: Label) -> void:

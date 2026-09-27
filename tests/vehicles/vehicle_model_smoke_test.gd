@@ -12,6 +12,7 @@ func _init() -> void:
 	_test_arm_vehicle_definition_and_runtime()
 	_test_transport_vehicle_definition_and_runtime()
 	_test_runtime_reset()
+	_test_runtime_pose_signals()
 	_test_unconfigured_definition_is_rejected()
 	_test_actor_definition_mismatch_is_rejected()
 
@@ -102,6 +103,39 @@ func _test_runtime_reset() -> void:
 	_expect_equal(runtime.motion_state, VEHICLE_RUNTIME_STATE_SCRIPT.MotionState.WAITING, "Reset should restore Waiting state.")
 	_expect_false(runtime.arm_has_item, "Reset should clear carried items.")
 	_expect_false(block.is_claimed(), "Reset should release carried block ownership.")
+
+
+func _test_runtime_pose_signals() -> void:
+	var definition: VehicleDefinition = _create_arm_definition()
+	if definition == null:
+		failures += 1
+		return
+	var runtime := VEHICLE_RUNTIME_STATE_SCRIPT.new()
+	if not runtime.configure(definition, Vector2i(2, 2), VEHICLE_RUNTIME_STATE_SCRIPT.Facing.NORTH):
+		failures += 1
+		return
+	var anchor_events: Array[Array] = []
+	var facing_events: Array[Array] = []
+	runtime.anchor_cell_changed.connect(
+		func(previous_cell: Vector2i, current_cell: Vector2i) -> void:
+			anchor_events.append([previous_cell, current_cell])
+	)
+	runtime.facing_changed.connect(
+		func(previous_facing: int, current_facing: int) -> void:
+			facing_events.append([previous_facing, current_facing])
+	)
+	runtime.anchor_cell = Vector2i(3, 2)
+	runtime.facing = VEHICLE_RUNTIME_STATE_SCRIPT.Facing.EAST
+	_expect_equal(
+		anchor_events,
+		[[Vector2i(2, 2), Vector2i(3, 2)]],
+		"Runtime owner should publish discrete anchor-cell changes once."
+	)
+	_expect_equal(
+		facing_events,
+		[[VEHICLE_RUNTIME_STATE_SCRIPT.Facing.NORTH, VEHICLE_RUNTIME_STATE_SCRIPT.Facing.EAST]],
+		"Runtime owner should publish facing changes once."
+	)
 
 
 func _test_unconfigured_definition_is_rejected() -> void:
