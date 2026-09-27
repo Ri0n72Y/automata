@@ -13,6 +13,7 @@ const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runti
 const GridSelectionControllerScript := preload("res://scripts/input/grid_selection_controller.gd")
 const VehicleSelectionControllerScript := preload("res://scripts/input/vehicle_selection_controller.gd")
 const Scene01VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
+const AvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
 
 const STOP_TASK_ACTION := &"vehicle_stop_task"
 const REJECTION_NO_VEHICLE := &"no_vehicle_selected"
@@ -20,16 +21,6 @@ const REJECTION_NO_MOVE_CAPABILITY := &"no_move_capability"
 const REJECTION_BUSY := &"vehicle_busy"
 const REJECTION_NO_PATH := &"no_path"
 const REJECTION_START_FAILED := &"start_failed"
-
-const AVAILABILITY_AVAILABLE := &"available"
-const AVAILABILITY_NO_VEHICLE := &"no_vehicle"
-const AVAILABILITY_NO_CAPABILITY := &"no_capability"
-const AVAILABILITY_UI_OPEN := &"ui_open"
-const AVAILABILITY_BUSY := &"busy"
-const AVAILABILITY_PLANNING := &"planning"
-const AVAILABILITY_MOVING := &"moving"
-const AVAILABILITY_BLOCKED := &"blocked"
-const AVAILABILITY_TARGETING := &"targeting"
 
 const MOTION_EPSILON := 0.000001
 
@@ -131,9 +122,9 @@ func get_selected_move_availability() -> StringName:
 	if (
 		grid_selection_controller != null
 		and grid_selection_controller.is_live_target_mode()
-		and (status == AVAILABILITY_AVAILABLE or status == AVAILABILITY_BLOCKED)
+		and (status == AvailabilityScript.AVAILABLE or status == AvailabilityScript.BLOCKED)
 	):
-		return AVAILABILITY_TARGETING
+		return AvailabilityScript.TARGETING
 	return status
 
 
@@ -378,29 +369,29 @@ func _can_show_prediction(vehicle: VehicleActorScript) -> bool:
 
 func _is_move_interaction_enabled(vehicle: VehicleActorScript) -> bool:
 	var status := _get_move_availability(vehicle)
-	return status == AVAILABILITY_AVAILABLE or status == AVAILABILITY_BLOCKED
+	return status == AvailabilityScript.AVAILABLE or status == AvailabilityScript.BLOCKED
 
 
 func _get_move_availability(vehicle: VehicleActorScript) -> StringName:
 	if vehicle == null:
-		return AVAILABILITY_NO_VEHICLE
+		return AvailabilityScript.NO_VEHICLE
 	if _vehicle_ui_open:
-		return AVAILABILITY_UI_OPEN
+		return AvailabilityScript.UI_OPEN
 	if not _vehicle_has_move_capability(vehicle):
-		return AVAILABILITY_NO_CAPABILITY
+		return AvailabilityScript.NO_CAPABILITY
 	if vehicle.runtime_state == null:
-		return AVAILABILITY_NO_CAPABILITY
+		return AvailabilityScript.NO_CAPABILITY
 	if vehicle.is_turning():
-		return AVAILABILITY_BUSY
+		return AvailabilityScript.BUSY
 	match vehicle.runtime_state.motion_state:
 		VehicleRuntimeStateScript.MotionState.PLANNING:
-			return AVAILABILITY_PLANNING
+			return AvailabilityScript.PLANNING
 		VehicleRuntimeStateScript.MotionState.MOVING:
-			return AVAILABILITY_MOVING
+			return AvailabilityScript.MOVING
 		VehicleRuntimeStateScript.MotionState.BLOCKED:
-			return AVAILABILITY_BLOCKED
+			return AvailabilityScript.BLOCKED
 		_:
-			return AVAILABILITY_AVAILABLE
+			return AvailabilityScript.AVAILABLE
 
 
 func _replace_observed_vehicle(vehicle: VehicleActorScript) -> void:

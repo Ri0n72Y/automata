@@ -9,10 +9,10 @@ const VehicleSelectionControllerScript := preload("res://scripts/input/vehicle_s
 const GridSelectionControllerScript := preload("res://scripts/input/grid_selection_controller.gd")
 const VehicleMoveControllerScript := preload("res://scripts/input/vehicle_move_controller.gd")
 const VehicleGrabDropControllerScript := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
+const AvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
 const MissionStateScript := preload("res://scripts/scene_01/scene_01_mission_state.gd")
 const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.gd")
 const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metrics.gd")
-const SIDEBAR_SCROLL_THEME: Theme = preload("res://scenes/scene_01/components/scene_01_sidebar_scroll_theme.tres")
 const CHEVRON_DOWN_ICON: Texture2D = preload("res://assets/ui/icons/chevron_down.svg")
 const CHEVRON_RIGHT_ICON: Texture2D = preload("res://assets/ui/icons/chevron_right.svg")
 
@@ -69,7 +69,6 @@ func _ready() -> void:
 	) as VehicleGrabDropControllerScript
 	_bind_signals()
 	status_collapse_button.pressed.connect(_on_status_collapse_pressed)
-	sidebar_scroll.get_v_scroll_bar().theme = SIDEBAR_SCROLL_THEME
 	set_status_collapsed(false)
 	sidebar_content.minimum_size_changed.connect(_queue_sidebar_layout)
 	get_viewport().size_changed.connect(_apply_sidebar_layout)
@@ -135,7 +134,6 @@ func _bind_signals() -> void:
 	_move_controller.move_rejected.connect(_on_move_rejected)
 	_move_controller.move_stopped.connect(_on_move_stopped)
 	_grab_drop_controller.grab_drop_completed.connect(_on_grab_drop_completed)
-	_grab_drop_controller.facing_changed.connect(_on_arm_facing_changed)
 	_scene_controller.lifecycle_state_changed.connect(_on_lifecycle_changed)
 	_scene_controller.lifecycle_reset_completed.connect(_on_reset_completed)
 
@@ -145,10 +143,6 @@ func _refresh() -> void:
 	var selected_id := _vehicle_selection.get_selected_vehicle_id()
 	var has_selection := selected_id != &""
 	selected_label.text = _selected_vehicle_name(selected_id)
-
-	var motion_state := -1
-	if observable_ready and has_selection:
-		motion_state = _observable.get_vehicle_state(selected_id)
 
 	if observable_ready:
 		var target_count := _scene_controller.get_mission_target_count()
@@ -172,8 +166,7 @@ func _refresh() -> void:
 		completion_panel.visible = false
 
 	_refresh_pointer_label()
-	_grab_drop_controller.refresh_interaction_preview()
-	_refresh_vehicle_status(selected_id, motion_state)
+	_refresh_vehicle_status(selected_id)
 
 
 func _refresh_pointer_label() -> void:
@@ -184,7 +177,7 @@ func _refresh_pointer_label() -> void:
 		pointer_label.text = "X —   Y —"
 
 
-func _refresh_vehicle_status(selected_id: StringName, _motion_state: int) -> void:
+func _refresh_vehicle_status(selected_id: StringName) -> void:
 	if selected_id == &"":
 		position_value_label.text = "—"
 		facing_value_label.text = "—"
@@ -236,28 +229,29 @@ func _refresh_vehicle_status(selected_id: StringName, _motion_state: int) -> voi
 
 func _availability_text(status: StringName) -> String:
 	match status:
-		&"available":
+		AvailabilityScript.AVAILABLE:
 			return "可用"
-		&"no_vehicle":
+		AvailabilityScript.NO_VEHICLE:
 			return "—"
-		&"no_capability", &"ui_open":
+		AvailabilityScript.NO_CAPABILITY, AvailabilityScript.UI_OPEN:
 			return "不可用"
-		&"planning":
+		AvailabilityScript.PLANNING:
 			return "规划中"
-		&"moving":
+		AvailabilityScript.MOVING:
 			return "移动中"
-		&"blocked":
+		AvailabilityScript.BLOCKED:
 			return "受阻"
-		&"targeting":
+		AvailabilityScript.TARGETING:
 			return "选点中"
-		&"rotating":
+		AvailabilityScript.ROTATING:
 			return "旋转中"
-		&"busy":
+		AvailabilityScript.BUSY:
 			return "忙碌"
-		&"no_target":
+		AvailabilityScript.NO_TARGET:
 			return "无目标"
 		_:
-			return "不可用"
+			push_warning("Unknown vehicle command availability: %s" % String(status))
+			return "未知"
 
 
 func _set_availability(label: Label, text: String) -> void:
@@ -309,10 +303,6 @@ func _on_hover_changed(_cell: Vector2i, _has_hover: bool) -> void:
 
 
 func _on_target_mode_changed(_active: bool) -> void:
-	_refresh()
-
-
-func _on_arm_facing_changed(_vehicle_id: StringName, _facing: int) -> void:
 	_refresh()
 
 

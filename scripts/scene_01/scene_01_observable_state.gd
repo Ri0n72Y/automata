@@ -59,17 +59,23 @@ func configure(
 	_transport_runtime.motion_state_changed.connect(
 		_on_vehicle_state_changed.bind(VehicleManagerScript.TRANSPORT_VEHICLE_ID)
 	)
-	arm.move_completed.connect(
-		_on_vehicle_move_completed.bind(VehicleManagerScript.ARM_VEHICLE_ID)
+	_arm_runtime.anchor_cell_changed.connect(
+		_on_vehicle_anchor_cell_changed.bind(VehicleManagerScript.ARM_VEHICLE_ID)
+	)
+	_transport_runtime.anchor_cell_changed.connect(
+		_on_vehicle_anchor_cell_changed.bind(VehicleManagerScript.TRANSPORT_VEHICLE_ID)
+	)
+	_arm_runtime.facing_changed.connect(
+		_on_vehicle_facing_changed.bind(VehicleManagerScript.ARM_VEHICLE_ID)
+	)
+	_transport_runtime.facing_changed.connect(
+		_on_vehicle_facing_changed.bind(VehicleManagerScript.TRANSPORT_VEHICLE_ID)
 	)
 	arm.turn_started.connect(
 		_on_vehicle_turn_started.bind(VehicleManagerScript.ARM_VEHICLE_ID)
 	)
 	arm.turn_completed.connect(
 		_on_vehicle_turn_completed.bind(VehicleManagerScript.ARM_VEHICLE_ID)
-	)
-	transport.move_completed.connect(
-		_on_vehicle_move_completed.bind(VehicleManagerScript.TRANSPORT_VEHICLE_ID)
 	)
 	transport.turn_started.connect(
 		_on_vehicle_turn_started.bind(VehicleManagerScript.TRANSPORT_VEHICLE_ID)
@@ -140,7 +146,19 @@ func _on_vehicle_state_changed(
 	vehicle_state_changed.emit(vehicle_id, previous_state, current_state)
 
 
-func _on_vehicle_move_completed(_target_anchor: Vector2i, vehicle_id: StringName) -> void:
+func _on_vehicle_anchor_cell_changed(
+	_previous_cell: Vector2i,
+	_current_cell: Vector2i,
+	vehicle_id: StringName
+) -> void:
+	vehicle_pose_changed.emit(vehicle_id)
+
+
+func _on_vehicle_facing_changed(
+	_previous_facing: int,
+	_current_facing: int,
+	vehicle_id: StringName
+) -> void:
 	vehicle_pose_changed.emit(vehicle_id)
 
 
@@ -150,7 +168,6 @@ func _on_vehicle_turn_started(_direction: int, vehicle_id: StringName) -> void:
 
 func _on_vehicle_turn_completed(_facing: int, vehicle_id: StringName) -> void:
 	vehicle_turning_changed.emit(vehicle_id, false)
-	vehicle_pose_changed.emit(vehicle_id)
 
 
 func _on_arm_has_item_changed(previous_value: bool, current_value: bool) -> void:

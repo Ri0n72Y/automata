@@ -2,6 +2,8 @@ class_name VehicleRuntimeState
 extends RefCounted
 
 signal motion_state_changed(previous_state: int, current_state: int)
+signal anchor_cell_changed(previous_cell: Vector2i, current_cell: Vector2i)
+signal facing_changed(previous_facing: int, current_facing: int)
 signal arm_has_item_changed(previous_value: bool, current_value: bool)
 
 const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
@@ -63,8 +65,28 @@ var motion_state: int:
 		_motion_state = value
 		motion_state_changed.emit(previous_state, _motion_state)
 
-var anchor_cell: Vector2i = Vector2i.ZERO
-var facing: int = Facing.NORTH
+var _anchor_cell: Vector2i = Vector2i.ZERO
+var _facing: int = Facing.NORTH
+
+var anchor_cell: Vector2i:
+	get:
+		return _anchor_cell
+	set(value):
+		if _anchor_cell == value:
+			return
+		var previous_cell := _anchor_cell
+		_anchor_cell = value
+		anchor_cell_changed.emit(previous_cell, _anchor_cell)
+
+var facing: int:
+	get:
+		return _facing
+	set(value):
+		if _facing == value:
+			return
+		var previous_facing := _facing
+		_facing = value
+		facing_changed.emit(previous_facing, _facing)
 
 var _initial_anchor_cell: Vector2i = Vector2i.ZERO
 var _initial_facing: int = Facing.NORTH

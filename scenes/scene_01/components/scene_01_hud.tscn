@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_hud.gd" id="1_hud"]
 [ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_tutorial_ui.gd" id="4_tutorial_ui"]
 [ext_resource type="Texture2D" path="res://assets/ui/icons/chevron_down.svg" id="5_chevron_down"]
 [ext_resource type="Texture2D" path="res://assets/ui/icons/chevron_right.svg" id="6_chevron_right"]
+[ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_sidebar_scroll_theme.tres" id="7_scroll_theme"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sidebar_shell"]
 bg_color = Color(0.975, 0.986, 0.996, 0.92)
@@ -101,6 +102,7 @@ theme_override_constants/margin_bottom = 8
 [node name="SidebarScroll" type="ScrollContainer" parent="RootControl/SidebarPanel/Margin"]
 unique_name_in_owner = true
 layout_mode = 2
+theme = ExtResource("7_scroll_theme")
 horizontal_scroll_mode = 0
 vertical_scroll_mode = 1
 
