@@ -123,6 +123,7 @@ func _bind_signals() -> void:
 	_observable.configured.connect(_refresh)
 	_observable.vehicle_state_changed.connect(_on_observable_changed)
 	_observable.vehicle_pose_changed.connect(_on_observable_changed)
+	_observable.vehicle_turning_changed.connect(_on_observable_changed)
 	_observable.arm_has_item_changed.connect(_on_observable_changed)
 	_observable.tray_count_changed.connect(_on_observable_changed)
 	_observable.standard_box_count_changed.connect(_on_observable_changed)
@@ -235,33 +236,26 @@ func _refresh_vehicle_status(selected_id: StringName, _motion_state: int) -> voi
 
 func _availability_text(status: StringName) -> String:
 	match status:
-		VehicleMoveControllerScript.AVAILABILITY_AVAILABLE,
-		VehicleGrabDropControllerScript.AVAILABILITY_AVAILABLE:
+		&"available":
 			return "可用"
-		VehicleMoveControllerScript.AVAILABILITY_NO_VEHICLE,
-		VehicleGrabDropControllerScript.AVAILABILITY_NO_VEHICLE:
+		&"no_vehicle":
 			return "—"
-		VehicleMoveControllerScript.AVAILABILITY_NO_CAPABILITY,
-		VehicleGrabDropControllerScript.AVAILABILITY_NO_CAPABILITY:
+		&"no_capability", &"ui_open":
 			return "不可用"
-		VehicleMoveControllerScript.AVAILABILITY_PLANNING:
+		&"planning":
 			return "规划中"
-		VehicleMoveControllerScript.AVAILABILITY_MOVING:
+		&"moving":
 			return "移动中"
-		VehicleMoveControllerScript.AVAILABILITY_BLOCKED:
+		&"blocked":
 			return "受阻"
-		VehicleMoveControllerScript.AVAILABILITY_TARGETING,
-		VehicleGrabDropControllerScript.AVAILABILITY_TARGETING:
+		&"targeting":
 			return "选点中"
-		VehicleGrabDropControllerScript.AVAILABILITY_ROTATING:
+		&"rotating":
 			return "旋转中"
-		VehicleMoveControllerScript.AVAILABILITY_BUSY,
-		VehicleGrabDropControllerScript.AVAILABILITY_BUSY:
+		&"busy":
 			return "忙碌"
-		VehicleGrabDropControllerScript.AVAILABILITY_NO_TARGET:
+		&"no_target":
 			return "无目标"
-		VehicleMoveControllerScript.AVAILABILITY_UI_OPEN:
-			return "不可用"
 		_:
 			return "不可用"
 

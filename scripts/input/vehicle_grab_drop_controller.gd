@@ -145,21 +145,10 @@ func rotate_selected_vehicle(direction: int) -> bool:
 
 
 func get_selected_rotate_availability() -> StringName:
-	var vehicle := _get_selected_vehicle()
-	if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
-		return AVAILABILITY_NO_VEHICLE
-	if not vehicle.definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_ROTATE):
-		return AVAILABILITY_NO_CAPABILITY
-	if _is_move_target_mode_active():
+	var status := _get_rotate_availability(_get_selected_vehicle())
+	if status == AVAILABILITY_AVAILABLE and _is_move_target_mode_active():
 		return AVAILABILITY_TARGETING
-	if vehicle.is_turning():
-		return AVAILABILITY_ROTATING
-	if (
-		vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
-		or vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING
-	):
-		return AVAILABILITY_BUSY
-	return AVAILABILITY_AVAILABLE
+	return status
 
 
 func get_selected_grab_drop_availability() -> StringName:

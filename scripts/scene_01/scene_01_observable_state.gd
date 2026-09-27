@@ -4,6 +4,7 @@ extends Node
 signal configured()
 signal vehicle_state_changed(vehicle_id: StringName, previous_state: int, current_state: int)
 signal vehicle_pose_changed(vehicle_id: StringName)
+signal vehicle_turning_changed(vehicle_id: StringName, is_turning: bool)
 signal arm_has_item_changed(previous_value: bool, current_value: bool)
 signal tray_count_changed(previous_count: int, current_count: int)
 signal standard_box_count_changed(previous_count: int, current_count: int)
@@ -61,11 +62,17 @@ func configure(
 	arm.move_completed.connect(
 		_on_vehicle_move_completed.bind(VehicleManagerScript.ARM_VEHICLE_ID)
 	)
+	arm.turn_started.connect(
+		_on_vehicle_turn_started.bind(VehicleManagerScript.ARM_VEHICLE_ID)
+	)
 	arm.turn_completed.connect(
 		_on_vehicle_turn_completed.bind(VehicleManagerScript.ARM_VEHICLE_ID)
 	)
 	transport.move_completed.connect(
 		_on_vehicle_move_completed.bind(VehicleManagerScript.TRANSPORT_VEHICLE_ID)
+	)
+	transport.turn_started.connect(
+		_on_vehicle_turn_started.bind(VehicleManagerScript.TRANSPORT_VEHICLE_ID)
 	)
 	transport.turn_completed.connect(
 		_on_vehicle_turn_completed.bind(VehicleManagerScript.TRANSPORT_VEHICLE_ID)
@@ -137,7 +144,12 @@ func _on_vehicle_move_completed(_target_anchor: Vector2i, vehicle_id: StringName
 	vehicle_pose_changed.emit(vehicle_id)
 
 
+func _on_vehicle_turn_started(_direction: int, vehicle_id: StringName) -> void:
+	vehicle_turning_changed.emit(vehicle_id, true)
+
+
 func _on_vehicle_turn_completed(_facing: int, vehicle_id: StringName) -> void:
+	vehicle_turning_changed.emit(vehicle_id, false)
 	vehicle_pose_changed.emit(vehicle_id)
 
 
