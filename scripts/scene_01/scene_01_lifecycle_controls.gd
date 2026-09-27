@@ -79,11 +79,8 @@ func _refresh_time() -> void:
 		time_label.text = "00:00.0"
 		return
 	var elapsed := 0.0
-	if controller.has_method("is_mission_completed") and bool(controller.call("is_mission_completed")):
-		if controller.has_method("get_mission_elapsed_time"):
-			elapsed = float(controller.call("get_mission_elapsed_time"))
-	elif "timer" in controller:
-		elapsed = float(controller.get("timer"))
+	if controller.has_method("get_mission_elapsed_time"):
+		elapsed = float(controller.call("get_mission_elapsed_time"))
 	time_label.text = _format_time(elapsed)
 
 

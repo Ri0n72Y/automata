@@ -3,6 +3,7 @@ extends Node
 
 signal configured()
 signal vehicle_state_changed(vehicle_id: StringName, previous_state: int, current_state: int)
+signal vehicle_pose_changed(vehicle_id: StringName)
 signal arm_has_item_changed(previous_value: bool, current_value: bool)
 signal tray_count_changed(previous_count: int, current_count: int)
 signal standard_box_count_changed(previous_count: int, current_count: int)
@@ -57,6 +58,18 @@ func configure(
 	_transport_runtime.motion_state_changed.connect(
 		_on_vehicle_state_changed.bind(VehicleManagerScript.TRANSPORT_VEHICLE_ID)
 	)
+	arm.move_completed.connect(
+		_on_vehicle_move_completed.bind(VehicleManagerScript.ARM_VEHICLE_ID)
+	)
+	arm.turn_completed.connect(
+		_on_vehicle_turn_completed.bind(VehicleManagerScript.ARM_VEHICLE_ID)
+	)
+	transport.move_completed.connect(
+		_on_vehicle_move_completed.bind(VehicleManagerScript.TRANSPORT_VEHICLE_ID)
+	)
+	transport.turn_completed.connect(
+		_on_vehicle_turn_completed.bind(VehicleManagerScript.TRANSPORT_VEHICLE_ID)
+	)
 	_arm_runtime.arm_has_item_changed.connect(_on_arm_has_item_changed)
 	_tray_state.count_changed.connect(_on_tray_count_changed)
 	_standard_box.count_changed.connect(_on_standard_box_count_changed)
@@ -72,6 +85,16 @@ func is_configured() -> bool:
 func get_vehicle_state(vehicle_id: StringName) -> int:
 	var runtime := _get_vehicle_runtime(vehicle_id)
 	return runtime.motion_state if runtime != null else -1
+
+
+func get_vehicle_anchor_cell(vehicle_id: StringName) -> Vector2i:
+	var runtime := _get_vehicle_runtime(vehicle_id)
+	return runtime.anchor_cell if runtime != null else Vector2i(-1, -1)
+
+
+func get_vehicle_facing(vehicle_id: StringName) -> int:
+	var runtime := _get_vehicle_runtime(vehicle_id)
+	return runtime.facing if runtime != null else -1
 
 
 func get_arm_has_item() -> bool:
@@ -108,6 +131,14 @@ func _on_vehicle_state_changed(
 	vehicle_id: StringName
 ) -> void:
 	vehicle_state_changed.emit(vehicle_id, previous_state, current_state)
+
+
+func _on_vehicle_move_completed(_target_anchor: Vector2i, vehicle_id: StringName) -> void:
+	vehicle_pose_changed.emit(vehicle_id)
+
+
+func _on_vehicle_turn_completed(_facing: int, vehicle_id: StringName) -> void:
+	vehicle_pose_changed.emit(vehicle_id)
 
 
 func _on_arm_has_item_changed(previous_value: bool, current_value: bool) -> void:

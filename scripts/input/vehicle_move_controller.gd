@@ -20,6 +20,17 @@ const REJECTION_NO_MOVE_CAPABILITY := &"no_move_capability"
 const REJECTION_BUSY := &"vehicle_busy"
 const REJECTION_NO_PATH := &"no_path"
 const REJECTION_START_FAILED := &"start_failed"
+
+const AVAILABILITY_AVAILABLE := &"available"
+const AVAILABILITY_NO_VEHICLE := &"no_vehicle"
+const AVAILABILITY_NO_CAPABILITY := &"no_capability"
+const AVAILABILITY_UI_OPEN := &"ui_open"
+const AVAILABILITY_BUSY := &"busy"
+const AVAILABILITY_PLANNING := &"planning"
+const AVAILABILITY_MOVING := &"moving"
+const AVAILABILITY_BLOCKED := &"blocked"
+const AVAILABILITY_TARGETING := &"targeting"
+
 const MOTION_EPSILON := 0.000001
 
 @export_range(0.01, 0.2, 0.01) var preview_height: float = 0.05
@@ -113,6 +124,17 @@ func set_vehicle_ui_open(is_open: bool) -> void:
 
 func is_vehicle_ui_open() -> bool:
 	return _vehicle_ui_open
+
+
+func get_selected_move_availability() -> StringName:
+	var status := _get_move_availability(_get_selected_vehicle())
+	if (
+		grid_selection_controller != null
+		and grid_selection_controller.is_live_target_mode()
+		and (status == AVAILABILITY_AVAILABLE or status == AVAILABILITY_BLOCKED)
+	):
+		return AVAILABILITY_TARGETING
+	return status
 
 
 func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
@@ -339,15 +361,7 @@ func _sync_live_target_mode() -> void:
 		return
 	var vehicle := _get_selected_vehicle()
 	_replace_observed_vehicle(vehicle)
-	var interaction_enabled := (
-		vehicle != null
-		and not _vehicle_ui_open
-		and _vehicle_has_move_capability(vehicle)
-		and vehicle.runtime_state != null
-		and not vehicle.is_turning()
-		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
-		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
-	)
+	var interaction_enabled := _is_move_interaction_enabled(vehicle)
 	var footprint := Vector2i.ONE
 	if vehicle != null and vehicle.definition != null:
 		footprint = vehicle.definition.footprint
@@ -359,14 +373,34 @@ func _sync_live_target_mode() -> void:
 
 
 func _can_show_prediction(vehicle: VehicleActorScript) -> bool:
-	if vehicle == null or _vehicle_ui_open or not _vehicle_has_move_capability(vehicle):
-		return false
-	if vehicle.definition == null or vehicle.runtime_state == null or vehicle.is_turning():
-		return false
-	return (
-		vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
-		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
-	)
+	return _is_move_interaction_enabled(vehicle)
+
+
+func _is_move_interaction_enabled(vehicle: VehicleActorScript) -> bool:
+	var status := _get_move_availability(vehicle)
+	return status == AVAILABILITY_AVAILABLE or status == AVAILABILITY_BLOCKED
+
+
+func _get_move_availability(vehicle: VehicleActorScript) -> StringName:
+	if vehicle == null:
+		return AVAILABILITY_NO_VEHICLE
+	if _vehicle_ui_open:
+		return AVAILABILITY_UI_OPEN
+	if not _vehicle_has_move_capability(vehicle):
+		return AVAILABILITY_NO_CAPABILITY
+	if vehicle.runtime_state == null:
+		return AVAILABILITY_NO_CAPABILITY
+	if vehicle.is_turning():
+		return AVAILABILITY_BUSY
+	match vehicle.runtime_state.motion_state:
+		VehicleRuntimeStateScript.MotionState.PLANNING:
+			return AVAILABILITY_PLANNING
+		VehicleRuntimeStateScript.MotionState.MOVING:
+			return AVAILABILITY_MOVING
+		VehicleRuntimeStateScript.MotionState.BLOCKED:
+			return AVAILABILITY_BLOCKED
+		_:
+			return AVAILABILITY_AVAILABLE
 
 
 func _replace_observed_vehicle(vehicle: VehicleActorScript) -> void:

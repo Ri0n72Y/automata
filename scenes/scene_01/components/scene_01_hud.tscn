@@ -111,6 +111,7 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
 [node name="MissionSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 2
 
@@ -176,6 +177,7 @@ theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
 
 [node name="VehicleSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 2
 
@@ -362,7 +364,7 @@ layout_mode = 2
 text = "—"
 theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
 
-[node name="FeedbackLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection"]
+[node name="FeedbackLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -372,6 +374,7 @@ text_overrun_behavior = 3
 theme_override_colors/font_color = Color(0.29, 0.36, 0.44, 1)
 
 [node name="PointerSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 2
 

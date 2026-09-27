@@ -5,8 +5,6 @@ const ObservableStateScript := preload("res://scripts/scene_01/scene_01_observab
 const MissionControllerScript := preload("res://scripts/scene_01/scene_01_mission_controller.gd")
 const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
-const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
-const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
 const VehicleSelectionControllerScript := preload("res://scripts/input/vehicle_selection_controller.gd")
 const GridSelectionControllerScript := preload("res://scripts/input/grid_selection_controller.gd")
 const VehicleMoveControllerScript := preload("res://scripts/input/vehicle_move_controller.gd")
@@ -34,6 +32,7 @@ const CHEVRON_RIGHT_ICON: Texture2D = preload("res://assets/ui/icons/chevron_rig
 @onready var completion_panel: PanelContainer = %CompletionPanel
 @onready var completion_summary_label: Label = %CompletionSummaryLabel
 @onready var sidebar_panel: PanelContainer = %SidebarPanel
+@onready var sidebar_margin: MarginContainer = $RootControl/SidebarPanel/Margin
 @onready var sidebar_scroll: ScrollContainer = %SidebarScroll
 @onready var sidebar_content: VBoxContainer = %Sidebar
 @onready var status_card: PanelContainer = %StatusCard
@@ -88,7 +87,8 @@ func _apply_sidebar_layout() -> void:
 	)
 	var content_height := (
 		sidebar_content.get_combined_minimum_size().y
-		+ LayoutMetrics.LEFT_SIDEBAR_VERTICAL_PADDING
+		+ sidebar_margin.get_theme_constant("margin_top")
+		+ sidebar_margin.get_theme_constant("margin_bottom")
 	)
 	var max_height := LayoutMetrics.left_sidebar_max_height(float(viewport_size.y))
 	var target_height := minf(content_height, max_height)
@@ -122,6 +122,7 @@ func _on_status_collapse_pressed() -> void:
 func _bind_signals() -> void:
 	_observable.configured.connect(_refresh)
 	_observable.vehicle_state_changed.connect(_on_observable_changed)
+	_observable.vehicle_pose_changed.connect(_on_observable_changed)
 	_observable.arm_has_item_changed.connect(_on_observable_changed)
 	_observable.tray_count_changed.connect(_on_observable_changed)
 	_observable.standard_box_count_changed.connect(_on_observable_changed)
@@ -134,7 +135,6 @@ func _bind_signals() -> void:
 	_move_controller.move_stopped.connect(_on_move_stopped)
 	_grab_drop_controller.grab_drop_completed.connect(_on_grab_drop_completed)
 	_grab_drop_controller.facing_changed.connect(_on_arm_facing_changed)
-	_bind_vehicle_turn_signals(_vehicle_selection.get_selected_vehicle_id())
 	_scene_controller.lifecycle_state_changed.connect(_on_lifecycle_changed)
 	_scene_controller.lifecycle_reset_completed.connect(_on_reset_completed)
 
@@ -183,7 +183,7 @@ func _refresh_pointer_label() -> void:
 		pointer_label.text = "X —   Y —"
 
 
-func _refresh_vehicle_status(selected_id: StringName, motion_state: int) -> void:
+func _refresh_vehicle_status(selected_id: StringName, _motion_state: int) -> void:
 	if selected_id == &"":
 		position_value_label.text = "—"
 		facing_value_label.text = "—"
@@ -194,85 +194,76 @@ func _refresh_vehicle_status(selected_id: StringName, motion_state: int) -> void
 		_set_availability(grab_value_label, "—")
 		return
 
-	var vehicle := _vehicle_manager.get_vehicle_by_id(selected_id) as VehicleActorScript
-	if vehicle == null or vehicle.runtime_state == null or vehicle.definition == null:
-		position_value_label.text = "—"
-		facing_value_label.text = "—"
-		cargo_name_label.text = "载荷"
-		cargo_value_label.text = "—"
-		_set_availability(move_value_label, "—")
-		_set_availability(rotate_value_label, "—")
-		_set_availability(grab_value_label, "—")
+	var anchor := _observable.get_vehicle_anchor_cell(selected_id)
+	position_value_label.text = (
+		"—"
+		if anchor == Vector2i(-1, -1)
+		else "%d, %d" % [anchor.x, anchor.y]
+	)
+	facing_value_label.text = _facing_text(_observable.get_vehicle_facing(selected_id))
+
+	match selected_id:
+		VehicleManagerScript.ARM_VEHICLE_ID:
+			cargo_name_label.text = "手持"
+			cargo_value_label.text = "方块" if _observable.get_arm_has_item() else "空"
+		VehicleManagerScript.TRANSPORT_VEHICLE_ID:
+			cargo_name_label.text = "托盘"
+			cargo_value_label.text = str(_observable.get_tray_count())
+		_:
+			cargo_name_label.text = "载荷"
+			cargo_value_label.text = "—"
+
+	if _scene_controller.is_scene_paused():
+		_set_availability(move_value_label, "暂停")
+		_set_availability(rotate_value_label, "暂停")
+		_set_availability(grab_value_label, "暂停")
 		return
 
-	var runtime = vehicle.runtime_state
-	position_value_label.text = "%d, %d" % [runtime.anchor_cell.x, runtime.anchor_cell.y]
-	facing_value_label.text = _facing_text(runtime.facing)
-
-	if vehicle.definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_GRAB):
-		cargo_name_label.text = "手持"
-		cargo_value_label.text = "方块" if runtime.arm_has_item else "空"
-	elif vehicle.definition.has_capability(VehicleDefinitionScript.CAPABILITY_HAS_TRAY):
-		cargo_name_label.text = "托盘"
-		cargo_value_label.text = str(runtime.tray_count)
-	else:
-		cargo_name_label.text = "载荷"
-		cargo_value_label.text = "—"
-
-	var statuses := _availability_statuses(vehicle, motion_state)
-	_set_availability(move_value_label, String(statuses["move"]))
-	_set_availability(rotate_value_label, String(statuses["rotate"]))
-	_set_availability(grab_value_label, String(statuses["grab"]))
-
-
-func _availability_statuses(vehicle: VehicleActorScript, motion_state: int) -> Dictionary:
-	if vehicle == null or vehicle.definition == null:
-		return {"move": "—", "rotate": "—", "grab": "—"}
-	if _scene_controller.is_scene_paused():
-		return {"move": "暂停", "rotate": "暂停", "grab": "暂停"}
-
-	var definition = vehicle.definition
-	var turning := vehicle.is_turning()
-	var busy := (
-		motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
-		or motion_state == VehicleRuntimeStateScript.MotionState.MOVING
+	_set_availability(
+		move_value_label,
+		_availability_text(_move_controller.get_selected_move_availability())
+	)
+	_set_availability(
+		rotate_value_label,
+		_availability_text(_grab_drop_controller.get_selected_rotate_availability())
+	)
+	_set_availability(
+		grab_value_label,
+		_availability_text(_grab_drop_controller.get_selected_grab_drop_availability())
 	)
 
-	var move_text := "可用"
-	if not definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_MOVE):
-		move_text = "不可用"
-	elif motion_state == VehicleRuntimeStateScript.MotionState.PLANNING:
-		move_text = "规划中"
-	elif motion_state == VehicleRuntimeStateScript.MotionState.MOVING:
-		move_text = "移动中"
-	elif motion_state == VehicleRuntimeStateScript.MotionState.BLOCKED:
-		move_text = "受阻"
-	elif turning:
-		move_text = "忙碌"
-	elif _grid_selection.is_live_target_mode():
-		move_text = "选点中"
 
-	var rotate_text := "可用"
-	if not definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_ROTATE):
-		rotate_text = "不可用"
-	elif turning:
-		rotate_text = "旋转中"
-	elif busy:
-		rotate_text = "忙碌"
-	elif _grid_selection.is_live_target_mode():
-		rotate_text = "选点中"
-
-	var grab_text := "无目标"
-	if not definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_GRAB):
-		grab_text = "不可用"
-	elif turning or busy:
-		grab_text = "忙碌"
-	elif _grid_selection.is_live_target_mode():
-		grab_text = "选点中"
-	elif _grab_drop_controller.is_interaction_preview_valid():
-		grab_text = "可用"
-
-	return {"move": move_text, "rotate": rotate_text, "grab": grab_text}
+func _availability_text(status: StringName) -> String:
+	match status:
+		VehicleMoveControllerScript.AVAILABILITY_AVAILABLE,
+		VehicleGrabDropControllerScript.AVAILABILITY_AVAILABLE:
+			return "可用"
+		VehicleMoveControllerScript.AVAILABILITY_NO_VEHICLE,
+		VehicleGrabDropControllerScript.AVAILABILITY_NO_VEHICLE:
+			return "—"
+		VehicleMoveControllerScript.AVAILABILITY_NO_CAPABILITY,
+		VehicleGrabDropControllerScript.AVAILABILITY_NO_CAPABILITY:
+			return "不可用"
+		VehicleMoveControllerScript.AVAILABILITY_PLANNING:
+			return "规划中"
+		VehicleMoveControllerScript.AVAILABILITY_MOVING:
+			return "移动中"
+		VehicleMoveControllerScript.AVAILABILITY_BLOCKED:
+			return "受阻"
+		VehicleMoveControllerScript.AVAILABILITY_TARGETING,
+		VehicleGrabDropControllerScript.AVAILABILITY_TARGETING:
+			return "选点中"
+		VehicleGrabDropControllerScript.AVAILABILITY_ROTATING:
+			return "旋转中"
+		VehicleMoveControllerScript.AVAILABILITY_BUSY,
+		VehicleGrabDropControllerScript.AVAILABILITY_BUSY:
+			return "忙碌"
+		VehicleGrabDropControllerScript.AVAILABILITY_NO_TARGET:
+			return "无目标"
+		VehicleMoveControllerScript.AVAILABILITY_UI_OPEN:
+			return "不可用"
+		_:
+			return "不可用"
 
 
 func _set_availability(label: Label, text: String) -> void:
@@ -315,31 +306,12 @@ func _on_observable_changed(_a = null, _b = null, _c = null) -> void:
 	_refresh()
 
 
-func _on_selection_changed(vehicle_id: StringName, has_selection: bool) -> void:
-	if has_selection:
-		_bind_vehicle_turn_signals(vehicle_id)
+func _on_selection_changed(_vehicle_id: StringName, _has_selection: bool) -> void:
 	_refresh()
 
 
 func _on_hover_changed(_cell: Vector2i, _has_hover: bool) -> void:
 	_refresh_pointer_label()
-
-
-func _bind_vehicle_turn_signals(vehicle_id: StringName) -> void:
-	if vehicle_id == &"":
-		return
-	var vehicle := _vehicle_manager.get_vehicle_by_id(vehicle_id) as VehicleActorScript
-	if vehicle == null:
-		return
-	var started_callable := Callable(self, "_on_vehicle_turn_started")
-	if not vehicle.turn_started.is_connected(started_callable):
-		vehicle.turn_started.connect(started_callable)
-	var completed_callable := Callable(self, "_on_vehicle_turn_completed")
-	if not vehicle.turn_completed.is_connected(completed_callable):
-		vehicle.turn_completed.connect(completed_callable)
-	var move_completed_callable := Callable(self, "_on_vehicle_move_completed")
-	if not vehicle.move_completed.is_connected(move_completed_callable):
-		vehicle.move_completed.connect(move_completed_callable)
 
 
 func _on_target_mode_changed(_active: bool) -> void:
@@ -349,17 +321,6 @@ func _on_target_mode_changed(_active: bool) -> void:
 func _on_arm_facing_changed(_vehicle_id: StringName, _facing: int) -> void:
 	_refresh()
 
-
-func _on_vehicle_turn_started(_direction: int) -> void:
-	_refresh()
-
-
-func _on_vehicle_turn_completed(_facing: int) -> void:
-	_refresh()
-
-
-func _on_vehicle_move_completed(_target_anchor: Vector2i) -> void:
-	_refresh()
 
 
 func _on_lifecycle_changed(_previous_state: int, _current_state: int) -> void:

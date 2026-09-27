@@ -19,6 +19,15 @@ const Scene01ObjectManagerScript := preload("res://scripts/scene_01/scene_01_obj
 const GRAB_DROP_ACTION := &"vehicle_grab_drop"
 const ROTATE_COUNTERCLOCKWISE_ACTION := &"vehicle_rotate_counterclockwise"
 const ROTATE_CLOCKWISE_ACTION := &"vehicle_rotate_clockwise"
+
+const AVAILABILITY_AVAILABLE := &"available"
+const AVAILABILITY_NO_VEHICLE := &"no_vehicle"
+const AVAILABILITY_NO_CAPABILITY := &"no_capability"
+const AVAILABILITY_TARGETING := &"targeting"
+const AVAILABILITY_BUSY := &"busy"
+const AVAILABILITY_ROTATING := &"rotating"
+const AVAILABILITY_NO_TARGET := &"no_target"
+
 const PREVIEW_SLOT_PATHS: Array[NodePath] = [
 	NodePath("GrabDropInteractionPreview/Slot0"),
 	NodePath("GrabDropInteractionPreview/Slot1"),
@@ -133,6 +142,36 @@ func request_vehicle_turn(vehicle: VehicleActorScript, direction: int) -> bool:
 
 func rotate_selected_vehicle(direction: int) -> bool:
 	return request_vehicle_turn(_get_selected_vehicle(), direction)
+
+
+func get_selected_rotate_availability() -> StringName:
+	var vehicle := _get_selected_vehicle()
+	if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
+		return AVAILABILITY_NO_VEHICLE
+	if not vehicle.definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_ROTATE):
+		return AVAILABILITY_NO_CAPABILITY
+	if _is_move_target_mode_active():
+		return AVAILABILITY_TARGETING
+	if vehicle.is_turning():
+		return AVAILABILITY_ROTATING
+	if (
+		vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
+		or vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING
+	):
+		return AVAILABILITY_BUSY
+	return AVAILABILITY_AVAILABLE
+
+
+func get_selected_grab_drop_availability() -> StringName:
+	var vehicle := _get_selected_vehicle()
+	var base_status := _get_grab_base_availability(vehicle, true)
+	if base_status != AVAILABILITY_AVAILABLE:
+		return base_status
+	return (
+		AVAILABILITY_AVAILABLE
+		if is_interaction_preview_valid()
+		else AVAILABILITY_NO_TARGET
+	)
 
 
 func _advance_turns(delta: float) -> void:
@@ -379,29 +418,46 @@ func _get_selected_vehicle() -> VehicleActorScript:
 
 
 func _can_rotate(vehicle: VehicleActorScript) -> bool:
+	return _get_rotate_availability(vehicle) == AVAILABILITY_AVAILABLE
+
+
+func _get_rotate_availability(vehicle: VehicleActorScript) -> StringName:
 	if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
-		return false
+		return AVAILABILITY_NO_VEHICLE
 	if not vehicle.definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_ROTATE):
-		return false
-	return (
-		not vehicle.is_turning()
-		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
-		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
-	)
+		return AVAILABILITY_NO_CAPABILITY
+	if vehicle.is_turning():
+		return AVAILABILITY_ROTATING
+	if (
+		vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
+		or vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING
+	):
+		return AVAILABILITY_BUSY
+	return AVAILABILITY_AVAILABLE
 
 
 func _can_preview(vehicle: VehicleActorScript) -> bool:
+	return _get_grab_base_availability(vehicle, true) == AVAILABILITY_AVAILABLE
+
+
+func _get_grab_base_availability(
+	vehicle: VehicleActorScript,
+	include_target_mode: bool
+) -> StringName:
 	if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
-		return false
+		return AVAILABILITY_NO_VEHICLE
 	if not vehicle.definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_GRAB):
-		return false
-	if _is_move_target_mode_active():
-		return false
-	return (
-		not vehicle.is_turning()
-		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
-		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
-	)
+		return AVAILABILITY_NO_CAPABILITY
+	if include_target_mode and _is_move_target_mode_active():
+		return AVAILABILITY_TARGETING
+	if vehicle.is_turning():
+		return AVAILABILITY_BUSY
+	if (
+		vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.PLANNING
+		or vehicle.runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING
+	):
+		return AVAILABILITY_BUSY
+	return AVAILABILITY_AVAILABLE
 
 
 func _is_move_target_mode_active() -> bool:
