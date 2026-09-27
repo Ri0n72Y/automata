@@ -157,12 +157,13 @@ func _test_vehicle_pose_projection(observable: ObservableStateScript, arm) -> vo
 		"Each discrete anchor-cell change should publish one pose change immediately."
 	)
 
+	var next_facing := posmod(arm.runtime_state.facing + 1, 4)
 	arm.turn_started.emit(1)
-	arm.runtime_state.facing = RuntimeStateScript.Facing.EAST
-	arm.turn_completed.emit(RuntimeStateScript.Facing.EAST)
+	arm.runtime_state.facing = next_facing
+	arm.turn_completed.emit(next_facing)
 	test.expect_equal(
 		observable.get_vehicle_facing(VehicleManagerScript.ARM_VEHICLE_ID),
-		RuntimeStateScript.Facing.EAST,
+		next_facing,
 		"Observable pose should read the turned owner facing."
 	)
 	test.expect_equal(
