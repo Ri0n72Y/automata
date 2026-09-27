@@ -122,7 +122,6 @@ func configure(
 	_initial_anchor_cell = p_anchor_cell
 	_initial_facing = p_facing
 	reset()
-	_sync_tray_interaction_cells()
 	return true
 
 
@@ -134,7 +133,7 @@ func reset() -> void:
 	_clear_carried_item()
 	if _tray_state != null:
 		_tray_state.reset()
-	_clear_item_interaction_cells()
+	_sync_tray_interaction_cells()
 
 
 func begin_move_planning() -> bool:
