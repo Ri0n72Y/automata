@@ -155,6 +155,30 @@ func _run() -> void:
 	)
 	_expect_true(sidebar.size.y <= LayoutMetrics.left_sidebar_max_height(float(viewport.size.y)) + 1.0, "Expanded Tutorial should scroll inside the capped Sidebar.")
 
+	tutorial_next.grab_focus()
+	await process_frame
+	_expect_equal(
+		viewport.gui_get_focus_owner(),
+		tutorial_next,
+		"Tutorial fixture should establish focus inside the Tutorial body."
+	)
+	hud.call("set_status_collapsed", true)
+	await process_frame
+	_expect_equal(
+		viewport.gui_get_focus_owner(),
+		tutorial_next,
+		"Collapsing Status should not release focus owned by another UI section."
+	)
+	hud.call("set_status_collapsed", false)
+	tutorial.call("set_collapsed", true)
+	await process_frame
+	_expect_true(
+		viewport.gui_get_focus_owner() == null,
+		"Collapsing Tutorial should release focus owned by the body being hidden."
+	)
+	tutorial.call("set_collapsed", false)
+	await process_frame
+
 	tutorial_owner.call("skip_tutorial")
 	await process_frame
 	_expect_false(tutorial.visible, "Skipping Tutorial should hide its presentation section.")
@@ -170,17 +194,13 @@ func _expect_tutorial_button_geometry(button: Button) -> void:
 		"Tutorial navigation buttons should keep a padded minimum height."
 	)
 	var normal_style: StyleBoxFlat = button.get_theme_stylebox("normal") as StyleBoxFlat
-	var focus_style: StyleBoxFlat = button.get_theme_stylebox("focus") as StyleBoxFlat
 	_expect_true(
 		normal_style != null,
 		"Tutorial navigation buttons should expose an explicit normal StyleBoxFlat."
 	)
-	_expect_true(
-		focus_style != null,
-		"Tutorial navigation buttons should expose an explicit focus StyleBoxFlat."
-	)
-	if normal_style == null or focus_style == null:
+	if normal_style == null:
 		return
+	var normal_margins := _style_margins(normal_style)
 	_expect_true(
 		normal_style.content_margin_left >= 10.0
 		and normal_style.content_margin_right >= 10.0
@@ -188,20 +208,40 @@ func _expect_tutorial_button_geometry(button: Button) -> void:
 		and normal_style.content_margin_bottom >= 5.0,
 		"Tutorial navigation button text should have stable internal padding."
 	)
-	_expect_equal(
-		Vector4(
-			focus_style.content_margin_left,
-			focus_style.content_margin_top,
-			focus_style.content_margin_right,
-			focus_style.content_margin_bottom
-		),
-		Vector4(
-			normal_style.content_margin_left,
-			normal_style.content_margin_top,
-			normal_style.content_margin_right,
-			normal_style.content_margin_bottom
-		),
-		"Tutorial focus state should preserve normal-state content geometry."
+	var state_names: Array[StringName] = [
+		&"hover",
+		&"pressed",
+		&"hover_pressed",
+		&"disabled",
+		&"focus",
+	]
+	for style_name in state_names:
+		var state_style: StyleBoxFlat = button.get_theme_stylebox(style_name) as StyleBoxFlat
+		_expect_true(
+			state_style != null,
+			"Tutorial navigation button state '%s' should expose StyleBoxFlat geometry." % String(style_name)
+		)
+		if state_style != null:
+			_expect_equal(
+				_style_margins(state_style),
+				normal_margins,
+				"Tutorial navigation button state '%s' should preserve normal-state geometry." % String(style_name)
+			)
+	var focus_style: StyleBoxFlat = button.get_theme_stylebox("focus") as StyleBoxFlat
+	if focus_style != null:
+		_expect_true(
+			focus_style.bg_color != normal_style.bg_color
+			or focus_style.border_color != normal_style.border_color,
+			"Tutorial focus state should remain visibly distinct without changing geometry."
+		)
+
+
+func _style_margins(style: StyleBoxFlat) -> Vector4:
+	return Vector4(
+		style.content_margin_left,
+		style.content_margin_top,
+		style.content_margin_right,
+		style.content_margin_bottom
 	)
 
 

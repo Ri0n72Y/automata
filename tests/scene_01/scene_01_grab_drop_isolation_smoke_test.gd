@@ -134,14 +134,17 @@ func _test_moving_tray_is_not_interactable(controller, selection, vehicle_manage
 	if arm == null or transport == null or arm.runtime_state == null or transport.runtime_state == null:
 		return
 
-	var waiting_interfaces: Array[Variant] = transport.runtime_state.get_item_interaction_interfaces(
-		transport.get_occupied_cells()
-	)
+	var waiting_interfaces: Array[Variant] = transport.runtime_state.get_item_interaction_interfaces_readonly()
 	_expect_true(waiting_interfaces.has(transport.runtime_state.tray_state), "Waiting transport should expose tray interface.")
+	_expect_equal(
+		transport.runtime_state.tray_state.get_interaction_cells(),
+		transport.get_occupied_cells(),
+		"Stationary tray interaction cells should be synchronized by RuntimeState ownership."
+	)
 
 	_expect_true(transport.runtime_state.begin_move_planning(), "Transport should enter Planning for interaction boundary.")
 	_expect_equal(
-		transport.runtime_state.get_item_interaction_interfaces(transport.get_occupied_cells()).size(),
+		transport.runtime_state.get_item_interaction_interfaces_readonly().size(),
 		0,
 		"Planning transport must not expose tray interaction interfaces."
 	)
@@ -178,15 +181,25 @@ func _test_moving_tray_is_not_interactable(controller, selection, vehicle_manage
 		VEHICLE_RUNTIME_STATE_SCRIPT.MotionState.BLOCKED,
 		"Cancel should leave transport Blocked."
 	)
-	var blocked_interfaces: Array[Variant] = transport.runtime_state.get_item_interaction_interfaces(
-		transport.get_occupied_cells()
-	)
+	var blocked_interfaces: Array[Variant] = transport.runtime_state.get_item_interaction_interfaces_readonly()
 	_expect_true(blocked_interfaces.has(transport.runtime_state.tray_state), "Blocked stationary transport should expose tray again.")
+	_expect_equal(
+		transport.runtime_state.tray_state.get_interaction_cells(),
+		transport.get_occupied_cells(),
+		"Blocked stationary tray should restore owner-synchronized interaction cells."
+	)
 
 
 func _test_availability_is_independent_from_preview(controller, selection, vehicle_manager) -> void:
 	var arm = vehicle_manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.ARM_VEHICLE_ID)
-	if arm == null or arm.runtime_state == null:
+	var transport = vehicle_manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.TRANSPORT_VEHICLE_ID)
+	if (
+		arm == null
+		or arm.runtime_state == null
+		or transport == null
+		or transport.runtime_state == null
+		or transport.runtime_state.tray_state == null
+	):
 		return
 	arm.reset_actor()
 	arm.runtime_state.anchor_cell = Vector2i(1, 3)
@@ -198,11 +211,20 @@ func _test_availability_is_independent_from_preview(controller, selection, vehic
 		controller.is_interaction_preview_valid(),
 		"Fixture should prove the visual preview is hidden before availability is read."
 	)
+	var sentinel_cells: Array[Vector2i] = [Vector2i(99, 99)]
+	transport.runtime_state.tray_state.set_interaction_cells(sentinel_cells)
 	_expect_equal(
 		controller.get_selected_grab_drop_availability(),
 		AVAILABILITY_SCRIPT.AVAILABLE,
 		"GrabDrop availability should derive from command target truth, not preview visibility."
 	)
+	_expect_equal(
+		transport.runtime_state.tray_state.get_interaction_cells(),
+		sentinel_cells,
+		"Reading GrabDrop availability must not mutate unrelated tray interaction metadata."
+	)
+	transport.runtime_state.anchor_cell = transport.runtime_state.anchor_cell + Vector2i(1, 0)
+	transport.runtime_state.anchor_cell = transport.runtime_state.anchor_cell - Vector2i(1, 0)
 
 
 func _test_feedback_is_instance_local(controller, selection, vehicle_manager, first_status: Label, second_status: Label) -> void:

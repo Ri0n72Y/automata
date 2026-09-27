@@ -219,6 +219,9 @@ func release_carried_item() -> StandardBlockScript:
 
 
 func get_item_interaction_interfaces(interaction_cells: Array[Vector2i]) -> Array[Variant]:
+	if not is_tray_interaction_available(_tray_state):
+		_clear_item_interaction_cells()
+		return get_item_interaction_interfaces_readonly()
 	if _tray_state != null:
 		_tray_state.set_interaction_cells(interaction_cells)
 	return get_item_interaction_interfaces_readonly()
@@ -250,6 +253,9 @@ func _clear_item_interaction_cells() -> void:
 
 func _sync_tray_interaction_cells() -> void:
 	if _tray_state == null or _definition == null:
+		return
+	if _motion_state == MotionState.PLANNING or _motion_state == MotionState.MOVING:
+		_clear_item_interaction_cells()
 		return
 	var occupied_cells: Array[Vector2i] = []
 	for offset_y in range(_definition.footprint.y):
