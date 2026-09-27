@@ -39,6 +39,7 @@ func _run() -> void:
 	var feedback := hud.get_node_or_null("%FeedbackLabel") as Label if hud != null else null
 	var tutorial := hud.get_node_or_null("%TutorialSection") as Control if hud != null else null
 	var tutorial_body := hud.get_node_or_null("%TutorialBody") as Control if hud != null else null
+	var tutorial_content_margin := tutorial_body.get_node_or_null("Margin") as MarginContainer if tutorial_body != null else null
 	var tutorial_collapse := hud.get_node_or_null("%CollapseButton") as Button if hud != null else null
 	var tutorial_previous := hud.get_node_or_null("%PreviousButton") as Button if hud != null else null
 	var tutorial_next := hud.get_node_or_null("%NextButton") as Button if hud != null else null
@@ -61,6 +62,7 @@ func _run() -> void:
 		and feedback != null
 		and tutorial != null
 		and tutorial_body != null
+		and tutorial_content_margin != null
 		and tutorial_collapse != null
 		and tutorial_previous != null
 		and tutorial_next != null
@@ -113,16 +115,17 @@ func _run() -> void:
 		"DPITexture",
 		"Tutorial disclosure SVG should import as DPITexture."
 	)
-	for button in [tutorial_previous, tutorial_next, tutorial_skip]:
-		_expect_true(button.custom_minimum_size.y >= 32.0, "Tutorial navigation buttons should keep a padded minimum height.")
-		var normal_style := button.get_theme_stylebox("normal")
-		_expect_true(
-			normal_style.content_margin_left >= 10.0
-			and normal_style.content_margin_right >= 10.0
-			and normal_style.content_margin_top >= 5.0
-			and normal_style.content_margin_bottom >= 5.0,
-			"Tutorial navigation button text should have stable internal padding."
-		)
+	var collapsed_icon: Texture2D = tutorial_collapse.icon
+	_expect_tutorial_button_geometry(tutorial_previous)
+	_expect_tutorial_button_geometry(tutorial_next)
+	_expect_tutorial_button_geometry(tutorial_skip)
+	_expect_true(
+		tutorial_content_margin.get_theme_constant("margin_left") >= 14
+		and tutorial_content_margin.get_theme_constant("margin_right") >= 14
+		and tutorial_content_margin.get_theme_constant("margin_top") >= 10
+		and tutorial_content_margin.get_theme_constant("margin_bottom") >= 10,
+		"Tutorial body text should keep explicit content padding."
+	)
 
 	hud.call("set_status_collapsed", true)
 	await process_frame
@@ -141,6 +144,15 @@ func _run() -> void:
 		tutorial_collapse.text.is_empty() and tutorial_collapse.icon != null,
 		"Expanded Tutorial should keep icon-only disclosure geometry."
 	)
+	_expect_true(
+		tutorial_collapse.icon != collapsed_icon,
+		"Tutorial disclosure should switch from right chevron when collapsed to down chevron when expanded."
+	)
+	_expect_equal(
+		tutorial_collapse.icon.get_class(),
+		"DPITexture",
+		"Expanded Tutorial disclosure SVG should remain a DPITexture."
+	)
 	_expect_true(sidebar.size.y <= LayoutMetrics.left_sidebar_max_height(float(viewport.size.y)) + 1.0, "Expanded Tutorial should scroll inside the capped Sidebar.")
 
 	tutorial_owner.call("skip_tutorial")
@@ -150,6 +162,47 @@ func _run() -> void:
 	_expect_true(sidebar.visible, "Skipping Tutorial should not remove the Sidebar.")
 
 	await _cleanup(scene, viewport)
+
+
+func _expect_tutorial_button_geometry(button: Button) -> void:
+	_expect_true(
+		button.custom_minimum_size.y >= 32.0,
+		"Tutorial navigation buttons should keep a padded minimum height."
+	)
+	var normal_style: StyleBoxFlat = button.get_theme_stylebox("normal") as StyleBoxFlat
+	var focus_style: StyleBoxFlat = button.get_theme_stylebox("focus") as StyleBoxFlat
+	_expect_true(
+		normal_style != null,
+		"Tutorial navigation buttons should expose an explicit normal StyleBoxFlat."
+	)
+	_expect_true(
+		focus_style != null,
+		"Tutorial navigation buttons should expose an explicit focus StyleBoxFlat."
+	)
+	if normal_style == null or focus_style == null:
+		return
+	_expect_true(
+		normal_style.content_margin_left >= 10.0
+		and normal_style.content_margin_right >= 10.0
+		and normal_style.content_margin_top >= 5.0
+		and normal_style.content_margin_bottom >= 5.0,
+		"Tutorial navigation button text should have stable internal padding."
+	)
+	_expect_equal(
+		Vector4(
+			focus_style.content_margin_left,
+			focus_style.content_margin_top,
+			focus_style.content_margin_right,
+			focus_style.content_margin_bottom
+		),
+		Vector4(
+			normal_style.content_margin_left,
+			normal_style.content_margin_top,
+			normal_style.content_margin_right,
+			normal_style.content_margin_bottom
+		),
+		"Tutorial focus state should preserve normal-state content geometry."
+	)
 
 
 func _cleanup(scene: Node, viewport: SubViewport) -> void:
