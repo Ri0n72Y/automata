@@ -14,6 +14,7 @@ const GridSelectionControllerScript := preload("res://scripts/input/grid_selecti
 const VehicleSelectionControllerScript := preload("res://scripts/input/vehicle_selection_controller.gd")
 const Scene01VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const AvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
+const ManualAvailabilityScript := preload("res://scripts/input/vehicle_manual_interaction_availability.gd")
 
 const STOP_TASK_ACTION := &"vehicle_stop_task"
 const REJECTION_NO_VEHICLE := &"no_vehicle_selected"
@@ -117,14 +118,20 @@ func is_vehicle_ui_open() -> bool:
 	return _vehicle_ui_open
 
 
-func get_selected_move_availability() -> StringName:
-	var status := _get_move_availability(_get_selected_vehicle())
+func get_selected_move_command_availability() -> StringName:
+	return _get_move_command_availability(_get_selected_vehicle())
+
+
+func get_selected_move_interaction_availability() -> StringName:
+	if _vehicle_ui_open:
+		return ManualAvailabilityScript.UI_OPEN
+	var status := get_selected_move_command_availability()
 	if (
 		grid_selection_controller != null
 		and grid_selection_controller.is_live_target_mode()
 		and (status == AvailabilityScript.AVAILABLE or status == AvailabilityScript.BLOCKED)
 	):
-		return AvailabilityScript.TARGETING
+		return ManualAvailabilityScript.TARGETING
 	return status
 
 
@@ -368,15 +375,15 @@ func _can_show_prediction(vehicle: VehicleActorScript) -> bool:
 
 
 func _is_move_interaction_enabled(vehicle: VehicleActorScript) -> bool:
-	var status := _get_move_availability(vehicle)
+	if _vehicle_ui_open:
+		return false
+	var status := _get_move_command_availability(vehicle)
 	return status == AvailabilityScript.AVAILABLE or status == AvailabilityScript.BLOCKED
 
 
-func _get_move_availability(vehicle: VehicleActorScript) -> StringName:
+func _get_move_command_availability(vehicle: VehicleActorScript) -> StringName:
 	if vehicle == null:
 		return AvailabilityScript.NO_VEHICLE
-	if _vehicle_ui_open:
-		return AvailabilityScript.UI_OPEN
 	if not _vehicle_has_move_capability(vehicle):
 		return AvailabilityScript.NO_CAPABILITY
 	if vehicle.runtime_state == null:

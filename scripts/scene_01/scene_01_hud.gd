@@ -10,6 +10,7 @@ const GridSelectionControllerScript := preload("res://scripts/input/grid_selecti
 const VehicleMoveControllerScript := preload("res://scripts/input/vehicle_move_controller.gd")
 const VehicleGrabDropControllerScript := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
 const AvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
+const ManualAvailabilityScript := preload("res://scripts/input/vehicle_manual_interaction_availability.gd")
 const MissionStateScript := preload("res://scripts/scene_01/scene_01_mission_state.gd")
 const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.gd")
 const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metrics.gd")
@@ -143,7 +144,6 @@ func _bind_signals() -> void:
 func _refresh() -> void:
 	var observable_ready := _observable.is_configured()
 	var selected_id := _vehicle_selection.get_selected_vehicle_id()
-	var has_selection := selected_id != &""
 	selected_label.text = _selected_vehicle_name(selected_id)
 
 	if observable_ready:
@@ -217,15 +217,15 @@ func _refresh_vehicle_status(selected_id: StringName) -> void:
 
 	_set_availability(
 		move_value_label,
-		_availability_text(_move_controller.get_selected_move_availability())
+		_availability_text(_move_controller.get_selected_move_interaction_availability())
 	)
 	_set_availability(
 		rotate_value_label,
-		_availability_text(_grab_drop_controller.get_selected_rotate_availability())
+		_availability_text(_grab_drop_controller.get_selected_rotate_interaction_availability())
 	)
 	_set_availability(
 		grab_value_label,
-		_availability_text(_grab_drop_controller.get_selected_grab_drop_availability())
+		_availability_text(_grab_drop_controller.get_selected_grab_drop_interaction_availability())
 	)
 
 
@@ -235,7 +235,7 @@ func _availability_text(status: StringName) -> String:
 			return "可用"
 		AvailabilityScript.NO_VEHICLE:
 			return "—"
-		AvailabilityScript.NO_CAPABILITY, AvailabilityScript.UI_OPEN:
+		AvailabilityScript.NO_CAPABILITY, ManualAvailabilityScript.UI_OPEN:
 			return "不可用"
 		AvailabilityScript.PLANNING:
 			return "规划中"
@@ -243,7 +243,7 @@ func _availability_text(status: StringName) -> String:
 			return "移动中"
 		AvailabilityScript.BLOCKED:
 			return "受阻"
-		AvailabilityScript.TARGETING:
+		ManualAvailabilityScript.TARGETING:
 			return "选点中"
 		AvailabilityScript.ROTATING:
 			return "旋转中"

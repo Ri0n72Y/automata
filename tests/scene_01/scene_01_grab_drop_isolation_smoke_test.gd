@@ -214,7 +214,7 @@ func _test_availability_is_independent_from_preview(controller, selection, vehic
 	var sentinel_cells: Array[Vector2i] = [Vector2i(99, 99)]
 	transport.runtime_state.tray_state.set_interaction_cells(sentinel_cells)
 	_expect_equal(
-		controller.get_selected_grab_drop_availability(),
+		controller.get_selected_grab_drop_command_availability(),
 		AVAILABILITY_SCRIPT.AVAILABLE,
 		"GrabDrop availability should derive from command target truth, not preview visibility."
 	)
@@ -223,6 +223,31 @@ func _test_availability_is_independent_from_preview(controller, selection, vehic
 		sentinel_cells,
 		"Reading GrabDrop availability must not mutate unrelated tray interaction metadata."
 	)
+
+	var ground_field = controller.object_manager.get_ground_block_field() if controller.object_manager != null else null
+	_expect_true(ground_field != null, "Availability purity fixture requires GroundBlockField.")
+	if ground_field != null:
+		controller.set_process(false)
+		ground_field.set("_interfaces", {})
+		arm.runtime_state.claim_carried_item(STANDARD_BLOCK_SCRIPT.create())
+		arm.runtime_state.anchor_cell = Vector2i(4, 4)
+		arm.runtime_state.facing = VEHICLE_RUNTIME_STATE_SCRIPT.Facing.NORTH
+		arm.sync_from_state()
+		var cached_before: Dictionary = ground_field.get("_interfaces")
+		_expect_equal(
+			controller.get_selected_grab_drop_command_availability(),
+			AVAILABILITY_SCRIPT.AVAILABLE,
+			"An empty legal ground cell should remain an available Drop command target."
+		)
+		var cached_after: Dictionary = ground_field.get("_interfaces")
+		_expect_equal(
+			cached_after.size(),
+			cached_before.size(),
+			"Reading GrabDrop command availability must not materialize GroundBlockField interfaces."
+		)
+		arm.runtime_state.release_carried_item()
+		controller.set_process(true)
+
 	transport.runtime_state.anchor_cell = transport.runtime_state.anchor_cell + Vector2i(1, 0)
 	transport.runtime_state.anchor_cell = transport.runtime_state.anchor_cell - Vector2i(1, 0)
 

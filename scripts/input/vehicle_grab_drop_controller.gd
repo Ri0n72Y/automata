@@ -16,6 +16,7 @@ const VehicleSelectionControllerScript := preload("res://scripts/input/vehicle_s
 const Scene01VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const Scene01ObjectManagerScript := preload("res://scripts/scene_01/scene_01_object_manager.gd")
 const AvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
+const ManualAvailabilityScript := preload("res://scripts/input/vehicle_manual_interaction_availability.gd")
 
 const GRAB_DROP_ACTION := &"vehicle_grab_drop"
 const ROTATE_COUNTERCLOCKWISE_ACTION := &"vehicle_rotate_counterclockwise"
@@ -137,24 +138,33 @@ func rotate_selected_vehicle(direction: int) -> bool:
 	return request_vehicle_turn(_get_selected_vehicle(), direction)
 
 
-func get_selected_rotate_availability() -> StringName:
-	var status := _get_rotate_availability(_get_selected_vehicle())
+func get_selected_rotate_command_availability() -> StringName:
+	return _get_rotate_command_availability(_get_selected_vehicle())
+
+
+func get_selected_rotate_interaction_availability() -> StringName:
+	var status := get_selected_rotate_command_availability()
 	if status == AvailabilityScript.AVAILABLE and _is_move_target_mode_active():
-		return AvailabilityScript.TARGETING
+		return ManualAvailabilityScript.TARGETING
 	return status
 
 
-func get_selected_grab_drop_availability() -> StringName:
+func get_selected_grab_drop_command_availability() -> StringName:
 	var vehicle := _get_selected_vehicle()
-	var base_status := _get_grab_base_availability(vehicle, true)
+	var base_status := _get_grab_command_base_availability(vehicle)
 	if base_status != AvailabilityScript.AVAILABLE:
 		return base_status
-	var target: Variant = resolve_target_for_vehicle(vehicle)
-	return (
-		AvailabilityScript.AVAILABLE
-		if target != null and _is_target_ready(vehicle.runtime_state, target)
-		else AvailabilityScript.NO_TARGET
-	)
+	return _get_grab_drop_target_availability_readonly(vehicle)
+
+
+func get_selected_grab_drop_interaction_availability() -> StringName:
+	var vehicle := _get_selected_vehicle()
+	var base_status := _get_grab_command_base_availability(vehicle)
+	if base_status != AvailabilityScript.AVAILABLE:
+		return base_status
+	if _is_move_target_mode_active():
+		return ManualAvailabilityScript.TARGETING
+	return _get_grab_drop_target_availability_readonly(vehicle)
 
 
 func _advance_turns(delta: float) -> void:
@@ -399,10 +409,10 @@ func _get_selected_vehicle() -> VehicleActorScript:
 
 
 func _can_rotate(vehicle: VehicleActorScript) -> bool:
-	return _get_rotate_availability(vehicle) == AvailabilityScript.AVAILABLE
+	return _get_rotate_command_availability(vehicle) == AvailabilityScript.AVAILABLE
 
 
-func _get_rotate_availability(vehicle: VehicleActorScript) -> StringName:
+func _get_rotate_command_availability(vehicle: VehicleActorScript) -> StringName:
 	if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
 		return AvailabilityScript.NO_VEHICLE
 	if not vehicle.definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_ROTATE):
@@ -418,19 +428,17 @@ func _get_rotate_availability(vehicle: VehicleActorScript) -> StringName:
 
 
 func _can_preview(vehicle: VehicleActorScript) -> bool:
-	return _get_grab_base_availability(vehicle, true) == AvailabilityScript.AVAILABLE
+	return (
+		_get_grab_command_base_availability(vehicle) == AvailabilityScript.AVAILABLE
+		and not _is_move_target_mode_active()
+	)
 
 
-func _get_grab_base_availability(
-	vehicle: VehicleActorScript,
-	include_target_mode: bool
-) -> StringName:
+func _get_grab_command_base_availability(vehicle: VehicleActorScript) -> StringName:
 	if vehicle == null or vehicle.definition == null or vehicle.runtime_state == null:
 		return AvailabilityScript.NO_VEHICLE
 	if not vehicle.definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_GRAB):
 		return AvailabilityScript.NO_CAPABILITY
-	if include_target_mode and _is_move_target_mode_active():
-		return AvailabilityScript.TARGETING
 	if vehicle.is_turning():
 		return AvailabilityScript.BUSY
 	if (
@@ -439,6 +447,49 @@ func _get_grab_base_availability(
 	):
 		return AvailabilityScript.BUSY
 	return AvailabilityScript.AVAILABLE
+
+
+func _get_grab_drop_target_availability_readonly(vehicle: VehicleActorScript) -> StringName:
+	if vehicle == null or vehicle.runtime_state == null:
+		return AvailabilityScript.NO_TARGET
+	var candidates: Array[Variant] = []
+	for interaction_interface in _collect_item_interaction_interfaces():
+		if not _is_action_compatible(vehicle.runtime_state, interaction_interface):
+			continue
+		if not GrabDropInteractionPolicyScript.is_target_in_range(
+			vehicle.runtime_state,
+			interaction_interface
+		):
+			continue
+		if not candidates.has(interaction_interface):
+			candidates.append(interaction_interface)
+	var has_ground_candidate := _has_ground_candidate_readonly(vehicle)
+	var candidate_count := candidates.size() + (1 if has_ground_candidate else 0)
+	if candidate_count != 1:
+		return AvailabilityScript.NO_TARGET
+	if has_ground_candidate:
+		return AvailabilityScript.AVAILABLE
+	return (
+		AvailabilityScript.AVAILABLE
+		if _is_target_ready(vehicle.runtime_state, candidates[0])
+		else AvailabilityScript.NO_TARGET
+	)
+
+
+func _has_ground_candidate_readonly(vehicle: VehicleActorScript) -> bool:
+	if object_manager == null or vehicle == null or vehicle.runtime_state == null:
+		return false
+	if vehicle.runtime_state.arm_has_item:
+		for cell in _ordered_ground_cells(vehicle):
+			if object_manager.can_drop_item_to_ground_cell(cell):
+				return true
+		return false
+
+	var occupied_candidate_count := 0
+	for cell in get_forward_interaction_cells(vehicle):
+		if object_manager.can_pick_up_item_from_ground_cell(cell):
+			occupied_candidate_count += 1
+	return occupied_candidate_count == 1
 
 
 func _is_move_target_mode_active() -> bool:

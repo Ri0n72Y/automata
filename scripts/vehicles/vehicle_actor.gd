@@ -6,6 +6,7 @@ signal move_completed(target_anchor: Vector2i)
 signal move_blocked()
 signal turn_started(direction: int)
 signal turn_completed(facing: int)
+signal turning_changed(is_turning: bool)
 
 const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
 const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
@@ -171,6 +172,7 @@ func start_turn(direction: int) -> bool:
 	_turn_target_facing = posmod(runtime_state.facing + step, 4)
 	_turn_progress = 0.0
 	_sync_turn_basis()
+	turning_changed.emit(true)
 	turn_started.emit(step)
 	return true
 
@@ -300,9 +302,12 @@ func _sync_turn_basis() -> void:
 
 
 func _clear_turn() -> void:
+	var was_turning := is_turning()
 	_turn_progress = 0.0
 	_turn_direction = 0
 	_turn_target_facing = -1
+	if was_turning:
+		turning_changed.emit(false)
 
 
 func _finish_move(target_anchor: Vector2i) -> void:

@@ -71,17 +71,11 @@ func configure(
 	_transport_runtime.facing_changed.connect(
 		_on_vehicle_facing_changed.bind(VehicleManagerScript.TRANSPORT_VEHICLE_ID)
 	)
-	arm.turn_started.connect(
-		_on_vehicle_turn_started.bind(VehicleManagerScript.ARM_VEHICLE_ID)
+	arm.turning_changed.connect(
+		_on_vehicle_turning_changed.bind(VehicleManagerScript.ARM_VEHICLE_ID)
 	)
-	arm.turn_completed.connect(
-		_on_vehicle_turn_completed.bind(VehicleManagerScript.ARM_VEHICLE_ID)
-	)
-	transport.turn_started.connect(
-		_on_vehicle_turn_started.bind(VehicleManagerScript.TRANSPORT_VEHICLE_ID)
-	)
-	transport.turn_completed.connect(
-		_on_vehicle_turn_completed.bind(VehicleManagerScript.TRANSPORT_VEHICLE_ID)
+	transport.turning_changed.connect(
+		_on_vehicle_turning_changed.bind(VehicleManagerScript.TRANSPORT_VEHICLE_ID)
 	)
 	_arm_runtime.arm_has_item_changed.connect(_on_arm_has_item_changed)
 	_tray_state.count_changed.connect(_on_tray_count_changed)
@@ -162,12 +156,8 @@ func _on_vehicle_facing_changed(
 	vehicle_pose_changed.emit(vehicle_id)
 
 
-func _on_vehicle_turn_started(_direction: int, vehicle_id: StringName) -> void:
-	vehicle_turning_changed.emit(vehicle_id, true)
-
-
-func _on_vehicle_turn_completed(_facing: int, vehicle_id: StringName) -> void:
-	vehicle_turning_changed.emit(vehicle_id, false)
+func _on_vehicle_turning_changed(is_turning: bool, vehicle_id: StringName) -> void:
+	vehicle_turning_changed.emit(vehicle_id, is_turning)
 
 
 func _on_arm_has_item_changed(previous_value: bool, current_value: bool) -> void:

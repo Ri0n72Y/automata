@@ -158,9 +158,7 @@ func _test_vehicle_pose_projection(observable: ObservableStateScript, arm) -> vo
 	)
 
 	var next_facing := posmod(arm.runtime_state.facing + 1, 4)
-	arm.turn_started.emit(1)
 	arm.runtime_state.facing = next_facing
-	arm.turn_completed.emit(next_facing)
 	test.expect_equal(
 		observable.get_vehicle_facing(VehicleManagerScript.ARM_VEHICLE_ID),
 		next_facing,
@@ -168,11 +166,8 @@ func _test_vehicle_pose_projection(observable: ObservableStateScript, arm) -> vo
 	)
 	test.expect_equal(
 		turning_events,
-		[
-			[VehicleManagerScript.ARM_VEHICLE_ID, true],
-			[VehicleManagerScript.ARM_VEHICLE_ID, false],
-		],
-		"Turn lifecycle should publish start and completion."
+		[],
+		"Direct facing projection should not fabricate a turn lifecycle transition."
 	)
 	test.expect_equal(
 		pose_events,
@@ -230,8 +225,29 @@ func _test_mission_notification(observable: ObservableStateScript, scene: Node) 
 
 
 func _test_reset_reads(observable: ObservableStateScript, scene: Node) -> void:
+	var manager := scene.get_node("SceneRoot/RobotRoot/Scene01VehicleManager") as VehicleManagerScript
+	var arm = manager.get_vehicle_by_id(VehicleManagerScript.ARM_VEHICLE_ID) if manager != null else null
+	test.expect_true(arm != null, "Reset turning fixture requires the arm vehicle.")
+	turning_events.clear()
+	if arm != null:
+		test.expect_true(arm.start_turn(1), "Reset turning fixture should start a real turn.")
+		test.expect_equal(
+			turning_events,
+			[[VehicleManagerScript.ARM_VEHICLE_ID, true]],
+			"Starting a real turn should publish the authoritative turning state."
+		)
 	test.expect_true(bool(scene.call("reset_scene")), "Scene Reset should succeed.")
 	await process_frame
+	if arm != null:
+		test.expect_false(arm.is_turning(), "Reset should clear an in-flight turn.")
+		test.expect_equal(
+			turning_events,
+			[
+				[VehicleManagerScript.ARM_VEHICLE_ID, true],
+				[VehicleManagerScript.ARM_VEHICLE_ID, false],
+			],
+			"Reset should close the turning observable transition with false."
+		)
 	test.expect_equal(tray_events.back(), Vector2i(1, 0), "Reset should publish tray 1 -> 0.")
 	test.expect_equal(box_events.back(), Vector2i(8, 3), "Reset should publish box 8 -> 3.")
 	test.expect_equal(mission_events.back(), Vector2i(MissionStateScript.State.COMPLETED, MissionStateScript.State.READY), "Reset should publish Mission COMPLETED -> READY.")

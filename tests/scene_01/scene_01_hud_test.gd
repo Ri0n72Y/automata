@@ -6,6 +6,8 @@ const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_m
 const RuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 const GrabDropControllerScript := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
 const StandardBlockScript := preload("res://scripts/objects/standard_block.gd")
+const AvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
+const ManualAvailabilityScript := preload("res://scripts/input/vehicle_manual_interaction_availability.gd")
 
 var test := ContractTestScript.new()
 
@@ -151,6 +153,36 @@ func _run() -> void:
 	test.expect_true(
 		bool(grid_selection.call("activate_live_target_mode")),
 		"Move target mode should activate for HUD availability transition."
+	)
+	test.expect_equal(
+		move_controller.call("get_selected_move_command_availability"),
+		AvailabilityScript.AVAILABLE,
+		"Move command availability should remain domain-owned while manual target mode is active."
+	)
+	test.expect_equal(
+		move_controller.call("get_selected_move_interaction_availability"),
+		ManualAvailabilityScript.TARGETING,
+		"Move manual interaction availability should expose target mode separately."
+	)
+	test.expect_equal(
+		grab_drop_controller.get_selected_rotate_command_availability(),
+		AvailabilityScript.AVAILABLE,
+		"Rotate command availability should not inherit Move target-mode presentation state."
+	)
+	test.expect_equal(
+		grab_drop_controller.get_selected_rotate_interaction_availability(),
+		ManualAvailabilityScript.TARGETING,
+		"Rotate manual interaction availability should expose Move target-mode gating."
+	)
+	test.expect_equal(
+		grab_drop_controller.get_selected_grab_drop_command_availability(),
+		AvailabilityScript.AVAILABLE,
+		"GrabDrop command availability should remain independent of Move target mode."
+	)
+	test.expect_equal(
+		grab_drop_controller.get_selected_grab_drop_interaction_availability(),
+		ManualAvailabilityScript.TARGETING,
+		"GrabDrop manual interaction availability should expose Move target-mode gating."
 	)
 	test.expect_equal(rotate_value.text, "选点中", "Move target mode should disable Rotate in HUD.")
 	test.expect_equal(grab_value.text, "选点中", "Move target mode should disable GrabDrop in HUD.")
