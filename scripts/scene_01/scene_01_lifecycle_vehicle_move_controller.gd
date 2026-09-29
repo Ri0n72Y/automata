@@ -1,12 +1,12 @@
 class_name Scene01LifecycleVehicleMoveController
 extends "res://scripts/input/vehicle_move_controller.gd"
 
-const AvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
+const LifecycleAvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
 
 
 func get_selected_move_command_availability() -> StringName:
 	var status := super.get_selected_move_command_availability()
-	if status != AvailabilityScript.AVAILABLE and status != AvailabilityScript.BLOCKED:
+	if status != LifecycleAvailabilityScript.AVAILABLE and status != LifecycleAvailabilityScript.BLOCKED:
 		return status
 	return _apply_lifecycle_command_availability(status)
 
@@ -85,9 +85,9 @@ func _face_vehicle_for_final_step(vehicle: VehicleActor) -> void:
 
 func _apply_lifecycle_command_availability(status: StringName) -> StringName:
 	if _is_lifecycle_paused():
-		return AvailabilityScript.PAUSED
+		return LifecycleAvailabilityScript.PAUSED
 	if not _lifecycle_allows_gameplay_command():
-		return AvailabilityScript.PREPARATION_REJECTED
+		return LifecycleAvailabilityScript.PREPARATION_REJECTED
 	return status
 
 

@@ -1,7 +1,7 @@
 class_name Scene01LifecycleGrabDropController
 extends "res://scripts/input/vehicle_grab_drop_controller.gd"
 
-const AvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
+const LifecycleAvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
 
 @export var scene_controller_path: NodePath = NodePath("../../..")
 
@@ -30,14 +30,14 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func get_selected_rotate_command_availability() -> StringName:
 	var status := super.get_selected_rotate_command_availability()
-	if status != AvailabilityScript.AVAILABLE:
+	if status != LifecycleAvailabilityScript.AVAILABLE:
 		return status
 	return _apply_lifecycle_command_availability(status)
 
 
 func get_selected_grab_drop_command_availability() -> StringName:
 	var status := super.get_selected_grab_drop_command_availability()
-	if status != AvailabilityScript.AVAILABLE:
+	if status != LifecycleAvailabilityScript.AVAILABLE:
 		return status
 	return _apply_lifecycle_command_availability(status)
 
@@ -81,9 +81,9 @@ func sync_lifecycle_state() -> void:
 
 func _apply_lifecycle_command_availability(status: StringName) -> StringName:
 	if _is_lifecycle_paused():
-		return AvailabilityScript.PAUSED
+		return LifecycleAvailabilityScript.PAUSED
 	if not _lifecycle_allows_gameplay_command():
-		return AvailabilityScript.PREPARATION_REJECTED
+		return LifecycleAvailabilityScript.PREPARATION_REJECTED
 	return status
 
 
