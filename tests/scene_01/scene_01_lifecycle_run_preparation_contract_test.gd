@@ -7,11 +7,17 @@ const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_m
 const VehicleSelectionScript := preload("res://scripts/input/vehicle_selection_controller.gd")
 const GrabDropControllerScript := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
 const GrabDropResultScript := preload("res://scripts/vehicles/grab_drop_result.gd")
+const AvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
 
 
 class CountingAcceptingGate:
 	extends Node
 	var call_count: int = 0
+	var probe_count: int = 0
+
+	func can_prepare_scene_run() -> bool:
+		probe_count += 1
+		return true
 
 	func prepare_scene_run() -> bool:
 		call_count += 1
@@ -21,6 +27,11 @@ class CountingAcceptingGate:
 class RejectingGate:
 	extends Node
 	var call_count: int = 0
+	var probe_count: int = 0
+
+	func can_prepare_scene_run() -> bool:
+		probe_count += 1
+		return false
 
 	func prepare_scene_run() -> bool:
 		call_count += 1
@@ -108,6 +119,21 @@ func _run() -> void:
 	scene.run_preparation_gate_path = NodePath("RejectingGate")
 	run_preparation_failures.clear()
 	grab_drop_completion_count = 0
+	_expect_equal(
+		grab_drop_controller.get_selected_rotate_command_availability(),
+		AvailabilityScript.PREPARATION_REJECTED,
+		"Production Rotate availability should reflect a pure run-preparation rejection."
+	)
+	_expect_equal(
+		rejecting_gate.call_count,
+		0,
+		"Reading production command availability must not execute run preparation."
+	)
+	_expect_equal(
+		rejecting_gate.probe_count,
+		1,
+		"Reading production command availability should use the pure preparation probe once."
+	)
 	var rejected_before_domain := grab_drop_controller.request_selected_grab_drop()
 	_expect_true(rejected_before_domain == null, "A lifecycle rejection should not fabricate a GrabDropResult.")
 	_expect_equal(rejecting_gate.call_count, 1, "Rejected gameplay start should execute the gate once.")

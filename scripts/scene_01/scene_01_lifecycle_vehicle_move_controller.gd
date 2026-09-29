@@ -1,6 +1,15 @@
 class_name Scene01LifecycleVehicleMoveController
 extends "res://scripts/input/vehicle_move_controller.gd"
 
+const AvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
+
+
+func get_selected_move_command_availability() -> StringName:
+	var status := super.get_selected_move_command_availability()
+	if status != AvailabilityScript.AVAILABLE and status != AvailabilityScript.BLOCKED:
+		return status
+	return _apply_lifecycle_command_availability(status)
+
 
 func _physics_process(delta: float) -> void:
 	if not _is_lifecycle_running():
@@ -38,6 +47,12 @@ func sync_lifecycle_state() -> void:
 	_sync_live_target_mode()
 
 
+func _is_move_interaction_enabled(vehicle: VehicleActor) -> bool:
+	if not _lifecycle_allows_gameplay_command():
+		return false
+	return super._is_move_interaction_enabled(vehicle)
+
+
 func _sync_live_target_mode() -> void:
 	super._sync_live_target_mode()
 	if grid_selection_controller == null or not _is_lifecycle_paused():
@@ -66,6 +81,22 @@ func _face_vehicle_for_final_step(vehicle: VehicleActor) -> void:
 	elif step == Vector2i(0, -1):
 		vehicle.runtime_state.facing = VehicleRuntimeStateScript.Facing.NORTH
 	vehicle.sync_from_state()
+
+
+func _apply_lifecycle_command_availability(status: StringName) -> StringName:
+	if _is_lifecycle_paused():
+		return AvailabilityScript.PAUSED
+	if not _lifecycle_allows_gameplay_command():
+		return AvailabilityScript.PREPARATION_REJECTED
+	return status
+
+
+func _lifecycle_allows_gameplay_command() -> bool:
+	return (
+		controller != null
+		and controller.has_method("can_execute_gameplay_command")
+		and bool(controller.call("can_execute_gameplay_command"))
+	)
 
 
 func _ensure_gameplay_running() -> bool:

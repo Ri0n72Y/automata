@@ -229,12 +229,23 @@ func _test_reset_reads(observable: ObservableStateScript, scene: Node) -> void:
 	var arm = manager.get_vehicle_by_id(VehicleManagerScript.ARM_VEHICLE_ID) if manager != null else null
 	test.expect_true(arm != null, "Reset turning fixture requires the arm vehicle.")
 	turning_events.clear()
+	var reset_turn_snapshot: Array = []
 	if arm != null:
 		test.expect_true(arm.start_turn(1), "Reset turning fixture should start a real turn.")
 		test.expect_equal(
 			turning_events,
 			[[VehicleManagerScript.ARM_VEHICLE_ID, true]],
 			"Starting a real turn should publish the authoritative turning state."
+		)
+		arm.turning_changed.connect(
+			func(is_turning: bool) -> void:
+				reset_turn_snapshot = [
+					is_turning,
+					arm.is_turning(),
+					arm.runtime_state.anchor_cell,
+					arm.runtime_state.facing,
+				],
+			CONNECT_ONE_SHOT
 		)
 	test.expect_true(bool(scene.call("reset_scene")), "Scene Reset should succeed.")
 	await process_frame
@@ -247,6 +258,16 @@ func _test_reset_reads(observable: ObservableStateScript, scene: Node) -> void:
 				[VehicleManagerScript.ARM_VEHICLE_ID, false],
 			],
 			"Reset should close the turning observable transition with false."
+		)
+		test.expect_equal(
+			reset_turn_snapshot,
+			[
+				false,
+				false,
+				manager.arm_start_cell,
+				RuntimeStateScript.Facing.EAST,
+			],
+			"turning_changed(false) should publish only after Reset restores stable runtime state."
 		)
 	test.expect_equal(tray_events.back(), Vector2i(1, 0), "Reset should publish tray 1 -> 0.")
 	test.expect_equal(box_events.back(), Vector2i(8, 3), "Reset should publish box 8 -> 3.")

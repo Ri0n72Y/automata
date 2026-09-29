@@ -235,8 +235,10 @@ func _availability_text(status: StringName) -> String:
 			return "可用"
 		AvailabilityScript.NO_VEHICLE:
 			return "—"
-		AvailabilityScript.NO_CAPABILITY, ManualAvailabilityScript.UI_OPEN:
+		AvailabilityScript.NO_CAPABILITY, AvailabilityScript.PREPARATION_REJECTED, ManualAvailabilityScript.UI_OPEN:
 			return "不可用"
+		AvailabilityScript.PAUSED:
+			return "暂停"
 		AvailabilityScript.PLANNING:
 			return "规划中"
 		AvailabilityScript.MOVING:

@@ -224,6 +224,17 @@ func _run() -> void:
 		bool(move_controller.call("is_path_preview_visible")),
 		"Rotate must not expose a Move path preview."
 	)
+	arm.cancel_turn()
+	test.expect_false(arm.is_turning(), "Cancel should close the active turn.")
+	test.expect_equal(move_value.text, "可用", "Canceled turn should restore Move availability.")
+	test.expect_true(
+		bool(grid_selection.call("is_live_target_available")),
+		"Canceled turn should restore Move target availability from turning_changed."
+	)
+	test.expect_true(
+		grab_drop_controller.rotate_selected_vehicle(1),
+		"Arm should be able to start another turn after cancellation."
+	)
 	var turn_frames := 0
 	while arm.is_turning() and turn_frames < 120:
 		await physics_frame
@@ -285,6 +296,16 @@ func _run() -> void:
 	)
 
 	scene.call("pause_scene")
+	test.expect_equal(
+		move_controller.call("get_selected_move_command_availability"),
+		AvailabilityScript.PAUSED,
+		"Production Move command availability should include the lifecycle pause gate."
+	)
+	test.expect_equal(
+		grab_drop_controller.get_selected_rotate_command_availability(),
+		AvailabilityScript.PAUSED,
+		"Production Rotate command availability should include the lifecycle pause gate."
+	)
 	test.expect_equal(move_value.text, "暂停", "Pause should explain Move unavailability.")
 	test.expect_equal(rotate_value.text, "暂停", "Pause should explain Rotate unavailability.")
 	test.expect_equal(grab_value.text, "暂停", "Pause should explain GrabDrop unavailability.")

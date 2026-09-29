@@ -346,11 +346,7 @@ func _on_observed_vehicle_move_blocked() -> void:
 	_sync_live_target_mode()
 
 
-func _on_observed_vehicle_turn_started(_direction: int) -> void:
-	_sync_live_target_mode()
-
-
-func _on_observed_vehicle_turn_completed(_facing: int) -> void:
+func _on_observed_vehicle_turning_changed(_is_turning: bool) -> void:
 	_sync_live_target_mode()
 
 
@@ -417,12 +413,9 @@ func _replace_observed_vehicle(vehicle: VehicleActorScript) -> void:
 	var blocked_callable := Callable(self, "_on_observed_vehicle_move_blocked")
 	if not _observed_vehicle.move_blocked.is_connected(blocked_callable):
 		_observed_vehicle.move_blocked.connect(blocked_callable)
-	var turn_started_callable := Callable(self, "_on_observed_vehicle_turn_started")
-	if not _observed_vehicle.turn_started.is_connected(turn_started_callable):
-		_observed_vehicle.turn_started.connect(turn_started_callable)
-	var turn_completed_callable := Callable(self, "_on_observed_vehicle_turn_completed")
-	if not _observed_vehicle.turn_completed.is_connected(turn_completed_callable):
-		_observed_vehicle.turn_completed.connect(turn_completed_callable)
+	var turning_changed_callable := Callable(self, "_on_observed_vehicle_turning_changed")
+	if not _observed_vehicle.turning_changed.is_connected(turning_changed_callable):
+		_observed_vehicle.turning_changed.connect(turning_changed_callable)
 
 
 func _disconnect_observed_vehicle() -> void:
@@ -438,12 +431,9 @@ func _disconnect_observed_vehicle() -> void:
 	var blocked_callable := Callable(self, "_on_observed_vehicle_move_blocked")
 	if _observed_vehicle.move_blocked.is_connected(blocked_callable):
 		_observed_vehicle.move_blocked.disconnect(blocked_callable)
-	var turn_started_callable := Callable(self, "_on_observed_vehicle_turn_started")
-	if _observed_vehicle.turn_started.is_connected(turn_started_callable):
-		_observed_vehicle.turn_started.disconnect(turn_started_callable)
-	var turn_completed_callable := Callable(self, "_on_observed_vehicle_turn_completed")
-	if _observed_vehicle.turn_completed.is_connected(turn_completed_callable):
-		_observed_vehicle.turn_completed.disconnect(turn_completed_callable)
+	var turning_changed_callable := Callable(self, "_on_observed_vehicle_turning_changed")
+	if _observed_vehicle.turning_changed.is_connected(turning_changed_callable):
+		_observed_vehicle.turning_changed.disconnect(turning_changed_callable)
 	_observed_vehicle = null
 
 

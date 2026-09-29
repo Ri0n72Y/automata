@@ -116,6 +116,18 @@ func get_simulation_speed() -> float:
 	return _lifecycle_state.get_simulation_speed()
 
 
+func can_execute_gameplay_command() -> bool:
+	if _lifecycle_mutation_in_progress or not _scene_initialized:
+		return false
+	if _lifecycle_state.is_paused():
+		return false
+	if _lifecycle_state.is_running():
+		return true
+	if not _lifecycle_state.is_ready():
+		return false
+	return _can_prepare_scene_run()
+
+
 func reset_scene_state() -> bool:
 	if _lifecycle_mutation_in_progress or not _scene_initialized:
 		return false
@@ -166,6 +178,17 @@ func _prepare_scene_run() -> bool:
 	if not bool(gate.call("prepare_scene_run")):
 		lifecycle_run_preparation_failed.emit(&"run_preparation_rejected")
 		return false
+	return true
+
+
+func _can_prepare_scene_run() -> bool:
+	if run_preparation_gate_path.is_empty():
+		return true
+	var gate := get_node_or_null(run_preparation_gate_path)
+	if gate == null or not gate.has_method("prepare_scene_run"):
+		return false
+	if gate.has_method("can_prepare_scene_run"):
+		return bool(gate.call("can_prepare_scene_run"))
 	return true
 
 

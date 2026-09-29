@@ -21,6 +21,8 @@ const ManualAvailabilityScript := preload("res://scripts/input/vehicle_manual_in
 const GRAB_DROP_ACTION := &"vehicle_grab_drop"
 const ROTATE_COUNTERCLOCKWISE_ACTION := &"vehicle_rotate_counterclockwise"
 const ROTATE_CLOCKWISE_ACTION := &"vehicle_rotate_clockwise"
+const TARGET_KIND_INTERFACE := &"interface"
+const TARGET_KIND_GROUND := &"ground"
 
 const PREVIEW_SLOT_PATHS: Array[NodePath] = [
 	NodePath("GrabDropInteractionPreview/Slot0"),
@@ -182,7 +184,11 @@ func _on_vehicle_turn_completed(facing: int, vehicle: VehicleActorScript) -> voi
 
 
 func resolve_target_for_vehicle(vehicle: VehicleActorScript) -> Variant:
-	return _resolve_target_from_interfaces(vehicle, _collect_item_interaction_interfaces())
+	var descriptor := _resolve_target_descriptor(
+		vehicle,
+		_collect_item_interaction_interfaces()
+	)
+	return _materialize_target_descriptor(descriptor)
 
 
 func get_forward_interaction_cells(vehicle: VehicleActorScript) -> Array[Vector2i]:
@@ -203,8 +209,7 @@ func refresh_interaction_preview() -> void:
 	if not _can_preview(vehicle):
 		_hide_interaction_preview()
 		return
-	var all_interfaces := _collect_item_interaction_interfaces()
-	var target: Variant = _resolve_target_from_interfaces(vehicle, all_interfaces)
+	var target: Variant = resolve_target_for_vehicle(vehicle)
 	var cells := get_forward_interaction_cells(vehicle)
 	_preview_is_valid = target != null and _is_target_ready(vehicle.runtime_state, target)
 	_show_interaction_preview(vehicle, cells, _preview_is_valid)
@@ -222,13 +227,13 @@ func get_interaction_preview_cells() -> Array[Vector2i]:
 	return _preview_cells.duplicate()
 
 
-func _resolve_target_from_interfaces(
+func _resolve_target_descriptor(
 	vehicle: VehicleActorScript,
 	all_interfaces: Array[Variant]
-) -> Variant:
+) -> Dictionary:
 	if vehicle == null or vehicle.runtime_state == null or vehicle.definition == null:
-		return null
-	var candidates: Array[Variant] = []
+		return {}
+	var candidates: Array[Dictionary] = []
 	for interaction_interface in all_interfaces:
 		if not _is_action_compatible(vehicle.runtime_state, interaction_interface):
 			continue
@@ -237,52 +242,65 @@ func _resolve_target_from_interfaces(
 			interaction_interface
 		):
 			continue
-		if not candidates.has(interaction_interface):
-			candidates.append(interaction_interface)
-	var ground_candidate := _get_ground_candidate(vehicle)
-	if ground_candidate != null and not candidates.has(ground_candidate):
-		candidates.append(ground_candidate)
+		if _descriptor_list_has_interface(candidates, interaction_interface):
+			continue
+		candidates.append({
+			"kind": TARGET_KIND_INTERFACE,
+			"target": interaction_interface,
+		})
+	var ground_descriptor := _get_ground_target_descriptor(vehicle)
+	if not ground_descriptor.is_empty():
+		candidates.append(ground_descriptor)
 	if candidates.size() != 1:
-		return null
+		return {}
 	return candidates[0]
 
 
-func _get_ground_candidate(vehicle: VehicleActorScript) -> ItemReceiverInterfaceScript:
+func _get_ground_target_descriptor(vehicle: VehicleActorScript) -> Dictionary:
 	if object_manager == null or vehicle == null or vehicle.runtime_state == null:
-		return null
+		return {}
 	if vehicle.runtime_state.arm_has_item:
 		for cell in _ordered_ground_cells(vehicle):
-			var receiver := _ground_interface_for_cell(cell)
-			if receiver == null:
-				continue
-			if not _is_action_compatible(vehicle.runtime_state, receiver):
-				continue
-			if not _is_target_ready(vehicle.runtime_state, receiver):
-				continue
-			if not GrabDropInteractionPolicyScript.is_target_in_range(
-				vehicle.runtime_state,
-				receiver
-			):
-				continue
-			return receiver
-		return null
+			if object_manager.can_drop_item_to_ground_cell(cell):
+				return {
+					"kind": TARGET_KIND_GROUND,
+					"cell": cell,
+				}
+		return {}
 
-	var occupied_candidates: Array[Variant] = []
+	var occupied_cells: Array[Vector2i] = []
 	for cell in get_forward_interaction_cells(vehicle):
-		var source_receiver := _ground_interface_for_cell(cell)
-		if source_receiver == null or not source_receiver.can_take_item():
-			continue
-		if not _is_action_compatible(vehicle.runtime_state, source_receiver):
-			continue
-		if not GrabDropInteractionPolicyScript.is_target_in_range(
-			vehicle.runtime_state,
-			source_receiver
+		if object_manager.can_pick_up_item_from_ground_cell(cell):
+			occupied_cells.append(cell)
+	if occupied_cells.size() != 1:
+		return {}
+	return {
+		"kind": TARGET_KIND_GROUND,
+		"cell": occupied_cells[0],
+	}
+
+
+func _materialize_target_descriptor(descriptor: Dictionary) -> Variant:
+	match StringName(descriptor.get("kind", &"")):
+		TARGET_KIND_INTERFACE:
+			return descriptor.get("target")
+		TARGET_KIND_GROUND:
+			return _ground_interface_for_cell(descriptor.get("cell", Vector2i(-1, -1)))
+		_:
+			return null
+
+
+func _descriptor_list_has_interface(
+	descriptors: Array[Dictionary],
+	interaction_interface: Variant
+) -> bool:
+	for descriptor in descriptors:
+		if (
+			StringName(descriptor.get("kind", &"")) == TARGET_KIND_INTERFACE
+			and descriptor.get("target") == interaction_interface
 		):
-			continue
-		occupied_candidates.append(source_receiver)
-	if occupied_candidates.size() != 1:
-		return null
-	return occupied_candidates[0] as ItemReceiverInterfaceScript
+			return true
+	return false
 
 
 func _ordered_ground_cells(vehicle: VehicleActorScript) -> Array[Vector2i]:
@@ -452,44 +470,20 @@ func _get_grab_command_base_availability(vehicle: VehicleActorScript) -> StringN
 func _get_grab_drop_target_availability_readonly(vehicle: VehicleActorScript) -> StringName:
 	if vehicle == null or vehicle.runtime_state == null:
 		return AvailabilityScript.NO_TARGET
-	var candidates: Array[Variant] = []
-	for interaction_interface in _collect_item_interaction_interfaces():
-		if not _is_action_compatible(vehicle.runtime_state, interaction_interface):
-			continue
-		if not GrabDropInteractionPolicyScript.is_target_in_range(
-			vehicle.runtime_state,
-			interaction_interface
-		):
-			continue
-		if not candidates.has(interaction_interface):
-			candidates.append(interaction_interface)
-	var has_ground_candidate := _has_ground_candidate_readonly(vehicle)
-	var candidate_count := candidates.size() + (1 if has_ground_candidate else 0)
-	if candidate_count != 1:
+	var descriptor := _resolve_target_descriptor(
+		vehicle,
+		_collect_item_interaction_interfaces()
+	)
+	if descriptor.is_empty():
 		return AvailabilityScript.NO_TARGET
-	if has_ground_candidate:
+	if StringName(descriptor.get("kind", &"")) == TARGET_KIND_GROUND:
 		return AvailabilityScript.AVAILABLE
+	var target: Variant = descriptor.get("target")
 	return (
 		AvailabilityScript.AVAILABLE
-		if _is_target_ready(vehicle.runtime_state, candidates[0])
+		if _is_target_ready(vehicle.runtime_state, target)
 		else AvailabilityScript.NO_TARGET
 	)
-
-
-func _has_ground_candidate_readonly(vehicle: VehicleActorScript) -> bool:
-	if object_manager == null or vehicle == null or vehicle.runtime_state == null:
-		return false
-	if vehicle.runtime_state.arm_has_item:
-		for cell in _ordered_ground_cells(vehicle):
-			if object_manager.can_drop_item_to_ground_cell(cell):
-				return true
-		return false
-
-	var occupied_candidate_count := 0
-	for cell in get_forward_interaction_cells(vehicle):
-		if object_manager.can_pick_up_item_from_ground_cell(cell):
-			occupied_candidate_count += 1
-	return occupied_candidate_count == 1
 
 
 func _is_move_target_mode_active() -> bool:
