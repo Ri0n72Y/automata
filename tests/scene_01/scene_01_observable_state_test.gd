@@ -239,12 +239,10 @@ func _test_reset_reads(observable: ObservableStateScript, scene: Node) -> void:
 		)
 		arm.turning_changed.connect(
 			func(is_turning: bool) -> void:
-				reset_turn_snapshot = [
-					is_turning,
-					arm.is_turning(),
-					arm.runtime_state.anchor_cell,
-					arm.runtime_state.facing,
-				],
+				reset_turn_snapshot.append(is_turning)
+				reset_turn_snapshot.append(arm.is_turning())
+				reset_turn_snapshot.append(arm.runtime_state.anchor_cell)
+				reset_turn_snapshot.append(arm.runtime_state.facing),
 			CONNECT_ONE_SHOT
 		)
 	test.expect_true(bool(scene.call("reset_scene")), "Scene Reset should succeed.")

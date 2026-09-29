@@ -47,12 +47,6 @@ func sync_lifecycle_state() -> void:
 	_sync_live_target_mode()
 
 
-func _is_move_interaction_enabled(vehicle: VehicleActor) -> bool:
-	if not _lifecycle_allows_gameplay_command():
-		return false
-	return super._is_move_interaction_enabled(vehicle)
-
-
 func _sync_live_target_mode() -> void:
 	super._sync_live_target_mode()
 	if grid_selection_controller == null or not _is_lifecycle_paused():

@@ -84,6 +84,11 @@ func _test_probe_does_not_publish_runtime_state() -> void:
 		&"",
 		"Pure preparation probe must not publish a failed vehicle id."
 	)
+	test.expect_equal(
+		gate.get_compile_cache_size(),
+		0,
+		"Pure preparation probe must not populate the compiler cache."
+	)
 	test.expect_false(
 		gate.prepare_scene_run(),
 		"Mutating preparation should still reject the same unsupported requirement."
