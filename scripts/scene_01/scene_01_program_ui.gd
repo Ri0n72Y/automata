@@ -76,7 +76,7 @@ func _apply_workspace_layout() -> void:
 		if _expanded_content.visible
 		else LayoutMetrics.PROGRAM_COLLAPSED_WIDTH
 	)
-	_program_panel.offset_top = LayoutMetrics.CONTENT_TOP
+	_program_panel.offset_top = LayoutMetrics.program_rail_top()
 	_program_panel.offset_right = -LayoutMetrics.EDGE_MARGIN
 	_program_panel.offset_left = _program_panel.offset_right - width
 	_program_panel.offset_bottom = -LayoutMetrics.CONTENT_BOTTOM_MARGIN
