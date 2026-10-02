@@ -15,7 +15,6 @@ const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metric
 @onready var _grab_drop_status: Label = %GrabDropStatus
 @onready var _grab_drop_button: Button = %GrabDropButton
 
-@onready var _scene_controller: Node = get_parent()
 @onready var _vehicle_selection: Node = get_parent().get_node("SceneRoot/GridRoot/VehicleSelectionController")
 @onready var _move_controller: Node = get_parent().get_node("SceneRoot/GridRoot/VehicleMoveController")
 @onready var _grab_drop_controller: Node = get_parent().get_node("SceneRoot/GridRoot/VehicleGrabDropController")
