@@ -37,11 +37,11 @@ func configure(vehicle_manager: Node) -> void:
 
 
 func can_prepare_scene_run() -> bool:
-	return bool(_evaluate_scene_run(false).get("ok", false))
+	return bool(_evaluate_scene_run().get("ok", false))
 
 
 func prepare_scene_run() -> bool:
-	var evaluation := _evaluate_scene_run(true)
+	var evaluation := _evaluate_scene_run()
 	if not bool(evaluation.get("ok", false)):
 		return _fail(
 			StringName(evaluation.get("failed_vehicle_id", &"")),
@@ -53,7 +53,7 @@ func prepare_scene_run() -> bool:
 	return true
 
 
-func _evaluate_scene_run(write_cache: bool) -> Dictionary:
+func _evaluate_scene_run() -> Dictionary:
 	if _vehicle_manager == null or not is_instance_valid(_vehicle_manager):
 		return _evaluation_failure(&"", [
 			AssemblyCompileDiagnosticScript.new(
@@ -112,11 +112,8 @@ func _evaluate_scene_run(write_cache: bool) -> Dictionary:
 					"Vehicle definition cannot be adapted for assembly compilation."
 				)
 			])
-		var compile_request := AssemblyCompileRequestScript.new(assembly_definition)
-		var compile_result = (
-			_compiler.compile(compile_request)
-			if write_cache
-			else _compiler.preview_compile(compile_request)
+		var compile_result = _compiler.compile(
+			AssemblyCompileRequestScript.new(assembly_definition)
 		)
 		if not compile_result.is_success():
 			return _evaluation_failure(vehicle_id, compile_result.get_diagnostics())

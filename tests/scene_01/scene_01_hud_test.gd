@@ -306,6 +306,16 @@ func _run() -> void:
 		AvailabilityScript.PAUSED,
 		"Production Rotate command availability should include the lifecycle pause gate."
 	)
+	test.expect_equal(
+		grab_drop_controller.get_selected_grab_drop_command_availability(),
+		AvailabilityScript.PAUSED,
+		"Production GrabDrop command availability should include the lifecycle pause gate."
+	)
+	test.expect_equal(
+		grab_drop_controller.get_selected_grab_drop_interaction_availability(),
+		AvailabilityScript.PAUSED,
+		"GrabDrop interaction availability should preserve lifecycle pause truth."
+	)
 	test.expect_equal(move_value.text, "暂停", "Pause should explain Move unavailability.")
 	test.expect_equal(rotate_value.text, "暂停", "Pause should explain Rotate unavailability.")
 	test.expect_equal(grab_value.text, "暂停", "Pause should explain GrabDrop unavailability.")

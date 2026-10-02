@@ -5,10 +5,12 @@ const LifecycleAvailabilityScript := preload("res://scripts/input/vehicle_comman
 
 
 func get_selected_move_command_availability() -> StringName:
-	var status := super.get_selected_move_command_availability()
-	if status != LifecycleAvailabilityScript.AVAILABLE and status != LifecycleAvailabilityScript.BLOCKED:
-		return status
-	return _apply_lifecycle_command_availability(status)
+	if super._get_selected_vehicle() == null:
+		return LifecycleAvailabilityScript.NO_VEHICLE
+	var lifecycle_status := _get_lifecycle_command_availability()
+	if lifecycle_status != LifecycleAvailabilityScript.AVAILABLE:
+		return lifecycle_status
+	return super.get_selected_move_command_availability()
 
 
 func _physics_process(delta: float) -> void:
@@ -77,20 +79,10 @@ func _face_vehicle_for_final_step(vehicle: VehicleActor) -> void:
 	vehicle.sync_from_state()
 
 
-func _apply_lifecycle_command_availability(status: StringName) -> StringName:
-	if _is_lifecycle_paused():
-		return LifecycleAvailabilityScript.PAUSED
-	if not _lifecycle_allows_gameplay_command():
+func _get_lifecycle_command_availability() -> StringName:
+	if controller == null or not controller.has_method("get_gameplay_command_availability"):
 		return LifecycleAvailabilityScript.PREPARATION_REJECTED
-	return status
-
-
-func _lifecycle_allows_gameplay_command() -> bool:
-	return (
-		controller != null
-		and controller.has_method("can_execute_gameplay_command")
-		and bool(controller.call("can_execute_gameplay_command"))
-	)
+	return StringName(controller.call("get_gameplay_command_availability"))
 
 
 func _ensure_gameplay_running() -> bool:

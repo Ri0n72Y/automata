@@ -86,8 +86,8 @@ func _test_probe_does_not_publish_runtime_state() -> void:
 	)
 	test.expect_equal(
 		gate.get_compile_cache_size(),
-		0,
-		"Pure preparation probe must not populate the compiler cache."
+		2,
+		"Preparation probe may reuse compiler memoization without publishing runtime state."
 	)
 	test.expect_false(
 		gate.prepare_scene_run(),

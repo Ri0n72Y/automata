@@ -38,6 +38,15 @@ class RejectingGate:
 		return false
 
 
+class PrepareOnlyGate:
+	extends Node
+	var call_count: int = 0
+
+	func prepare_scene_run() -> bool:
+		call_count += 1
+		return true
+
+
 var failures: int = 0
 var run_preparation_failures: Array[StringName] = []
 var grab_drop_completion_count: int = 0
@@ -112,7 +121,10 @@ func _run() -> void:
 	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.RUNNING, "Domain command rejection should not roll the simulation back to READY.")
 
 	_expect_true(scene.reset_scene(), "Reset should succeed before rejecting gate coverage.")
-	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable after Reset.")
+	_expect_true(
+		vehicle_selection.select_vehicle(transport),
+		"Transport should be selectable before the rejecting gate is installed."
+	)
 	var rejecting_gate := RejectingGate.new()
 	rejecting_gate.name = "RejectingGate"
 	scene.add_child(rejecting_gate)
@@ -120,9 +132,19 @@ func _run() -> void:
 	run_preparation_failures.clear()
 	grab_drop_completion_count = 0
 	_expect_equal(
+		grab_drop_controller.get_selected_grab_drop_command_availability(),
+		AvailabilityScript.PREPARATION_REJECTED,
+		"Lifecycle rejection should precede Transport's domain NO_CAPABILITY result."
+	)
+	_expect_equal(
+		grab_drop_controller.get_selected_grab_drop_interaction_availability(),
+		AvailabilityScript.PREPARATION_REJECTED,
+		"GrabDrop interaction availability should consume the lifecycle-aware command truth."
+	)
+	_expect_equal(
 		grab_drop_controller.get_selected_rotate_command_availability(),
 		AvailabilityScript.PREPARATION_REJECTED,
-		"Production Rotate availability should reflect a pure run-preparation rejection."
+		"Production Rotate availability should reflect the same run-preparation rejection."
 	)
 	_expect_equal(
 		rejecting_gate.call_count,
@@ -131,8 +153,8 @@ func _run() -> void:
 	)
 	_expect_equal(
 		rejecting_gate.probe_count,
-		1,
-		"Reading production command availability should use the pure preparation probe once."
+		3,
+		"Each explicit availability read should use the pure preparation probe."
 	)
 	var rejected_before_domain := grab_drop_controller.request_selected_grab_drop()
 	_expect_true(rejected_before_domain == null, "A lifecycle rejection should not fabricate a GrabDropResult.")
@@ -140,6 +162,43 @@ func _run() -> void:
 	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.READY, "Rejected run preparation should keep READY.")
 	_expect_equal(grab_drop_completion_count, 0, "A command blocked before domain execution must not emit grab_drop_completed.")
 	_expect_equal(run_preparation_failures, [&"run_preparation_rejected"], "Rejected preparation should expose the lifecycle failure reason.")
+
+	_expect_true(scene.reset_scene(), "Reset should succeed before incomplete gate contract coverage.")
+	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable for incomplete gate coverage.")
+	var prepare_only_gate := PrepareOnlyGate.new()
+	prepare_only_gate.name = "PrepareOnlyGate"
+	scene.add_child(prepare_only_gate)
+	scene.run_preparation_gate_path = NodePath("PrepareOnlyGate")
+	run_preparation_failures.clear()
+	_expect_false(
+		scene.can_execute_gameplay_command(),
+		"A configured gate without can_prepare_scene_run must not be advertised as executable."
+	)
+	_expect_equal(
+		grab_drop_controller.get_selected_grab_drop_command_availability(),
+		AvailabilityScript.PREPARATION_REJECTED,
+		"Missing readiness probe should surface as preparation_rejected availability."
+	)
+	var invalid_gate_result := grab_drop_controller.request_selected_grab_drop()
+	_expect_true(
+		invalid_gate_result == null,
+		"An incomplete run-preparation gate contract should reject before domain execution."
+	)
+	_expect_equal(
+		prepare_only_gate.call_count,
+		0,
+		"Invalid gate contract must not fall through to the mutating prepare hook."
+	)
+	_expect_equal(
+		run_preparation_failures,
+		[&"invalid_run_preparation_gate"],
+		"Incomplete gate contract should publish the stable invalid-gate failure reason."
+	)
+	_expect_equal(
+		scene.get_lifecycle_state(),
+		LifecycleStateScript.State.READY,
+		"Incomplete gate contract should leave lifecycle READY."
+	)
 
 	await _cleanup(scene)
 	_finish()

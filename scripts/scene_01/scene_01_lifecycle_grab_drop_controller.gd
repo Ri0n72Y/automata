@@ -29,17 +29,21 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func get_selected_rotate_command_availability() -> StringName:
-	var status := super.get_selected_rotate_command_availability()
-	if status != LifecycleAvailabilityScript.AVAILABLE:
-		return status
-	return _apply_lifecycle_command_availability(status)
+	if super._get_selected_vehicle() == null:
+		return LifecycleAvailabilityScript.NO_VEHICLE
+	var lifecycle_status := _get_lifecycle_command_availability()
+	if lifecycle_status != LifecycleAvailabilityScript.AVAILABLE:
+		return lifecycle_status
+	return super.get_selected_rotate_command_availability()
 
 
 func get_selected_grab_drop_command_availability() -> StringName:
-	var status := super.get_selected_grab_drop_command_availability()
-	if status != LifecycleAvailabilityScript.AVAILABLE:
-		return status
-	return _apply_lifecycle_command_availability(status)
+	if super._get_selected_vehicle() == null:
+		return LifecycleAvailabilityScript.NO_VEHICLE
+	var lifecycle_status := _get_lifecycle_command_availability()
+	if lifecycle_status != LifecycleAvailabilityScript.AVAILABLE:
+		return lifecycle_status
+	return super.get_selected_grab_drop_command_availability()
 
 
 func request_selected_grab_drop() -> GrabDropResultScript:
@@ -79,20 +83,13 @@ func sync_lifecycle_state() -> void:
 	refresh_interaction_preview()
 
 
-func _apply_lifecycle_command_availability(status: StringName) -> StringName:
-	if _is_lifecycle_paused():
-		return LifecycleAvailabilityScript.PAUSED
-	if not _lifecycle_allows_gameplay_command():
+func _get_lifecycle_command_availability() -> StringName:
+	if (
+		not _has_lifecycle_contract()
+		or not _scene_controller.has_method("get_gameplay_command_availability")
+	):
 		return LifecycleAvailabilityScript.PREPARATION_REJECTED
-	return status
-
-
-func _lifecycle_allows_gameplay_command() -> bool:
-	return (
-		_has_lifecycle_contract()
-		and _scene_controller.has_method("can_execute_gameplay_command")
-		and bool(_scene_controller.call("can_execute_gameplay_command"))
-	)
+	return StringName(_scene_controller.call("get_gameplay_command_availability"))
 
 
 func _ensure_gameplay_running() -> bool:

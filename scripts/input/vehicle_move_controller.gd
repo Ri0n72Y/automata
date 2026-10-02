@@ -123,14 +123,12 @@ func get_selected_move_command_availability() -> StringName:
 
 
 func get_selected_move_interaction_availability() -> StringName:
+	var status := get_selected_move_command_availability()
+	if status != AvailabilityScript.AVAILABLE and status != AvailabilityScript.BLOCKED:
+		return status
 	if _vehicle_ui_open:
 		return ManualAvailabilityScript.UI_OPEN
-	var status := get_selected_move_command_availability()
-	if (
-		grid_selection_controller != null
-		and grid_selection_controller.is_live_target_mode()
-		and (status == AvailabilityScript.AVAILABLE or status == AvailabilityScript.BLOCKED)
-	):
+	if grid_selection_controller != null and grid_selection_controller.is_live_target_mode():
 		return ManualAvailabilityScript.TARGETING
 	return status
 

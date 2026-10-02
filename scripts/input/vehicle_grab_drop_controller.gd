@@ -160,13 +160,15 @@ func get_selected_grab_drop_command_availability() -> StringName:
 
 
 func get_selected_grab_drop_interaction_availability() -> StringName:
-	var vehicle := _get_selected_vehicle()
-	var base_status := _get_grab_command_base_availability(vehicle)
-	if base_status != AvailabilityScript.AVAILABLE:
-		return base_status
+	var status := get_selected_grab_drop_command_availability()
+	if (
+		status != AvailabilityScript.AVAILABLE
+		and status != AvailabilityScript.NO_TARGET
+	):
+		return status
 	if _is_move_target_mode_active():
 		return ManualAvailabilityScript.TARGETING
-	return _get_grab_drop_target_availability_readonly(vehicle)
+	return status
 
 
 func _advance_turns(delta: float) -> void:

@@ -209,12 +209,6 @@ func _refresh_vehicle_status(selected_id: StringName) -> void:
 			cargo_name_label.text = "载荷"
 			cargo_value_label.text = "—"
 
-	if _scene_controller.is_scene_paused():
-		_set_availability(move_value_label, "暂停")
-		_set_availability(rotate_value_label, "暂停")
-		_set_availability(grab_value_label, "暂停")
-		return
-
 	_set_availability(
 		move_value_label,
 		_availability_text(_move_controller.get_selected_move_interaction_availability())

@@ -31,17 +31,6 @@ var _cache: Dictionary = {}
 
 
 func compile(request: AssemblyCompileRequest) -> AssemblyCompileResult:
-	return _compile_with_cache_policy(request, true)
-
-
-func preview_compile(request: AssemblyCompileRequest) -> AssemblyCompileResult:
-	return _compile_with_cache_policy(request, false)
-
-
-func _compile_with_cache_policy(
-	request: AssemblyCompileRequest,
-	write_cache: bool
-) -> AssemblyCompileResult:
 	if request == null or not request.has_definition():
 		return _failed_result(
 			AssemblyRevision.new(),
@@ -68,12 +57,11 @@ func _compile_with_cache_policy(
 				)
 			return cached_entry["result"]
 		var result := _compile_uncached(definition, revision)
-		if write_cache:
-			revisions[revision_value] = {
-				"structure_signature": request.get_structure_signature(),
-				"result": result,
-			}
-			_cache[assembly_id] = revisions
+		revisions[revision_value] = {
+			"structure_signature": request.get_structure_signature(),
+			"result": result,
+		}
+		_cache[assembly_id] = revisions
 		return result
 	return _compile_uncached(definition, revision)
 
