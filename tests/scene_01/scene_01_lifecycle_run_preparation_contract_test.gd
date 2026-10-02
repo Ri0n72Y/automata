@@ -170,8 +170,8 @@ func _run() -> void:
 	scene.add_child(prepare_only_gate)
 	scene.run_preparation_gate_path = NodePath("PrepareOnlyGate")
 	run_preparation_failures.clear()
-	_expect_false(
-		scene.can_execute_gameplay_command(),
+	_expect_true(
+		not scene.can_execute_gameplay_command(),
 		"A configured gate without can_prepare_scene_run must not be advertised as executable."
 	)
 	_expect_equal(

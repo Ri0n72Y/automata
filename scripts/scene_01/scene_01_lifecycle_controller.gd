@@ -118,13 +118,13 @@ func get_simulation_speed() -> float:
 
 
 func get_gameplay_command_availability() -> StringName:
-	if _lifecycle_mutation_in_progress or not _scene_initialized:
+	if not _scene_initialized:
 		return CommandAvailabilityScript.PREPARATION_REJECTED
 	if _lifecycle_state.is_paused():
 		return CommandAvailabilityScript.PAUSED
 	if _lifecycle_state.is_running():
 		return CommandAvailabilityScript.AVAILABLE
-	if not _lifecycle_state.is_ready():
+	if _lifecycle_mutation_in_progress or not _lifecycle_state.is_ready():
 		return CommandAvailabilityScript.PREPARATION_REJECTED
 	return (
 		CommandAvailabilityScript.AVAILABLE
