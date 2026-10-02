@@ -35,6 +35,7 @@ func _ready() -> void:
 	_bind_runner()
 	_vehicle_selection.selection_changed.connect(_on_vehicle_selection_changed)
 	get_viewport().size_changed.connect(_apply_workspace_layout)
+	_apply_workspace_layout()
 	call_deferred("_initialize_editor")
 
 func _input(event: InputEvent) -> void:
