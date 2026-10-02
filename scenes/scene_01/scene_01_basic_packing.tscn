@@ -144,6 +144,9 @@ position = Vector3(8, 0, 5)
 unique_name_in_owner = true
 
 
+[node name="OperationsUIRoot" parent="." instance=ExtResource("31_operations_ui")]
+unique_name_in_owner = true
+
 [node name="ProgramUIRoot" parent="." instance=ExtResource("25_program_ui")]
 unique_name_in_owner = true
 
