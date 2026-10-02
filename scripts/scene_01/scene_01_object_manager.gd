@@ -126,6 +126,22 @@ func get_ground_cell_interface(cell: Vector2i) -> ItemReceiverInterface:
 	return ground_block_field.get_cell_interface(cell)
 
 
+func can_drop_item_to_ground_cell(cell: Vector2i) -> bool:
+	return (
+		ground_block_field != null
+		and is_ground_cell_interactable(cell)
+		and not ground_block_field.has_item(cell)
+	)
+
+
+func can_pick_up_item_from_ground_cell(cell: Vector2i) -> bool:
+	return (
+		ground_block_field != null
+		and is_ground_cell_interactable(cell)
+		and ground_block_field.has_item(cell)
+	)
+
+
 func has_ground_block(cell: Vector2i) -> bool:
 	return ground_block_field != null and ground_block_field.has_item(cell)
 

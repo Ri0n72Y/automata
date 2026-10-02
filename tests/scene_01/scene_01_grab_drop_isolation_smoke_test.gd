@@ -5,6 +5,7 @@ const VEHICLE_MANAGER_SCRIPT := preload("res://scripts/scene_01/scene_01_vehicle
 const VEHICLE_RUNTIME_STATE_SCRIPT := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
 const MOVE_COMMAND_SCRIPT := preload("res://scripts/vehicles/move_command.gd")
 const STANDARD_BLOCK_SCRIPT := preload("res://scripts/objects/standard_block.gd")
+const AVAILABILITY_SCRIPT := preload("res://scripts/input/vehicle_command_availability.gd")
 
 var failures: int = 0
 
@@ -36,10 +37,10 @@ func _run() -> void:
 	) as VEHICLE_MANAGER_SCRIPT
 	var first_selection = first_scene.get_node_or_null("SceneRoot/GridRoot/VehicleSelectionController")
 	var first_status = first_scene.get_node_or_null(
-		"HUDRoot/RootControl/StatusPanel/Margin/VBox/FeedbackLabel"
+		"HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/FeedbackLabel"
 	) as Label
 	var second_status = second_scene.get_node_or_null(
-		"HUDRoot/RootControl/StatusPanel/Margin/VBox/FeedbackLabel"
+		"HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/FeedbackLabel"
 	) as Label
 
 	_expect_true(first_manager != null and second_manager != null, "Both Scene01 instances need object managers.")
@@ -60,6 +61,7 @@ func _run() -> void:
 	_test_static_scene_resources(first_manager, second_manager, first_grab_drop, second_grab_drop)
 	_test_ground_policy_and_instance_isolation(first_scene, second_scene, first_manager, second_manager)
 	_test_moving_tray_is_not_interactable(first_grab_drop, first_selection, first_vehicle_manager)
+	_test_availability_is_independent_from_preview(first_grab_drop, first_selection, first_vehicle_manager)
 	_test_feedback_is_instance_local(first_grab_drop, first_selection, first_vehicle_manager, first_status, second_status)
 
 	await _finish_scenes(first_scene, second_scene)
@@ -132,14 +134,17 @@ func _test_moving_tray_is_not_interactable(controller, selection, vehicle_manage
 	if arm == null or transport == null or arm.runtime_state == null or transport.runtime_state == null:
 		return
 
-	var waiting_interfaces: Array[Variant] = transport.runtime_state.get_item_interaction_interfaces(
-		transport.get_occupied_cells()
-	)
+	var waiting_interfaces: Array[Variant] = transport.runtime_state.get_item_interaction_interfaces_readonly()
 	_expect_true(waiting_interfaces.has(transport.runtime_state.tray_state), "Waiting transport should expose tray interface.")
+	_expect_equal(
+		transport.runtime_state.tray_state.get_interaction_cells(),
+		transport.get_occupied_cells(),
+		"Stationary tray interaction cells should be synchronized by RuntimeState ownership."
+	)
 
 	_expect_true(transport.runtime_state.begin_move_planning(), "Transport should enter Planning for interaction boundary.")
 	_expect_equal(
-		transport.runtime_state.get_item_interaction_interfaces(transport.get_occupied_cells()).size(),
+		transport.runtime_state.get_item_interaction_interfaces_readonly().size(),
 		0,
 		"Planning transport must not expose tray interaction interfaces."
 	)
@@ -176,10 +181,75 @@ func _test_moving_tray_is_not_interactable(controller, selection, vehicle_manage
 		VEHICLE_RUNTIME_STATE_SCRIPT.MotionState.BLOCKED,
 		"Cancel should leave transport Blocked."
 	)
-	var blocked_interfaces: Array[Variant] = transport.runtime_state.get_item_interaction_interfaces(
-		transport.get_occupied_cells()
-	)
+	var blocked_interfaces: Array[Variant] = transport.runtime_state.get_item_interaction_interfaces_readonly()
 	_expect_true(blocked_interfaces.has(transport.runtime_state.tray_state), "Blocked stationary transport should expose tray again.")
+	_expect_equal(
+		transport.runtime_state.tray_state.get_interaction_cells(),
+		transport.get_occupied_cells(),
+		"Blocked stationary tray should restore owner-synchronized interaction cells."
+	)
+
+
+func _test_availability_is_independent_from_preview(controller, selection, vehicle_manager) -> void:
+	var arm = vehicle_manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.ARM_VEHICLE_ID)
+	var transport = vehicle_manager.get_vehicle_by_id(VEHICLE_MANAGER_SCRIPT.TRANSPORT_VEHICLE_ID)
+	if (
+		arm == null
+		or arm.runtime_state == null
+		or transport == null
+		or transport.runtime_state == null
+		or transport.runtime_state.tray_state == null
+	):
+		return
+	arm.reset_actor()
+	arm.runtime_state.anchor_cell = Vector2i(1, 3)
+	arm.runtime_state.facing = VEHICLE_RUNTIME_STATE_SCRIPT.Facing.WEST
+	arm.sync_from_state()
+	_expect_true(selection.select_vehicle(arm), "Availability fixture should select the arm.")
+	controller.call("_hide_interaction_preview")
+	_expect_false(
+		controller.is_interaction_preview_valid(),
+		"Fixture should prove the visual preview is hidden before availability is read."
+	)
+	var sentinel_cells: Array[Vector2i] = [Vector2i(99, 99)]
+	transport.runtime_state.tray_state.set_interaction_cells(sentinel_cells)
+	_expect_equal(
+		controller.get_selected_grab_drop_command_availability(),
+		AVAILABILITY_SCRIPT.AVAILABLE,
+		"GrabDrop availability should derive from command target truth, not preview visibility."
+	)
+	_expect_equal(
+		transport.runtime_state.tray_state.get_interaction_cells(),
+		sentinel_cells,
+		"Reading GrabDrop availability must not mutate unrelated tray interaction metadata."
+	)
+
+	var ground_field = controller.object_manager.get_ground_block_field() if controller.object_manager != null else null
+	_expect_true(ground_field != null, "Availability purity fixture requires GroundBlockField.")
+	if ground_field != null:
+		controller.set_process(false)
+		ground_field.set("_interfaces", {})
+		arm.runtime_state.claim_carried_item(STANDARD_BLOCK_SCRIPT.create())
+		arm.runtime_state.anchor_cell = Vector2i(4, 4)
+		arm.runtime_state.facing = VEHICLE_RUNTIME_STATE_SCRIPT.Facing.NORTH
+		arm.sync_from_state()
+		var cached_before: Dictionary = ground_field.get("_interfaces")
+		_expect_equal(
+			controller.get_selected_grab_drop_command_availability(),
+			AVAILABILITY_SCRIPT.AVAILABLE,
+			"An empty legal ground cell should remain an available Drop command target."
+		)
+		var cached_after: Dictionary = ground_field.get("_interfaces")
+		_expect_equal(
+			cached_after.size(),
+			cached_before.size(),
+			"Reading GrabDrop command availability must not materialize GroundBlockField interfaces."
+		)
+		arm.runtime_state.release_carried_item()
+		controller.set_process(true)
+
+	transport.runtime_state.anchor_cell = transport.runtime_state.anchor_cell + Vector2i(1, 0)
+	transport.runtime_state.anchor_cell = transport.runtime_state.anchor_cell - Vector2i(1, 0)
 
 
 func _test_feedback_is_instance_local(controller, selection, vehicle_manager, first_status: Label, second_status: Label) -> void:

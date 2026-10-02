@@ -18,6 +18,7 @@ var test := CONTRACT_TEST_SCRIPT.new()
 
 func _init() -> void:
 	_test_successful_prepare_publishes_all_results_and_reuses_cache()
+	_test_probe_does_not_publish_runtime_state()
 	_test_capability_failure_publishes_no_partial_runtime_state()
 	_test_requirement_changes_invalidate_publication_but_preserve_cache()
 	_test_missing_required_vehicle_rejects_and_clears_publication()
@@ -50,6 +51,52 @@ func _test_successful_prepare_publishes_all_results_and_reuses_cache() -> void:
 	test.expect_true(gate.get_compile_result(&"arm_vehicle") == first_arm_result, "Repeated preparation should reuse cached arm compile result.")
 	test.expect_true(gate.get_compile_result(&"transport_vehicle") == first_transport_result, "Repeated preparation should reuse cached transport compile result.")
 	test.expect_equal(gate.get_compile_cache_size(), 2, "Repeated preparation should not create duplicate cache entries.")
+
+
+func _test_probe_does_not_publish_runtime_state() -> void:
+	var manager := FakeVehicleManager.new()
+	manager.vehicles = [
+		_make_actor(_make_arm_definition()),
+		_make_actor(_make_transport_definition()),
+	]
+	var gate := GATE_SCRIPT.new()
+	gate.configure(manager)
+	gate.set_required_capabilities(
+		&"transport_vehicle",
+		[ASSEMBLY_CAPABILITIES_SCRIPT.GRAB_DROP]
+	)
+	test.expect_false(
+		gate.can_prepare_scene_run(),
+		"Pure preparation probe should report unsupported capabilities."
+	)
+	test.expect_true(
+		gate.get_compile_result(&"arm_vehicle") == null
+		and gate.get_compile_result(&"transport_vehicle") == null,
+		"Pure preparation probe must not publish compile results."
+	)
+	test.expect_equal(
+		gate.get_last_diagnostics().size(),
+		0,
+		"Pure preparation probe must not publish diagnostics."
+	)
+	test.expect_equal(
+		gate.get_last_failed_vehicle_id(),
+		&"",
+		"Pure preparation probe must not publish a failed vehicle id."
+	)
+	test.expect_equal(
+		gate.get_compile_cache_size(),
+		2,
+		"Preparation probe may reuse compiler memoization without publishing runtime state."
+	)
+	test.expect_false(
+		gate.prepare_scene_run(),
+		"Mutating preparation should still reject the same unsupported requirement."
+	)
+	test.expect_true(
+		gate.get_last_diagnostics().size() > 0,
+		"Mutating preparation should publish the failure diagnostics."
+	)
 
 
 func _test_capability_failure_publishes_no_partial_runtime_state() -> void:

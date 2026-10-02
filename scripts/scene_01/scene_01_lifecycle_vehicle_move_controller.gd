@@ -1,6 +1,17 @@
 class_name Scene01LifecycleVehicleMoveController
 extends "res://scripts/input/vehicle_move_controller.gd"
 
+const LifecycleAvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
+
+
+func get_selected_move_command_availability() -> StringName:
+	if super._get_selected_vehicle() == null:
+		return LifecycleAvailabilityScript.NO_VEHICLE
+	var lifecycle_status := _get_lifecycle_command_availability()
+	if lifecycle_status != LifecycleAvailabilityScript.AVAILABLE:
+		return lifecycle_status
+	return super.get_selected_move_command_availability()
+
 
 func _physics_process(delta: float) -> void:
 	if not _is_lifecycle_running():
@@ -66,6 +77,12 @@ func _face_vehicle_for_final_step(vehicle: VehicleActor) -> void:
 	elif step == Vector2i(0, -1):
 		vehicle.runtime_state.facing = VehicleRuntimeStateScript.Facing.NORTH
 	vehicle.sync_from_state()
+
+
+func _get_lifecycle_command_availability() -> StringName:
+	if controller == null or not controller.has_method("get_gameplay_command_availability"):
+		return LifecycleAvailabilityScript.PREPARATION_REJECTED
+	return StringName(controller.call("get_gameplay_command_availability"))
 
 
 func _ensure_gameplay_running() -> bool:

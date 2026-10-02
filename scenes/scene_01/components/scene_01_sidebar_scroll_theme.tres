@@ -1,0 +1,37 @@
+[gd_resource type="Theme" load_steps=5 format=3]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_track"]
+bg_color = Color(0.28, 0.38, 0.5, 0.055)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_grabber"]
+bg_color = Color(0.34, 0.44, 0.55, 0.24)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_grabber_hover"]
+bg_color = Color(0.3, 0.42, 0.56, 0.4)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_grabber_pressed"]
+bg_color = Color(0.25, 0.39, 0.54, 0.52)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[resource]
+VScrollBar/constants/scroll_size = 6
+VScrollBar/styles/scroll = SubResource("StyleBoxFlat_track")
+VScrollBar/styles/scroll_focus = SubResource("StyleBoxFlat_track")
+VScrollBar/styles/grabber = SubResource("StyleBoxFlat_grabber")
+VScrollBar/styles/grabber_highlight = SubResource("StyleBoxFlat_grabber_hover")
+VScrollBar/styles/grabber_pressed = SubResource("StyleBoxFlat_grabber_pressed")

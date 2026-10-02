@@ -13,6 +13,8 @@ const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runti
 const GridSelectionControllerScript := preload("res://scripts/input/grid_selection_controller.gd")
 const VehicleSelectionControllerScript := preload("res://scripts/input/vehicle_selection_controller.gd")
 const Scene01VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
+const AvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
+const ManualAvailabilityScript := preload("res://scripts/input/vehicle_manual_interaction_availability.gd")
 
 const STOP_TASK_ACTION := &"vehicle_stop_task"
 const REJECTION_NO_VEHICLE := &"no_vehicle_selected"
@@ -20,6 +22,7 @@ const REJECTION_NO_MOVE_CAPABILITY := &"no_move_capability"
 const REJECTION_BUSY := &"vehicle_busy"
 const REJECTION_NO_PATH := &"no_path"
 const REJECTION_START_FAILED := &"start_failed"
+
 const MOTION_EPSILON := 0.000001
 
 @export_range(0.01, 0.2, 0.01) var preview_height: float = 0.05
@@ -113,6 +116,21 @@ func set_vehicle_ui_open(is_open: bool) -> void:
 
 func is_vehicle_ui_open() -> bool:
 	return _vehicle_ui_open
+
+
+func get_selected_move_command_availability() -> StringName:
+	return _get_move_command_availability(_get_selected_vehicle())
+
+
+func get_selected_move_interaction_availability() -> StringName:
+	var status := get_selected_move_command_availability()
+	if status != AvailabilityScript.AVAILABLE and status != AvailabilityScript.BLOCKED:
+		return status
+	if _vehicle_ui_open:
+		return ManualAvailabilityScript.UI_OPEN
+	if grid_selection_controller != null and grid_selection_controller.is_live_target_mode():
+		return ManualAvailabilityScript.TARGETING
+	return status
 
 
 func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
@@ -326,11 +344,7 @@ func _on_observed_vehicle_move_blocked() -> void:
 	_sync_live_target_mode()
 
 
-func _on_observed_vehicle_turn_started(_direction: int) -> void:
-	_sync_live_target_mode()
-
-
-func _on_observed_vehicle_turn_completed(_facing: int) -> void:
+func _on_observed_vehicle_turning_changed(_is_turning: bool) -> void:
 	_sync_live_target_mode()
 
 
@@ -339,15 +353,7 @@ func _sync_live_target_mode() -> void:
 		return
 	var vehicle := _get_selected_vehicle()
 	_replace_observed_vehicle(vehicle)
-	var interaction_enabled := (
-		vehicle != null
-		and not _vehicle_ui_open
-		and _vehicle_has_move_capability(vehicle)
-		and vehicle.runtime_state != null
-		and not vehicle.is_turning()
-		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
-		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
-	)
+	var interaction_enabled := _is_move_interaction_enabled(vehicle)
 	var footprint := Vector2i.ONE
 	if vehicle != null and vehicle.definition != null:
 		footprint = vehicle.definition.footprint
@@ -359,14 +365,34 @@ func _sync_live_target_mode() -> void:
 
 
 func _can_show_prediction(vehicle: VehicleActorScript) -> bool:
-	if vehicle == null or _vehicle_ui_open or not _vehicle_has_move_capability(vehicle):
+	return _is_move_interaction_enabled(vehicle)
+
+
+func _is_move_interaction_enabled(vehicle: VehicleActorScript) -> bool:
+	if _vehicle_ui_open:
 		return false
-	if vehicle.definition == null or vehicle.runtime_state == null or vehicle.is_turning():
-		return false
-	return (
-		vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.PLANNING
-		and vehicle.runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING
-	)
+	var status := _get_move_command_availability(vehicle)
+	return status == AvailabilityScript.AVAILABLE or status == AvailabilityScript.BLOCKED
+
+
+func _get_move_command_availability(vehicle: VehicleActorScript) -> StringName:
+	if vehicle == null:
+		return AvailabilityScript.NO_VEHICLE
+	if not _vehicle_has_move_capability(vehicle):
+		return AvailabilityScript.NO_CAPABILITY
+	if vehicle.runtime_state == null:
+		return AvailabilityScript.NO_CAPABILITY
+	if vehicle.is_turning():
+		return AvailabilityScript.BUSY
+	match vehicle.runtime_state.motion_state:
+		VehicleRuntimeStateScript.MotionState.PLANNING:
+			return AvailabilityScript.PLANNING
+		VehicleRuntimeStateScript.MotionState.MOVING:
+			return AvailabilityScript.MOVING
+		VehicleRuntimeStateScript.MotionState.BLOCKED:
+			return AvailabilityScript.BLOCKED
+		_:
+			return AvailabilityScript.AVAILABLE
 
 
 func _replace_observed_vehicle(vehicle: VehicleActorScript) -> void:
@@ -385,12 +411,9 @@ func _replace_observed_vehicle(vehicle: VehicleActorScript) -> void:
 	var blocked_callable := Callable(self, "_on_observed_vehicle_move_blocked")
 	if not _observed_vehicle.move_blocked.is_connected(blocked_callable):
 		_observed_vehicle.move_blocked.connect(blocked_callable)
-	var turn_started_callable := Callable(self, "_on_observed_vehicle_turn_started")
-	if not _observed_vehicle.turn_started.is_connected(turn_started_callable):
-		_observed_vehicle.turn_started.connect(turn_started_callable)
-	var turn_completed_callable := Callable(self, "_on_observed_vehicle_turn_completed")
-	if not _observed_vehicle.turn_completed.is_connected(turn_completed_callable):
-		_observed_vehicle.turn_completed.connect(turn_completed_callable)
+	var turning_changed_callable := Callable(self, "_on_observed_vehicle_turning_changed")
+	if not _observed_vehicle.turning_changed.is_connected(turning_changed_callable):
+		_observed_vehicle.turning_changed.connect(turning_changed_callable)
 
 
 func _disconnect_observed_vehicle() -> void:
@@ -406,12 +429,9 @@ func _disconnect_observed_vehicle() -> void:
 	var blocked_callable := Callable(self, "_on_observed_vehicle_move_blocked")
 	if _observed_vehicle.move_blocked.is_connected(blocked_callable):
 		_observed_vehicle.move_blocked.disconnect(blocked_callable)
-	var turn_started_callable := Callable(self, "_on_observed_vehicle_turn_started")
-	if _observed_vehicle.turn_started.is_connected(turn_started_callable):
-		_observed_vehicle.turn_started.disconnect(turn_started_callable)
-	var turn_completed_callable := Callable(self, "_on_observed_vehicle_turn_completed")
-	if _observed_vehicle.turn_completed.is_connected(turn_completed_callable):
-		_observed_vehicle.turn_completed.disconnect(turn_completed_callable)
+	var turning_changed_callable := Callable(self, "_on_observed_vehicle_turning_changed")
+	if _observed_vehicle.turning_changed.is_connected(turning_changed_callable):
+		_observed_vehicle.turning_changed.disconnect(turning_changed_callable)
 	_observed_vehicle = null
 
 

@@ -6,6 +6,7 @@ signal move_completed(target_anchor: Vector2i)
 signal move_blocked()
 signal turn_started(direction: int)
 signal turn_completed(facing: int)
+signal turning_changed(is_turning: bool)
 
 const VehicleDefinitionScript := preload("res://scripts/vehicles/vehicle_definition.gd")
 const VehicleRuntimeStateScript := preload("res://scripts/vehicles/vehicle_runtime_state.gd")
@@ -171,6 +172,7 @@ func start_turn(direction: int) -> bool:
 	_turn_target_facing = posmod(runtime_state.facing + step, 4)
 	_turn_progress = 0.0
 	_sync_turn_basis()
+	turning_changed.emit(true)
 	turn_started.emit(step)
 	return true
 
@@ -184,8 +186,10 @@ func advance_turn(delta: float) -> void:
 		return
 	runtime_state.facing = _turn_target_facing
 	var completed_facing := runtime_state.facing
-	_clear_turn()
+	var was_turning := _clear_turn()
 	_sync_actor_basis()
+	if was_turning:
+		turning_changed.emit(false)
 	turn_completed.emit(completed_facing)
 
 
@@ -196,8 +200,10 @@ func is_turning() -> bool:
 func cancel_turn() -> void:
 	if not is_turning():
 		return
-	_clear_turn()
+	var was_turning := _clear_turn()
 	_sync_actor_basis()
+	if was_turning:
+		turning_changed.emit(false)
 
 
 func cancel_move() -> void:
@@ -215,9 +221,11 @@ func reset_actor() -> void:
 		return
 	set_physics_process(false)
 	_segment_progress = 0.0
-	_clear_turn()
+	var was_turning := _clear_turn()
 	runtime_state.reset()
 	sync_from_state()
+	if was_turning:
+		turning_changed.emit(false)
 
 
 func get_vehicle_id() -> StringName:
@@ -299,10 +307,12 @@ func _sync_turn_basis() -> void:
 	)
 
 
-func _clear_turn() -> void:
+func _clear_turn() -> bool:
+	var was_turning := is_turning()
 	_turn_progress = 0.0
 	_turn_direction = 0
 	_turn_target_facing = -1
+	return was_turning
 
 
 func _finish_move(target_anchor: Vector2i) -> void:
