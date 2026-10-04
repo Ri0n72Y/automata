@@ -90,7 +90,7 @@ func _run() -> void:
 	_expect_equal(move_button.text, "插入", "Move surface should switch from gameplay execution to source insertion.")
 	_expect_equal(grab_button.text, "插入", "GrabDrop surface should switch from gameplay execution to source insertion.")
 
-	var source_editor := operations.get_node("%SourceEditor") as CodeEdit
+	var source_editor := authoring.get_node("%SourceEditor") as CodeEdit
 	_expect_true(source_editor != null, "Unified panel should contain the one canonical CodeEdit source.")
 	operations.call("set_source_text", "automata_scene01_program 2\n[arm_vehicle:grabDrop]\n\n")
 	source_editor.set_caret_line(2)
