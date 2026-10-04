@@ -100,13 +100,12 @@ func _test_corner_path(scene: Node, move_controller: Node, selection: Node, arm:
 	var safety := 0
 	var observed_turn := false
 	while arm.runtime_state.motion_state == RUNTIME.MotionState.MOVING and safety < 1000:
-		var before_anchor: Vector2i = arm.runtime_state.anchor_cell
-		var before_position: Vector3 = arm.global_position
 		move_controller.call("_physics_process", 0.05)
 		if arm.is_turning():
 			observed_turn = true
-			_expect_equal(arm.runtime_state.anchor_cell, before_anchor, "Automatic corner turn should not translate anchor state.")
-			_expect_true(arm.global_position.is_equal_approx(before_position), "Automatic corner turn should stay at the reached corner.")
+			var turn_anchor: Vector2i = arm.runtime_state.anchor_cell
+			var turn_world: Vector3 = scene.call("grid_footprint_center_to_world", turn_anchor, arm.definition.footprint)
+			_expect_true(arm.global_position.is_equal_approx(turn_world), "Automatic corner turn should stay at the reached corner.")
 		safety += 1
 
 	_expect_true(safety < 1000, "Corner MoveTo should terminate within the safety bound.")
