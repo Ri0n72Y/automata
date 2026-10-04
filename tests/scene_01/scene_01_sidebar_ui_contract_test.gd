@@ -35,6 +35,7 @@ func _run() -> void:
 	var status_card := hud.get_node_or_null("%StatusCard") as Control if hud != null else null
 	var status_collapse := hud.get_node_or_null("%StatusCollapseButton") as Button if hud != null else null
 	var rail_collapse := hud.get_node_or_null("%RailCollapseButton") as Button if hud != null else null
+	var rail_icon := hud.get_node_or_null("%RailDisclosureIcon") as TextureRect if hud != null else null
 	var pointer := hud.get_node_or_null("%PointerSection") as Control if hud != null else null
 	var pointer_label := hud.get_node_or_null("%PointerLabel") as Label if hud != null else null
 	var feedback := hud.get_node_or_null("%FeedbackLabel") as Label if hud != null else null
@@ -59,6 +60,7 @@ func _run() -> void:
 		and status_card != null
 		and status_collapse != null
 		and rail_collapse != null
+		and rail_icon != null
 		and pointer != null
 		and pointer_label != null
 		and feedback != null
@@ -90,7 +92,8 @@ func _run() -> void:
 		"Primary information blocks should be sibling sections in one Sidebar."
 	)
 	_expect_true(status_collapse != null and status_collapse.icon != null and status_collapse.text.is_empty(), "Status should use an icon disclosure control.")
-	_expect_true(rail_collapse.icon == null and rail_collapse.text == "←", "Main rail should expose an explicit leftward collapse affordance.")
+	_expect_true(rail_collapse.icon == null and rail_collapse.text.is_empty(), "Main rail button should remain text-free when using the SVG disclosure child.")
+	_expect_true(rail_icon.texture != null and rail_icon.flip_h, "Expanded rail should present the shared chevron as a leftward collapse affordance.")
 	_expect_true(status_card.is_ancestor_of(feedback), "Status feedback should collapse with the Status body.")
 	_expect_true(pointer_label != null, "Pointer coordinates should be lightweight player-facing state.")
 	_expect_true(scene.get_node_or_null("DebugUIRoot/RootControl/Panel/Margin/VBox/CoordinatesRow") == null, "Pointer coordinates should not return to Debug.")
@@ -137,14 +140,14 @@ func _run() -> void:
 	_expect_false(scroll.is_visible_in_tree(), "Collapsed rail should hide its content without changing section ownership.")
 	_expect_equal(sidebar.mouse_filter, Control.MOUSE_FILTER_IGNORE, "Collapsed shell must not become a transparent world-input blocker.")
 	_expect_equal(rail_collapse.mouse_filter, Control.MOUSE_FILTER_STOP, "Only the real disclosure surface should stop pointer input while collapsed.")
-	_expect_equal(rail_collapse.text, "→", "Collapsed rail should use a rightward expand affordance.")
+	_expect_false(rail_icon.flip_h, "Collapsed rail should present the shared chevron as a rightward expand affordance.")
 	_expect_true(mission.get_parent() == content and vehicle.get_parent() == content and status.get_parent() == content, "Rail collapse should not reparent domain presentation sections.")
 	hud.call("set_rail_collapsed", false)
 	await process_frame
 	_expect_false(bool(hud.call("is_rail_collapsed")), "Main Sidebar should expand through the same presentation state.")
 	_expect_true(scroll.is_visible_in_tree(), "Expanded rail should restore its existing content tree.")
 	_expect_equal(sidebar.mouse_filter, Control.MOUSE_FILTER_STOP, "Expanded rail should restore its normal pointer-blocking surface.")
-	_expect_equal(rail_collapse.text, "←", "Expanded rail should use a leftward collapse affordance.")
+	_expect_true(rail_icon.flip_h, "Expanded rail should restore the leftward collapse affordance.")
 
 	_expect_true(bool(tutorial.call("is_collapsed")), "Tutorial should start collapsed in the compact main state.")
 	_expect_false(tutorial_body.visible, "Default collapsed Tutorial should not lengthen the Sidebar.")
