@@ -2,12 +2,13 @@
 
 importer="svg"
 type="DPITexture"
-path="res://.godot/imported/chevron_right.svg-0b4c4b2e135ae2fb24957cc74f53686c.dpitex"
+uid="uid://53ur06l10e62"
+path="res://.godot/imported/chevron_right.svg-9a18865f1be1ef337e1034f9a440943f.dpitex"
 
 [deps]
 
 source_file="res://assets/ui/icons/chevron_right.svg"
-dest_files=["res://.godot/imported/chevron_right.svg-0b4c4b2e135ae2fb24957cc74f53686c.dpitex"]
+dest_files=["res://.godot/imported/chevron_right.svg-9a18865f1be1ef337e1034f9a440943f.dpitex"]
 
 [params]
 
