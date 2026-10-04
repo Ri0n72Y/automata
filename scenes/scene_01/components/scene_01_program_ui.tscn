@@ -51,7 +51,7 @@ autowrap_mode = 2
 [node name="SourceEditor" type="CodeEdit" parent="."]
 unique_name_in_owner = true
 script = ExtResource("2_source_editor")
-custom_minimum_size = Vector2(0, 220)
+custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 text = "automata_scene01_program 2\n"
 size_flags_horizontal = 3
