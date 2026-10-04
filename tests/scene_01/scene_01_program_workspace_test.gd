@@ -67,10 +67,12 @@ func _run() -> void:
 	ui.call("set_source_text", "automata_scene01_program 2\n[arm_vehicle:grabDrop]\n\n[arm_vehicle:grabDrop]\n")
 	source_editor.set_caret_line(2)
 	source_editor.set_caret_column(0)
+	var anchor: Vector2i = arm.runtime_state.anchor_cell
+	var expected_move := "[arm_vehicle:moveTo] %d %d" % [anchor.x, anchor.y]
 	ui.get_node("%MoveButton").emit_signal("pressed")
 	var inserted := String(ui.call("get_source_text"))
-	_expect_true(inserted.find("[arm_vehicle:moveTo] 0 0") > inserted.find("[arm_vehicle:grabDrop]"), "Operations insertion should use the current canonical caret line.")
-	_expect_true(inserted.find("[arm_vehicle:moveTo] 0 0") < inserted.rfind("[arm_vehicle:grabDrop]"), "Operations insertion should not append blindly to the end.")
+	_expect_true(inserted.find(expected_move) > inserted.find("[arm_vehicle:grabDrop]"), "Operations insertion should use the current canonical caret line.")
+	_expect_true(inserted.find(expected_move) < inserted.rfind("[arm_vehicle:grabDrop]"), "Operations insertion should not append blindly to the end.")
 
 	repeat_count.value = 2
 	_expect_true(repeat_target_option.item_count > 0, "Repeat picker should derive legal targets from parsed canonical source.")
