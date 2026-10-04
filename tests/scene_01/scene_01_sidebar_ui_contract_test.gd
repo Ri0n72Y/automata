@@ -90,7 +90,7 @@ func _run() -> void:
 		"Primary information blocks should be sibling sections in one Sidebar."
 	)
 	_expect_true(status_collapse != null and status_collapse.icon != null and status_collapse.text.is_empty(), "Status should use an icon disclosure control.")
-	_expect_true(rail_collapse.icon != null and rail_collapse.text.is_empty(), "Main rail should expose its own disclosure control.")
+	_expect_true(rail_collapse.icon == null and rail_collapse.text == "←", "Main rail should expose an explicit leftward collapse affordance.")
 	_expect_true(status_card.is_ancestor_of(feedback), "Status feedback should collapse with the Status body.")
 	_expect_true(pointer_label != null, "Pointer coordinates should be lightweight player-facing state.")
 	_expect_true(scene.get_node_or_null("DebugUIRoot/RootControl/Panel/Margin/VBox/CoordinatesRow") == null, "Pointer coordinates should not return to Debug.")
