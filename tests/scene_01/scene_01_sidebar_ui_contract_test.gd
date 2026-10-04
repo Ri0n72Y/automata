@@ -121,9 +121,19 @@ func _run() -> void:
 		await process_frame
 		_expect_near(
 			sidebar.size.x,
-			LayoutMetrics.left_rail_width(float(viewport_size.x)),
+			LayoutMetrics.REFERENCE_LEFT_RAIL_WIDTH,
 			2.0,
-			"Expanded Sidebar width should follow the reference-derived shared metric."
+			"Expanded Sidebar should stay at the compact 240px production width."
+		)
+		_expect_near(
+			LayoutMetrics.left_rail_width(float(viewport_size.x)),
+			LayoutMetrics.REFERENCE_LEFT_RAIL_WIDTH,
+			0.1,
+			"Shared layout metrics should not re-expand the Sidebar at common viewport widths."
+		)
+		_expect_true(
+			sidebar.get_combined_minimum_size().x <= LayoutMetrics.REFERENCE_LEFT_RAIL_WIDTH + 1.0,
+			"Sidebar child minimum sizes must not silently expand the 240px rail."
 		)
 
 	viewport.size = Vector2i(1280, 720)
@@ -164,6 +174,16 @@ func _run() -> void:
 	_expect_tutorial_button_geometry(tutorial_previous)
 	_expect_tutorial_button_geometry(tutorial_next)
 	_expect_tutorial_button_geometry(tutorial_skip)
+	var tutorial_button_row := tutorial_previous.get_parent() as HBoxContainer
+	_expect_true(
+		tutorial_button_row != null
+		and tutorial_button_row.get_combined_minimum_size().x <= (
+			LayoutMetrics.REFERENCE_LEFT_RAIL_WIDTH
+			- 2.0 * 8.0
+			- 2.0 * float(tutorial_content_margin.get_theme_constant("margin_left"))
+		),
+		"Tutorial navigation minimum width should fit inside the 240px Sidebar."
+	)
 	_expect_true(
 		tutorial_content_margin.get_theme_constant("margin_left") >= 14
 		and tutorial_content_margin.get_theme_constant("margin_right") >= 14
@@ -247,8 +267,8 @@ func _expect_tutorial_button_geometry(button: Button) -> void:
 		return
 	var normal_margins := _style_margins(normal_style)
 	_expect_true(
-		normal_style.content_margin_left >= 10.0
-		and normal_style.content_margin_right >= 10.0
+		normal_style.content_margin_left >= 6.0
+		and normal_style.content_margin_right >= 6.0
 		and normal_style.content_margin_top >= 5.0
 		and normal_style.content_margin_bottom >= 5.0,
 		"Tutorial navigation button text should have stable internal padding."
