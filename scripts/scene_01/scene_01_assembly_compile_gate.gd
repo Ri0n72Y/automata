@@ -36,16 +36,33 @@ func configure(vehicle_manager: Node) -> void:
 	clear_runtime_results()
 
 
+func can_prepare_scene_run() -> bool:
+	return bool(_evaluate_scene_run().get("ok", false))
+
+
 func prepare_scene_run() -> bool:
+	var evaluation := _evaluate_scene_run()
+	if not bool(evaluation.get("ok", false)):
+		return _fail(
+			StringName(evaluation.get("failed_vehicle_id", &"")),
+			evaluation.get("diagnostics", [])
+		)
+	_compiled_results = evaluation.get("compiled_results", {})
+	_last_diagnostics.clear()
+	_last_failed_vehicle_id = &""
+	return true
+
+
+func _evaluate_scene_run() -> Dictionary:
 	if _vehicle_manager == null or not is_instance_valid(_vehicle_manager):
-		return _fail(&"", [
+		return _evaluation_failure(&"", [
 			AssemblyCompileDiagnosticScript.new(
 				DIAGNOSTIC_VEHICLE_MANAGER_REQUIRED,
 				"Scene 01 assembly compile requires a vehicle manager."
 			)
 		])
 	if not _vehicle_manager.has_method("get_vehicles"):
-		return _fail(&"", [
+		return _evaluation_failure(&"", [
 			AssemblyCompileDiagnosticScript.new(
 				DIAGNOSTIC_VEHICLE_MANAGER_REQUIRED,
 				"Scene 01 vehicle manager must expose get_vehicles()."
@@ -54,7 +71,7 @@ func prepare_scene_run() -> bool:
 
 	var vehicle_nodes: Array = _vehicle_manager.call("get_vehicles")
 	if vehicle_nodes.is_empty():
-		return _fail(&"", [
+		return _evaluation_failure(&"", [
 			AssemblyCompileDiagnosticScript.new(
 				DIAGNOSTIC_VEHICLES_REQUIRED,
 				"Scene 01 assembly compile requires at least one participating vehicle."
@@ -65,14 +82,14 @@ func prepare_scene_run() -> bool:
 	for vehicle_node in vehicle_nodes:
 		var vehicle := vehicle_node as VehicleActorScript
 		if vehicle == null or vehicle.definition == null:
-			return _fail(&"", [
+			return _evaluation_failure(&"", [
 				AssemblyCompileDiagnosticScript.new(
 					DIAGNOSTIC_VEHICLE_DEFINITION_INVALID,
 					"Participating vehicle is missing a configured definition."
 				)
 			])
 		if not vehicle.definition.is_configured():
-			return _fail(&"", [
+			return _evaluation_failure(&"", [
 				AssemblyCompileDiagnosticScript.new(
 					DIAGNOSTIC_VEHICLE_DEFINITION_INVALID,
 					"Participating vehicle is missing a configured definition."
@@ -80,7 +97,7 @@ func prepare_scene_run() -> bool:
 			])
 		var vehicle_id := vehicle.get_vehicle_id()
 		if vehicle_id == &"" or candidate_results.has(vehicle_id):
-			return _fail(vehicle_id, [
+			return _evaluation_failure(vehicle_id, [
 				AssemblyCompileDiagnosticScript.new(
 					DIAGNOSTIC_DUPLICATE_VEHICLE_ID,
 					"Participating vehicle ids must be unique."
@@ -89,7 +106,7 @@ func prepare_scene_run() -> bool:
 
 		var assembly_definition = _adapter.build_definition(vehicle)
 		if assembly_definition == null:
-			return _fail(vehicle_id, [
+			return _evaluation_failure(vehicle_id, [
 				AssemblyCompileDiagnosticScript.new(
 					DIAGNOSTIC_VEHICLE_DEFINITION_INVALID,
 					"Vehicle definition cannot be adapted for assembly compilation."
@@ -99,7 +116,7 @@ func prepare_scene_run() -> bool:
 			AssemblyCompileRequestScript.new(assembly_definition)
 		)
 		if not compile_result.is_success():
-			return _fail(vehicle_id, compile_result.get_diagnostics())
+			return _evaluation_failure(vehicle_id, compile_result.get_diagnostics())
 
 		var required: Array[StringName] = _requirements_for(vehicle_id)
 		var capability_diagnostics := _capability_validator.validate(
@@ -107,7 +124,7 @@ func prepare_scene_run() -> bool:
 			required
 		)
 		if not capability_diagnostics.is_empty():
-			return _fail(vehicle_id, capability_diagnostics)
+			return _evaluation_failure(vehicle_id, capability_diagnostics)
 		candidate_results[vehicle_id] = compile_result
 
 	for required_vehicle_value in _required_capabilities.keys():
@@ -116,17 +133,28 @@ func prepare_scene_run() -> bool:
 			continue
 		if _requirements_for(required_vehicle_id).is_empty():
 			continue
-		return _fail(required_vehicle_id, [
+		return _evaluation_failure(required_vehicle_id, [
 			AssemblyCompileDiagnosticScript.new(
 				DIAGNOSTIC_REQUIRED_VEHICLE_MISSING,
 				"Program requirements reference a vehicle that is not participating in Scene 01."
 			)
 		])
 
-	_compiled_results = candidate_results
-	_last_diagnostics.clear()
-	_last_failed_vehicle_id = &""
-	return true
+	return {
+		"ok": true,
+		"compiled_results": candidate_results,
+		"failed_vehicle_id": &"",
+		"diagnostics": [],
+	}
+
+
+func _evaluation_failure(vehicle_id: StringName, diagnostics: Array) -> Dictionary:
+	return {
+		"ok": false,
+		"compiled_results": {},
+		"failed_vehicle_id": vehicle_id,
+		"diagnostics": diagnostics,
+	}
 
 
 func set_required_capabilities(

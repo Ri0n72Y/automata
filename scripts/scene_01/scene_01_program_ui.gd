@@ -35,6 +35,7 @@ func _ready() -> void:
 	_bind_runner()
 	_vehicle_selection.selection_changed.connect(_on_vehicle_selection_changed)
 	get_viewport().size_changed.connect(_apply_workspace_layout)
+	_apply_workspace_layout()
 	call_deferred("_initialize_editor")
 
 func _input(event: InputEvent) -> void:
@@ -76,7 +77,7 @@ func _apply_workspace_layout() -> void:
 		if _expanded_content.visible
 		else LayoutMetrics.PROGRAM_COLLAPSED_WIDTH
 	)
-	_program_panel.offset_top = LayoutMetrics.CONTENT_TOP
+	_program_panel.offset_top = LayoutMetrics.program_rail_top()
 	_program_panel.offset_right = -LayoutMetrics.EDGE_MARGIN
 	_program_panel.offset_left = _program_panel.offset_right - width
 	_program_panel.offset_bottom = -LayoutMetrics.CONTENT_BOTTOM_MARGIN

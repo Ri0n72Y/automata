@@ -14,6 +14,9 @@ class RejectingRunPreparationGate:
 	extends Node
 	var call_count: int = 0
 
+	func can_prepare_scene_run() -> bool:
+		return false
+
 	func prepare_scene_run() -> bool:
 		call_count += 1
 		return false
@@ -47,14 +50,26 @@ func _run() -> void:
 	_expect_equal(lifecycle_events, [], "Initial scene construction must not masquerade as an explicit Reset.")
 
 	var lifecycle_ui := scene.get_node_or_null("LifecycleUIRoot") as LifecycleControlsScript
-	var run_pause_button := scene.get_node_or_null("LifecycleUIRoot/RootControl/Panel/Margin/Controls/RunPauseButton") as Button
-	var speed_button := scene.get_node_or_null("LifecycleUIRoot/RootControl/Panel/Margin/Controls/SpeedButton") as Button
+	var state_label := lifecycle_ui.get_node_or_null("%StateLabel") as Label if lifecycle_ui != null else null
+	var time_label := lifecycle_ui.get_node_or_null("%TimeLabel") as Label if lifecycle_ui != null else null
+	var run_pause_button := lifecycle_ui.get_node_or_null("%RunPauseButton") as Button if lifecycle_ui != null else null
+	var speed_option := lifecycle_ui.get_node_or_null("%SpeedOption") as OptionButton if lifecycle_ui != null else null
 	var vehicle_manager := scene.get_node_or_null("SceneRoot/RobotRoot/Scene01VehicleManager") as VehicleManagerScript
 	var vehicle_selection := scene.get_node_or_null("SceneRoot/GridRoot/VehicleSelectionController") as VehicleSelectionScript
 	var move_controller := scene.get_node_or_null("SceneRoot/GridRoot/VehicleMoveController") as VehicleMoveScript
 	var object_manager := scene.get_node_or_null("SceneRoot/ObjectRoot/Scene01ObjectManager") as ObjectManagerScript
-	_expect_true(lifecycle_ui != null and run_pause_button != null and speed_button != null and vehicle_manager != null and vehicle_selection != null and move_controller != null and object_manager != null, "Lifecycle integration dependencies should exist.")
-	if lifecycle_ui == null or vehicle_manager == null or vehicle_selection == null or move_controller == null or object_manager == null:
+	_expect_true(lifecycle_ui != null and state_label != null and time_label != null and run_pause_button != null and speed_option != null and vehicle_manager != null and vehicle_selection != null and move_controller != null and object_manager != null, "Lifecycle integration dependencies should exist.")
+	if (
+		lifecycle_ui == null
+		or state_label == null
+		or time_label == null
+		or run_pause_button == null
+		or speed_option == null
+		or vehicle_manager == null
+		or vehicle_selection == null
+		or move_controller == null
+		or object_manager == null
+	):
 		await _cleanup(scene)
 		_finish()
 		return
@@ -71,18 +86,22 @@ func _run() -> void:
 	_expect_true(object_manager.is_initialized(), "Object domain should be initialized before lifecycle gameplay begins.")
 	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.READY, "Scene should start READY.")
 	_expect_equal(scene.get_simulation_speed(), 1.0, "Scene should start at 1x.")
-	_expect_equal(run_pause_button.text, "▶", "READY should show play icon.")
+	_expect_true(run_pause_button.icon != null, "READY should show the SVG play icon.")
+	_expect_equal(state_label.text, "就绪", "READY should expose a compact readable lifecycle state.")
+	_expect_equal(time_label.text, "00:00.0", "READY should expose zero simulation time.")
+	_expect_equal(speed_option.selected, 1, "READY should select the 1x speed option.")
 
 	lifecycle_ui._on_run_pause_pressed()
 	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.RUNNING, "Play should enter RUNNING.")
-	_expect_equal(run_pause_button.text, "⏸", "RUNNING should show pause icon.")
+	_expect_true(run_pause_button.icon != null, "RUNNING should show the SVG pause icon.")
+	_expect_equal(state_label.text, "运行中", "RUNNING should expose a readable lifecycle state.")
 	_expect_true(vehicle_selection.select_vehicle(arm), "Arm should be selectable.")
 	_expect_true(move_controller.request_selected_vehicle_move(Vector2i(4, 2)), "RUNNING should accept a valid MoveTo.")
 	move_controller._physics_process(0.20)
 	var position_before_pause: Vector3 = arm.global_position
 	var anchor_before_pause: Vector2i = arm.runtime_state.anchor_cell
 	var command_before_pause = arm.runtime_state.active_move_command
-	var timer_before_pause: float = scene.timer
+	var timer_before_pause: float = scene.get_mission_elapsed_time()
 	lifecycle_ui._on_run_pause_pressed()
 	_expect_equal(scene.get_lifecycle_state(), LifecycleStateScript.State.PAUSED, "Pause should enter PAUSED.")
 	move_controller._physics_process(1.0)
@@ -90,12 +109,12 @@ func _run() -> void:
 	_expect_vector_approx(arm.global_position, position_before_pause, "Paused vehicle should not advance.")
 	_expect_equal(arm.runtime_state.anchor_cell, anchor_before_pause, "Pause should preserve discrete anchor.")
 	_expect_true(arm.runtime_state.active_move_command == command_before_pause, "Pause should preserve active MoveCommand identity.")
-	_expect_float_approx(scene.timer, timer_before_pause, "Paused timer should not advance.")
+	_expect_float_approx(scene.get_mission_elapsed_time(), timer_before_pause, "Paused timer should not advance.")
 	_expect_false(move_controller.request_selected_vehicle_stop(), "PAUSED should reject stop requests.")
 
-	lifecycle_ui._on_speed_pressed()
-	_expect_equal(scene.get_simulation_speed(), 2.0, "Speed should cycle while paused.")
-	_expect_equal(speed_button.text, "2×", "Speed label should update while paused.")
+	lifecycle_ui._on_speed_selected(2)
+	_expect_equal(scene.get_simulation_speed(), 2.0, "Speed option should update simulation speed while paused.")
+	_expect_equal(speed_option.selected, 2, "Speed selector should reflect 2x while paused.")
 	lifecycle_ui._on_run_pause_pressed()
 	move_controller._physics_process(0.20)
 	_expect_true(arm.global_position.distance_to(position_before_pause) > 0.01, "Resume should continue the active move.")

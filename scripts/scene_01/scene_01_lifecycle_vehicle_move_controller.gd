@@ -1,6 +1,17 @@
 class_name Scene01LifecycleVehicleMoveController
 extends "res://scripts/input/vehicle_move_controller.gd"
 
+const LifecycleAvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
+
+
+func get_selected_move_command_availability() -> StringName:
+	if super._get_selected_vehicle() == null:
+		return LifecycleAvailabilityScript.NO_VEHICLE
+	var lifecycle_status := _get_lifecycle_command_availability()
+	if lifecycle_status != LifecycleAvailabilityScript.AVAILABLE:
+		return lifecycle_status
+	return super.get_selected_move_command_availability()
+
 
 func _physics_process(delta: float) -> void:
 	if not _is_lifecycle_running():
@@ -22,8 +33,6 @@ func request_vehicle_move(vehicle: VehicleActor, target_anchor: Vector2i) -> boo
 	if vehicle != null and not _ensure_gameplay_running():
 		return false
 	var accepted := super.request_vehicle_move(vehicle, target_anchor)
-	if accepted:
-		_face_vehicle_for_final_step(vehicle)
 	_sync_live_target_mode()
 	return accepted
 
@@ -50,22 +59,10 @@ func _sync_live_target_mode() -> void:
 	_hide_prediction()
 
 
-func _face_vehicle_for_final_step(vehicle: VehicleActor) -> void:
-	if vehicle == null or vehicle.runtime_state == null:
-		return
-	var command = vehicle.runtime_state.active_move_command
-	if command == null or command.path.size() < 2:
-		return
-	var step: Vector2i = command.path[command.path.size() - 1] - command.path[command.path.size() - 2]
-	if step == Vector2i(1, 0):
-		vehicle.runtime_state.facing = VehicleRuntimeStateScript.Facing.EAST
-	elif step == Vector2i(-1, 0):
-		vehicle.runtime_state.facing = VehicleRuntimeStateScript.Facing.WEST
-	elif step == Vector2i(0, 1):
-		vehicle.runtime_state.facing = VehicleRuntimeStateScript.Facing.SOUTH
-	elif step == Vector2i(0, -1):
-		vehicle.runtime_state.facing = VehicleRuntimeStateScript.Facing.NORTH
-	vehicle.sync_from_state()
+func _get_lifecycle_command_availability() -> StringName:
+	if controller == null or not controller.has_method("get_gameplay_command_availability"):
+		return LifecycleAvailabilityScript.PREPARATION_REJECTED
+	return StringName(controller.call("get_gameplay_command_availability"))
 
 
 func _ensure_gameplay_running() -> bool:

@@ -7,6 +7,7 @@ signal lifecycle_reset_completed()
 signal lifecycle_run_preparation_failed(reason: StringName)
 
 const LifecycleStateScript := preload("res://scripts/scene_01/scene_01_lifecycle_state.gd")
+const CommandAvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
 
 @export var run_preparation_gate_path: NodePath = NodePath()
 
@@ -116,6 +117,26 @@ func get_simulation_speed() -> float:
 	return _lifecycle_state.get_simulation_speed()
 
 
+func get_gameplay_command_availability() -> StringName:
+	if not _scene_initialized:
+		return CommandAvailabilityScript.PREPARATION_REJECTED
+	if _lifecycle_state.is_paused():
+		return CommandAvailabilityScript.PAUSED
+	if _lifecycle_state.is_running():
+		return CommandAvailabilityScript.AVAILABLE
+	if _lifecycle_mutation_in_progress or not _lifecycle_state.is_ready():
+		return CommandAvailabilityScript.PREPARATION_REJECTED
+	return (
+		CommandAvailabilityScript.AVAILABLE
+		if _can_prepare_scene_run()
+		else CommandAvailabilityScript.PREPARATION_REJECTED
+	)
+
+
+func can_execute_gameplay_command() -> bool:
+	return get_gameplay_command_availability() == CommandAvailabilityScript.AVAILABLE
+
+
 func reset_scene_state() -> bool:
 	if _lifecycle_mutation_in_progress or not _scene_initialized:
 		return false
@@ -160,13 +181,29 @@ func _prepare_scene_run() -> bool:
 	if gate == null:
 		lifecycle_run_preparation_failed.emit(&"missing_run_preparation_gate")
 		return false
-	if not gate.has_method("prepare_scene_run"):
+	if (
+		not gate.has_method("prepare_scene_run")
+		or not gate.has_method("can_prepare_scene_run")
+	):
 		lifecycle_run_preparation_failed.emit(&"invalid_run_preparation_gate")
 		return false
 	if not bool(gate.call("prepare_scene_run")):
 		lifecycle_run_preparation_failed.emit(&"run_preparation_rejected")
 		return false
 	return true
+
+
+func _can_prepare_scene_run() -> bool:
+	if run_preparation_gate_path.is_empty():
+		return true
+	var gate := get_node_or_null(run_preparation_gate_path)
+	if (
+		gate == null
+		or not gate.has_method("prepare_scene_run")
+		or not gate.has_method("can_prepare_scene_run")
+	):
+		return false
+	return bool(gate.call("can_prepare_scene_run"))
 
 
 func _connect_lifecycle_signals() -> void:

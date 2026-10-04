@@ -14,6 +14,9 @@ class CountingAcceptingGate:
 	extends Node
 	var call_count: int = 0
 
+	func can_prepare_scene_run() -> bool:
+		return true
+
 	func prepare_scene_run() -> bool:
 		call_count += 1
 		return true

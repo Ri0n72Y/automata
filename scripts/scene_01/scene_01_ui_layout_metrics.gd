@@ -7,15 +7,11 @@ const WIDE_BREAKPOINT := 1920.0
 const EDGE_MARGIN := 16.0
 const CONTENT_TOP := 82.0
 const CONTENT_BOTTOM_MARGIN := 16.0
-const PANEL_GAP := 12.0
+const OPERATIONS_PANEL_HEIGHT := 218.0
+const RIGHT_RAIL_SECTION_GAP := 8.0
 
-const LEFT_STATUS_HEIGHT := 232.0
-const LEFT_AUX_TOP := CONTENT_TOP + LEFT_STATUS_HEIGHT + PANEL_GAP
-const TUTORIAL_TARGET_HEIGHT := 260.0
-
-const LEFT_NARROW_WIDTH := 340.0
-const LEFT_COMPACT_WIDTH := 360.0
-const LEFT_WIDE_WIDTH := 380.0
+const PRIMARY_RAIL_WIDTH := 240.0
+const LEFT_RAIL_COLLAPSED_WIDTH := 44.0
 
 const PROGRAM_COLLAPSED_WIDTH := 56.0
 const PROGRAM_NARROW_WIDTH := 360.0
@@ -23,10 +19,8 @@ const PROGRAM_COMPACT_WIDTH := 400.0
 const PROGRAM_WIDE_WIDTH := 460.0
 
 
-static func left_rail_width(viewport_width: float) -> float:
-	return LEFT_WIDE_WIDTH if viewport_width >= WIDE_BREAKPOINT else (
-		LEFT_COMPACT_WIDTH if viewport_width >= COMPACT_BREAKPOINT else LEFT_NARROW_WIDTH
-	)
+static func left_sidebar_max_height(viewport_height: float) -> float:
+	return maxf(viewport_height - CONTENT_TOP - CONTENT_BOTTOM_MARGIN, 0.0)
 
 
 static func program_rail_width(viewport_width: float) -> float:
@@ -35,14 +29,5 @@ static func program_rail_width(viewport_width: float) -> float:
 	)
 
 
-static func available_height(viewport_height: float, top: float) -> float:
-	return maxf(0.0, viewport_height - CONTENT_BOTTOM_MARGIN - top)
-
-
-static func clamped_panel_height(
-	viewport_height: float,
-	top: float,
-	desired_height: float,
-	minimum_height: float
-) -> float:
-	return maxf(minimum_height, minf(desired_height, available_height(viewport_height, top)))
+static func program_rail_top() -> float:
+	return CONTENT_TOP + OPERATIONS_PANEL_HEIGHT + RIGHT_RAIL_SECTION_GAP

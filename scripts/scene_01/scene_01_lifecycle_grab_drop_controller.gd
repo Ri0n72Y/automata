@@ -1,6 +1,8 @@
 class_name Scene01LifecycleGrabDropController
 extends "res://scripts/input/vehicle_grab_drop_controller.gd"
 
+const LifecycleAvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
+
 @export var scene_controller_path: NodePath = NodePath("../../..")
 
 var _scene_controller: Node
@@ -24,6 +26,24 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _is_lifecycle_paused():
 		return
 	super._unhandled_input(event)
+
+
+func get_selected_rotate_command_availability() -> StringName:
+	if super._get_selected_vehicle() == null:
+		return LifecycleAvailabilityScript.NO_VEHICLE
+	var lifecycle_status := _get_lifecycle_command_availability()
+	if lifecycle_status != LifecycleAvailabilityScript.AVAILABLE:
+		return lifecycle_status
+	return super.get_selected_rotate_command_availability()
+
+
+func get_selected_grab_drop_command_availability() -> StringName:
+	if super._get_selected_vehicle() == null:
+		return LifecycleAvailabilityScript.NO_VEHICLE
+	var lifecycle_status := _get_lifecycle_command_availability()
+	if lifecycle_status != LifecycleAvailabilityScript.AVAILABLE:
+		return lifecycle_status
+	return super.get_selected_grab_drop_command_availability()
 
 
 func request_selected_grab_drop() -> GrabDropResultScript:
@@ -61,6 +81,15 @@ func refresh_interaction_preview() -> void:
 
 func sync_lifecycle_state() -> void:
 	refresh_interaction_preview()
+
+
+func _get_lifecycle_command_availability() -> StringName:
+	if (
+		not _has_lifecycle_contract()
+		or not _scene_controller.has_method("get_gameplay_command_availability")
+	):
+		return LifecycleAvailabilityScript.PREPARATION_REJECTED
+	return StringName(_scene_controller.call("get_gameplay_command_availability"))
 
 
 func _ensure_gameplay_running() -> bool:
