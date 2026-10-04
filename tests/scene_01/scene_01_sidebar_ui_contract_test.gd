@@ -107,7 +107,12 @@ func _run() -> void:
 	_expect_near(max_height, float(viewport.size.y) - LayoutMetrics.CONTENT_TOP - LayoutMetrics.CONTENT_BOTTOM_MARGIN, 1.0, "Sidebar maximum should use the available viewport height.")
 	_expect_true(sidebar.size.y <= max_height + 1.0, "Sidebar should never exceed its viewport-derived cap.")
 
-	for viewport_size in [Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(1920, 1080)]:
+	for viewport_size in [
+		Vector2i(1280, 720),
+		Vector2i(1600, 900),
+		Vector2i(1920, 1080),
+		Vector2i(2264, 1274),
+	]:
 		viewport.size = viewport_size
 		await process_frame
 		await process_frame
@@ -120,17 +125,26 @@ func _run() -> void:
 
 	viewport.size = Vector2i(1280, 720)
 	await process_frame
+	await process_frame
+	var expanded_height := sidebar.size.y
+	_expect_true(rail_collapse.get_parent() == hud.get_node("RootControl"), "Rail disclosure must be a RootControl sibling, not a PanelContainer child.")
+	_expect_true(rail_collapse.size.x <= 32.0 and rail_collapse.size.y <= 32.0, "Rail disclosure hitbox should stay limited to the visible control.")
 	hud.call("set_rail_collapsed", true)
 	await process_frame
 	_expect_true(bool(hud.call("is_rail_collapsed")), "Main Sidebar should support presentation-only rail collapse.")
 	_expect_near(sidebar.size.x, LayoutMetrics.LEFT_RAIL_COLLAPSED_WIDTH, 1.0, "Collapsed rail should release gameplay width.")
-	_expect_near(sidebar.size.y, LayoutMetrics.LEFT_RAIL_COLLAPSED_WIDTH, 1.0, "Collapsed rail should keep only its disclosure hit target.")
+	_expect_near(sidebar.size.y, expanded_height, 1.0, "Collapsed rail should keep the expanded vertical rail geometry.")
 	_expect_false(scroll.is_visible_in_tree(), "Collapsed rail should hide its content without changing section ownership.")
+	_expect_equal(sidebar.mouse_filter, Control.MOUSE_FILTER_IGNORE, "Collapsed shell must not become a transparent world-input blocker.")
+	_expect_equal(rail_collapse.mouse_filter, Control.MOUSE_FILTER_STOP, "Only the real disclosure surface should stop pointer input while collapsed.")
+	_expect_equal(rail_collapse.text, "→", "Collapsed rail should use a rightward expand affordance.")
 	_expect_true(mission.get_parent() == content and vehicle.get_parent() == content and status.get_parent() == content, "Rail collapse should not reparent domain presentation sections.")
 	hud.call("set_rail_collapsed", false)
 	await process_frame
 	_expect_false(bool(hud.call("is_rail_collapsed")), "Main Sidebar should expand through the same presentation state.")
 	_expect_true(scroll.is_visible_in_tree(), "Expanded rail should restore its existing content tree.")
+	_expect_equal(sidebar.mouse_filter, Control.MOUSE_FILTER_STOP, "Expanded rail should restore its normal pointer-blocking surface.")
+	_expect_equal(rail_collapse.text, "←", "Expanded rail should use a leftward collapse affordance.")
 
 	_expect_true(bool(tutorial.call("is_collapsed")), "Tutorial should start collapsed in the compact main state.")
 	_expect_false(tutorial_body.visible, "Default collapsed Tutorial should not lengthen the Sidebar.")

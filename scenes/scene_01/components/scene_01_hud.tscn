@@ -156,20 +156,17 @@ offset_bottom = 82.0
 mouse_filter = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_sidebar_shell")
 
-[node name="RailCollapseButton" type="Button" parent="RootControl/SidebarPanel"]
+[node name="RailCollapseButton" type="Button" parent="RootControl"]
 unique_name_in_owner = true
-z_index = 1
+z_index = 2
 layout_mode = 0
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -34.0
-offset_top = 8.0
-offset_right = -8.0
-offset_bottom = 34.0
-grow_horizontal = 0
+offset_left = 302.0
+offset_top = 90.0
+offset_right = 328.0
+offset_bottom = 116.0
 focus_mode = 0
-icon = ExtResource("5_chevron_down")
-icon_alignment = 1
+mouse_filter = 0
+text = "←"
 tooltip_text = "折叠侧栏"
 theme_override_styles/normal = SubResource("StyleBoxFlat_header_button_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_header_button_hover")

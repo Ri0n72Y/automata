@@ -45,7 +45,7 @@ func _apply_layout() -> void:
 	_panel.offset_top = LayoutMetrics.CONTENT_TOP
 	_panel.offset_right = -LayoutMetrics.EDGE_MARGIN
 	_panel.offset_left = _panel.offset_right - width
-	_panel.offset_bottom = _panel.offset_top + LayoutMetrics.OPERATIONS_PANEL_HEIGHT
+	_panel.offset_bottom = _panel.offset_top + ceilf(_panel.get_combined_minimum_size().y)
 
 
 func _refresh_projection() -> void:
@@ -65,6 +65,7 @@ func _refresh_projection() -> void:
 	_move_row.visible = move_status != AvailabilityScript.NO_CAPABILITY
 	_rotate_row.visible = rotate_status != AvailabilityScript.NO_CAPABILITY
 	_grab_drop_row.visible = grab_drop_status != AvailabilityScript.NO_CAPABILITY
+	call_deferred("_apply_layout")
 
 	_move_status.text = _status_text(move_status)
 	_rotate_status.text = _status_text(rotate_status)

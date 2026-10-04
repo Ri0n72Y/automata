@@ -92,9 +92,6 @@ func _apply_sidebar_layout() -> void:
 		else LayoutMetrics.left_rail_width(float(viewport_size.x))
 	)
 	sidebar_panel.offset_right = sidebar_panel.offset_left + rail_width
-	if _rail_collapsed:
-		sidebar_panel.offset_bottom = sidebar_panel.offset_top + LayoutMetrics.LEFT_RAIL_COLLAPSED_WIDTH
-		return
 	var content_height := (
 		sidebar_content.get_combined_minimum_size().y
 		+ sidebar_margin.get_theme_constant("margin_top")
@@ -103,6 +100,11 @@ func _apply_sidebar_layout() -> void:
 	var max_height := LayoutMetrics.left_sidebar_max_height(float(viewport_size.y))
 	var target_height := minf(content_height, max_height)
 	sidebar_panel.offset_bottom = sidebar_panel.offset_top + target_height
+	if rail_collapse_button != null:
+		rail_collapse_button.offset_left = sidebar_panel.offset_right - 34.0
+		rail_collapse_button.offset_top = sidebar_panel.offset_top + 8.0
+		rail_collapse_button.offset_right = sidebar_panel.offset_right - 8.0
+		rail_collapse_button.offset_bottom = sidebar_panel.offset_top + 34.0
 
 
 func _queue_sidebar_layout() -> void:
@@ -131,8 +133,12 @@ func set_rail_collapsed(collapsed: bool) -> void:
 	_rail_collapsed = collapsed
 	if sidebar_margin != null:
 		sidebar_margin.visible = not _rail_collapsed
+	if sidebar_panel != null:
+		sidebar_panel.mouse_filter = (
+			Control.MOUSE_FILTER_IGNORE if _rail_collapsed else Control.MOUSE_FILTER_STOP
+		)
 	if rail_collapse_button != null:
-		rail_collapse_button.icon = CHEVRON_RIGHT_ICON if _rail_collapsed else CHEVRON_DOWN_ICON
+		rail_collapse_button.text = "→" if _rail_collapsed else "←"
 		rail_collapse_button.tooltip_text = "展开侧栏" if _rail_collapsed else "折叠侧栏"
 	if _rail_collapsed:
 		var focus_owner := get_viewport().gui_get_focus_owner()

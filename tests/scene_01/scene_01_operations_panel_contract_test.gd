@@ -62,6 +62,9 @@ func _run() -> void:
 	_expect_true(arm != null and selection.call("select_vehicle", arm), "Operations contract should select Arm through VehicleSelectionController.")
 	await process_frame
 	_expect_true(vehicle_label.text.contains("机械臂车"), "Operations vehicle label should project the selected Arm.")
+	await process_frame
+	var arm_panel_height := panel.size.y
+	_expect_true(grab_row.visible, "Arm should expose its supported GrabDrop row.")
 	_assert_projection(move_controller, grab_controller, move_button, rotate_left, rotate_right, grab_button)
 
 	var move_availability := StringName(move_controller.call("get_selected_move_interaction_availability"))
@@ -95,11 +98,17 @@ func _run() -> void:
 	_expect_false(grab_row.visible, "Authoritative NO_CAPABILITY should hide the unsupported GrabDrop row.")
 	_expect_true(move_row.visible and rotate_row.visible, "Transport-supported command rows should remain visible.")
 	_expect_true(grab_button.disabled, "Hidden unsupported GrabDrop should remain non-actionable.")
+	await process_frame
+	var transport_panel_height := panel.size.y
+	_expect_true(transport_panel_height < arm_panel_height, "Transport panel should shrink when NO_CAPABILITY hides GrabDrop.")
+	_expect_near(panel.size.y, panel.get_combined_minimum_size().y, 1.0, "Operations pointer rect should follow visible-content natural height.")
 	_assert_projection(move_controller, grab_controller, move_button, rotate_left, rotate_right, grab_button)
 
 	_expect_true(selection.call("select_vehicle", arm), "Operations contract should reselect Arm after Transport.")
 	await process_frame
+	await process_frame
 	_expect_true(grab_row.visible, "Arm reselection should restore GrabDrop without stale visibility.")
+	_expect_near(panel.size.y, arm_panel_height, 1.0, "Arm reselection should restore the natural Operations height.")
 
 	if bool(scene.call("ensure_gameplay_running")):
 		scene.call("pause_scene")
@@ -110,6 +119,8 @@ func _run() -> void:
 		_expect_equal(move_status.text, "已暂停", "Operations should refresh lifecycle changes.")
 		_expect_equal(rotate_status.text, "已暂停", "Rotate presentation should refresh lifecycle changes.")
 		_expect_equal(grab_status.text, "已暂停", "GrabDrop presentation should refresh lifecycle changes.")
+		_expect_true(grab_row.visible, "PAUSED must keep supported GrabDrop visible.")
+		_expect_near(panel.size.y, arm_panel_height, 1.0, "Supported-command status changes must not change Operations row count or height.")
 		_expect_true(move_button.disabled and rotate_left.disabled and rotate_right.disabled and grab_button.disabled, "Paused lifecycle should disable Operations actions from availability.")
 
 	var program_panel := scene.get_node("ProgramUIRoot/RootControl/ProgramPanel") as Control
@@ -146,6 +157,13 @@ func _expect_equal(actual: Variant, expected: Variant, message: String) -> void:
 		return
 	failures += 1
 	push_error("%s Expected %s, got %s." % [message, str(expected), str(actual)])
+
+
+func _expect_near(actual: float, expected: float, tolerance: float, message: String) -> void:
+	if absf(actual - expected) <= tolerance:
+		return
+	failures += 1
+	push_error("%s Expected %.2f ± %.2f, got %.2f." % [message, expected, tolerance, actual])
 
 
 func _expect_true(value: bool, message: String) -> void:
