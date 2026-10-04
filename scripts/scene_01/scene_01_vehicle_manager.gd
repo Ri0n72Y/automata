@@ -105,7 +105,7 @@ func _configure_actor(
 	var runtime_state := VehicleRuntimeStateScript.new()
 	if not runtime_state.configure(definition, anchor_cell, facing):
 		return false
-	return actor.configure(definition, runtime_state, p_controller, p_cell_size)
+	return actor.configure(definition, runtime_state, p_controller, p_cell_size, true)
 
 
 func _is_start_footprint_valid(
