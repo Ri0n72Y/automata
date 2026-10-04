@@ -158,6 +158,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_sidebar_shell")
 
 [node name="RailCollapseButton" type="Button" parent="RootControl/SidebarPanel"]
 unique_name_in_owner = true
+z_index = 1
 layout_mode = 0
 anchor_left = 1.0
 anchor_right = 1.0
