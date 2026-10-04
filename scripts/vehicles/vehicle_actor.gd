@@ -20,6 +20,7 @@ const TURN_DURATION_SECONDS := 0.3
 var runtime_state: VehicleRuntimeStateScript
 var controller: Node
 var cell_size: float = 1.0
+var _turn_along_move_path: bool = false
 
 var _visual_root: Node3D
 var _selection_area: Area3D
@@ -42,7 +43,8 @@ func configure(
 	p_definition: VehicleDefinitionScript,
 	p_runtime_state: VehicleRuntimeStateScript,
 	p_controller: Node,
-	p_cell_size: float
+	p_cell_size: float,
+	p_turn_along_move_path: bool = false
 ) -> bool:
 	if p_definition == null or p_runtime_state == null or p_controller == null:
 		push_error("Vehicle actor requires definition, runtime state, and controller.")
@@ -58,6 +60,7 @@ func configure(
 	runtime_state = p_runtime_state
 	controller = p_controller
 	cell_size = maxf(p_cell_size, 0.01)
+	_turn_along_move_path = p_turn_along_move_path
 	if not use_static_scene_visual:
 		name = "Vehicle_%s" % String(definition.assembly_id)
 
@@ -269,6 +272,10 @@ func get_segment_progress() -> float:
 	return _segment_progress
 
 
+func turns_along_move_path() -> bool:
+	return _turn_along_move_path
+
+
 func _anchor_to_world(anchor: Vector2i) -> Vector3:
 	return controller.call(
 		"grid_footprint_center_to_world",
@@ -293,6 +300,8 @@ func _sync_movement_transform() -> void:
 
 
 func _begin_required_move_turn() -> bool:
+	if not _turn_along_move_path:
+		return false
 	if runtime_state == null or runtime_state.active_move_command == null or is_turning():
 		return false
 	var command: MoveCommandScript = runtime_state.active_move_command
