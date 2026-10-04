@@ -70,6 +70,7 @@ func _run() -> void:
 		Vector2i(1280, 720),
 		Vector2i(1600, 900),
 		Vector2i(1920, 1080),
+		Vector2i(2264, 1274),
 	]:
 		viewport.size = viewport_size
 		await process_frame
@@ -81,7 +82,7 @@ func _run() -> void:
 		_expect_near(sidebar.position.y, LayoutMetrics.CONTENT_TOP, 1.0, "Main Sidebar should begin below lifecycle controls.")
 		_expect_true(sidebar.get_global_rect().end.y <= float(viewport_size.y) - LayoutMetrics.CONTENT_BOTTOM_MARGIN + 1.0, "Main Sidebar should remain within the viewport safe area.")
 		_expect_near(operations_panel.position.y, LayoutMetrics.CONTENT_TOP, 1.0, "Operations should begin at the shared content top.")
-		_expect_near(operations_panel.size.y, LayoutMetrics.OPERATIONS_PANEL_HEIGHT, 2.0, "Operations should keep its bounded section height.")
+		_expect_near(operations_panel.size.y, operations_panel.get_combined_minimum_size().y, 1.0, "Operations should follow its visible-content natural height.")
 		_expect_false(operations_panel.get_global_rect().intersects(program_panel.get_global_rect()), "Operations and Program should be explicit stacked right-rail sections.")
 		_expect_false(operations_panel.get_global_rect().intersects(lifecycle_panel.get_global_rect()), "Operations should stay below lifecycle controls.")
 		_expect_false(program_panel.get_global_rect().intersects(lifecycle_panel.get_global_rect()), "Program rail should stay below lifecycle controls.")
