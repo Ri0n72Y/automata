@@ -98,7 +98,7 @@ func _refresh_projection() -> void:
 
 
 func _on_move_pressed() -> void:
-	var status := StringName(_move_controller.call("get_selected_move_interaction_availability"))
+	var status := _move_controller.get_selected_move_interaction_availability()
 	if not _is_move_actionable(status):
 		return
 	_grid_selection.toggle_live_target_mode()
@@ -106,7 +106,7 @@ func _on_move_pressed() -> void:
 
 
 func _request_turn(direction: int) -> void:
-	var status := StringName(_grab_drop_controller.call("get_selected_rotate_interaction_availability"))
+	var status := _grab_drop_controller.get_selected_rotate_interaction_availability()
 	if status != AvailabilityScript.AVAILABLE:
 		return
 	_grab_drop_controller.rotate_selected_vehicle(direction)
@@ -114,7 +114,7 @@ func _request_turn(direction: int) -> void:
 
 
 func _on_grab_drop_pressed() -> void:
-	var status := StringName(_grab_drop_controller.call("get_selected_grab_drop_interaction_availability"))
+	var status := _grab_drop_controller.get_selected_grab_drop_interaction_availability()
 	if status != AvailabilityScript.AVAILABLE:
 		return
 	_grab_drop_controller.request_selected_grab_drop()
