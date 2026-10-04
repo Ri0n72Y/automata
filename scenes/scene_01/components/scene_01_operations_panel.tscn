@@ -170,6 +170,8 @@ focus_mode = 0
 text = "执行"
 
 [node name="AuthoringDivider" type="HSeparator" parent="RootControl/OperationsPanel/Margin/VBox"]
+unique_name_in_owner = true
+visible = false
 layout_mode = 2
 
 [node name="ProgramAuthoring" parent="RootControl/OperationsPanel/Margin/VBox" instance=ExtResource("3_program")]
