@@ -125,12 +125,12 @@ func _run() -> void:
 	_expect_true(bool(hud.call("is_rail_collapsed")), "Main Sidebar should support presentation-only rail collapse.")
 	_expect_near(sidebar.size.x, LayoutMetrics.LEFT_RAIL_COLLAPSED_WIDTH, 1.0, "Collapsed rail should release gameplay width.")
 	_expect_near(sidebar.size.y, LayoutMetrics.LEFT_RAIL_COLLAPSED_WIDTH, 1.0, "Collapsed rail should keep only its disclosure hit target.")
-	_expect_false(scroll.visible, "Collapsed rail should hide its content without changing section ownership.")
+	_expect_false(scroll.is_visible_in_tree(), "Collapsed rail should hide its content without changing section ownership.")
 	_expect_true(mission.get_parent() == content and vehicle.get_parent() == content and status.get_parent() == content, "Rail collapse should not reparent domain presentation sections.")
 	hud.call("set_rail_collapsed", false)
 	await process_frame
 	_expect_false(bool(hud.call("is_rail_collapsed")), "Main Sidebar should expand through the same presentation state.")
-	_expect_true(scroll.visible, "Expanded rail should restore its existing content tree.")
+	_expect_true(scroll.is_visible_in_tree(), "Expanded rail should restore its existing content tree.")
 
 	_expect_true(bool(tutorial.call("is_collapsed")), "Tutorial should start collapsed in the compact main state.")
 	_expect_false(tutorial_body.visible, "Default collapsed Tutorial should not lengthen the Sidebar.")
