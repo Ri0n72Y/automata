@@ -616,7 +616,7 @@ func _build_motion_plan(vehicle: VehicleActorScript, delta: float) -> Dictionary
 				float(command.path[path_index].x),
 				float(command.path[path_index].y)
 			)
-			if path_index < command.path.size() - 1:
+			if vehicle.turns_along_move_path() and path_index < command.path.size() - 1:
 				var completed_step := command.path[completed_index + 1] - command.path[completed_index]
 				var next_step := command.path[path_index + 1] - command.path[path_index]
 				if next_step != completed_step:
