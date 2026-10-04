@@ -52,7 +52,7 @@ func _fixture(can_move: bool) -> Dictionary:
 		Vector2i(2, 2), 2.0, 10.0, 0.0, 5.0, tags, 0.25
 	), "Definition should configure.")
 	var runtime := RUNTIME.new()
-	test.expect_true(runtime.configure(definition, Vector2i(1, 1)), "Runtime should configure.")
+	test.expect_true(runtime.configure(definition, Vector2i(1, 1), RUNTIME.Facing.EAST), "Runtime should configure aligned with the translation fixture.")
 	var controller := FakeController.new()
 	root.add_child(controller)
 	var actor := ACTOR.new()
