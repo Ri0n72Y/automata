@@ -39,6 +39,7 @@ func _run() -> void:
 
 	await _test_straight_path(scene, move_controller, selection, arm)
 	await _test_corner_path(scene, move_controller, selection, arm)
+	await _test_multi_corner_path(scene, move_controller, selection, arm)
 	await _test_pause_speed_stop_reset(scene, move_controller, selection, arm)
 
 	await _cleanup(scene)
@@ -118,6 +119,36 @@ func _test_corner_path(scene: Node, move_controller: Node, selection: Node, arm:
 		arm.runtime_state.facing,
 		_facing_for_step(path[path.size() - 1] - path[path.size() - 2]),
 		"Corner MoveTo final facing should come from the last real segment."
+	)
+
+
+func _test_multi_corner_path(scene: Node, move_controller: Node, selection: Node, arm: Node) -> void:
+	scene.call("reset_scene")
+	await process_frame
+	_expect_true(bool(scene.call("ensure_gameplay_running")), "Multi-corner fixture should start gameplay.")
+	_expect_true(bool(selection.call("select_vehicle", arm)), "Multi-corner fixture should select Arm.")
+	var candidate := _find_candidate(scene, move_controller, arm, 2, true, false)
+	_expect_true(not candidate.is_empty(), "Scene should expose a MoveTo path with at least two corners.")
+	if candidate.is_empty():
+		return
+
+	var path: Array = candidate["path"]
+	var target: Vector2i = candidate["target"]
+	var corners := _corner_cells(path)
+	var turn_anchors: Array[Vector2i] = []
+	arm.turn_started.connect(
+		func(_direction: int) -> void:
+			turn_anchors.append(arm.runtime_state.anchor_cell)
+	)
+
+	_expect_true(bool(move_controller.call("request_vehicle_move", arm, target)), "Multi-corner MoveTo should be accepted.")
+	_drive_until_idle(move_controller, arm)
+	_expect_equal(turn_anchors, corners, "Multi-corner MoveTo should turn once at each corner in path order.")
+	_expect_equal(arm.runtime_state.anchor_cell, target, "Multi-corner MoveTo should reach its target.")
+	_expect_equal(
+		arm.runtime_state.facing,
+		_facing_for_step(path[path.size() - 1] - path[path.size() - 2]),
+		"Multi-corner MoveTo final facing should match the last real segment."
 	)
 
 
