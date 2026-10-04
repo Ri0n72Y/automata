@@ -25,11 +25,14 @@ func _run() -> void:
 	var operations := scene.get_node_or_null("OperationsUIRoot")
 	var panel := operations.get_node_or_null("%OperationsPanel") as PanelContainer if operations != null else null
 	var vehicle_label := operations.get_node_or_null("%VehicleLabel") as Label if operations != null else null
+	var move_row := operations.get_node_or_null("%MoveRow") as Control if operations != null else null
 	var move_status := operations.get_node_or_null("%MoveStatus") as Label if operations != null else null
 	var move_button := operations.get_node_or_null("%MoveButton") as Button if operations != null else null
+	var rotate_row := operations.get_node_or_null("%RotateRow") as Control if operations != null else null
 	var rotate_status := operations.get_node_or_null("%RotateStatus") as Label if operations != null else null
 	var rotate_left := operations.get_node_or_null("%RotateLeftButton") as Button if operations != null else null
 	var rotate_right := operations.get_node_or_null("%RotateRightButton") as Button if operations != null else null
+	var grab_row := operations.get_node_or_null("%GrabDropRow") as Control if operations != null else null
 	var grab_status := operations.get_node_or_null("%GrabDropStatus") as Label if operations != null else null
 	var grab_button := operations.get_node_or_null("%GrabDropButton") as Button if operations != null else null
 	var selection := scene.get_node("SceneRoot/GridRoot/VehicleSelectionController")
@@ -39,9 +42,9 @@ func _run() -> void:
 	var manager := scene.get_node("SceneRoot/RobotRoot/Scene01VehicleManager")
 
 	_expect_true(
-		panel != null and vehicle_label != null and move_status != null and move_button != null
-		and rotate_status != null and rotate_left != null and rotate_right != null
-		and grab_status != null and grab_button != null,
+		panel != null and vehicle_label != null and move_row != null and move_status != null and move_button != null
+		and rotate_row != null and rotate_status != null and rotate_left != null and rotate_right != null
+		and grab_row != null and grab_status != null and grab_button != null,
 		"Operations Panel should expose one stable static presentation contract."
 	)
 	if panel == null or move_button == null or rotate_left == null or rotate_right == null or grab_button == null:
@@ -52,6 +55,7 @@ func _run() -> void:
 	_expect_equal(StringName(move_controller.call("get_selected_move_interaction_availability")), AvailabilityScript.NO_VEHICLE, "Move owner should report no vehicle.")
 	_expect_equal(StringName(grab_controller.call("get_selected_rotate_interaction_availability")), AvailabilityScript.NO_VEHICLE, "Rotate owner should report no vehicle.")
 	_expect_equal(StringName(grab_controller.call("get_selected_grab_drop_interaction_availability")), AvailabilityScript.NO_VEHICLE, "GrabDrop owner should report no vehicle.")
+	_expect_true(move_row.visible and rotate_row.visible and grab_row.visible, "NO_VEHICLE should keep supported command surfaces visible.")
 	_expect_true(move_button.disabled and rotate_left.disabled and rotate_right.disabled and grab_button.disabled, "No-selection state should disable every manual action.")
 
 	var arm = manager.call("get_vehicle_by_id", &"arm_vehicle")
@@ -88,9 +92,14 @@ func _run() -> void:
 	await process_frame
 	_expect_true(vehicle_label.text.contains("运输车"), "Operations vehicle label should project the selected Transport.")
 	_expect_equal(StringName(grab_controller.call("get_selected_grab_drop_interaction_availability")), AvailabilityScript.NO_CAPABILITY, "Transport GrabDrop should be unavailable from the authoritative controller.")
-	_expect_equal(grab_status.text, "当前车辆不支持", "Unsupported command presentation should come from NO_CAPABILITY.")
-	_expect_true(grab_button.disabled, "Unsupported GrabDrop should stay disabled.")
+	_expect_false(grab_row.visible, "Authoritative NO_CAPABILITY should hide the unsupported GrabDrop row.")
+	_expect_true(move_row.visible and rotate_row.visible, "Transport-supported command rows should remain visible.")
+	_expect_true(grab_button.disabled, "Hidden unsupported GrabDrop should remain non-actionable.")
 	_assert_projection(move_controller, grab_controller, move_button, rotate_left, rotate_right, grab_button)
+
+	_expect_true(selection.call("select_vehicle", arm), "Operations contract should reselect Arm after Transport.")
+	await process_frame
+	_expect_true(grab_row.visible, "Arm reselection should restore GrabDrop without stale visibility.")
 
 	if bool(scene.call("ensure_gameplay_running")):
 		scene.call("pause_scene")
