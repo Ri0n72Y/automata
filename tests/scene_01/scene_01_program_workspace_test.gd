@@ -139,6 +139,10 @@ func _expect_near(actual: float, expected: float, tolerance: float, message: Str
 		push_error("%s Expected %.2f ± %.2f, got %.2f." % [message, expected, tolerance, actual])
 
 
+func _expect_false(value: bool, message: String) -> void:
+	_expect_true(not value, message)
+
+
 func _finish() -> void:
 	if failures == 0:
 		print("Scene 01 unified Program authoring tests passed.")

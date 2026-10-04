@@ -98,6 +98,7 @@ func focus_source_editor() -> void:
 func _apply_layout() -> void:
 	var viewport_size := get_viewport().get_visible_rect().size
 	var width := LayoutMetrics.program_rail_width(float(viewport_size.x)) if _authoring_mode else LayoutMetrics.PRIMARY_RAIL_WIDTH
+	_panel.anchor_bottom = 1.0 if _authoring_mode else 0.0
 	_panel.offset_top = LayoutMetrics.CONTENT_TOP
 	_panel.offset_right = -LayoutMetrics.EDGE_MARGIN
 	_panel.offset_left = _panel.offset_right - width
