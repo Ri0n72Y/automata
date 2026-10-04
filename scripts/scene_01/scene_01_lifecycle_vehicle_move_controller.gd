@@ -33,8 +33,6 @@ func request_vehicle_move(vehicle: VehicleActor, target_anchor: Vector2i) -> boo
 	if vehicle != null and not _ensure_gameplay_running():
 		return false
 	var accepted := super.request_vehicle_move(vehicle, target_anchor)
-	if accepted:
-		_face_vehicle_for_final_step(vehicle)
 	_sync_live_target_mode()
 	return accepted
 
@@ -59,24 +57,6 @@ func _sync_live_target_mode() -> void:
 		footprint = vehicle.definition.footprint
 	grid_selection_controller.set_live_target_mode(false, footprint)
 	_hide_prediction()
-
-
-func _face_vehicle_for_final_step(vehicle: VehicleActor) -> void:
-	if vehicle == null or vehicle.runtime_state == null:
-		return
-	var command = vehicle.runtime_state.active_move_command
-	if command == null or command.path.size() < 2:
-		return
-	var step: Vector2i = command.path[command.path.size() - 1] - command.path[command.path.size() - 2]
-	if step == Vector2i(1, 0):
-		vehicle.runtime_state.facing = VehicleRuntimeStateScript.Facing.EAST
-	elif step == Vector2i(-1, 0):
-		vehicle.runtime_state.facing = VehicleRuntimeStateScript.Facing.WEST
-	elif step == Vector2i(0, 1):
-		vehicle.runtime_state.facing = VehicleRuntimeStateScript.Facing.SOUTH
-	elif step == Vector2i(0, -1):
-		vehicle.runtime_state.facing = VehicleRuntimeStateScript.Facing.NORTH
-	vehicle.sync_from_state()
 
 
 func _get_lifecycle_command_availability() -> StringName:
