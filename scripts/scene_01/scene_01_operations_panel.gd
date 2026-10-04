@@ -164,7 +164,7 @@ func _on_move_pressed() -> void:
 	if _authoring_mode:
 		if not _can_author(status):
 			return
-		_insert_vehicle_statement("moveTo] 0 0")
+		_insert_move_statement()
 		return
 	if not _is_move_actionable(status):
 		return
@@ -197,6 +197,18 @@ func _on_grab_drop_pressed() -> void:
 		return
 	_grab_drop_controller.request_selected_grab_drop()
 	_refresh_projection()
+
+
+func _insert_move_statement() -> void:
+	var vehicle := _vehicle_selection.get_selected_vehicle()
+	if vehicle == null or vehicle.runtime_state == null:
+		return
+	var anchor := vehicle.runtime_state.anchor_cell
+	_program_ui.insert_statement("[%s:moveTo] %d %d" % [
+		String(vehicle.get_vehicle_id()),
+		anchor.x,
+		anchor.y,
+	])
 
 
 func _insert_vehicle_statement(command_tail: String) -> void:
