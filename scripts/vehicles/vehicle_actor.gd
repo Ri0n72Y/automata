@@ -107,6 +107,7 @@ func start_move(command: MoveCommandScript) -> bool:
 
 	_segment_progress = 0.0
 	set_physics_process(true)
+	_begin_required_move_turn()
 	_sync_movement_transform()
 	move_started.emit(command.target_anchor)
 	return true
@@ -124,8 +125,13 @@ func advance_move(delta: float) -> void:
 	if command == null or runtime_state.motion_state != VehicleRuntimeStateScript.MotionState.MOVING:
 		set_physics_process(false)
 		return
+	if is_turning():
+		advance_turn(delta)
+		return
 	if command.path_index >= command.path.size() - 1:
 		_finish_move(command.target_anchor)
+		return
+	if _begin_required_move_turn():
 		return
 
 	var speed_in_cells := runtime_state.get_effective_speed()
@@ -157,6 +163,8 @@ func advance_move(delta: float) -> void:
 		if finished:
 			_finish_move(command.target_anchor)
 			return
+		if _begin_required_move_turn():
+			return
 		_sync_movement_transform()
 
 
@@ -165,16 +173,7 @@ func start_turn(direction: int) -> bool:
 		return false
 	if runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.PLANNING or runtime_state.motion_state == VehicleRuntimeStateScript.MotionState.MOVING:
 		return false
-	var step := clampi(direction, -1, 1)
-	if step == 0:
-		return false
-	_turn_direction = step
-	_turn_target_facing = posmod(runtime_state.facing + step, 4)
-	_turn_progress = 0.0
-	_sync_turn_basis()
-	turning_changed.emit(true)
-	turn_started.emit(step)
-	return true
+	return _begin_turn(direction)
 
 
 func advance_turn(delta: float) -> void:
@@ -209,10 +208,13 @@ func cancel_turn() -> void:
 func cancel_move() -> void:
 	if runtime_state == null or runtime_state.active_move_command == null:
 		return
+	var was_turning := _clear_turn()
 	runtime_state.block_move_command()
 	_segment_progress = 0.0
 	set_physics_process(false)
 	sync_from_state()
+	if was_turning:
+		turning_changed.emit(false)
 	move_blocked.emit()
 
 
@@ -284,7 +286,50 @@ func _sync_movement_transform() -> void:
 	var current_world := _anchor_to_world(current_anchor)
 	var next_world := _anchor_to_world(next_anchor)
 	global_position = current_world.lerp(next_world, clampf(_segment_progress, 0.0, 1.0))
-	_sync_actor_basis()
+	if is_turning():
+		_sync_turn_basis()
+	else:
+		_sync_actor_basis()
+
+
+func _begin_required_move_turn() -> bool:
+	if runtime_state == null or runtime_state.active_move_command == null or is_turning():
+		return false
+	var command: MoveCommandScript = runtime_state.active_move_command
+	if command.path_index >= command.path.size() - 1:
+		return false
+	var step := command.get_next_anchor() - command.get_current_anchor()
+	var required_facing := _facing_for_step(step)
+	if required_facing < 0 or required_facing == runtime_state.facing:
+		return false
+	var clockwise_distance := posmod(required_facing - runtime_state.facing, 4)
+	var direction := 1 if clockwise_distance <= 2 else -1
+	return _begin_turn(direction)
+
+
+func _begin_turn(direction: int) -> bool:
+	var step := clampi(direction, -1, 1)
+	if step == 0:
+		return false
+	_turn_direction = step
+	_turn_target_facing = posmod(runtime_state.facing + step, 4)
+	_turn_progress = 0.0
+	_sync_turn_basis()
+	turning_changed.emit(true)
+	turn_started.emit(step)
+	return true
+
+
+func _facing_for_step(step: Vector2i) -> int:
+	if step == Vector2i(1, 0):
+		return VehicleRuntimeStateScript.Facing.EAST
+	if step == Vector2i(-1, 0):
+		return VehicleRuntimeStateScript.Facing.WEST
+	if step == Vector2i(0, 1):
+		return VehicleRuntimeStateScript.Facing.SOUTH
+	if step == Vector2i(0, -1):
+		return VehicleRuntimeStateScript.Facing.NORTH
+	return -1
 
 
 func _sync_actor_basis() -> void:
