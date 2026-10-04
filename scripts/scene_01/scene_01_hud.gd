@@ -38,8 +38,10 @@ const CHEVRON_RIGHT_ICON: Texture2D = preload("res://assets/ui/icons/chevron_rig
 @onready var sidebar_content: VBoxContainer = %Sidebar
 @onready var status_card: PanelContainer = %StatusCard
 @onready var status_collapse_button: Button = %StatusCollapseButton
+@onready var rail_collapse_button: Button = %RailCollapseButton
 
 var _status_collapsed := false
+var _rail_collapsed := false
 
 var _scene_controller: MissionControllerScript
 var _observable: ObservableStateScript
@@ -70,7 +72,9 @@ func _ready() -> void:
 	) as VehicleGrabDropControllerScript
 	_bind_signals()
 	status_collapse_button.pressed.connect(_on_status_collapse_pressed)
+	rail_collapse_button.pressed.connect(_on_rail_collapse_pressed)
 	set_status_collapsed(false)
+	set_rail_collapsed(false)
 	sidebar_content.minimum_size_changed.connect(_queue_sidebar_layout)
 	get_viewport().size_changed.connect(_apply_sidebar_layout)
 	_apply_sidebar_layout()
@@ -82,9 +86,15 @@ func _apply_sidebar_layout() -> void:
 	var viewport_size := get_viewport().get_visible_rect().size
 	sidebar_panel.offset_left = LayoutMetrics.EDGE_MARGIN
 	sidebar_panel.offset_top = LayoutMetrics.CONTENT_TOP
-	sidebar_panel.offset_right = (
-		sidebar_panel.offset_left + LayoutMetrics.left_rail_width(float(viewport_size.x))
+	var rail_width := (
+		LayoutMetrics.LEFT_RAIL_COLLAPSED_WIDTH
+		if _rail_collapsed
+		else LayoutMetrics.left_rail_width(float(viewport_size.x))
 	)
+	sidebar_panel.offset_right = sidebar_panel.offset_left + rail_width
+	if _rail_collapsed:
+		sidebar_panel.offset_bottom = sidebar_panel.offset_top + LayoutMetrics.LEFT_RAIL_COLLAPSED_WIDTH
+		return
 	var content_height := (
 		sidebar_content.get_combined_minimum_size().y
 		+ sidebar_margin.get_theme_constant("margin_top")
@@ -117,8 +127,30 @@ func is_status_collapsed() -> bool:
 	return _status_collapsed
 
 
+func set_rail_collapsed(collapsed: bool) -> void:
+	_rail_collapsed = collapsed
+	if sidebar_margin != null:
+		sidebar_margin.visible = not _rail_collapsed
+	if rail_collapse_button != null:
+		rail_collapse_button.icon = CHEVRON_RIGHT_ICON if _rail_collapsed else CHEVRON_DOWN_ICON
+		rail_collapse_button.tooltip_text = "展开侧栏" if _rail_collapsed else "折叠侧栏"
+	if _rail_collapsed:
+		var focus_owner := get_viewport().gui_get_focus_owner()
+		if focus_owner != null and sidebar_margin != null and sidebar_margin.is_ancestor_of(focus_owner):
+			get_viewport().gui_release_focus()
+	_apply_sidebar_layout()
+
+
+func is_rail_collapsed() -> bool:
+	return _rail_collapsed
+
+
 func _on_status_collapse_pressed() -> void:
 	set_status_collapsed(not _status_collapsed)
+
+
+func _on_rail_collapse_pressed() -> void:
+	set_rail_collapsed(not _rail_collapsed)
 
 
 func _bind_signals() -> void:
