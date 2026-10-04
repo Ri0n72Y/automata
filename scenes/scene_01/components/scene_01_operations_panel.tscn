@@ -54,6 +54,7 @@ text = "当前车辆 · 未选择"
 layout_mode = 2
 
 [node name="MoveRow" type="HBoxContainer" parent="RootControl/OperationsPanel/Margin/VBox"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 6
 
@@ -81,6 +82,7 @@ focus_mode = 0
 text = "选择目标"
 
 [node name="RotateRow" type="HBoxContainer" parent="RootControl/OperationsPanel/Margin/VBox"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 6
 
@@ -122,6 +124,7 @@ text = "↷"
 tooltip_text = "顺时针旋转 90°"
 
 [node name="GrabDropRow" type="HBoxContainer" parent="RootControl/OperationsPanel/Margin/VBox"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 6
 
