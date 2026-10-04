@@ -6,6 +6,7 @@ const ManualAvailabilityScript := preload("res://scripts/input/vehicle_manual_in
 const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metrics.gd")
 
 @onready var _panel: PanelContainer = %OperationsPanel
+@onready var _content: VBoxContainer = $RootControl/OperationsPanel/Margin/VBox
 @onready var _vehicle_label: Label = %VehicleLabel
 @onready var _move_row: Control = %MoveRow
 @onready var _move_status: Label = %MoveStatus
@@ -29,6 +30,7 @@ func _ready() -> void:
 	_rotate_left_button.pressed.connect(func(): _request_turn(-1))
 	_rotate_right_button.pressed.connect(func(): _request_turn(1))
 	_grab_drop_button.pressed.connect(_on_grab_drop_pressed)
+	_content.minimum_size_changed.connect(_queue_layout)
 	get_viewport().size_changed.connect(_apply_layout)
 	_apply_layout()
 	_refresh_projection()
@@ -45,6 +47,10 @@ func _apply_layout() -> void:
 	_panel.offset_right = -LayoutMetrics.EDGE_MARGIN
 	_panel.offset_left = _panel.offset_right - width
 	_panel.offset_bottom = _panel.offset_top + ceilf(_panel.get_combined_minimum_size().y)
+
+
+func _queue_layout() -> void:
+	call_deferred("_apply_layout")
 
 
 func _refresh_projection() -> void:
