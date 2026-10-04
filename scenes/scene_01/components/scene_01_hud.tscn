@@ -166,13 +166,32 @@ offset_right = 328.0
 offset_bottom = 116.0
 focus_mode = 0
 mouse_filter = 0
-text = "←"
 tooltip_text = "折叠侧栏"
 theme_override_styles/normal = SubResource("StyleBoxFlat_header_button_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_header_button_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_header_button_hover")
 theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_header_button_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_header_button_normal")
+
+[node name="RailDisclosureIcon" type="TextureRect" parent="RootControl/RailCollapseButton"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -7.0
+offset_top = -7.0
+offset_right = 7.0
+offset_bottom = 7.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("6_chevron_right")
+expand_mode = 1
+stretch_mode = 5
+flip_h = true
 
 [node name="Margin" type="MarginContainer" parent="RootControl/SidebarPanel"]
 layout_mode = 2
