@@ -25,6 +25,7 @@ const GridSelectionControllerScript := preload("res://scripts/input/grid_selecti
 @onready var _grab_drop_row: Control = %GrabDropRow
 @onready var _grab_drop_status: Label = %GrabDropStatus
 @onready var _grab_drop_button: Button = %GrabDropButton
+@onready var _authoring_divider: HSeparator = %AuthoringDivider
 @onready var _program_ui: ProgramUIScript = $RootControl/OperationsPanel/Margin/VBox/ProgramAuthoring as ProgramUIScript
 
 @onready var _vehicle_selection: VehicleSelectionControllerScript = get_parent().get_node("SceneRoot/GridRoot/VehicleSelectionController") as VehicleSelectionControllerScript
@@ -63,6 +64,7 @@ func _process(_delta: float) -> void:
 func set_authoring_mode(enabled: bool) -> void:
 	_authoring_mode = enabled
 	_program_ui.visible = enabled
+	_authoring_divider.visible = enabled
 	_title.text = "程序" if enabled else "操作台"
 	_mode_button.text = "收起" if enabled else "展开"
 	_mode_button.tooltip_text = "返回日常操作" if enabled else "展开程序编辑"
