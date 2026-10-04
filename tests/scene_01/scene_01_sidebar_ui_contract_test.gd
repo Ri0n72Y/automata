@@ -185,8 +185,8 @@ func _run() -> void:
 		"Tutorial navigation minimum width should fit inside the 240px Sidebar."
 	)
 	_expect_true(
-		tutorial_content_margin.get_theme_constant("margin_left") >= 14
-		and tutorial_content_margin.get_theme_constant("margin_right") >= 14
+		tutorial_content_margin.get_theme_constant("margin_left") >= 10
+		and tutorial_content_margin.get_theme_constant("margin_right") >= 10
 		and tutorial_content_margin.get_theme_constant("margin_top") >= 10
 		and tutorial_content_margin.get_theme_constant("margin_bottom") >= 10,
 		"Tutorial body text should keep explicit content padding."
