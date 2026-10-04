@@ -571,6 +571,12 @@ func _build_motion_plan(vehicle: VehicleActorScript, delta: float) -> Dictionary
 			"footprint": footprint,
 			"segments": stationary_segments,
 		}
+	if vehicle.is_turning():
+		return {
+			"moving": true,
+			"footprint": footprint,
+			"segments": stationary_segments,
+		}
 
 	var command: MoveCommandScript = vehicle.runtime_state.active_move_command
 	var speed := vehicle.runtime_state.get_effective_speed()
@@ -603,12 +609,18 @@ func _build_motion_plan(vehicle: VehicleActorScript, delta: float) -> Dictionary
 		current_position = next_position
 		progress = next_progress
 		if progress >= 1.0 - MOTION_EPSILON:
+			var completed_index := path_index
 			path_index += 1
 			progress = 0.0
 			current_position = Vector2(
 				float(command.path[path_index].x),
 				float(command.path[path_index].y)
 			)
+			if path_index < command.path.size() - 1:
+				var completed_step := command.path[completed_index + 1] - command.path[completed_index]
+				var next_step := command.path[path_index + 1] - command.path[path_index]
+				if next_step != completed_step:
+					break
 
 	if elapsed < duration - MOTION_EPSILON:
 		segments.append(_motion_segment(
