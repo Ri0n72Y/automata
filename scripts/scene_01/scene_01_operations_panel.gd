@@ -7,11 +7,14 @@ const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metric
 
 @onready var _panel: PanelContainer = %OperationsPanel
 @onready var _vehicle_label: Label = %VehicleLabel
+@onready var _move_row: Control = %MoveRow
 @onready var _move_status: Label = %MoveStatus
 @onready var _move_button: Button = %MoveButton
+@onready var _rotate_row: Control = %RotateRow
 @onready var _rotate_status: Label = %RotateStatus
 @onready var _rotate_left_button: Button = %RotateLeftButton
 @onready var _rotate_right_button: Button = %RotateRightButton
+@onready var _grab_drop_row: Control = %GrabDropRow
 @onready var _grab_drop_status: Label = %GrabDropStatus
 @onready var _grab_drop_button: Button = %GrabDropButton
 
@@ -58,6 +61,10 @@ func _refresh_projection() -> void:
 	var move_status := StringName(_move_controller.call("get_selected_move_interaction_availability"))
 	var rotate_status := StringName(_grab_drop_controller.call("get_selected_rotate_interaction_availability"))
 	var grab_drop_status := StringName(_grab_drop_controller.call("get_selected_grab_drop_interaction_availability"))
+
+	_move_row.visible = move_status != AvailabilityScript.NO_CAPABILITY
+	_rotate_row.visible = rotate_status != AvailabilityScript.NO_CAPABILITY
+	_grab_drop_row.visible = grab_drop_status != AvailabilityScript.NO_CAPABILITY
 
 	_move_status.text = _status_text(move_status)
 	_rotate_status.text = _status_text(rotate_status)
