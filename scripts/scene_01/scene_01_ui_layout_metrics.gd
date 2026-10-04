@@ -10,9 +10,11 @@ const CONTENT_BOTTOM_MARGIN := 16.0
 const OPERATIONS_PANEL_HEIGHT := 218.0
 const RIGHT_RAIL_SECTION_GAP := 8.0
 
-const LEFT_NARROW_WIDTH := 320.0
-const LEFT_COMPACT_WIDTH := 336.0
-const LEFT_WIDE_WIDTH := 352.0
+const REFERENCE_VIEWPORT_WIDTH := 1672.0
+const REFERENCE_LEFT_RAIL_WIDTH := 300.0
+const LEFT_RAIL_WIDTH_PROPORTION := REFERENCE_LEFT_RAIL_WIDTH / REFERENCE_VIEWPORT_WIDTH
+const LEFT_RAIL_MIN_WIDTH := 296.0
+const LEFT_RAIL_COLLAPSED_WIDTH := 44.0
 
 const PROGRAM_COLLAPSED_WIDTH := 56.0
 const PROGRAM_NARROW_WIDTH := 360.0
@@ -21,9 +23,7 @@ const PROGRAM_WIDE_WIDTH := 460.0
 
 
 static func left_rail_width(viewport_width: float) -> float:
-	return LEFT_WIDE_WIDTH if viewport_width >= WIDE_BREAKPOINT else (
-		LEFT_COMPACT_WIDTH if viewport_width >= COMPACT_BREAKPOINT else LEFT_NARROW_WIDTH
-	)
+	return maxf(roundf(viewport_width * LEFT_RAIL_WIDTH_PROPORTION), LEFT_RAIL_MIN_WIDTH)
 
 
 static func left_sidebar_max_height(viewport_height: float) -> float:
