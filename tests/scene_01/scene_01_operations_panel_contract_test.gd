@@ -95,10 +95,12 @@ func _run() -> void:
 	operations.call("set_source_text", "automata_scene01_program 2\n[arm_vehicle:grabDrop]\n\n")
 	source_editor.set_caret_line(2)
 	source_editor.set_caret_column(0)
+	var anchor: Vector2i = arm.runtime_state.anchor_cell
+	var expected_move := "[arm_vehicle:moveTo] %d %d" % [anchor.x, anchor.y]
 	move_button.emit_signal("pressed")
 	var source_after_move := String(operations.call("get_source_text"))
-	_expect_true(source_after_move.contains("[arm_vehicle:moveTo] 0 0\n"), "Authoring Move should write into canonical source.")
-	_expect_true(source_after_move.find("[arm_vehicle:moveTo] 0 0") > source_after_move.find("[arm_vehicle:grabDrop]"), "Insertion should follow the current source caret line instead of always appending at an unrelated model.")
+	_expect_true(source_after_move.contains(expected_move + "\n"), "Authoring Move should write the selected vehicle's authoritative anchor into canonical source.")
+	_expect_true(source_after_move.find(expected_move) > source_after_move.find("[arm_vehicle:grabDrop]"), "Insertion should follow the current source caret line instead of always appending at an unrelated model.")
 
 	rotate_right.emit_signal("pressed")
 	grab_button.emit_signal("pressed")
