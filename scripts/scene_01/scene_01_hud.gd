@@ -39,6 +39,7 @@ const CHEVRON_RIGHT_ICON: Texture2D = preload("res://assets/ui/icons/chevron_rig
 @onready var status_card: PanelContainer = %StatusCard
 @onready var status_collapse_button: Button = %StatusCollapseButton
 @onready var rail_collapse_button: Button = %RailCollapseButton
+@onready var rail_disclosure_icon: TextureRect = %RailDisclosureIcon
 
 var _status_collapsed := false
 var _rail_collapsed := false
@@ -138,8 +139,9 @@ func set_rail_collapsed(collapsed: bool) -> void:
 			Control.MOUSE_FILTER_IGNORE if _rail_collapsed else Control.MOUSE_FILTER_STOP
 		)
 	if rail_collapse_button != null:
-		rail_collapse_button.text = "→" if _rail_collapsed else "←"
 		rail_collapse_button.tooltip_text = "展开侧栏" if _rail_collapsed else "折叠侧栏"
+	if rail_disclosure_icon != null:
+		rail_disclosure_icon.flip_h = not _rail_collapsed
 	if _rail_collapsed:
 		var focus_owner := get_viewport().gui_get_focus_owner()
 		if focus_owner != null and sidebar_margin != null and sidebar_margin.is_ancestor_of(focus_owner):
