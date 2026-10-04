@@ -62,10 +62,19 @@ func _refresh_projection() -> void:
 	var rotate_status := StringName(_grab_drop_controller.call("get_selected_rotate_interaction_availability"))
 	var grab_drop_status := StringName(_grab_drop_controller.call("get_selected_grab_drop_interaction_availability"))
 
-	_move_row.visible = move_status != AvailabilityScript.NO_CAPABILITY
-	_rotate_row.visible = rotate_status != AvailabilityScript.NO_CAPABILITY
-	_grab_drop_row.visible = grab_drop_status != AvailabilityScript.NO_CAPABILITY
-	call_deferred("_apply_layout")
+	var move_visible := move_status != AvailabilityScript.NO_CAPABILITY
+	var rotate_visible := rotate_status != AvailabilityScript.NO_CAPABILITY
+	var grab_drop_visible := grab_drop_status != AvailabilityScript.NO_CAPABILITY
+	var visibility_changed := (
+		_move_row.visible != move_visible
+		or _rotate_row.visible != rotate_visible
+		or _grab_drop_row.visible != grab_drop_visible
+	)
+	_move_row.visible = move_visible
+	_rotate_row.visible = rotate_visible
+	_grab_drop_row.visible = grab_drop_visible
+	if visibility_changed:
+		call_deferred("_apply_layout")
 
 	_move_status.text = _status_text(move_status)
 	_rotate_status.text = _status_text(rotate_status)
