@@ -4,7 +4,6 @@ extends VBoxContainer
 const SupportScript := preload("res://scripts/scene_01/scene_01_program_workspace_support.gd")
 const SourceEditorScript := preload("res://scripts/scene_01/scene_01_program_source_editor.gd")
 const RunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
-const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
 
 @onready var _source_editor: SourceEditorScript = %SourceEditor
 @onready var _repeat_target_option: OptionButton = %RepeatTargetOption
