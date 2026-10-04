@@ -34,6 +34,7 @@ func _run() -> void:
 	var status := hud.get_node_or_null("%StatusSection") as Control if hud != null else null
 	var status_card := hud.get_node_or_null("%StatusCard") as Control if hud != null else null
 	var status_collapse := hud.get_node_or_null("%StatusCollapseButton") as Button if hud != null else null
+	var rail_collapse := hud.get_node_or_null("%RailCollapseButton") as Button if hud != null else null
 	var pointer := hud.get_node_or_null("%PointerSection") as Control if hud != null else null
 	var pointer_label := hud.get_node_or_null("%PointerLabel") as Label if hud != null else null
 	var feedback := hud.get_node_or_null("%FeedbackLabel") as Label if hud != null else null
@@ -57,6 +58,7 @@ func _run() -> void:
 		and status != null
 		and status_card != null
 		and status_collapse != null
+		and rail_collapse != null
 		and pointer != null
 		and pointer_label != null
 		and feedback != null
@@ -88,6 +90,7 @@ func _run() -> void:
 		"Primary information blocks should be sibling sections in one Sidebar."
 	)
 	_expect_true(status_collapse != null and status_collapse.icon != null and status_collapse.text.is_empty(), "Status should use an icon disclosure control.")
+	_expect_true(rail_collapse.icon != null and rail_collapse.text.is_empty(), "Main rail should expose its own disclosure control.")
 	_expect_true(status_card.is_ancestor_of(feedback), "Status feedback should collapse with the Status body.")
 	_expect_true(pointer_label != null, "Pointer coordinates should be lightweight player-facing state.")
 	_expect_true(scene.get_node_or_null("DebugUIRoot/RootControl/Panel/Margin/VBox/CoordinatesRow") == null, "Pointer coordinates should not return to Debug.")
@@ -103,6 +106,31 @@ func _run() -> void:
 	var max_height := LayoutMetrics.left_sidebar_max_height(float(viewport.size.y))
 	_expect_near(max_height, float(viewport.size.y) - LayoutMetrics.CONTENT_TOP - LayoutMetrics.CONTENT_BOTTOM_MARGIN, 1.0, "Sidebar maximum should use the available viewport height.")
 	_expect_true(sidebar.size.y <= max_height + 1.0, "Sidebar should never exceed its viewport-derived cap.")
+
+	for viewport_size in [Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(1920, 1080)]:
+		viewport.size = viewport_size
+		await process_frame
+		await process_frame
+		_expect_near(
+			sidebar.size.x,
+			LayoutMetrics.left_rail_width(float(viewport_size.x)),
+			2.0,
+			"Expanded Sidebar width should follow the reference-derived shared metric."
+		)
+
+	viewport.size = Vector2i(1280, 720)
+	await process_frame
+	hud.call("set_rail_collapsed", true)
+	await process_frame
+	_expect_true(bool(hud.call("is_rail_collapsed")), "Main Sidebar should support presentation-only rail collapse.")
+	_expect_near(sidebar.size.x, LayoutMetrics.LEFT_RAIL_COLLAPSED_WIDTH, 1.0, "Collapsed rail should release gameplay width.")
+	_expect_near(sidebar.size.y, LayoutMetrics.LEFT_RAIL_COLLAPSED_WIDTH, 1.0, "Collapsed rail should keep only its disclosure hit target.")
+	_expect_false(scroll.visible, "Collapsed rail should hide its content without changing section ownership.")
+	_expect_true(mission.get_parent() == content and vehicle.get_parent() == content and status.get_parent() == content, "Rail collapse should not reparent domain presentation sections.")
+	hud.call("set_rail_collapsed", false)
+	await process_frame
+	_expect_false(bool(hud.call("is_rail_collapsed")), "Main Sidebar should expand through the same presentation state.")
+	_expect_true(scroll.visible, "Expanded rail should restore its existing content tree.")
 
 	_expect_true(bool(tutorial.call("is_collapsed")), "Tutorial should start collapsed in the compact main state.")
 	_expect_false(tutorial_body.visible, "Default collapsed Tutorial should not lengthen the Sidebar.")
