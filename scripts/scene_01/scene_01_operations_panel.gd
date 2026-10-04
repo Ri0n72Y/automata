@@ -4,6 +4,10 @@ extends CanvasLayer
 const AvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
 const ManualAvailabilityScript := preload("res://scripts/input/vehicle_manual_interaction_availability.gd")
 const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metrics.gd")
+const VehicleSelectionControllerScript := preload("res://scripts/input/vehicle_selection_controller.gd")
+const VehicleMoveControllerScript := preload("res://scripts/input/vehicle_move_controller.gd")
+const VehicleGrabDropControllerScript := preload("res://scripts/input/vehicle_grab_drop_controller.gd")
+const GridSelectionControllerScript := preload("res://scripts/input/grid_selection_controller.gd")
 
 @onready var _panel: PanelContainer = %OperationsPanel
 @onready var _content: VBoxContainer = $RootControl/OperationsPanel/Margin/VBox
@@ -19,10 +23,10 @@ const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metric
 @onready var _grab_drop_status: Label = %GrabDropStatus
 @onready var _grab_drop_button: Button = %GrabDropButton
 
-@onready var _vehicle_selection: Node = get_parent().get_node("SceneRoot/GridRoot/VehicleSelectionController")
-@onready var _move_controller: Node = get_parent().get_node("SceneRoot/GridRoot/VehicleMoveController")
-@onready var _grab_drop_controller: Node = get_parent().get_node("SceneRoot/GridRoot/VehicleGrabDropController")
-@onready var _grid_selection: Node = get_parent().get_node("SceneRoot/GridRoot/GridSelectionController")
+@onready var _vehicle_selection: VehicleSelectionControllerScript = get_parent().get_node("SceneRoot/GridRoot/VehicleSelectionController") as VehicleSelectionControllerScript
+@onready var _move_controller: VehicleMoveControllerScript = get_parent().get_node("SceneRoot/GridRoot/VehicleMoveController") as VehicleMoveControllerScript
+@onready var _grab_drop_controller: VehicleGrabDropControllerScript = get_parent().get_node("SceneRoot/GridRoot/VehicleGrabDropController") as VehicleGrabDropControllerScript
+@onready var _grid_selection: GridSelectionControllerScript = get_parent().get_node("SceneRoot/GridRoot/GridSelectionController") as GridSelectionControllerScript
 
 
 func _ready() -> void:
@@ -54,7 +58,7 @@ func _queue_layout() -> void:
 
 
 func _refresh_projection() -> void:
-	var vehicle: Variant = _vehicle_selection.call("get_selected_vehicle")
+	var vehicle := _vehicle_selection.get_selected_vehicle()
 	if vehicle == null:
 		_vehicle_label.text = "当前车辆 · 未选择"
 	else:
@@ -63,9 +67,9 @@ func _refresh_projection() -> void:
 			display_name = String(vehicle.definition.display_name)
 		_vehicle_label.text = "当前车辆 · %s" % display_name
 
-	var move_status := StringName(_move_controller.call("get_selected_move_interaction_availability"))
-	var rotate_status := StringName(_grab_drop_controller.call("get_selected_rotate_interaction_availability"))
-	var grab_drop_status := StringName(_grab_drop_controller.call("get_selected_grab_drop_interaction_availability"))
+	var move_status := _move_controller.get_selected_move_interaction_availability()
+	var rotate_status := _grab_drop_controller.get_selected_rotate_interaction_availability()
+	var grab_drop_status := _grab_drop_controller.get_selected_grab_drop_interaction_availability()
 
 	var move_visible := move_status != AvailabilityScript.NO_CAPABILITY
 	var rotate_visible := rotate_status != AvailabilityScript.NO_CAPABILITY
@@ -97,7 +101,7 @@ func _on_move_pressed() -> void:
 	var status := StringName(_move_controller.call("get_selected_move_interaction_availability"))
 	if not _is_move_actionable(status):
 		return
-	_grid_selection.call("toggle_live_target_mode")
+	_grid_selection.toggle_live_target_mode()
 	_refresh_projection()
 
 
@@ -105,7 +109,7 @@ func _request_turn(direction: int) -> void:
 	var status := StringName(_grab_drop_controller.call("get_selected_rotate_interaction_availability"))
 	if status != AvailabilityScript.AVAILABLE:
 		return
-	_grab_drop_controller.call("rotate_selected_vehicle", direction)
+	_grab_drop_controller.rotate_selected_vehicle(direction)
 	_refresh_projection()
 
 
@@ -113,7 +117,7 @@ func _on_grab_drop_pressed() -> void:
 	var status := StringName(_grab_drop_controller.call("get_selected_grab_drop_interaction_availability"))
 	if status != AvailabilityScript.AVAILABLE:
 		return
-	_grab_drop_controller.call("request_selected_grab_drop")
+	_grab_drop_controller.request_selected_grab_drop()
 	_refresh_projection()
 
 
