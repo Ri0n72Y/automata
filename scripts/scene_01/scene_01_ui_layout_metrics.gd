@@ -10,18 +10,13 @@ const CONTENT_BOTTOM_MARGIN := 16.0
 const OPERATIONS_PANEL_HEIGHT := 218.0
 const RIGHT_RAIL_SECTION_GAP := 8.0
 
-const REFERENCE_VIEWPORT_WIDTH := 2264.0
-const REFERENCE_LEFT_RAIL_WIDTH := 240.0
+const PRIMARY_RAIL_WIDTH := 240.0
 const LEFT_RAIL_COLLAPSED_WIDTH := 44.0
 
 const PROGRAM_COLLAPSED_WIDTH := 56.0
 const PROGRAM_NARROW_WIDTH := 360.0
 const PROGRAM_COMPACT_WIDTH := 400.0
 const PROGRAM_WIDE_WIDTH := 460.0
-
-
-static func left_rail_width(_viewport_width: float) -> float:
-	return REFERENCE_LEFT_RAIL_WIDTH
 
 
 static func left_sidebar_max_height(viewport_height: float) -> float:

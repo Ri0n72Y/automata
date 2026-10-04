@@ -40,8 +40,7 @@ func _process(_delta: float) -> void:
 
 
 func _apply_layout() -> void:
-	var viewport_width := float(get_viewport().get_visible_rect().size.x)
-	var width := LayoutMetrics.program_rail_width(viewport_width)
+	var width := LayoutMetrics.PRIMARY_RAIL_WIDTH
 	_panel.offset_top = LayoutMetrics.CONTENT_TOP
 	_panel.offset_right = -LayoutMetrics.EDGE_MARGIN
 	_panel.offset_left = _panel.offset_right - width

@@ -121,18 +121,12 @@ func _run() -> void:
 		await process_frame
 		_expect_near(
 			sidebar.size.x,
-			LayoutMetrics.REFERENCE_LEFT_RAIL_WIDTH,
+			LayoutMetrics.PRIMARY_RAIL_WIDTH,
 			2.0,
 			"Expanded Sidebar should stay at the compact 240px production width."
 		)
-		_expect_near(
-			LayoutMetrics.left_rail_width(float(viewport_size.x)),
-			LayoutMetrics.REFERENCE_LEFT_RAIL_WIDTH,
-			0.1,
-			"Shared layout metrics should not re-expand the Sidebar at common viewport widths."
-		)
 		_expect_true(
-			sidebar.get_combined_minimum_size().x <= LayoutMetrics.REFERENCE_LEFT_RAIL_WIDTH + 1.0,
+			sidebar.get_combined_minimum_size().x <= LayoutMetrics.PRIMARY_RAIL_WIDTH + 1.0,
 			"Sidebar child minimum sizes must not silently expand the 240px rail."
 		)
 
@@ -178,7 +172,7 @@ func _run() -> void:
 	_expect_true(
 		tutorial_button_row != null
 		and tutorial_button_row.get_combined_minimum_size().x <= (
-			LayoutMetrics.REFERENCE_LEFT_RAIL_WIDTH
+			LayoutMetrics.PRIMARY_RAIL_WIDTH
 			- 2.0 * 8.0
 			- 2.0 * float(tutorial_content_margin.get_theme_constant("margin_left"))
 		),

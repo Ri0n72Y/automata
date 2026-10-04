@@ -3,6 +3,7 @@ extends SceneTree
 const SCENE_PATH := "res://scenes/scene_01/scene_01_basic_packing.tscn"
 const AvailabilityScript := preload("res://scripts/input/vehicle_command_availability.gd")
 const ManualAvailabilityScript := preload("res://scripts/input/vehicle_manual_interaction_availability.gd")
+const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metrics.gd")
 
 var failures := 0
 
@@ -51,6 +52,10 @@ func _run() -> void:
 		await _cleanup(scene)
 		return
 
+	_expect_near(panel.size.x, LayoutMetrics.PRIMARY_RAIL_WIDTH, 1.0, "Operations should use the shared 240px primary rail width.")
+	_expect_true(panel.get_combined_minimum_size().x <= LayoutMetrics.PRIMARY_RAIL_WIDTH + 1.0, "Operations child minimum width must fit inside the primary rail.")
+	_assert_horizontal_fit(panel, [vehicle_label, move_row, move_status, move_button, rotate_row, rotate_status, rotate_left, rotate_right, grab_row, grab_status, grab_button])
+
 	_expect_equal(vehicle_label.text, "当前车辆 · 未选择", "No-selection state should not invent a default vehicle.")
 	_expect_equal(StringName(move_controller.call("get_selected_move_interaction_availability")), AvailabilityScript.NO_VEHICLE, "Move owner should report no vehicle.")
 	_expect_equal(StringName(grab_controller.call("get_selected_rotate_interaction_availability")), AvailabilityScript.NO_VEHICLE, "Rotate owner should report no vehicle.")
@@ -66,6 +71,7 @@ func _run() -> void:
 	var arm_panel_height := panel.size.y
 	_expect_true(grab_row.visible, "Arm should expose its supported GrabDrop row.")
 	_assert_projection(move_controller, grab_controller, move_button, rotate_left, rotate_right, grab_button)
+	_assert_horizontal_fit(panel, [vehicle_label, move_row, move_status, move_button, rotate_row, rotate_status, rotate_left, rotate_right, grab_row, grab_status, grab_button])
 
 	var move_availability := StringName(move_controller.call("get_selected_move_interaction_availability"))
 	if move_availability == AvailabilityScript.AVAILABLE:
@@ -103,6 +109,7 @@ func _run() -> void:
 	_expect_true(transport_panel_height < arm_panel_height, "Transport panel should shrink when NO_CAPABILITY hides GrabDrop.")
 	_expect_near(panel.size.y, panel.get_combined_minimum_size().y, 1.0, "Operations pointer rect should follow visible-content natural height.")
 	_assert_projection(move_controller, grab_controller, move_button, rotate_left, rotate_right, grab_button)
+	_assert_horizontal_fit(panel, [vehicle_label, move_row, move_status, move_button, rotate_row, rotate_status, rotate_left, rotate_right, grab_row, grab_status, grab_button])
 
 	_expect_true(selection.call("select_vehicle", arm), "Operations contract should reselect Arm after Transport.")
 	await process_frame
@@ -129,6 +136,20 @@ func _run() -> void:
 	_expect_true(panel.mouse_filter == Control.MOUSE_FILTER_STOP, "Operations surface must stop pointer clicks from leaking into gameplay.")
 
 	await _cleanup(scene)
+
+
+func _assert_horizontal_fit(panel: Control, controls: Array) -> void:
+	var panel_rect := panel.get_global_rect()
+	for control_variant in controls:
+		var control := control_variant as Control
+		if control == null or not control.is_visible_in_tree():
+			continue
+		var rect := control.get_global_rect()
+		_expect_true(
+			rect.position.x >= panel_rect.position.x - 1.0
+			and rect.end.x <= panel_rect.end.x + 1.0,
+			"Visible Operations controls must stay inside the 240px panel width."
+		)
 
 
 func _assert_projection(move_controller: Node, grab_controller: Node, move_button: Button, rotate_left: Button, rotate_right: Button, grab_button: Button) -> void:

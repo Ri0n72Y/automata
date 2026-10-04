@@ -90,7 +90,7 @@ func _apply_sidebar_layout() -> void:
 	var rail_width := (
 		LayoutMetrics.LEFT_RAIL_COLLAPSED_WIDTH
 		if _rail_collapsed
-		else LayoutMetrics.left_rail_width(float(viewport_size.x))
+		else LayoutMetrics.PRIMARY_RAIL_WIDTH
 	)
 	sidebar_panel.offset_right = sidebar_panel.offset_left + rail_width
 	var content_height := (

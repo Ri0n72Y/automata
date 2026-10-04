@@ -64,6 +64,9 @@ func _run() -> void:
 	for ui_root in [hud_root, operations_root, program_root, lifecycle_root, debug_root]:
 		_expect_true(ui_root.theme != null, "Every visible Scene 01 UI surface should use the shared explicit theme.")
 
+	var operations_script_source := FileAccess.get_file_as_string("res://scripts/scene_01/scene_01_operations_panel.gd")
+	_expect_false(operations_script_source.contains("program_rail_width"), "Operations must not consume legacy Program workspace width tiers.")
+
 	program_ui.call("set_workspace_collapsed", false)
 
 	for viewport_size in [
@@ -75,17 +78,21 @@ func _run() -> void:
 		viewport.size = viewport_size
 		await process_frame
 		await process_frame
-		_expect_near(sidebar.size.x, LayoutMetrics.left_rail_width(float(viewport_size.x)), 2.0, "Main Sidebar width should follow the shared tier.")
-		_expect_near(operations_panel.size.x, LayoutMetrics.program_rail_width(float(viewport_size.x)), 2.0, "Operations width should follow the shared right-rail tier.")
-		_expect_near(program_panel.size.x, LayoutMetrics.program_rail_width(float(viewport_size.x)), 2.0, "Expanded Program width should follow the shared tier.")
+		_expect_near(sidebar.size.x, LayoutMetrics.PRIMARY_RAIL_WIDTH, 2.0, "Main Sidebar should use the shared primary rail width.")
+		_expect_near(operations_panel.size.x, LayoutMetrics.PRIMARY_RAIL_WIDTH, 2.0, "Operations should use the same shared primary rail width.")
+		_expect_near(program_panel.size.x, LayoutMetrics.program_rail_width(float(viewport_size.x)), 2.0, "Expanded Program should retain its legacy workspace width tier.")
+		_expect_true(operations_panel.get_combined_minimum_size().x <= LayoutMetrics.PRIMARY_RAIL_WIDTH + 1.0, "Operations child minimum sizes must not expand the 240px primary rail.")
 		_expect_near(sidebar.position.x, LayoutMetrics.EDGE_MARGIN, 1.0, "Main Sidebar should align to the common edge margin.")
 		_expect_near(sidebar.position.y, LayoutMetrics.CONTENT_TOP, 1.0, "Main Sidebar should begin below lifecycle controls.")
 		_expect_true(sidebar.get_global_rect().end.y <= float(viewport_size.y) - LayoutMetrics.CONTENT_BOTTOM_MARGIN + 1.0, "Main Sidebar should remain within the viewport safe area.")
+		_expect_near(operations_panel.position.x, float(viewport_size.x) - LayoutMetrics.EDGE_MARGIN - LayoutMetrics.PRIMARY_RAIL_WIDTH, 1.0, "Operations left edge should mirror the accepted left rail placement.")
+		_expect_near(operations_panel.get_global_rect().end.x, float(viewport_size.x) - LayoutMetrics.EDGE_MARGIN, 1.0, "Operations right edge should use the shared outer margin.")
 		_expect_near(operations_panel.position.y, LayoutMetrics.CONTENT_TOP, 1.0, "Operations should begin at the shared content top.")
 		_expect_near(operations_panel.size.y, operations_panel.get_combined_minimum_size().y, 1.0, "Operations should follow its visible-content natural height.")
 		_expect_false(operations_panel.get_global_rect().intersects(program_panel.get_global_rect()), "Operations and Program should be explicit stacked right-rail sections.")
 		_expect_false(operations_panel.get_global_rect().intersects(lifecycle_panel.get_global_rect()), "Operations should stay below lifecycle controls.")
 		_expect_false(program_panel.get_global_rect().intersects(lifecycle_panel.get_global_rect()), "Program rail should stay below lifecycle controls.")
+		_expect_false(debug_panel.get_global_rect().intersects(operations_panel.get_global_rect()), "Collapsed Debug entry should stay above Operations.")
 		_expect_false(debug_panel.get_global_rect().intersects(program_panel.get_global_rect()), "Collapsed Debug entry should stay above the Program rail.")
 		_expect_true(operations_panel.get_global_rect().position.x - sidebar.get_global_rect().end.x >= 400.0, "Supported desktop sizes should preserve central gameplay width beside Operations.")
 		_expect_true(program_panel.get_global_rect().position.x - sidebar.get_global_rect().end.x >= 400.0, "Supported desktop sizes should preserve central gameplay width beside Program.")

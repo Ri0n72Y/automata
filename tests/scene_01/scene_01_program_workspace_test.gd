@@ -89,12 +89,12 @@ func _run() -> void:
 	_expect_true(source_editor.is_visible_in_tree(), "Expanded Program rail should expose the canonical source editor.")
 	var viewport_width := float(scene.get_viewport().get_visible_rect().size.x)
 	var expected_program_width := LayoutMetrics.program_rail_width(viewport_width)
-	var expected_left_width := LayoutMetrics.left_rail_width(viewport_width)
+	var expected_left_width := LayoutMetrics.PRIMARY_RAIL_WIDTH
 	_expect_true(absf(program_panel.size.x - expected_program_width) <= 2.0, "Expanded Program rail should follow the shared desktop width tier.")
 	_expect_true(absf(sidebar_panel.size.x - expected_left_width) <= 2.0, "Main sidebar should use the shared immutable left-rail width metric.")
 	var central_width := program_panel.get_global_rect().position.x - sidebar_panel.get_global_rect().end.x
 	_expect_true(central_width > 0.0, "Program rail and main sidebar must leave a non-overlapping central gameplay region.")
-	var wide_central_width := 1920.0 - 16.0 - LayoutMetrics.program_rail_width(1920.0) - (16.0 + LayoutMetrics.left_rail_width(1920.0))
+	var wide_central_width := 1920.0 - 16.0 - LayoutMetrics.program_rail_width(1920.0) - (16.0 + LayoutMetrics.PRIMARY_RAIL_WIDTH)
 	_expect_true(wide_central_width >= 900.0, "1920px spec tier should protect at least 900px of central gameplay width.")
 	_expect_true(tutorial_section.is_ancestor_of(scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody")), "Tutorial must be a section inside the single main sidebar.")
 	_expect_true(program_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and hud_root.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Fullscreen presentation roots must not intercept central gameplay input.")
