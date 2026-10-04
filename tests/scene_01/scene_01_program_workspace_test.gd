@@ -26,17 +26,17 @@ func _run() -> void:
 	var selection = scene.get_node("SceneRoot/GridRoot/VehicleSelectionController")
 	var manager = scene.get_node("SceneRoot/RobotRoot/Scene01VehicleManager")
 	var panel := ui.get_node("%OperationsPanel") as Control
-	var source_editor := ui.get_node("%SourceEditor") as CodeEdit
-	var repeat_row := ui.get_node("%RepeatRow") as HBoxContainer
-	var add_repeat := ui.get_node("%AddRepeatButton") as Button
-	var clear_button := ui.get_node("%ClearButton") as Button
-	var save_button := ui.get_node("%SaveButton") as Button
-	var load_button := ui.get_node("%LoadButton") as Button
-	var run_button := ui.get_node("%RunButton") as Button
-	var repeat_count := ui.get_node("%RepeatCount") as SpinBox
-	var repeat_target_option := ui.get_node("%RepeatTargetOption") as OptionButton
-	var status_label := ui.get_node("%StatusLabel") as Label
 	var authoring := ui.get_node("RootControl/OperationsPanel/Margin/VBox/ProgramAuthoring") as Control
+	var source_editor := authoring.get_node("%SourceEditor") as CodeEdit
+	var repeat_row := authoring.get_node("RepeatRow") as HBoxContainer
+	var add_repeat := authoring.get_node("%AddRepeatButton") as Button
+	var clear_button := authoring.get_node("%ClearButton") as Button
+	var save_button := authoring.get_node("%SaveButton") as Button
+	var load_button := authoring.get_node("%LoadButton") as Button
+	var run_button := authoring.get_node("%RunButton") as Button
+	var repeat_count := authoring.get_node("%RepeatCount") as SpinBox
+	var repeat_target_option := authoring.get_node("%RepeatTargetOption") as OptionButton
+	var status_label := authoring.get_node("%StatusLabel") as Label
 	var sidebar_panel := scene.get_node("HUDRoot/RootControl/SidebarPanel") as Control
 	var operations_root := ui.get_node("RootControl") as Control
 
