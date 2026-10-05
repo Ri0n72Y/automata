@@ -95,12 +95,39 @@ func _run() -> void:
 	operations.call("set_source_text", "automata_scene01_program 2\n[arm_vehicle:grabDrop]\n\n")
 	source_editor.set_caret_line(2)
 	source_editor.set_caret_column(0)
-	var anchor: Vector2i = arm.runtime_state.anchor_cell
-	var expected_move := "[arm_vehicle:moveTo] %d %d" % [anchor.x, anchor.y]
+	var source_before_move := String(operations.call("get_source_text"))
+	var anchor_before_move: Vector2i = arm.runtime_state.anchor_cell
+	var move_requests: Array[Vector2i] = []
+	move_controller.move_requested.connect(
+		func(_vehicle_id: StringName, target: Vector2i) -> void:
+			move_requests.append(target)
+	)
 	move_button.emit_signal("pressed")
+	await process_frame
+	_expect_true(bool(grid_selection.call("is_live_target_mode")), "Authoring Move should enter the existing live target selector.")
+	_expect_equal(String(operations.call("get_source_text")), source_before_move, "Authoring Move should not insert source before target confirmation.")
+	_expect_equal(move_button.text, "取消目标", "Authoring Move should expose target cancellation while selection is active.")
+
+	var authored_target := anchor_before_move + Vector2i(1, 0)
+	grid_selection.set("selected_cell", authored_target)
+	_expect_true(bool(grid_selection.call("confirm_selection")), "Authoring Move target should confirm through GridSelectionController.")
+	await process_frame
+	var expected_move := "[arm_vehicle:moveTo] %d %d" % [authored_target.x, authored_target.y]
 	var source_after_move := String(operations.call("get_source_text"))
-	_expect_true(source_after_move.contains(expected_move + "\n"), "Authoring Move should write the selected vehicle's authoritative anchor into canonical source.")
-	_expect_true(source_after_move.find(expected_move) > source_after_move.find("[arm_vehicle:grabDrop]"), "Insertion should follow the current source caret line instead of always appending at an unrelated model.")
+	_expect_true(source_after_move.contains(expected_move + "\n"), "Authoring Move should insert the confirmed selected target coordinate.")
+	_expect_true(source_after_move.find(expected_move) > source_after_move.find("[arm_vehicle:grabDrop]"), "Insertion should remain relative to the original source caret.")
+	_expect_equal(move_requests.size(), 0, "Authoring Move confirmation must not invoke gameplay Move.")
+	_expect_equal(arm.runtime_state.anchor_cell, anchor_before_move, "Authoring Move confirmation must not mutate vehicle runtime position.")
+	_expect_false(bool(grid_selection.call("is_live_target_mode")), "Authoring Move confirmation should finish target-selection mode.")
+
+	var source_before_cancel := String(operations.call("get_source_text"))
+	move_button.emit_signal("pressed")
+	await process_frame
+	_expect_true(bool(grid_selection.call("is_live_target_mode")), "Second Authoring Move should re-enter target selection.")
+	move_button.emit_signal("pressed")
+	await process_frame
+	_expect_false(bool(grid_selection.call("is_live_target_mode")), "Authoring Move button should cancel pending target selection.")
+	_expect_equal(String(operations.call("get_source_text")), source_before_cancel, "Cancelling Authoring Move must insert nothing.")
 
 	rotate_right.emit_signal("pressed")
 	grab_button.emit_signal("pressed")
@@ -117,8 +144,12 @@ func _run() -> void:
 	_expect_false(grab_row.visible, "Authoritative NO_CAPABILITY should hide unsupported GrabDrop in both modes.")
 	_expect_true(move_row.visible and rotate_row.visible, "Supported Transport tools should remain visible.")
 
+	move_button.emit_signal("pressed")
+	await process_frame
+	_expect_true(bool(grid_selection.call("is_live_target_mode")), "Pending Authoring Move should be active before collapse.")
 	operations.call("set_authoring_mode", false)
 	await process_frame
+	_expect_false(bool(grid_selection.call("is_live_target_mode")), "Collapsing Program should cancel pending Authoring Move targeting.")
 	_expect_false(authoring.visible, "Collapse should restore daily Operations presentation.")
 	_expect_near(panel.size.x, LayoutMetrics.PRIMARY_RAIL_WIDTH, 1.0, "Collapse should restore the accepted 240px baseline.")
 	_expect_true(panel.size.y < float(scene.get_viewport().get_visible_rect().size.y) - LayoutMetrics.CONTENT_TOP, "Collapsed daily Operations should return to natural content height.")
