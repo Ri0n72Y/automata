@@ -66,7 +66,10 @@ func _process(_delta: float) -> void:
 
 
 func set_authoring_mode(enabled: bool) -> void:
-	if not enabled:
+	var entering_authoring := enabled and not _authoring_mode
+	if entering_authoring and _grid_selection.is_live_target_mode():
+		_grid_selection.deactivate_live_target_mode()
+	elif not enabled:
 		_cancel_authoring_move_targeting()
 	_authoring_mode = enabled
 	_program_ui.visible = enabled
