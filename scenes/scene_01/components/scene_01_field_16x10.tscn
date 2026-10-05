@@ -1,16 +1,29 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scripts/grid/grid_tile_view.gd" id="1_grid_tiles"]
 [ext_resource type="PackedScene" path="res://scenes/scene_01/components/grid_row_boundary_16_static.tscn" id="2_boundary_row"]
 [ext_resource type="PackedScene" path="res://scenes/scene_01/components/grid_row_interior_16_static.tscn" id="3_interior_row"]
-
 [ext_resource type="Material" path="res://scenes/scene_01/materials/neutral_floor.tres" id="4_floor"]
 [ext_resource type="Material" path="res://scenes/scene_01/materials/painted_white.tres" id="5_power"]
 [ext_resource type="Material" path="res://scenes/scene_01/materials/neutral_obstacle.tres" id="6_boundary"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/floor_panel_alt.tres" id="7_panel"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/floor_seam.tres" id="8_seam"]
 
 [sub_resource type="BoxShape3D" id="GroundShape"]
 resource_local_to_scene = true
 size = Vector3(16, 0.08, 10)
+
+[sub_resource type="BoxMesh" id="SeamAcrossXMesh"]
+size = Vector3(15.82, 0.008, 0.02)
+
+[sub_resource type="BoxMesh" id="SeamAcrossZMesh"]
+size = Vector3(0.02, 0.008, 9.82)
+
+[sub_resource type="BoxMesh" id="BorderXMesh"]
+size = Vector3(16.16, 0.032, 0.11)
+
+[sub_resource type="BoxMesh" id="BorderZMesh"]
+size = Vector3(0.11, 0.032, 10.16)
 
 [node name="GridTileView" type="Node3D"]
 script = ExtResource("1_grid_tiles")
@@ -60,3 +73,55 @@ collision_mask = 0
 [node name="GroundShape" type="CollisionShape3D" parent="Tiles/GroundBody"]
 position = Vector3(8, -0.04, 5)
 shape = SubResource("GroundShape")
+
+[node name="FloorDetail" type="Node3D" parent="."]
+
+[node name="MajorSeamX4" type="MeshInstance3D" parent="FloorDetail"]
+position = Vector3(4, 0.006, 5)
+mesh = SubResource("SeamAcrossZMesh")
+material_override = ExtResource("8_seam")
+cast_shadow = 0
+
+[node name="MajorSeamX8" type="MeshInstance3D" parent="FloorDetail"]
+position = Vector3(8, 0.006, 5)
+mesh = SubResource("SeamAcrossZMesh")
+material_override = ExtResource("8_seam")
+cast_shadow = 0
+
+[node name="MajorSeamX12" type="MeshInstance3D" parent="FloorDetail"]
+position = Vector3(12, 0.006, 5)
+mesh = SubResource("SeamAcrossZMesh")
+material_override = ExtResource("8_seam")
+cast_shadow = 0
+
+[node name="MajorSeamZ3" type="MeshInstance3D" parent="FloorDetail"]
+position = Vector3(8, 0.006, 3)
+mesh = SubResource("SeamAcrossXMesh")
+material_override = ExtResource("8_seam")
+cast_shadow = 0
+
+[node name="MajorSeamZ65" type="MeshInstance3D" parent="FloorDetail"]
+position = Vector3(8, 0.006, 6.5)
+mesh = SubResource("SeamAcrossXMesh")
+material_override = ExtResource("8_seam")
+cast_shadow = 0
+
+[node name="BorderNorth" type="MeshInstance3D" parent="FloorDetail"]
+position = Vector3(8, 0.016, -0.055)
+mesh = SubResource("BorderXMesh")
+material_override = ExtResource("7_panel")
+
+[node name="BorderSouth" type="MeshInstance3D" parent="FloorDetail"]
+position = Vector3(8, 0.016, 10.055)
+mesh = SubResource("BorderXMesh")
+material_override = ExtResource("7_panel")
+
+[node name="BorderWest" type="MeshInstance3D" parent="FloorDetail"]
+position = Vector3(-0.055, 0.016, 5)
+mesh = SubResource("BorderZMesh")
+material_override = ExtResource("7_panel")
+
+[node name="BorderEast" type="MeshInstance3D" parent="FloorDetail"]
+position = Vector3(16.055, 0.016, 5)
+mesh = SubResource("BorderZMesh")
+material_override = ExtResource("7_panel")
