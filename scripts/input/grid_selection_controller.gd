@@ -302,7 +302,7 @@ func _selected_vehicle_completed_no_op() -> bool:
 
 
 func _can_activate_live_target_mode() -> bool:
-	return _live_target_available and not _selected_vehicle_is_busy()
+	return _live_target_available
 
 
 func _has_selected_vehicle() -> bool:
