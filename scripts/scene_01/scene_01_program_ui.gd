@@ -1,6 +1,8 @@
 class_name Scene01ProgramUI
 extends VBoxContainer
 
+signal editing_enabled_changed(enabled: bool)
+
 const SupportScript := preload("res://scripts/scene_01/scene_01_program_workspace_support.gd")
 const SourceEditorScript := preload("res://scripts/scene_01/scene_01_program_source_editor.gd")
 const RunnerScript := preload("res://scripts/scene_01/scene_01_program_runner.gd")
@@ -177,12 +179,15 @@ func _refresh_repeat_controls() -> void:
 
 
 func _set_editing_enabled(enabled: bool) -> void:
+	if _editing_enabled == enabled:
+		return
 	_editing_enabled = enabled
 	%RepeatCount.editable = enabled
 	_source_editor.editable = enabled
 	for button in [%ClearButton, %SaveButton, %LoadButton, %ExportButton, %RunButton]:
 		button.disabled = not enabled
 	_refresh_repeat_controls()
+	editing_enabled_changed.emit(enabled)
 
 
 func _scene_host() -> Node:
