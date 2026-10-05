@@ -39,6 +39,7 @@ Scene 01 merely to verify an invariant that can be exercised directly.
 | `move_command_state_machine_test.gd` | MoveCommand mutable transition boundary |
 | `transport_tray_state_smoke_test.gd` | tray inventory ownership, access guard, reset release |
 | `vehicle_move_execution_contract_test.gd` | MoveCommand -> VehicleActor/VehicleRuntimeState timing, cancel and reset semantics |
+| `move_target_commit_boundary_test.gd` | shared live target selection -> execute-vs-select-only commit routing |
 | `lifecycle_readiness_purity_stability_test.gd` | readiness query -> preparation gate must remain side-effect free |
 | `vehicle_runtime_reset_stability_test.gd` | VehicleRuntimeState reset -> stationary tray interaction metadata restoration |
 
