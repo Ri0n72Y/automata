@@ -34,6 +34,7 @@ const GridSelectionControllerScript := preload("res://scripts/input/grid_selecti
 @onready var _grid_selection: GridSelectionControllerScript = get_parent().get_node("SceneRoot/GridRoot/GridSelectionController") as GridSelectionControllerScript
 
 var _authoring_mode := false
+var _authoring_move_targeting := false
 
 
 func _ready() -> void:
@@ -42,6 +43,9 @@ func _ready() -> void:
 	_rotate_left_button.pressed.connect(func(): _request_turn(-1))
 	_rotate_right_button.pressed.connect(func(): _request_turn(1))
 	_grab_drop_button.pressed.connect(_on_grab_drop_pressed)
+	_move_controller.move_target_selected.connect(_on_move_target_selected)
+	_grid_selection.live_target_mode_changed.connect(_on_live_target_mode_changed)
+	_program_ui.editing_enabled_changed.connect(_on_program_editing_enabled_changed)
 	_content.minimum_size_changed.connect(_queue_layout)
 	get_viewport().size_changed.connect(_apply_layout)
 	set_authoring_mode(false)
@@ -62,6 +66,8 @@ func _process(_delta: float) -> void:
 
 
 func set_authoring_mode(enabled: bool) -> void:
+	if not enabled:
+		_cancel_authoring_move_targeting()
 	_authoring_mode = enabled
 	_program_ui.visible = enabled
 	_authoring_divider.visible = enabled
@@ -144,9 +150,9 @@ func _refresh_projection() -> void:
 	_grab_drop_status.text = _status_text(grab_drop_status)
 
 	if _authoring_mode:
-		_move_button.text = "插入"
+		_move_button.text = "取消目标" if _authoring_move_targeting else "插入"
 		_grab_drop_button.text = "插入"
-		_move_button.disabled = not _can_author(move_status)
+		_move_button.disabled = false if _authoring_move_targeting else not _can_author(move_status)
 		var rotate_disabled := not _can_author(rotate_status)
 		_rotate_left_button.disabled = rotate_disabled
 		_rotate_right_button.disabled = rotate_disabled
@@ -163,9 +169,12 @@ func _refresh_projection() -> void:
 func _on_move_pressed() -> void:
 	var status := _move_controller.get_selected_move_interaction_availability()
 	if _authoring_mode:
+		if _authoring_move_targeting:
+			_cancel_authoring_move_targeting()
+			return
 		if not _can_author(status):
 			return
-		_insert_move_statement()
+		_begin_authoring_move_targeting()
 		return
 	if not _is_move_actionable(status):
 		return
@@ -200,16 +209,43 @@ func _on_grab_drop_pressed() -> void:
 	_refresh_projection()
 
 
-func _insert_move_statement() -> void:
-	var vehicle := _vehicle_selection.get_selected_vehicle()
-	if vehicle == null or vehicle.runtime_state == null:
+func _begin_authoring_move_targeting() -> void:
+	_authoring_move_targeting = _move_controller.begin_selected_move_target_selection(
+		VehicleMoveControllerScript.TargetCommitMode.SELECT_ONLY
+	)
+	_refresh_projection()
+
+
+func _cancel_authoring_move_targeting() -> void:
+	if not _authoring_move_targeting:
 		return
-	var anchor := vehicle.runtime_state.anchor_cell
+	_authoring_move_targeting = false
+	if _grid_selection.is_live_target_mode():
+		_grid_selection.deactivate_live_target_mode()
+	_refresh_projection()
+
+
+func _on_move_target_selected(vehicle_id: StringName, target_anchor: Vector2i) -> void:
+	if not _authoring_mode or not _authoring_move_targeting:
+		return
+	_authoring_move_targeting = false
 	_program_ui.insert_statement("[%s:moveTo] %d %d" % [
-		String(vehicle.get_vehicle_id()),
-		anchor.x,
-		anchor.y,
+		String(vehicle_id),
+		target_anchor.x,
+		target_anchor.y,
 	])
+	_refresh_projection()
+
+
+func _on_live_target_mode_changed(active: bool) -> void:
+	if not active and _authoring_move_targeting:
+		_authoring_move_targeting = false
+		_refresh_projection()
+
+
+func _on_program_editing_enabled_changed(enabled: bool) -> void:
+	if not enabled:
+		_cancel_authoring_move_targeting()
 
 
 func _insert_vehicle_statement(command_tail: String) -> void:
