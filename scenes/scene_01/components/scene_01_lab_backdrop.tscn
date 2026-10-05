@@ -1,0 +1,191 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="Material" path="res://scenes/scene_01/materials/painted_white.tres" id="1_white"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/dark_mechanical_metal.tres" id="2_dark"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/cyan_emissive.tres" id="3_cyan"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/lab_wall.tres" id="4_wall"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/lab_window_panel.tres" id="5_window"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/neutral_obstacle.tres" id="6_trim"]
+
+[sub_resource type="BoxMesh" id="BackWallMesh"]
+size = Vector3(16.8, 2.45, 0.24)
+
+[sub_resource type="BoxMesh" id="SideWallMesh"]
+size = Vector3(0.24, 2.45, 10.8)
+
+[sub_resource type="BoxMesh" id="BackKickMesh"]
+size = Vector3(16.4, 0.22, 0.13)
+
+[sub_resource type="BoxMesh" id="SideKickMesh"]
+size = Vector3(0.13, 0.22, 10.4)
+
+[sub_resource type="BoxMesh" id="BackWindowMesh"]
+size = Vector3(3.35, 0.74, 0.045)
+
+[sub_resource type="BoxMesh" id="SideWindowMesh"]
+size = Vector3(0.045, 0.74, 2.0)
+
+[sub_resource type="BoxMesh" id="BackColumnMesh"]
+size = Vector3(0.16, 2.5, 0.3)
+
+[sub_resource type="BoxMesh" id="SideColumnMesh"]
+size = Vector3(0.3, 2.5, 0.16)
+
+[sub_resource type="BoxMesh" id="BackTopBeamMesh"]
+size = Vector3(16.45, 0.14, 0.16)
+
+[sub_resource type="BoxMesh" id="SideTopBeamMesh"]
+size = Vector3(0.16, 0.14, 10.45)
+
+[sub_resource type="BoxMesh" id="BackLightMesh"]
+size = Vector3(0.62, 0.04, 0.03)
+
+[sub_resource type="BoxMesh" id="SideLightMesh"]
+size = Vector3(0.03, 0.04, 0.62)
+
+[node name="Scene01LabBackdrop" type="Node3D"]
+
+[node name="BackWall" type="MeshInstance3D" parent="."]
+position = Vector3(8, 1.225, -0.62)
+mesh = SubResource("BackWallMesh")
+material_override = ExtResource("4_wall")
+
+[node name="SideWall" type="MeshInstance3D" parent="."]
+position = Vector3(-0.62, 1.225, 5)
+mesh = SubResource("SideWallMesh")
+material_override = ExtResource("4_wall")
+
+[node name="BackKick" type="MeshInstance3D" parent="."]
+position = Vector3(8, 0.11, -0.475)
+mesh = SubResource("BackKickMesh")
+material_override = ExtResource("6_trim")
+
+[node name="SideKick" type="MeshInstance3D" parent="."]
+position = Vector3(-0.475, 0.11, 5)
+mesh = SubResource("SideKickMesh")
+material_override = ExtResource("6_trim")
+
+[node name="BackTopBeam" type="MeshInstance3D" parent="."]
+position = Vector3(8, 2.34, -0.47)
+mesh = SubResource("BackTopBeamMesh")
+material_override = ExtResource("1_white")
+
+[node name="SideTopBeam" type="MeshInstance3D" parent="."]
+position = Vector3(-0.47, 2.34, 5)
+mesh = SubResource("SideTopBeamMesh")
+material_override = ExtResource("1_white")
+
+[node name="BackColumnA" type="MeshInstance3D" parent="."]
+position = Vector3(0.6, 1.25, -0.45)
+mesh = SubResource("BackColumnMesh")
+material_override = ExtResource("2_dark")
+
+[node name="BackColumnB" type="MeshInstance3D" parent="."]
+position = Vector3(4.2, 1.25, -0.45)
+mesh = SubResource("BackColumnMesh")
+material_override = ExtResource("2_dark")
+
+[node name="BackColumnC" type="MeshInstance3D" parent="."]
+position = Vector3(8, 1.25, -0.45)
+mesh = SubResource("BackColumnMesh")
+material_override = ExtResource("2_dark")
+
+[node name="BackColumnD" type="MeshInstance3D" parent="."]
+position = Vector3(11.8, 1.25, -0.45)
+mesh = SubResource("BackColumnMesh")
+material_override = ExtResource("2_dark")
+
+[node name="BackColumnE" type="MeshInstance3D" parent="."]
+position = Vector3(15.4, 1.25, -0.45)
+mesh = SubResource("BackColumnMesh")
+material_override = ExtResource("2_dark")
+
+[node name="SideColumnA" type="MeshInstance3D" parent="."]
+position = Vector3(-0.45, 1.25, 0.6)
+mesh = SubResource("SideColumnMesh")
+material_override = ExtResource("2_dark")
+
+[node name="SideColumnB" type="MeshInstance3D" parent="."]
+position = Vector3(-0.45, 1.25, 3.1)
+mesh = SubResource("SideColumnMesh")
+material_override = ExtResource("2_dark")
+
+[node name="SideColumnC" type="MeshInstance3D" parent="."]
+position = Vector3(-0.45, 1.25, 5.6)
+mesh = SubResource("SideColumnMesh")
+material_override = ExtResource("2_dark")
+
+[node name="SideColumnD" type="MeshInstance3D" parent="."]
+position = Vector3(-0.45, 1.25, 8.1)
+mesh = SubResource("SideColumnMesh")
+material_override = ExtResource("2_dark")
+
+[node name="BackWindowA" type="MeshInstance3D" parent="."]
+position = Vector3(2.4, 1.55, -0.465)
+mesh = SubResource("BackWindowMesh")
+material_override = ExtResource("5_window")
+
+[node name="BackWindowB" type="MeshInstance3D" parent="."]
+position = Vector3(6.1, 1.55, -0.465)
+mesh = SubResource("BackWindowMesh")
+material_override = ExtResource("5_window")
+
+[node name="BackWindowC" type="MeshInstance3D" parent="."]
+position = Vector3(9.9, 1.55, -0.465)
+mesh = SubResource("BackWindowMesh")
+material_override = ExtResource("5_window")
+
+[node name="BackWindowD" type="MeshInstance3D" parent="."]
+position = Vector3(13.6, 1.55, -0.465)
+mesh = SubResource("BackWindowMesh")
+material_override = ExtResource("5_window")
+
+[node name="SideWindowA" type="MeshInstance3D" parent="."]
+position = Vector3(-0.465, 1.55, 1.85)
+mesh = SubResource("SideWindowMesh")
+material_override = ExtResource("5_window")
+
+[node name="SideWindowB" type="MeshInstance3D" parent="."]
+position = Vector3(-0.465, 1.55, 4.35)
+mesh = SubResource("SideWindowMesh")
+material_override = ExtResource("5_window")
+
+[node name="SideWindowC" type="MeshInstance3D" parent="."]
+position = Vector3(-0.465, 1.55, 6.85)
+mesh = SubResource("SideWindowMesh")
+material_override = ExtResource("5_window")
+
+[node name="SideWindowD" type="MeshInstance3D" parent="."]
+position = Vector3(-0.465, 1.55, 9.1)
+mesh = SubResource("SideWindowMesh")
+material_override = ExtResource("5_window")
+
+[node name="BackLightA" type="MeshInstance3D" parent="."]
+position = Vector3(3, 0.29, -0.398)
+mesh = SubResource("BackLightMesh")
+material_override = ExtResource("3_cyan")
+
+[node name="BackLightB" type="MeshInstance3D" parent="."]
+position = Vector3(8, 0.29, -0.398)
+mesh = SubResource("BackLightMesh")
+material_override = ExtResource("3_cyan")
+
+[node name="BackLightC" type="MeshInstance3D" parent="."]
+position = Vector3(13, 0.29, -0.398)
+mesh = SubResource("BackLightMesh")
+material_override = ExtResource("3_cyan")
+
+[node name="SideLightA" type="MeshInstance3D" parent="."]
+position = Vector3(-0.398, 0.29, 2.3)
+mesh = SubResource("SideLightMesh")
+material_override = ExtResource("3_cyan")
+
+[node name="SideLightB" type="MeshInstance3D" parent="."]
+position = Vector3(-0.398, 0.29, 5)
+mesh = SubResource("SideLightMesh")
+material_override = ExtResource("3_cyan")
+
+[node name="SideLightC" type="MeshInstance3D" parent="."]
+position = Vector3(-0.398, 0.29, 7.7)
+mesh = SubResource("SideLightMesh")
+material_override = ExtResource("3_cyan")
