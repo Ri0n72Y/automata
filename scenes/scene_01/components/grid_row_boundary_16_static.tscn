@@ -11,64 +11,64 @@ roughness = 0.72
 
 [node name="Tile_0" parent="." instance=ExtResource("1_tile")]
 position = Vector3(0.5, -0.04, 0)
-material_override = SubResource("BoundaryMaterial")
+material_override = ExtResource("2_boundary")
 
 [node name="Tile_1" parent="." instance=ExtResource("1_tile")]
 position = Vector3(1.5, -0.04, 0)
-material_override = SubResource("BoundaryMaterial")
+material_override = ExtResource("2_boundary")
 
 [node name="Tile_2" parent="." instance=ExtResource("1_tile")]
 position = Vector3(2.5, -0.04, 0)
-material_override = SubResource("BoundaryMaterial")
+material_override = ExtResource("2_boundary")
 
 [node name="Tile_3" parent="." instance=ExtResource("1_tile")]
 position = Vector3(3.5, -0.04, 0)
-material_override = SubResource("BoundaryMaterial")
+material_override = ExtResource("2_boundary")
 
 [node name="Tile_4" parent="." instance=ExtResource("1_tile")]
 position = Vector3(4.5, -0.04, 0)
-material_override = SubResource("BoundaryMaterial")
+material_override = ExtResource("2_boundary")
 
 [node name="Tile_5" parent="." instance=ExtResource("1_tile")]
 position = Vector3(5.5, -0.04, 0)
-material_override = SubResource("BoundaryMaterial")
+material_override = ExtResource("2_boundary")
 
 [node name="Tile_6" parent="." instance=ExtResource("1_tile")]
 position = Vector3(6.5, -0.04, 0)
-material_override = SubResource("BoundaryMaterial")
+material_override = ExtResource("2_boundary")
 
 [node name="Tile_7" parent="." instance=ExtResource("1_tile")]
 position = Vector3(7.5, -0.04, 0)
-material_override = SubResource("BoundaryMaterial")
+material_override = ExtResource("2_boundary")
 
 [node name="Tile_8" parent="." instance=ExtResource("1_tile")]
 position = Vector3(8.5, -0.04, 0)
-material_override = SubResource("BoundaryMaterial")
+material_override = ExtResource("2_boundary")
 
 [node name="Tile_9" parent="." instance=ExtResource("1_tile")]
 position = Vector3(9.5, -0.04, 0)
-material_override = SubResource("BoundaryMaterial")
+material_override = ExtResource("2_boundary")
 
 [node name="Tile_10" parent="." instance=ExtResource("1_tile")]
 position = Vector3(10.5, -0.04, 0)
-material_override = SubResource("BoundaryMaterial")
+material_override = ExtResource("2_boundary")
 
 [node name="Tile_11" parent="." instance=ExtResource("1_tile")]
 position = Vector3(11.5, -0.04, 0)
-material_override = SubResource("BoundaryMaterial")
+material_override = ExtResource("2_boundary")
 
 [node name="Tile_12" parent="." instance=ExtResource("1_tile")]
 position = Vector3(12.5, -0.04, 0)
-material_override = SubResource("BoundaryMaterial")
+material_override = ExtResource("2_boundary")
 
 [node name="Tile_13" parent="." instance=ExtResource("1_tile")]
 position = Vector3(13.5, -0.04, 0)
-material_override = SubResource("BoundaryMaterial")
+material_override = ExtResource("2_boundary")
 
 [node name="Tile_14" parent="." instance=ExtResource("1_tile")]
 position = Vector3(14.5, -0.04, 0)
-material_override = SubResource("BoundaryMaterial")
+material_override = ExtResource("2_boundary")
 
 [node name="Tile_15" parent="." instance=ExtResource("1_tile")]
 position = Vector3(15.5, -0.04, 0)
-material_override = SubResource("BoundaryMaterial")
+material_override = ExtResource("2_boundary")
