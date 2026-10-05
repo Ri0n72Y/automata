@@ -5,6 +5,7 @@ signal move_requested(vehicle_id: StringName, target_anchor: Vector2i)
 signal move_accepted(vehicle_id: StringName, target_anchor: Vector2i)
 signal move_rejected(vehicle_id: StringName, target_anchor: Vector2i, reason: StringName)
 signal move_stopped(vehicle_id: StringName)
+signal move_target_selected(vehicle_id: StringName, target_anchor: Vector2i)
 
 const GridPathfinderScript := preload("res://scripts/vehicles/grid_pathfinder.gd")
 const MoveCommandScript := preload("res://scripts/vehicles/move_command.gd")
@@ -24,6 +25,11 @@ const REJECTION_NO_PATH := &"no_path"
 const REJECTION_START_FAILED := &"start_failed"
 
 const MOTION_EPSILON := 0.000001
+
+enum TargetCommitMode {
+	EXECUTE,
+	SELECT_ONLY,
+}
 
 @export_range(0.01, 0.2, 0.01) var preview_height: float = 0.05
 @export_range(0.8, 1.0, 0.01) var preview_scale: float = 0.94
@@ -48,6 +54,7 @@ var _valid_target_material: StandardMaterial3D
 var _invalid_target_material: StandardMaterial3D
 var _valid_path_material: StandardMaterial3D
 var _invalid_path_material: StandardMaterial3D
+var _target_commit_mode := TargetCommitMode.EXECUTE
 
 
 func _ready() -> void:
@@ -131,6 +138,19 @@ func get_selected_move_interaction_availability() -> StringName:
 	if grid_selection_controller != null and grid_selection_controller.is_live_target_mode():
 		return ManualAvailabilityScript.TARGETING
 	return status
+
+
+func begin_selected_move_target_selection(commit_mode: TargetCommitMode = TargetCommitMode.EXECUTE) -> bool:
+	var vehicle := _get_selected_vehicle()
+	if vehicle == null or not _vehicle_has_move_capability(vehicle):
+		return false
+	_target_commit_mode = commit_mode
+	_sync_live_target_mode()
+	if grid_selection_controller == null or not grid_selection_controller.activate_live_target_mode():
+		_target_commit_mode = TargetCommitMode.EXECUTE
+		_sync_live_target_mode()
+		return false
+	return true
 
 
 func request_selected_vehicle_move(target_anchor: Vector2i) -> bool:
@@ -278,6 +298,9 @@ func _connect_input_signals() -> void:
 		var grid_changed_callable := Callable(self, "_on_grid_selection_changed")
 		if not grid_selection_controller.selection_changed.is_connected(grid_changed_callable):
 			grid_selection_controller.selection_changed.connect(grid_changed_callable)
+		var target_mode_callable := Callable(self, "_on_live_target_mode_changed")
+		if not grid_selection_controller.live_target_mode_changed.is_connected(target_mode_callable):
+			grid_selection_controller.live_target_mode_changed.connect(target_mode_callable)
 	if vehicle_selection_controller != null:
 		var vehicle_changed_callable := Callable(self, "_on_vehicle_selection_changed")
 		if not vehicle_selection_controller.selection_changed.is_connected(vehicle_changed_callable):
@@ -321,7 +344,20 @@ func _on_managed_vehicle_move_started(_target_anchor: Vector2i, vehicle: Vehicle
 func _on_grid_selection_confirmed(target_anchor: Vector2i) -> void:
 	if grid_selection_controller == null or not grid_selection_controller.is_live_target_mode():
 		return
+	if _target_commit_mode == TargetCommitMode.SELECT_ONLY:
+		var vehicle := _get_selected_vehicle()
+		if vehicle == null:
+			grid_selection_controller.deactivate_live_target_mode()
+			return
+		move_target_selected.emit(vehicle.get_vehicle_id(), target_anchor)
+		grid_selection_controller.deactivate_live_target_mode()
+		return
 	request_selected_vehicle_move(target_anchor)
+
+
+func _on_live_target_mode_changed(active: bool) -> void:
+	if not active:
+		_target_commit_mode = TargetCommitMode.EXECUTE
 
 
 func _on_grid_selection_changed(_cell: Vector2i, _has_selection: bool) -> void:
@@ -371,6 +407,8 @@ func _can_show_prediction(vehicle: VehicleActorScript) -> bool:
 func _is_move_interaction_enabled(vehicle: VehicleActorScript) -> bool:
 	if _vehicle_ui_open:
 		return false
+	if _target_commit_mode == TargetCommitMode.SELECT_ONLY:
+		return _vehicle_has_move_capability(vehicle)
 	var status := _get_move_command_availability(vehicle)
 	return status == AvailabilityScript.AVAILABLE or status == AvailabilityScript.BLOCKED
 
