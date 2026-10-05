@@ -1,11 +1,42 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Material" path="res://scenes/scene_01/materials/neutral_floor.tres" id="1_floor"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/floor_seam.tres" id="2_seam"]
 
 [sub_resource type="BoxMesh" id="TileMesh"]
 material = ExtResource("1_floor")
 size = Vector3(0.96, 0.08, 0.96)
 
+[sub_resource type="BoxMesh" id="FrameLongMesh"]
+size = Vector3(0.84, 0.008, 0.016)
+
+[sub_resource type="BoxMesh" id="FrameShortMesh"]
+size = Vector3(0.016, 0.008, 0.84)
+
 [node name="GridTileStatic" type="MeshInstance3D"]
 mesh = SubResource("TileMesh")
 cast_shadow = 1
+
+[node name="FrameNorth" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.044, -0.42)
+mesh = SubResource("FrameLongMesh")
+material_override = ExtResource("2_seam")
+cast_shadow = 0
+
+[node name="FrameSouth" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.044, 0.42)
+mesh = SubResource("FrameLongMesh")
+material_override = ExtResource("2_seam")
+cast_shadow = 0
+
+[node name="FrameWest" type="MeshInstance3D" parent="."]
+position = Vector3(-0.42, 0.044, 0)
+mesh = SubResource("FrameShortMesh")
+material_override = ExtResource("2_seam")
+cast_shadow = 0
+
+[node name="FrameEast" type="MeshInstance3D" parent="."]
+position = Vector3(0.42, 0.044, 0)
+mesh = SubResource("FrameShortMesh")
+material_override = ExtResource("2_seam")
+cast_shadow = 0
