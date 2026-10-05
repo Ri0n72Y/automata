@@ -6,12 +6,14 @@ const LayoutMetrics := preload("res://scripts/scene_01/scene_01_ui_layout_metric
 
 var failures := 0
 
+
 func _init() -> void:
 	call_deferred("_run")
 
+
 func _run() -> void:
 	var packed := load(SCENE_PATH) as PackedScene
-	_expect_true(packed != null, "Scene 01 should load for Program workspace test.")
+	_expect_true(packed != null, "Scene 01 should load for unified Program authoring test.")
 	if packed == null:
 		_finish()
 		return
@@ -19,96 +21,76 @@ func _run() -> void:
 	root.add_child(scene)
 	await process_frame
 	await process_frame
-	var ui = scene.get_node("ProgramUIRoot")
-	var hud = scene.get_node("HUDRoot") as CanvasLayer
+
+	var ui = scene.get_node("OperationsUIRoot")
 	var selection = scene.get_node("SceneRoot/GridRoot/VehicleSelectionController")
 	var grid_selection = scene.get_node("SceneRoot/GridRoot/GridSelectionController")
 	var manager = scene.get_node("SceneRoot/RobotRoot/Scene01VehicleManager")
-	var program_panel := ui.get_node("RootControl/ProgramPanel") as Control
-	var lifecycle_panel := scene.get_node("LifecycleUIRoot/RootControl/Panel") as Control
-	var source_editor := ui.get_node("%SourceEditor") as CodeEdit
-	var move_row := ui.get_node("%MoveRow") as HBoxContainer
-	var move_divider := ui.get_node("%MoveDivider") as HSeparator
-	var add_move := ui.get_node("%AddMoveButton") as Button
-	var rotate_row := ui.get_node("%RotateRow") as HBoxContainer
-	var rotate_divider := ui.get_node("%RotateDivider") as HSeparator
-	var add_rotate := ui.get_node("%AddRotateButton") as Button
-	var grab_row := ui.get_node("%GrabRow") as HBoxContainer
-	var grab_divider := ui.get_node("%GrabDivider") as HSeparator
-	var add_grab := ui.get_node("%AddGrabButton") as Button
-	var repeat_row := ui.get_node("%RepeatRow") as HBoxContainer
-	var add_repeat := ui.get_node("%AddRepeatButton") as Button
-	var clear_button := ui.get_node("%ClearButton") as Button
-	var save_button := ui.get_node("%SaveButton") as Button
-	var load_button := ui.get_node("%LoadButton") as Button
-	var run_button := ui.get_node("%RunButton") as Button
-	var target_x := ui.get_node("%TargetX") as SpinBox
-	var target_y := ui.get_node("%TargetY") as SpinBox
-	var rotation_option := ui.get_node("%RotationOption") as OptionButton
-	var repeat_count := ui.get_node("%RepeatCount") as SpinBox
-	var repeat_target_option := ui.get_node("%RepeatTargetOption") as OptionButton
-	var status_label := ui.get_node("%StatusLabel") as Label
-	var vehicle_selection_label := ui.get_node("%VehicleSelectionLabel") as Label
-	var expanded_content := ui.get_node("%ExpandedContent") as Control
-	var builder_scroll := ui.get_node("%BuilderScroll") as ScrollContainer
-	var builder_body := ui.get_node("%BuilderBody") as Control
-	var workspace_button := ui.get_node("%WorkspaceCollapseButton") as Button
-	var builder_button := ui.get_node("%BuilderToggleButton") as Button
+	var panel := ui.get_node("%OperationsPanel") as Control
+	var authoring := ui.get_node("RootControl/OperationsPanel/Margin/VBox/ProgramAuthoring") as Control
+	var source_editor := authoring.get_node("%SourceEditor") as CodeEdit
+	var repeat_row := authoring.get_node("RepeatRow") as HBoxContainer
+	var add_repeat := authoring.get_node("%AddRepeatButton") as Button
+	var clear_button := authoring.get_node("%ClearButton") as Button
+	var save_button := authoring.get_node("%SaveButton") as Button
+	var load_button := authoring.get_node("%LoadButton") as Button
+	var run_button := authoring.get_node("%RunButton") as Button
+	var repeat_count := authoring.get_node("%RepeatCount") as SpinBox
+	var repeat_target_option := authoring.get_node("%RepeatTargetOption") as OptionButton
+	var status_label := authoring.get_node("%StatusLabel") as Label
 	var sidebar_panel := scene.get_node("HUDRoot/RootControl/SidebarPanel") as Control
-	var tutorial_section := scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection") as Control
-	var program_root := ui.get_node("RootControl") as Control
-	var hud_root := scene.get_node("HUDRoot/RootControl") as Control
-	_expect_true(source_editor != null, "Program workspace should expose one canonical SourceEditor.")
+	var operations_root := ui.get_node("RootControl") as Control
+
+	_expect_true(scene.get_node_or_null("ProgramUIRoot") == null, "Program authoring must not own a sibling panel.")
+	_expect_true(source_editor != null, "Unified workspace should expose one canonical SourceEditor.")
 	_expect_equal(ui.call("get_source_text"), SOURCE_HEADER, "Workspace should initialize from the scene-authored v2 source header.")
-	_expect_equal(status_label.text, "语法有效 · 0 条语句", "Initial Program status should be serialized in the scene instead of rebuilt at runtime.")
-	_expect_equal(vehicle_selection_label.text, "当前车辆：未选择车辆", "Vehicle selection should read as one static line before a world selection.")
-	_expect_true(ui.find_child("VehicleLabel", true, false) == null, "Program builder should not split the current-vehicle sentence across two labels.")
-	_expect_equal(rotation_option.item_count, 2, "Rotate options should be serialized in the Program scene.")
-	_expect_equal(rotation_option.get_item_text(0), "顺时针 · D · +90°", "Clockwise option should come from static scene data.")
-	_expect_equal(rotation_option.get_item_text(1), "逆时针 · A · -90°", "Counterclockwise option should come from static scene data.")
-	ui.call("set_source_text", "[arm_vehicle:grabDrop]\n")
-	_expect_true(String(ui.call("get_source_text")).begins_with(SOURCE_HEADER), "Program namespace header must be restored when an edit attempts to remove it.")
-	_expect_true(source_editor.highlight_current_line and source_editor.gutters_draw_executing_lines, "Selected source line should have both row and gutter visual cues.")
-	_expect_true(ui.find_child("ProgramList", true, false) == null, "Legacy mutable ProgramList should be removed.")
-	_expect_true(ui.find_child("ConnectButton", true, false) == null, "Legacy graph Connect control should be removed.")
-	_expect_true(ui.find_child("DeleteButton", true, false) == null, "Legacy graph Delete control should be removed.")
-	_expect_true(move_row != null and add_move.get_parent() == move_row and target_x.get_parent() == move_row and target_y.get_parent() == move_row, "MoveTo title, parameters and add button should share one static HBox row.")
-	_expect_true(rotate_row != null and add_rotate.get_parent() == rotate_row and rotation_option.get_parent() == rotate_row, "Rotate controls should share one static HBox row.")
-	_expect_true(grab_row != null and add_grab.get_parent() == grab_row, "GrabDrop should occupy one static command row.")
-	_expect_true(repeat_row != null and add_repeat.get_parent() == repeat_row and repeat_count.get_parent() == repeat_row and repeat_target_option.get_parent() == repeat_row, "Repeat title, count, target and add button should share one static HBox row.")
-	_expect_true(move_divider != null and rotate_divider != null and grab_divider != null, "Vehicle command groups should own static separators.")
-	_expect_true(source_editor.get_parent() is VBoxContainer, "Canonical SourceEditor should be the primary single-column workspace content.")
-	_expect_true(ui.find_child("Workspace", true, false) == null, "Legacy side-by-side workspace container should be removed.")
-	_expect_true(not expanded_content.visible, "Program rail should start collapsed so gameplay remains visible.")
-	_expect_true(not builder_scroll.visible, "Add Command should start collapsed behind its accordion.")
-	_expect_true(workspace_button.text.contains("+"), "Collapsed Program disclosure should use plus instead of a triangle arrow.")
-	_expect_true(absf(program_panel.size.x - LayoutMetrics.PROGRAM_COLLAPSED_WIDTH) <= 2.0, "Collapsed Program rail should match the shared compact width metric.")
-	ui.call("set_workspace_collapsed", false)
+	_expect_equal(status_label.text, "语法有效 · 0 条语句", "Initial Program status should be serialized in the authoring scene.")
+	_expect_true(not authoring.visible, "Program authoring should start collapsed inside Operations.")
+	_expect_near(panel.size.x, LayoutMetrics.PRIMARY_RAIL_WIDTH, 2.0, "Default unified rail should preserve the 240px baseline.")
+	_expect_true(operations_root.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Fullscreen presentation root must not intercept central gameplay input.")
+	_expect_true(panel.mouse_filter == Control.MOUSE_FILTER_STOP, "Visible unified panel must stop clicks from leaking into gameplay.")
+
+	ui.call("set_authoring_mode", true)
 	await process_frame
-	_expect_true(expanded_content.visible, "Program rail should expand on explicit player action.")
-	_expect_true(source_editor.is_visible_in_tree(), "Expanded Program rail should expose the canonical source editor.")
-	var viewport_width := float(scene.get_viewport().get_visible_rect().size.x)
-	var expected_program_width := LayoutMetrics.program_rail_width(viewport_width)
-	var expected_left_width := LayoutMetrics.PRIMARY_RAIL_WIDTH
-	_expect_true(absf(program_panel.size.x - expected_program_width) <= 2.0, "Expanded Program rail should follow the shared desktop width tier.")
-	_expect_true(absf(sidebar_panel.size.x - expected_left_width) <= 2.0, "Main sidebar should use the shared immutable left-rail width metric.")
-	var central_width := program_panel.get_global_rect().position.x - sidebar_panel.get_global_rect().end.x
-	_expect_true(central_width > 0.0, "Program rail and main sidebar must leave a non-overlapping central gameplay region.")
-	var wide_central_width := 1920.0 - 16.0 - LayoutMetrics.program_rail_width(1920.0) - (16.0 + LayoutMetrics.PRIMARY_RAIL_WIDTH)
-	_expect_true(wide_central_width >= 900.0, "1920px spec tier should protect at least 900px of central gameplay width.")
-	_expect_true(tutorial_section.is_ancestor_of(scene.get_node("HUDRoot/RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody")), "Tutorial must be a section inside the single main sidebar.")
-	_expect_true(program_root.mouse_filter == Control.MOUSE_FILTER_IGNORE and hud_root.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Fullscreen presentation roots must not intercept central gameplay input.")
-	_expect_true(sidebar_panel.mouse_filter == Control.MOUSE_FILTER_STOP, "The visible main sidebar must stop clicks from leaking into gameplay.")
-	ui.call("set_command_builder_expanded", true)
-	_expect_true(builder_scroll.visible and builder_body.is_visible_in_tree(), "Add Command should expand inside a bounded scroll region.")
-	_expect_true(builder_button.text.begins_with("−"), "Expanded command builder should use minus instead of a triangle arrow.")
-	_expect_true(vehicle_selection_label.text.contains("未选择车辆"), "Builder should project the real scene selection instead of owning a default vehicle.")
-	_expect_true(not move_row.is_visible_in_tree() and not rotate_row.is_visible_in_tree() and not grab_row.is_visible_in_tree(), "Vehicle command rows should not remain resident when no scene vehicle is selected.")
-	_expect_true(not move_divider.is_visible_in_tree() and not rotate_divider.is_visible_in_tree() and not grab_divider.is_visible_in_tree(), "Hidden vehicle command rows should not leave orphan separators.")
-	_expect_true(repeat_row.is_visible_in_tree(), "Repeat should remain a Program control row independent of vehicle selection.")
-	_expect_true(builder_scroll.get_global_rect().end.y <= program_panel.get_global_rect().end.y + 1.0, "Scrollable builder must remain inside the Program rail instead of pushing Repeat off-screen.")
-	_expect_true(not program_panel.get_global_rect().intersects(lifecycle_panel.get_global_rect()), "Program workspace must not cover lifecycle controls.")
-	_expect_true((ui as CanvasLayer).layer < hud.layer, "HUD completion results must render above the Program workspace.")
+	_expect_true(authoring.is_visible_in_tree(), "Explicit expand should reveal authoring content.")
+	_expect_true(source_editor.is_visible_in_tree(), "Expanded unified rail should expose canonical source.")
+	_expect_near(panel.size.x, LayoutMetrics.program_rail_width(float(scene.get_viewport().get_visible_rect().size.x)), 2.0, "Expanded authoring should reuse the established Program width tiers.")
+	_expect_near(sidebar_panel.size.x, LayoutMetrics.PRIMARY_RAIL_WIDTH, 2.0, "Left rail should retain the shared 240px baseline.")
+	_expect_true(repeat_row.is_visible_in_tree(), "Repeat remains a source-level Program tool without creating a second command palette.")
+	_expect_true(ui.find_child("BuilderScroll", true, false) == null, "Legacy duplicate Program command builder should be removed.")
+	_expect_true(ui.find_child("VehicleSelectionLabel", true, false) == null, "Vehicle selection presentation should remain on the unified Operations surface.")
+	_expect_true(source_editor.get_parent() == authoring, "Canonical SourceEditor should live directly in embedded Program authoring content.")
+
+	var arm = manager.call("get_vehicle_by_id", &"arm_vehicle")
+	_expect_true(arm != null and selection.call("select_vehicle", arm), "Authoring test should select Arm through gameplay selection truth.")
+	await process_frame
+
+	ui.call("set_source_text", "automata_scene01_program 2\n[arm_vehicle:grabDrop]\n\n[arm_vehicle:grabDrop]\n")
+	source_editor.set_caret_line(2)
+	source_editor.set_caret_column(0)
+	var anchor: Vector2i = arm.runtime_state.anchor_cell
+	var expected_move := "[arm_vehicle:moveTo] %d %d" % [anchor.x, anchor.y]
+	ui.get_node("%MoveButton").emit_signal("pressed")
+	grid_selection.set("selected_cell", anchor)
+	_expect_true(
+		bool(grid_selection.call("confirm_selection")),
+		"Operations Move insertion should commit through the current target confirmation interaction."
+	)
+	var inserted := String(ui.call("get_source_text"))
+	_expect_true(inserted.find(expected_move) > inserted.find("[arm_vehicle:grabDrop]"), "Operations insertion should use the current canonical caret line.")
+	_expect_true(inserted.find(expected_move) < inserted.rfind("[arm_vehicle:grabDrop]"), "Operations insertion should not append blindly to the end.")
+
+	repeat_count.value = 2
+	_expect_true(repeat_target_option.item_count > 0, "Repeat picker should derive legal targets from parsed canonical source.")
+	add_repeat.emit_signal("pressed")
+	_expect_true(String(ui.call("get_source_text")).contains("repeat 2 "), "Repeat should write directly into canonical source.")
+
+	var valid_source := "automata_scene01_program 2\n[arm_vehicle:grabDrop]\n"
+	ui.call("set_source_text", valid_source)
+	_expect_equal(ui.call("get_source_text"), valid_source, "Direct typing API should replace canonical source exactly.")
+	_expect_true(ui.call("get_program") != null, "Valid canonical source should produce a derived runtime snapshot.")
+	_expect_true(status_label.text.contains("语法有效"), "Editor status should describe parser validity.")
+
 	source_editor.grab_focus()
 	await process_frame
 	_expect_true(scene.get_viewport().gui_get_focus_owner() == source_editor, "SourceEditor should own focus before world-click regression.")
@@ -118,93 +100,25 @@ func _run() -> void:
 	world_click.position = Vector2(8, 8)
 	Input.parse_input_event(world_click)
 	await process_frame
-	_expect_true(scene.get_viewport().gui_get_focus_owner() != source_editor, "A real world click through the input pipeline should release CodeEdit focus.")
-	var arm = manager.call("get_vehicle_by_id", &"arm_vehicle")
-	_expect_true(arm != null and selection.call("select_vehicle", arm), "Input regression should select a movable vehicle through the gameplay owner.")
-	await process_frame
-	_expect_equal(vehicle_selection_label.text, "当前车辆：机械臂车", "Program builder should keep the selected Arm on the same current-vehicle line.")
-	_expect_true(move_row.is_visible_in_tree() and rotate_row.is_visible_in_tree() and grab_row.is_visible_in_tree(), "Arm palette should expose MoveTo, Rotate and GrabDrop rows from its real capabilities.")
-	_expect_true(move_divider.is_visible_in_tree() and rotate_divider.is_visible_in_tree() and grab_divider.is_visible_in_tree(), "Arm command rows should be visually separated.")
-	var move_key := InputEventKey.new()
-	move_key.keycode = KEY_M
-	move_key.pressed = true
-	Input.parse_input_event(move_key)
-	await process_frame
-	_expect_true(bool(grid_selection.call("is_live_target_mode")), "After focus release, a real M key event should reach gameplay and activate move targeting.")
-	target_x.value = 4
-	target_y.value = 5
-	add_move.emit_signal("pressed")
-	_expect_true(String(ui.call("get_source_text")).contains("[arm_vehicle:moveTo] 4 5\n"), "Add MoveTo should write directly into source.")
-	rotation_option.select(0)
-	add_rotate.emit_signal("pressed")
-	_expect_true(String(ui.call("get_source_text")).contains("[arm_vehicle:rotate] clockwise\n"), "Add Rotate should write one clockwise 90-degree turn directly into source.")
-	add_grab.emit_signal("pressed")
-	_expect_true(String(ui.call("get_source_text")).contains("[arm_vehicle:grabDrop]\n"), "Add GrabDrop should write directly into source.")
-	var transport = manager.call("get_vehicle_by_id", &"transport_vehicle")
-	_expect_true(transport != null and selection.call("select_vehicle", transport), "Builder regression should select Transport through the gameplay selection owner.")
-	await process_frame
-	_expect_equal(vehicle_selection_label.text, "当前车辆：运输车", "Program builder should keep the selected Transport on the same current-vehicle line.")
-	_expect_true(move_row.is_visible_in_tree() and rotate_row.is_visible_in_tree(), "Transport palette should expose MoveTo and its independent Rotate capability.")
-	_expect_true(move_divider.is_visible_in_tree() and rotate_divider.is_visible_in_tree(), "Visible Transport command rows should retain separators.")
-	_expect_true(not grab_row.is_visible_in_tree() and not grab_divider.is_visible_in_tree(), "Transport palette must hide claw-only GrabDrop and its separator.")
-	target_x.value = 8
-	target_y.value = 4
-	add_move.emit_signal("pressed")
-	_expect_true(String(ui.call("get_source_text")).contains("[transport_vehicle:moveTo] 8 4\n"), "Builder should bind new commands to the currently selected Transport.")
-	rotation_option.select(1)
-	add_rotate.emit_signal("pressed")
-	_expect_true(String(ui.call("get_source_text")).contains("[transport_vehicle:rotate] counterclockwise\n"), "Transport Rotate should be authored from the same compiled capability projection.")
-	repeat_count.value = 2
-	_expect_equal(int(repeat_target_option.get_item_metadata(0)), 1, "First Repeat target should use the first source statement number.")
-	add_repeat.emit_signal("pressed")
-	_expect_true(String(ui.call("get_source_text")).contains("repeat 2 1\n"), "Add Repeat should write the selected source statement number.")
-	_expect_true(ui.call("get_program") != null, "Valid edited source should produce a runtime snapshot.")
-	_expect_true(add_repeat.disabled, "After a Repeat, UI must require a new vehicle command before another Repeat can be added.")
-	var numbered_source := """automata_scene01_program 2
-[arm_vehicle:moveTo] 1 3
-repeat 2 1
-[transport_vehicle:moveTo] 8 4
-"""
-	ui.call("set_source_text", numbered_source)
-	_expect_equal(repeat_target_option.item_count, 1, "Repeat picker should exclude targets whose range would contain an earlier Repeat.")
-	_expect_equal(int(repeat_target_option.get_item_metadata(0)), 3, "Only the vehicle command after the latest Repeat should remain a legal target.")
-	var valid_source := "automata_scene01_program 2\n[transport_vehicle:moveTo] 8 4\n"
-	ui.call("set_source_text", valid_source)
-	_expect_equal(ui.call("get_source_text"), valid_source, "Direct typing API should replace the canonical source exactly.")
-	_expect_true(ui.call("get_program") != null, "Directly typed valid source should parse.")
-	_expect_true(status_label.text.contains("语法有效"), "Editor status should describe parser validity without claiming full Program validation.")
-	var exposed_program := ui.call("get_program") as Scene01Program
-	_expect_true(exposed_program != null, "Workspace accessor should expose a snapshot copy.")
-	if exposed_program != null:
-		exposed_program.set_statement_vehicle(0, &"arm_vehicle")
-	var fresh_program := ui.call("get_program") as Scene01Program
-	_expect_true(fresh_program != null, "Workspace should retain its derived snapshot after external copy mutation.")
-	if fresh_program != null:
-		_expect_equal(StringName(fresh_program.get_statement(0).get("vehicle_id", &"")), &"transport_vehicle", "External snapshot mutation must not change the workspace-derived Program.")
-	_expect_equal(ui.call("get_source_text"), valid_source, "External snapshot mutation must not change canonical source.")
-	ui.call("set_source_text", "automata_scene01_program 2\n[arm_vehicle:moveTo] x 4\n")
-	_expect_true(ui.call("get_program") == null, "Invalid text must not leave a stale mutable Program snapshot.")
-	_expect_true(status_label.text.contains("第 2 行"), "Syntax diagnostics should identify the physical source line.")
-	var semantic_source := "automata_scene01_program 2\n\n# comment\n\n[arm_vehicle:moveTo] 1 3\nrepeat 0 1\n"
-	ui.call("set_source_text", semantic_source)
-	_expect_true(ui.call("get_program") != null, "Semantic fixture should remain syntactically parseable.")
-	_expect_true(status_label.text.contains("语法有效"), "Semantic-invalid text should only be labeled syntax-valid before Run validation.")
-	run_button.emit_signal("pressed")
-	_expect_true(status_label.text.contains("第 6 行"), "Validator rejection should map statement index back to physical source line.")
-	_expect_true(status_label.text.contains("重复"), "Semantic failure should preserve the useful rejection reason.")
-	var missing_vehicle_source := "automata_scene01_program 2\n\n# typo\n[missing_vehicle:grabDrop]\n"
-	ui.call("set_source_text", missing_vehicle_source)
-	run_button.emit_signal("pressed")
-	_expect_true(status_label.text.contains("第 4 行"), "Preflight vehicle rejection should map statement index back to physical source line.")
-	_expect_true(status_label.text.contains("程序车辆不存在"), "Preflight vehicle rejection should preserve the useful reason.")
-	ui.call("set_source_text", valid_source)
+	_expect_true(scene.get_viewport().gui_get_focus_owner() != source_editor, "A real world click outside the unified panel should release CodeEdit focus.")
+
 	save_button.emit_signal("pressed")
 	ui.call("set_source_text", SOURCE_HEADER)
 	load_button.emit_signal("pressed")
 	_expect_equal(ui.call("get_source_text"), valid_source, "Save/Load should round-trip the same canonical text buffer.")
 	clear_button.emit_signal("pressed")
-	_expect_equal(ui.call("get_source_text"), SOURCE_HEADER, "Clear All should return to the deterministic header-only source.")
+	_expect_equal(ui.call("get_source_text"), SOURCE_HEADER, "Clear All should return to deterministic header-only source.")
 	_expect_true(ui.call("get_program") != null, "Header-only source should still parse to an empty runtime program.")
+
+	ui.call("set_source_text", "automata_scene01_program 2\n[missing_vehicle:grabDrop]\n")
+	run_button.emit_signal("pressed")
+	_expect_true(status_label.text.contains("程序车辆不存在"), "Run should preserve existing Program preflight validation ownership.")
+
+	ui.call("set_authoring_mode", false)
+	await process_frame
+	_expect_false(authoring.visible, "Collapse should hide Program authoring content.")
+	_expect_near(panel.size.x, LayoutMetrics.PRIMARY_RAIL_WIDTH, 2.0, "Collapse should restore daily 240px Operations.")
+
 	var save_path := ProjectSettings.globalize_path("user://scene_01_program.txt")
 	if FileAccess.file_exists(save_path):
 		DirAccess.remove_absolute(save_path)
@@ -212,15 +126,30 @@ repeat 2 1
 	await process_frame
 	_finish()
 
+
 func _expect_true(value: bool, message: String) -> void:
 	if not value:
 		failures += 1
 		push_error(message)
+
+
 func _expect_equal(actual: Variant, expected: Variant, message: String) -> void:
 	if actual != expected:
 		failures += 1
 		push_error("%s Expected %s, got %s." % [message, str(expected), str(actual)])
+
+
+func _expect_near(actual: float, expected: float, tolerance: float, message: String) -> void:
+	if absf(actual - expected) > tolerance:
+		failures += 1
+		push_error("%s Expected %.2f ± %.2f, got %.2f." % [message, expected, tolerance, actual])
+
+
+func _expect_false(value: bool, message: String) -> void:
+	_expect_true(not value, message)
+
+
 func _finish() -> void:
 	if failures == 0:
-		print("Scene 01 Program workspace tests passed.")
+		print("Scene 01 unified Program authoring tests passed.")
 	quit(failures)

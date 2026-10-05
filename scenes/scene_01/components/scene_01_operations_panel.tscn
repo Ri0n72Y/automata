@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_operations_panel.gd" id="1_operations"]
 [ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_program_ui.tscn" id="3_program"]
 
 [node name="OperationsUIRoot" type="CanvasLayer"]
 layer = 4
@@ -40,10 +41,23 @@ theme_override_constants/margin_bottom = 10
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="Title" type="Label" parent="RootControl/OperationsPanel/Margin/VBox"]
+[node name="HeaderRow" type="HBoxContainer" parent="RootControl/OperationsPanel/Margin/VBox"]
 layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="OperationsTitle" type="Label" parent="RootControl/OperationsPanel/Margin/VBox/HeaderRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
 text = "操作台"
 theme_override_font_sizes/font_size = 18
+
+[node name="AuthoringModeButton" type="Button" parent="RootControl/OperationsPanel/Margin/VBox/HeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 32)
+layout_mode = 2
+focus_mode = 0
+text = "展开"
 
 [node name="VehicleLabel" type="Label" parent="RootControl/OperationsPanel/Margin/VBox"]
 unique_name_in_owner = true
@@ -154,3 +168,11 @@ layout_mode = 2
 disabled = true
 focus_mode = 0
 text = "执行"
+
+[node name="AuthoringDivider" type="HSeparator" parent="RootControl/OperationsPanel/Margin/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="ProgramAuthoring" parent="RootControl/OperationsPanel/Margin/VBox" instance=ExtResource("3_program")]
+visible = false

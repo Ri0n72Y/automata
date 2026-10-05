@@ -23,6 +23,26 @@ func set_program_text(source: String) -> void:
 	_refresh_line_marker()
 
 
+func insert_statement_line(statement: String) -> void:
+	if statement.strip_edges().is_empty():
+		return
+	var target_line := maxi(1, get_caret_line())
+	if target_line >= get_line_count():
+		target_line = maxi(1, get_line_count() - 1)
+	var current_line := get_line(target_line)
+	var insert_after := get_caret_column() > 0 and not current_line.strip_edges().is_empty()
+	if insert_after:
+		set_caret_line(target_line)
+		set_caret_column(current_line.length())
+		var suffix := "\n" if target_line >= get_line_count() - 1 or not get_line(target_line + 1).strip_edges().is_empty() else ""
+		insert_text_at_caret("\n" + statement + suffix)
+	else:
+		set_caret_line(target_line)
+		set_caret_column(0)
+		insert_text_at_caret(statement + "\n")
+	_refresh_line_marker()
+
+
 func _on_text_changed() -> void:
 	if _restoring:
 		return
