@@ -14,7 +14,7 @@ on:
         type: choice
         options:
           - full
-          - regression
+          - stability
 
 permissions:
   contents: read
@@ -62,7 +62,7 @@ jobs:
       - name: Run runtime test matrix
         shell: bash
         env:
-          REQUESTED_SUITE: ${{ inputs.suite || 'regression' }}
+          REQUESTED_SUITE: ${{ inputs.suite || 'stability' }}
         run: |
           set -euo pipefail
           readonly test_timeout_seconds=30
@@ -70,12 +70,18 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && "$REQUESTED_SUITE" == "full" ]]; then
             echo "Running manually requested Full Suite."
             mapfile -t tests < <(
-              find tests -type f                 \( -name '*_test.gd' -o -name '*_smoke_test.gd' \)                 ! -path 'tests/fixtures/*'                 ! -path 'tests/support/*'                 -print | sort
+              find tests -type f \
+                \( -name '*_test.gd' -o -name '*_smoke_test.gd' \) \
+                ! -path 'tests/fixtures/*' \
+                ! -path 'tests/support/*' \
+                -print | sort
             )
           else
-            echo "Running confirmed regression suite."
+            echo "Running dependency-risk stability suite."
             mapfile -t tests < <(
-              find tests/regression -type f                 \( -name '*_test.gd' -o -name '*_smoke_test.gd' \)                 -print | sort
+              find tests/stability -type f \
+                \( -name '*_test.gd' -o -name '*_smoke_test.gd' \) \
+                -print | sort
             )
           fi
 
@@ -90,7 +96,8 @@ jobs:
             test="res://$test_path"
             log="$(mktemp)"
             echo "=== RUN  $test ==="
-            if timeout --signal=TERM --kill-after=5s "${test_timeout_seconds}s"               godot --headless --path . --script "$test" 2>&1 | tee "$log"; then
+            if timeout --signal=TERM --kill-after=5s "${test_timeout_seconds}s" \
+              godot --headless --path . --script "$test" 2>&1 | tee "$log"; then
               rc=0
             else
               rc=$?
