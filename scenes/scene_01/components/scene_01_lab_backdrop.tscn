@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Material" path="res://scenes/scene_01/materials/painted_white.tres" id="1_white"]
 [ext_resource type="Material" path="res://scenes/scene_01/materials/dark_mechanical_metal.tres" id="2_dark"]
