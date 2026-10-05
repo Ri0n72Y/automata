@@ -34,7 +34,7 @@ func _init() -> void:
 
 func _test_readiness_query_does_not_prepare_or_start() -> void:
 	var gate := ProbeGate.new()
-	var controller := _make_ready_controller(gate)
+	var controller = _make_ready_controller(gate)
 
 	test.expect_equal(
 		controller.get_lifecycle_state(),
@@ -98,7 +98,7 @@ func _test_readiness_query_does_not_prepare_or_start() -> void:
 func _test_rejected_readiness_probe_fails_closed_without_preparation() -> void:
 	var gate := ProbeGate.new()
 	gate.can_prepare_result = false
-	var controller := _make_ready_controller(gate)
+	var controller = _make_ready_controller(gate)
 
 	test.expect_equal(
 		controller.get_gameplay_command_availability(),
