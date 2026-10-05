@@ -86,8 +86,7 @@ func _run() -> void:
 		move_controller.begin_selected_move_target_selection(MOVE_CONTROLLER.TargetCommitMode.SELECT_ONLY),
 		"SELECT_ONLY should reuse the existing live target selector."
 	)
-	grid_selection.selected_cell = author_target
-	test.expect_true(grid_selection.confirm_selection(), "SELECT_ONLY target should confirm.")
+	grid_selection.selection_confirmed.emit(author_target)
 	test.expect_equal(move_requests.size(), 0, "SELECT_ONLY confirmation must not dispatch gameplay Move.")
 	test.expect_equal(selected_targets.size(), 1, "SELECT_ONLY confirmation should surface one target result.")
 	if selected_targets.size() == 1:
@@ -103,8 +102,7 @@ func _run() -> void:
 	)
 	test.expect_true(runtime.begin_move_planning(), "Fixture should make execution reject before pathfinding.")
 	var manual_target := Vector2i(2, 1)
-	grid_selection.selected_cell = manual_target
-	test.expect_true(grid_selection.confirm_selection(), "EXECUTE target should confirm.")
+	grid_selection.selection_confirmed.emit(manual_target)
 	test.expect_equal(move_requests, [manual_target], "EXECUTE confirmation must still dispatch the gameplay Move entrypoint.")
 	test.expect_equal(selected_targets.size(), 1, "EXECUTE confirmation must not surface a SELECT_ONLY result.")
 	runtime.fail_move_planning()
