@@ -222,6 +222,9 @@ func request_selected_vehicle_stop() -> bool:
 func reset_controller_state() -> void:
 	_last_rejection_reason = &""
 	_vehicle_ui_open = false
+	_target_commit_mode = TargetCommitMode.EXECUTE
+	if grid_selection_controller != null and grid_selection_controller.is_live_target_mode():
+		grid_selection_controller.deactivate_live_target_mode()
 	_hide_prediction()
 
 
