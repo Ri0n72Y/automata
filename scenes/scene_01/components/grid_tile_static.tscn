@@ -1,12 +1,9 @@
 [gd_scene load_steps=3 format=3]
 
-[sub_resource type="StandardMaterial3D" id="DefaultTileMaterial"]
-albedo_color = Color(0.34, 0.4, 0.48, 1)
-metallic = 0.04
-roughness = 0.8
+[ext_resource type="Material" path="res://scenes/scene_01/materials/neutral_floor.tres" id="1_floor"]
 
 [sub_resource type="BoxMesh" id="TileMesh"]
-material = SubResource("DefaultTileMaterial")
+material = ExtResource("1_floor")
 size = Vector3(0.96, 0.08, 0.96)
 
 [node name="GridTileStatic" type="MeshInstance3D"]
