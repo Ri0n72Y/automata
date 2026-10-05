@@ -24,6 +24,7 @@ func _run() -> void:
 
 	var ui = scene.get_node("OperationsUIRoot")
 	var selection = scene.get_node("SceneRoot/GridRoot/VehicleSelectionController")
+	var grid_selection = scene.get_node("SceneRoot/GridRoot/GridSelectionController")
 	var manager = scene.get_node("SceneRoot/RobotRoot/Scene01VehicleManager")
 	var panel := ui.get_node("%OperationsPanel") as Control
 	var authoring := ui.get_node("RootControl/OperationsPanel/Margin/VBox/ProgramAuthoring") as Control
@@ -70,6 +71,11 @@ func _run() -> void:
 	var anchor: Vector2i = arm.runtime_state.anchor_cell
 	var expected_move := "[arm_vehicle:moveTo] %d %d" % [anchor.x, anchor.y]
 	ui.get_node("%MoveButton").emit_signal("pressed")
+	grid_selection.set("selected_cell", anchor)
+	_expect_true(
+		bool(grid_selection.call("confirm_selection")),
+		"Operations Move insertion should commit through the current target confirmation interaction."
+	)
 	var inserted := String(ui.call("get_source_text"))
 	_expect_true(inserted.find(expected_move) > inserted.find("[arm_vehicle:grabDrop]"), "Operations insertion should use the current canonical caret line.")
 	_expect_true(inserted.find(expected_move) < inserted.rfind("[arm_vehicle:grabDrop]"), "Operations insertion should not append blindly to the end.")
