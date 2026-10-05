@@ -118,7 +118,7 @@ func _test_production_runner() -> void:
 	var arm_rotate_index := arm_rotate.append_statement(ProgramScript.StatementType.ROTATE)
 	arm_rotate.set_statement_vehicle(arm_rotate_index, &"arm_vehicle")
 	arm_rotate.set_turn_direction(arm_rotate_index, -1)
-	var arm_facing := arm.runtime_state.facing
+	var arm_facing: int = arm.runtime_state.facing
 	_expect_true(runner.start_program(arm_rotate), "Arm Rotate should start through the shared command path.")
 	frames = 0
 	while runner.get_state() == ProgramRunnerScript.STATE_RUNNING and frames < 120:
@@ -131,7 +131,7 @@ func _test_production_runner() -> void:
 	var transport_rotate_index := transport_rotate.append_statement(ProgramScript.StatementType.ROTATE)
 	transport_rotate.set_statement_vehicle(transport_rotate_index, &"transport_vehicle")
 	transport_rotate.set_turn_direction(transport_rotate_index, 1)
-	var transport_facing := transport.runtime_state.facing
+	var transport_facing: int = transport.runtime_state.facing
 	_expect_true(runner.start_program(transport_rotate), "Transport Rotate should use its independent Rotate capability.")
 	frames = 0
 	while runner.get_state() == ProgramRunnerScript.STATE_RUNNING and frames < 120:
