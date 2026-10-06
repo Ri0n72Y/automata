@@ -12,4 +12,4 @@ normal_enabled = true
 normal_scale = 0.22
 normal_texture = ExtResource("2_normal")
 texture_repeat = true
-uv1_scale = Vector3(40, 32, 1)
+uv1_scale = Vector3(80, 80, 1)
