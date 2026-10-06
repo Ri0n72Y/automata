@@ -8,7 +8,6 @@
 shader = ExtResource("1_shader")
 shader_parameter/albedo_texture = ExtResource("2_albedo")
 shader_parameter/normal_texture = ExtResource("3_normal")
-shader_parameter/tile_repeat = Vector2(16, 10)
 shader_parameter/tint = Color(1, 1, 1, 1)
 shader_parameter/normal_depth = 1.15
 shader_parameter/roughness_value = 0.72
