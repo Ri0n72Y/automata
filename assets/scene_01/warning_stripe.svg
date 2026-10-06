@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="32" viewBox="0 0 256 32">
+  <defs>
+    <pattern id="warning" width="64" height="32" patternUnits="userSpaceOnUse">
+      <rect width="64" height="32" fill="#f2c230"/>
+      <polygon points="-16,32 16,0 36,0 4,32" fill="#202326"/>
+      <polygon points="48,32 80,0 100,0 68,32" fill="#202326"/>
+    </pattern>
+  </defs>
+  <rect width="256" height="32" fill="url(#warning)"/>
+</svg>
