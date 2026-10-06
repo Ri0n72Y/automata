@@ -14,11 +14,11 @@ size = Vector2(16, 10)
 material = ExtResource("2_floor")
 
 [sub_resource type="PlaneMesh" id="WarningLongMesh"]
-size = Vector2(16, 0.12)
+size = Vector2(16, 1)
 material = ExtResource("3_warning_x")
 
-[sub_resource type="PlaneMesh" id="WarningShortMesh"]
-size = Vector2(10, 0.12)
+[sub_resource type="PlaneMesh" id="WarningSideMesh"]
+size = Vector2(8, 1)
 material = ExtResource("4_warning_z")
 
 [node name="GridTileView" type="Node3D"]
@@ -36,26 +36,26 @@ cast_shadow = 0
 
 [node name="WarningBoundary" type="Node3D" parent="Tiles"]
 
-[node name="North" type="MeshInstance3D" parent="Tiles/WarningBoundary"]
-position = Vector3(8, 0.008, 0.06)
+[node name="NorthBoundaryCells" type="MeshInstance3D" parent="Tiles/WarningBoundary"]
+position = Vector3(8, 0.01, 0.5)
 mesh = SubResource("WarningLongMesh")
 cast_shadow = 0
 
-[node name="South" type="MeshInstance3D" parent="Tiles/WarningBoundary"]
-position = Vector3(8, 0.008, 9.94)
+[node name="SouthBoundaryCells" type="MeshInstance3D" parent="Tiles/WarningBoundary"]
+position = Vector3(8, 0.01, 9.5)
 mesh = SubResource("WarningLongMesh")
 cast_shadow = 0
 
-[node name="West" type="MeshInstance3D" parent="Tiles/WarningBoundary"]
-position = Vector3(0.06, 0.008, 5)
+[node name="WestBoundaryCells" type="MeshInstance3D" parent="Tiles/WarningBoundary"]
+position = Vector3(0.5, 0.01, 5)
 rotation = Vector3(0, 1.570796, 0)
-mesh = SubResource("WarningShortMesh")
+mesh = SubResource("WarningSideMesh")
 cast_shadow = 0
 
-[node name="East" type="MeshInstance3D" parent="Tiles/WarningBoundary"]
-position = Vector3(15.94, 0.008, 5)
+[node name="EastBoundaryCells" type="MeshInstance3D" parent="Tiles/WarningBoundary"]
+position = Vector3(15.5, 0.01, 5)
 rotation = Vector3(0, 1.570796, 0)
-mesh = SubResource("WarningShortMesh")
+mesh = SubResource("WarningSideMesh")
 cast_shadow = 0
 
 [node name="GroundBody" type="StaticBody3D" parent="Tiles"]
