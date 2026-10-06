@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
   <rect width="256" height="256" fill="#8080ff"/>
-  <rect x="4" y="0" width="4" height="256" fill="#4080f0"/>
-  <rect x="8" y="0" width="5" height="256" fill="#6080fa"/>
-  <rect x="248" y="0" width="4" height="256" fill="#c080f0"/>
-  <rect x="243" y="0" width="5" height="256" fill="#a080fa"/>
-  <rect x="0" y="4" width="256" height="4" fill="#8040f0"/>
-  <rect x="0" y="8" width="256" height="5" fill="#8060fa"/>
-  <rect x="0" y="248" width="256" height="4" fill="#80c0f0"/>
-  <rect x="0" y="243" width="256" height="5" fill="#80a0fa"/>
+  <rect x="8" y="0" width="8" height="256" fill="#3880ec"/>
+  <rect x="16" y="0" width="8" height="256" fill="#5c80f7"/>
+  <rect x="240" y="0" width="8" height="256" fill="#c880ec"/>
+  <rect x="232" y="0" width="8" height="256" fill="#a480f7"/>
+  <rect x="0" y="8" width="256" height="8" fill="#8038ec"/>
+  <rect x="0" y="16" width="256" height="8" fill="#805cf7"/>
+  <rect x="0" y="240" width="256" height="8" fill="#80c8ec"/>
+  <rect x="0" y="232" width="256" height="8" fill="#80a4f7"/>
 </svg>
