@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      GODOT_FATAL_LOG_PATTERN: 'SCRIPT ERROR:|Parse Error:|CRC error|ERROR: (Error importing|Error loading image|Failed loading resource)|Shader compilation failed|ERROR:.*[Ss]hader'
+      GODOT_FATAL_LOG_PATTERN: 'SCRIPT ERROR:|Parse Error:|CRC error|ERROR: (Error importing|Error loading image|Failed loading resource)|Shader compilation failed|ERROR:.*[Ss]hader|ObjectDB instances were leaked|resources still in use at exit'
 
     steps:
       - name: Checkout
