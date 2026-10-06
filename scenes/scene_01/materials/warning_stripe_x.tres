@@ -1,0 +1,10 @@
+[gd_resource type="StandardMaterial3D" load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/scene_01/warning_stripe.svg" id="1_warning"]
+
+[resource]
+albedo_texture = ExtResource("1_warning")
+metallic = 0.01
+roughness = 0.68
+texture_repeat = true
+uv1_scale = Vector3(32, 1, 1)
