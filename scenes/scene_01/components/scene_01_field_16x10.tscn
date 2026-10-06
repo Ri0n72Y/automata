@@ -23,7 +23,7 @@ material = ExtResource("4_warning_z")
 
 [node name="GridTileView" type="Node3D"]
 script = ExtResource("1_grid_tiles")
-use_static_scene_tiles = true
+use_flat_static_surface = true
 static_grid_width = 16
 static_grid_height = 10
 
