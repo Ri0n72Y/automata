@@ -5,6 +5,7 @@
 [resource]
 albedo_texture = ExtResource("1_warning")
 metallic = 0.01
-roughness = 0.68
+roughness = 0.7
+texture_filter = 5
 texture_repeat = true
-uv1_scale = Vector3(32, 1, 1)
+uv1_scale = Vector3(8, 1, 1)
