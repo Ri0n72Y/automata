@@ -7,9 +7,10 @@
 albedo_color = Color(1, 1, 1, 1)
 albedo_texture = ExtResource("1_albedo")
 metallic = 0.02
-roughness = 0.71
+roughness = 0.72
 normal_enabled = true
-normal_scale = 0.42
+normal_scale = 1.15
 normal_texture = ExtResource("2_normal")
+texture_filter = 5
 texture_repeat = true
 uv1_scale = Vector3(16, 10, 1)
