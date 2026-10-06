@@ -134,13 +134,6 @@ func get_grid_cell_type(cell: Vector2i) -> int:
 	return grid_model.get_cell_type(cell) if grid_model != null else GridModelScript.CellType.BOUNDARY
 
 
-func set_grid_cell_type(cell: Vector2i, cell_type: int) -> bool:
-	if grid_model == null or not grid_model._set_cell_type(cell, cell_type):
-		return false
-	_sync_ground_cell_policy()
-	return true
-
-
 func is_grid_cell_walkable(cell: Vector2i) -> bool:
 	return grid_model != null and grid_model.is_cell_walkable(cell)
 
@@ -280,16 +273,17 @@ func _configure_initial_grid_dependents() -> bool:
 		return false
 	if scene_vehicle_manager != null and not scene_vehicle_manager.configure(self, grid_model.cell_size):
 		return false
-	_configure_grid_presentation()
+	if not _configure_grid_presentation():
+		return false
 	_sync_ground_cell_policy()
 	return true
 
 
-func _configure_grid_presentation() -> void:
-	if grid_model == null or grid_root == null:
-		return
-	if grid_tile_view != null:
-		grid_tile_view.draw(grid_model)
+func _configure_grid_presentation() -> bool:
+	if grid_model == null or grid_root == null or grid_tile_view == null:
+		return false
+	if not grid_tile_view.draw(grid_model):
+		return false
 	if grid_debug_view != null:
 		grid_debug_view.draw(grid_model)
 	_refresh_camera_for_grid()
@@ -305,6 +299,7 @@ func _configure_grid_presentation() -> void:
 			grid_selection_controller,
 			scene_vehicle_manager
 		)
+	return true
 
 
 func _sync_ground_cell_policy() -> void:
