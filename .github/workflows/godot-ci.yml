@@ -54,7 +54,7 @@ jobs:
             rc=$?
           fi
 
-          if (( rc != 0 )) || grep -q 'SCRIPT ERROR:' "$log"; then
+          if (( rc != 0 )) || grep -Eq             'SCRIPT ERROR:|Parse Error:|CRC error|ERROR: (Error importing|Error loading image|Failed loading resource)|Shader compilation failed|ERROR:.*[Ss]hader'             "$log"; then
             echo "Godot import failed (exit=$rc)."
             exit 1
           fi
