@@ -1,10 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="32" viewBox="0 0 256 32">
-  <defs>
-    <pattern id="warning" width="64" height="32" patternUnits="userSpaceOnUse">
-      <rect width="64" height="32" fill="#f2c230"/>
-      <polygon points="-16,32 16,0 36,0 4,32" fill="#202326"/>
-      <polygon points="48,32 80,0 100,0 68,32" fill="#202326"/>
-    </pattern>
-  </defs>
-  <rect width="256" height="32" fill="url(#warning)"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="128" viewBox="0 0 256 128">
+  <rect width="256" height="128" fill="#f1c232"/>
+  <polygon points="-64,128 32,0 96,0 0,128" fill="#232629"/>
+  <polygon points="64,128 160,0 224,0 128,128" fill="#232629"/>
+  <polygon points="192,128 288,0 352,0 256,128" fill="#232629"/>
 </svg>
