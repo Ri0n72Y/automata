@@ -108,6 +108,11 @@ func _run() -> void:
 	runtime.fail_move_planning()
 	grid_selection.deactivate_live_target_mode()
 
+	manager.vehicle = null
+	move_controller.free()
+	grid_selection.free()
+	selection.free()
+	manager.free()
 	actor.queue_free()
 	controller.queue_free()
 	await process_frame
