@@ -113,18 +113,6 @@ func is_cell_walkable(cell: Vector2i) -> bool:
 	return is_cell_valid(cell) and get_cell_type(cell) != CellType.BOUNDARY
 
 
-## Internal mutation used by the scene controller so model and views stay synchronized.
-func _set_cell_type(cell: Vector2i, cell_type: int) -> bool:
-	if not is_cell_valid(cell):
-		return false
-	if cell_type < CellType.NORMAL_TILE or cell_type > CellType.BOUNDARY:
-		return false
-	if _cell_types.size() != _width * _height:
-		return false
-	_cell_types[_cell_index(cell)] = cell_type
-	return true
-
-
 func _cell_index(cell: Vector2i) -> int:
 	return cell.y * _width + cell.x
 

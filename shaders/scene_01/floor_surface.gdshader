@@ -2,7 +2,7 @@ shader_type spatial;
 
 uniform sampler2D albedo_texture : source_color, filter_linear, repeat_enable;
 uniform sampler2D normal_texture : hint_normal, filter_linear, repeat_enable;
-uniform vec2 tile_repeat = vec2(1.0, 1.0);
+instance uniform vec2 tile_repeat = vec2(1.0, 1.0);
 uniform vec4 tint : source_color = vec4(1.0);
 uniform float normal_depth : hint_range(0.0, 2.0, 0.05) = 1.0;
 uniform float roughness_value : hint_range(0.0, 1.0, 0.01) = 0.72;

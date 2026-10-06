@@ -1,0 +1,66 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/grid/grid_tile_view.gd" id="1_grid_tiles"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/floor_cross_playable.tres" id="2_floor"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/warning_tile.tres" id="3_warning"]
+
+[sub_resource type="BoxShape3D" id="GroundShape"]
+resource_local_to_scene = true
+size = Vector3(1, 0.08, 1)
+
+[sub_resource type="PlaneMesh" id="PlayableFloorMesh"]
+resource_local_to_scene = true
+size = Vector2(1, 1)
+material = ExtResource("2_floor")
+
+[sub_resource type="PlaneMesh" id="WarningLongMesh"]
+resource_local_to_scene = true
+size = Vector2(1, 1)
+material = ExtResource("3_warning")
+
+[sub_resource type="PlaneMesh" id="WarningSideMesh"]
+resource_local_to_scene = true
+size = Vector2(1, 1)
+material = ExtResource("3_warning")
+
+[node name="GridTileView" type="Node3D"]
+script = ExtResource("1_grid_tiles")
+
+[node name="Tiles" type="Node3D" parent="."]
+
+[node name="SurfaceVisuals" type="Node3D" parent="Tiles"]
+
+[node name="PlayableFloor" type="MeshInstance3D" parent="Tiles/SurfaceVisuals"]
+position = Vector3(0, 0.002, 0)
+mesh = SubResource("PlayableFloorMesh")
+cast_shadow = 0
+
+[node name="WarningBoundary" type="Node3D" parent="Tiles/SurfaceVisuals"]
+
+[node name="NorthBoundaryCells" type="MeshInstance3D" parent="Tiles/SurfaceVisuals/WarningBoundary"]
+position = Vector3(0, 0.01, 0)
+mesh = SubResource("WarningLongMesh")
+cast_shadow = 0
+
+[node name="SouthBoundaryCells" type="MeshInstance3D" parent="Tiles/SurfaceVisuals/WarningBoundary"]
+position = Vector3(0, 0.01, 0)
+mesh = SubResource("WarningLongMesh")
+cast_shadow = 0
+
+[node name="WestBoundaryCells" type="MeshInstance3D" parent="Tiles/SurfaceVisuals/WarningBoundary"]
+position = Vector3(0, 0.01, 0)
+mesh = SubResource("WarningSideMesh")
+cast_shadow = 0
+
+[node name="EastBoundaryCells" type="MeshInstance3D" parent="Tiles/SurfaceVisuals/WarningBoundary"]
+position = Vector3(0, 0.01, 0)
+mesh = SubResource("WarningSideMesh")
+cast_shadow = 0
+
+[node name="GroundBody" type="StaticBody3D" parent="Tiles"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="GroundShape" type="CollisionShape3D" parent="Tiles/GroundBody"]
+position = Vector3(0.5, -0.04, 0.5)
+shape = SubResource("GroundShape")
