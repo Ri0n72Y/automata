@@ -1,6 +1,6 @@
 [gd_resource type="ShaderMaterial" load_steps=4 format=3]
 
-[ext_resource type="Shader" path="res://shaders/scene_01/floor_surface.gdshader" id="1_shader"]
+[ext_resource type="Shader" path="res://shaders/scene_01/floor_backdrop_surface.gdshader" id="1_shader"]
 [ext_resource type="Texture2D" path="res://assets/scene_01/floor_cross_albedo.svg" id="2_albedo"]
 [ext_resource type="Texture2D" path="res://assets/scene_01/floor_cross_normal.svg" id="3_normal"]
 
