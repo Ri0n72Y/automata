@@ -1,55 +1,62 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/grid/grid_tile_view.gd" id="1_grid_tiles"]
-[ext_resource type="PackedScene" path="res://scenes/scene_01/components/grid_row_boundary_16_static.tscn" id="2_boundary_row"]
-[ext_resource type="PackedScene" path="res://scenes/scene_01/components/grid_row_interior_16_static.tscn" id="3_interior_row"]
-[ext_resource type="Material" path="res://scenes/scene_01/materials/floor_cross_tile.tres" id="4_floor"]
-[ext_resource type="Material" path="res://scenes/scene_01/materials/neutral_obstacle.tres" id="5_boundary"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/floor_cross_playable.tres" id="2_floor"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/warning_stripe_x.tres" id="3_warning_x"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/warning_stripe_z.tres" id="4_warning_z"]
 
 [sub_resource type="BoxShape3D" id="GroundShape"]
 resource_local_to_scene = true
 size = Vector3(16, 0.08, 10)
+
+[sub_resource type="PlaneMesh" id="PlayableFloorMesh"]
+size = Vector2(16, 10)
+material = ExtResource("2_floor")
+
+[sub_resource type="PlaneMesh" id="WarningLongMesh"]
+size = Vector2(16, 0.12)
+material = ExtResource("3_warning_x")
+
+[sub_resource type="PlaneMesh" id="WarningShortMesh"]
+size = Vector2(10, 0.12)
+material = ExtResource("4_warning_z")
 
 [node name="GridTileView" type="Node3D"]
 script = ExtResource("1_grid_tiles")
 use_static_scene_tiles = true
 static_grid_width = 16
 static_grid_height = 10
-normal_tile_material = ExtResource("4_floor")
-power_tile_material = ExtResource("4_floor")
-boundary_tile_material = ExtResource("5_boundary")
 
 [node name="Tiles" type="Node3D" parent="."]
 
-[node name="Row_0" parent="Tiles" instance=ExtResource("2_boundary_row")]
-position = Vector3(0, 0, 0.5)
+[node name="PlayableFloor" type="MeshInstance3D" parent="Tiles"]
+position = Vector3(8, 0.002, 5)
+mesh = SubResource("PlayableFloorMesh")
+cast_shadow = 0
 
-[node name="Row_1" parent="Tiles" instance=ExtResource("3_interior_row")]
-position = Vector3(0, 0, 1.5)
+[node name="WarningBoundary" type="Node3D" parent="Tiles"]
 
-[node name="Row_2" parent="Tiles" instance=ExtResource("3_interior_row")]
-position = Vector3(0, 0, 2.5)
+[node name="North" type="MeshInstance3D" parent="Tiles/WarningBoundary"]
+position = Vector3(8, 0.008, 0.06)
+mesh = SubResource("WarningLongMesh")
+cast_shadow = 0
 
-[node name="Row_3" parent="Tiles" instance=ExtResource("3_interior_row")]
-position = Vector3(0, 0, 3.5)
+[node name="South" type="MeshInstance3D" parent="Tiles/WarningBoundary"]
+position = Vector3(8, 0.008, 9.94)
+mesh = SubResource("WarningLongMesh")
+cast_shadow = 0
 
-[node name="Row_4" parent="Tiles" instance=ExtResource("3_interior_row")]
-position = Vector3(0, 0, 4.5)
+[node name="West" type="MeshInstance3D" parent="Tiles/WarningBoundary"]
+position = Vector3(0.06, 0.008, 5)
+rotation = Vector3(0, 1.570796, 0)
+mesh = SubResource("WarningShortMesh")
+cast_shadow = 0
 
-[node name="Row_5" parent="Tiles" instance=ExtResource("3_interior_row")]
-position = Vector3(0, 0, 5.5)
-
-[node name="Row_6" parent="Tiles" instance=ExtResource("3_interior_row")]
-position = Vector3(0, 0, 6.5)
-
-[node name="Row_7" parent="Tiles" instance=ExtResource("3_interior_row")]
-position = Vector3(0, 0, 7.5)
-
-[node name="Row_8" parent="Tiles" instance=ExtResource("3_interior_row")]
-position = Vector3(0, 0, 8.5)
-
-[node name="Row_9" parent="Tiles" instance=ExtResource("2_boundary_row")]
-position = Vector3(0, 0, 9.5)
+[node name="East" type="MeshInstance3D" parent="Tiles/WarningBoundary"]
+position = Vector3(15.94, 0.008, 5)
+rotation = Vector3(0, 1.570796, 0)
+mesh = SubResource("WarningShortMesh")
+cast_shadow = 0
 
 [node name="GroundBody" type="StaticBody3D" parent="Tiles"]
 collision_layer = 1
