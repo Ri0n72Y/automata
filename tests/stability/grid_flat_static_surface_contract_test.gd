@@ -22,22 +22,24 @@ func _run() -> void:
 		view.is_using_flat_static_surface(),
 		"Default 16x10 boundary-ring model should use the flat static surface."
 	)
-	_expect_true(view.is_using_static_scene(), "Flat static surface should satisfy static-scene semantics.")
-	_expect_false(view.is_using_dynamic_scene(), "Flat static surface should not build dynamic tile meshes.")
+	_expect_true(view.is_using_static_scene(), "Flat surface should satisfy scene-owned rendering semantics.")
+	_expect_false(view.is_using_dynamic_scene(), "Grid view must not generate per-cell runtime meshes.")
 	_expect_equal(view.get_tile_count(), 160, "Flat renderer should report all represented model cells.")
-	_expect_true(view.get_tile_node(Vector2i(1, 1)) == null, "Flat renderer must not claim per-cell MeshInstance ownership.")
+	_expect_true(view.get_tile_node(Vector2i(1, 1)) == null, "Flat renderer must not own per-cell MeshInstance nodes.")
 	_expect_true(view.get_ground_body() != null, "Flat renderer must preserve the authoritative ground collider.")
 
 	_expect_true(
 		model._set_cell_type(Vector2i(1, 1), GRID_MODEL_SCRIPT.CellType.NORMAL_TILE),
-		"Fixture should be able to introduce a cell type the fixed flat art cannot represent."
+		"Fixture should be able to introduce a cell type the fixed surface cannot represent."
 	)
 	view.rebuild(model)
-	_expect_true(
-		view.is_using_dynamic_scene(),
-		"Flat renderer must fail closed to dynamic rendering when model cell types diverge from its fixed art contract."
+	_expect_false(
+		view.is_using_flat_static_surface(),
+		"Fixed surface must fail closed when model cell types diverge from its visual contract."
 	)
-	_expect_equal(view.get_tile_count(), 160, "Dynamic fallback should still represent every model cell.")
+	_expect_false(view.is_using_dynamic_scene(), "Unsupported models must not resurrect per-cell mesh generation.")
+	_expect_equal(view.get_tile_count(), 0, "Unsupported model should expose no active rendered cells.")
+	_expect_true(view.get_ground_body() == null, "Unsupported model should disable the scene-owned ground collider.")
 
 	view.free()
 	_finish()
