@@ -3,7 +3,7 @@
 [ext_resource type="Material" path="res://scenes/scene_01/materials/floor_cross_backdrop.tres" id="1_floor"]
 
 [sub_resource type="PlaneMesh" id="FloorMesh"]
-size = Vector2(40, 32)
+size = Vector2(80, 80)
 material = ExtResource("1_floor")
 
 [node name="Scene01FloorBackdrop" type="MeshInstance3D"]
