@@ -7,11 +7,13 @@ const VEHICLE_DEFINITION_SCRIPT = preload("res://scripts/vehicles/vehicle_defini
 const CONTRACT_TEST_SCRIPT = preload("res://tests/support/contract_test.gd")
 
 var test = CONTRACT_TEST_SCRIPT.new()
+var fixture_root := Node.new()
 
 
 func _init() -> void:
 	_test_arm_preset_maps_to_compile_input()
 	_test_transport_preset_maps_tray_interface_without_grab_drop()
+	fixture_root.free()
 	test.finish(self, "Scene 01 assembly definition adapter contract tests")
 
 
@@ -70,6 +72,7 @@ func _test_transport_preset_maps_tray_interface_without_grab_drop() -> void:
 
 func _make_actor(definition):
 	var actor = VEHICLE_ACTOR_SCRIPT.new()
+	fixture_root.add_child(actor)
 	actor.definition = definition
 	return actor
 
