@@ -102,49 +102,49 @@ mesh = SubResource("StatusStripMesh")
 material_override = ExtResource("7_cyan")
 
 [node name="WheelFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(-0.37, 0.22, -0.27)
+position = Vector3(-0.37, 0.16, -0.27)
 rotation = Vector3(0, 0, 1.5708)
 mesh = SubResource("WheelMesh")
 material_override = ExtResource("6_rubber")
 
 [node name="WheelFrontRight" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(0.37, 0.22, -0.27)
+position = Vector3(0.37, 0.16, -0.27)
 rotation = Vector3(0, 0, 1.5708)
 mesh = SubResource("WheelMesh")
 material_override = ExtResource("6_rubber")
 
 [node name="WheelRearLeft" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(-0.37, 0.22, 0.27)
+position = Vector3(-0.37, 0.16, 0.27)
 rotation = Vector3(0, 0, 1.5708)
 mesh = SubResource("WheelMesh")
 material_override = ExtResource("6_rubber")
 
 [node name="WheelRearRight" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(0.37, 0.22, 0.27)
+position = Vector3(0.37, 0.16, 0.27)
 rotation = Vector3(0, 0, 1.5708)
 mesh = SubResource("WheelMesh")
 material_override = ExtResource("6_rubber")
 
 [node name="HubFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(-0.373, 0.22, -0.27)
+position = Vector3(-0.373, 0.16, -0.27)
 rotation = Vector3(0, 0, 1.5708)
 mesh = SubResource("HubMesh")
 material_override = ExtResource("7_cyan")
 
 [node name="HubFrontRight" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(0.373, 0.22, -0.27)
+position = Vector3(0.373, 0.16, -0.27)
 rotation = Vector3(0, 0, 1.5708)
 mesh = SubResource("HubMesh")
 material_override = ExtResource("7_cyan")
 
 [node name="HubRearLeft" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(-0.373, 0.22, 0.27)
+position = Vector3(-0.373, 0.16, 0.27)
 rotation = Vector3(0, 0, 1.5708)
 mesh = SubResource("HubMesh")
 material_override = ExtResource("5_dark")
 
 [node name="HubRearRight" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(0.373, 0.22, 0.27)
+position = Vector3(0.373, 0.16, 0.27)
 rotation = Vector3(0, 0, 1.5708)
 mesh = SubResource("HubMesh")
 material_override = ExtResource("5_dark")
@@ -233,4 +233,4 @@ no_depth_test = true
 text = "机械臂车\n18.0 千克"
 font_size = 28
 outline_size = 7
-modulate = Color(0.14, 0.18, 0.22, 1)
+modulate = Color(0.14, 0.18, 0.16, 1)
