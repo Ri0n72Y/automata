@@ -30,7 +30,7 @@
 [ext_resource type="PackedScene" path="res://scenes/scene_01/components/vehicle_move_preview.tscn" id="30_vehicle_move_preview"]
 [ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_operations_panel.tscn" id="31_operations_ui"]
 [ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_art_vertical_slice_sample.tscn" id="32_art_sample"]
-[ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_lab_backdrop.tscn" id="33_lab_backdrop"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_floor_backdrop.tscn" id="33_floor_backdrop"]
 
 [sub_resource type="Resource" id="Resource_ground_field"]
 resource_local_to_scene = true
@@ -72,7 +72,7 @@ unique_name_in_owner = true
 [node name="GridTileView" parent="SceneRoot/GridRoot" instance=ExtResource("3_static_field")]
 unique_name_in_owner = true
 
-[node name="LabBackdrop" parent="SceneRoot/GridRoot" instance=ExtResource("33_lab_backdrop")]
+[node name="FloorBackdrop" parent="SceneRoot/GridRoot" instance=ExtResource("33_floor_backdrop")]
 
 [node name="ArtVerticalSliceSample" parent="SceneRoot/GridRoot" instance=ExtResource("32_art_sample")]
 position = Vector3(4, 0, -0.48)
