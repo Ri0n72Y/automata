@@ -27,6 +27,8 @@ jobs:
   runtime:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      GODOT_FATAL_LOG_PATTERN: 'SCRIPT ERROR:|Parse Error:|CRC error|ERROR: (Error importing|Error loading image|Failed loading resource)|Shader compilation failed|ERROR:.*[Ss]hader'
 
     steps:
       - name: Checkout
@@ -54,7 +56,7 @@ jobs:
             rc=$?
           fi
 
-          if (( rc != 0 )) || grep -Eq             'SCRIPT ERROR:|Parse Error:|CRC error|ERROR: (Error importing|Error loading image|Failed loading resource)|Shader compilation failed|ERROR:.*[Ss]hader'             "$log"; then
+          if (( rc != 0 )) || grep -Eq "$GODOT_FATAL_LOG_PATTERN" "$log"; then
             echo "Godot import failed (exit=$rc)."
             exit 1
           fi
@@ -102,7 +104,7 @@ jobs:
             else
               rc=$?
             fi
-            if (( rc != 0 )) || grep -q 'SCRIPT ERROR:' "$log"; then
+            if (( rc != 0 )) || grep -Eq "$GODOT_FATAL_LOG_PATTERN" "$log"; then
               echo "=== FAIL $test (exit=$rc) ==="
               failed=1
             else
