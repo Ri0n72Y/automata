@@ -29,29 +29,31 @@ flat_surface_grid_height = 10
 
 [node name="Tiles" type="Node3D" parent="."]
 
-[node name="PlayableFloor" type="MeshInstance3D" parent="Tiles"]
+[node name="SurfaceVisuals" type="Node3D" parent="Tiles"]
+
+[node name="PlayableFloor" type="MeshInstance3D" parent="Tiles/SurfaceVisuals"]
 position = Vector3(8, 0.002, 5)
 mesh = SubResource("PlayableFloorMesh")
 cast_shadow = 0
 
-[node name="WarningBoundary" type="Node3D" parent="Tiles"]
+[node name="WarningBoundary" type="Node3D" parent="Tiles/SurfaceVisuals"]
 
-[node name="NorthBoundaryCells" type="MeshInstance3D" parent="Tiles/WarningBoundary"]
+[node name="NorthBoundaryCells" type="MeshInstance3D" parent="Tiles/SurfaceVisuals/WarningBoundary"]
 position = Vector3(8, 0.01, 0.5)
 mesh = SubResource("WarningLongMesh")
 cast_shadow = 0
 
-[node name="SouthBoundaryCells" type="MeshInstance3D" parent="Tiles/WarningBoundary"]
+[node name="SouthBoundaryCells" type="MeshInstance3D" parent="Tiles/SurfaceVisuals/WarningBoundary"]
 position = Vector3(8, 0.01, 9.5)
 mesh = SubResource("WarningLongMesh")
 cast_shadow = 0
 
-[node name="WestBoundaryCells" type="MeshInstance3D" parent="Tiles/WarningBoundary"]
+[node name="WestBoundaryCells" type="MeshInstance3D" parent="Tiles/SurfaceVisuals/WarningBoundary"]
 position = Vector3(0.5, 0.01, 5)
 mesh = SubResource("WarningSideMesh")
 cast_shadow = 0
 
-[node name="EastBoundaryCells" type="MeshInstance3D" parent="Tiles/WarningBoundary"]
+[node name="EastBoundaryCells" type="MeshInstance3D" parent="Tiles/SurfaceVisuals/WarningBoundary"]
 position = Vector3(15.5, 0.01, 5)
 mesh = SubResource("WarningSideMesh")
 cast_shadow = 0
