@@ -4,12 +4,12 @@
 [ext_resource type="Texture2D" path="res://assets/scene_01/floor_cross_normal.svg" id="2_normal"]
 
 [resource]
-albedo_color = Color(0.96, 0.97, 0.98, 1)
+albedo_color = Color(0.98, 0.985, 0.99, 1)
 albedo_texture = ExtResource("1_albedo")
-metallic = 0.02
-roughness = 0.74
+metallic = 0.015
+roughness = 0.75
 normal_enabled = true
-normal_scale = 0.22
+normal_scale = 0.32
 normal_texture = ExtResource("2_normal")
 texture_repeat = true
-uv1_scale = Vector3(80, 80, 1)
+uv1_scale = Vector3(200, 200, 1)
