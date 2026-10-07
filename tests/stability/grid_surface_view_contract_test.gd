@@ -15,11 +15,14 @@ func _run() -> void:
 	var view = FIELD_SCENE.instantiate()
 	root.add_child(view)
 
+	_expect_authored_16x10_field(view)
+	_expect_ground_enabled(view, Vector3(16, 0.08, 10))
+
 	var model = GRID_MODEL_SCRIPT.new()
 	_expect_true(model.configure(16, 10, 1.0), "Grid fixture should configure.")
-	_expect_true(view.draw(model), "Configured grid geometry should project to the field surface.")
-	_expect_true(view.is_surface_active(), "Configured grid geometry should show the field surface.")
-	_expect_surface_geometry(view, Vector2(16, 10), 1.0, Vector2(16, 10))
+	_expect_true(view.draw(model), "Authored 16x10 field should validate against GridModel.")
+	_expect_true(view.is_surface_active(), "Matching authored field should become runtime-active.")
+	_expect_authored_16x10_field(view)
 	_expect_ground_enabled(view, Vector3(16, 0.08, 10))
 
 	_expect_equal(
@@ -37,40 +40,34 @@ func _run() -> void:
 	)
 	controller.free()
 
-	var alternate_geometry = GRID_MODEL_SCRIPT.new()
+	var mismatched_model = GRID_MODEL_SCRIPT.new()
 	_expect_true(
-		alternate_geometry.configure(15, 9, 0.5, Vector3(2, 0, 3)),
-		"Alternate geometry fixture should configure."
+		mismatched_model.configure(15, 9, 0.5, Vector3(2, 0, 3)),
+		"Mismatched geometry fixture should configure."
 	)
-	_expect_true(
-		view.draw(alternate_geometry),
-		"Field surface should resize from model geometry instead of requiring a fixed 16x10 asset."
+	_expect_false(
+		view.draw(mismatched_model),
+		"Authored Scene 01 field must fail closed instead of resizing to a mismatched GridModel."
 	)
-	_expect_true(view.is_surface_active(), "Alternate valid geometry should keep the surface active.")
-	_expect_surface_geometry(view, Vector2(7.5, 4.5), 0.5, Vector2(15, 9))
-	_expect_ground_enabled(view, Vector3(7.5, 0.08, 4.5))
-	var tiles := view.get_node_or_null("Tiles") as Node3D
-	_expect_true(tiles != null, "Field should own a Tiles root.")
-	if tiles != null:
-		_expect_true(
-			tiles.position.is_equal_approx(Vector3(2, 0, 3)),
-			"Surface and interaction ground should follow model local origin."
-		)
-
-	_expect_false(view.draw(null), "Missing model should fail field projection explicitly.")
-	_expect_false(view.is_surface_active(), "Failed projection should hide the surface.")
+	_expect_false(view.is_surface_active(), "Mismatched serialized field should not remain runtime-active.")
+	_expect_authored_16x10_field(view)
 	_expect_ground_disabled(view)
+
+	_expect_true(
+		view.draw(model),
+		"Matching GridModel should revalidate the untouched serialized field after a mismatch."
+	)
+	_expect_true(view.is_surface_active(), "Revalidated authored field should become active again.")
+	_expect_authored_16x10_field(view)
+	_expect_ground_enabled(view, Vector3(16, 0.08, 10))
 
 	view.free()
 	_finish()
 
 
-func _expect_surface_geometry(
-	view: Node,
-	expected_size: Vector2,
-	cell_size: float,
-	expected_repeat: Vector2
-) -> void:
+func _expect_authored_16x10_field(view: Node) -> void:
+	var tiles := view.get_node_or_null("Tiles") as Node3D
+	var visuals := view.get_node_or_null("Tiles/SurfaceVisuals") as Node3D
 	var floor := view.get_node_or_null("Tiles/SurfaceVisuals/PlayableFloor") as MeshInstance3D
 	var north := view.get_node_or_null(
 		"Tiles/SurfaceVisuals/WarningBoundary/NorthBoundaryCells"
@@ -84,124 +81,122 @@ func _expect_surface_geometry(
 	var east := view.get_node_or_null(
 		"Tiles/SurfaceVisuals/WarningBoundary/EastBoundaryCells"
 	) as MeshInstance3D
-	for node in [floor, north, south, west, east]:
-		_expect_true(node != null, "Field surface should own all required visual nodes.")
-	if floor == null or north == null or south == null or west == null or east == null:
+
+	for node in [tiles, visuals, floor, north, south, west, east]:
+		_expect_true(node != null, "Authored field should own all required serialized nodes.")
+	if (
+		tiles == null
+		or visuals == null
+		or floor == null
+		or north == null
+		or south == null
+		or west == null
+		or east == null
+	):
 		return
 
-	var floor_mesh := floor.mesh as PlaneMesh
-	var north_mesh := north.mesh as PlaneMesh
-	var side_mesh := west.mesh as PlaneMesh
-	_expect_true(floor_mesh != null and north_mesh != null and side_mesh != null, "Field visuals should use PlaneMesh resources.")
-	if floor_mesh == null or north_mesh == null or side_mesh == null:
-		return
+	_expect_true(visuals.visible, "Serialized field visuals should be visible before runtime validation.")
+	_expect_true(tiles.position.is_equal_approx(Vector3.ZERO), "Authored field origin should be serialized.")
+	_expect_true(tiles.scale.is_equal_approx(Vector3.ONE), "Authored field scale should remain identity.")
 
-	_expect_true(floor_mesh.size.is_equal_approx(expected_size), "Playable floor mesh should match model world size.")
-	_expect_true(
-		north_mesh.size.is_equal_approx(Vector2(expected_size.x, cell_size)),
-		"Horizontal warning edge should be exactly one cell thick."
-	)
-	var expected_side_height := maxf(expected_size.y - cell_size * 2.0, 0.0)
-	if expected_side_height > 0.0:
-		_expect_true(
-			side_mesh.size.is_equal_approx(Vector2(cell_size, expected_side_height)),
-			"Vertical warning edge should cover only non-corner boundary cells."
-		)
+	_expect_plane_size(floor, Vector2(16, 10), "PlayableFloor")
+	_expect_plane_size(north, Vector2(16, 1), "North warning")
+	_expect_plane_size(south, Vector2(16, 1), "South warning")
+	_expect_plane_size(west, Vector2(1, 8), "West warning")
+	_expect_plane_size(east, Vector2(1, 8), "East warning")
 
 	_expect_true(
-		floor.position.is_equal_approx(Vector3(expected_size.x * 0.5, 0.002, expected_size.y * 0.5)),
-		"Playable floor should stay centered on projected grid geometry."
+		floor.position.is_equal_approx(Vector3(8, 0.002, 5)),
+		"PlayableFloor final position should be serialized."
 	)
 	_expect_true(
-		north.position.is_equal_approx(Vector3(expected_size.x * 0.5, 0.01, cell_size * 0.5)),
-		"North warning edge should align to the first boundary row."
+		north.position.is_equal_approx(Vector3(8, 0.01, 0.5)),
+		"North warning final position should be serialized."
 	)
 	_expect_true(
-		south.position.is_equal_approx(
-			Vector3(expected_size.x * 0.5, 0.01, expected_size.y - cell_size * 0.5)
-		),
-		"South warning edge should align to the last boundary row."
+		south.position.is_equal_approx(Vector3(8, 0.01, 9.5)),
+		"South warning final position should be serialized."
 	)
 	_expect_true(
-		west.position.is_equal_approx(Vector3(cell_size * 0.5, 0.01, expected_size.y * 0.5)),
-		"West warning edge should align to the first boundary column."
+		west.position.is_equal_approx(Vector3(0.5, 0.01, 5)),
+		"West warning final position should be serialized."
 	)
 	_expect_true(
-		east.position.is_equal_approx(
-			Vector3(expected_size.x - cell_size * 0.5, 0.01, expected_size.y * 0.5)
-		),
-		"East warning edge should align to the last boundary column."
+		east.position.is_equal_approx(Vector3(15.5, 0.01, 5)),
+		"East warning final position should be serialized."
 	)
 
-	_expect_true(
-		Vector2(floor.get_instance_shader_parameter(&"tile_repeat")).is_equal_approx(expected_repeat),
-		"Playable texture repeat should derive from logical grid dimensions."
-	)
-	_expect_true(
-		Vector2(north.get_instance_shader_parameter(&"tile_repeat")).is_equal_approx(
-			Vector2(expected_repeat.x, 1)
-		),
-		"Horizontal warning repeat should derive from boundary cell count."
-	)
-	_expect_true(
-		Vector2(west.get_instance_shader_parameter(&"tile_repeat")).is_equal_approx(
-			Vector2(1, maxf(expected_repeat.y - 2.0, 1.0))
-		),
-		"Vertical warning repeat should derive from non-corner boundary cell count."
-	)
+	_expect_shader_vector2(floor, &"tile_repeat", Vector2(16, 10), "PlayableFloor repeat")
+	_expect_shader_vector2(north, &"tile_repeat", Vector2(16, 1), "North warning repeat")
+	_expect_shader_vector2(south, &"tile_repeat", Vector2(16, 1), "South warning repeat")
+	_expect_shader_vector2(west, &"tile_repeat", Vector2(1, 8), "West warning repeat")
+	_expect_shader_vector2(east, &"tile_repeat", Vector2(1, 8), "East warning repeat")
 
-	_expect_true(
-		Vector2(north.get_instance_shader_parameter(&"tile_origin")).is_equal_approx(Vector2.ZERO),
-		"North warning edge should start at the field origin for stripe phase."
-	)
-	_expect_true(
-		Vector2(south.get_instance_shader_parameter(&"tile_origin")).is_equal_approx(
-			Vector2(0, expected_repeat.y - 1.0)
-		),
-		"South warning edge should preserve field-space stripe phase."
-	)
-	_expect_true(
-		Vector2(west.get_instance_shader_parameter(&"tile_origin")).is_equal_approx(Vector2(0, 1)),
-		"West warning edge should preserve field-space stripe phase."
-	)
-	_expect_true(
-		Vector2(east.get_instance_shader_parameter(&"tile_origin")).is_equal_approx(
-			Vector2(expected_repeat.x - 1.0, 1)
-		),
-		"East warning edge should preserve field-space stripe phase."
-	)
+	_expect_shader_vector2(north, &"tile_origin", Vector2(0, 0), "North warning phase")
+	_expect_shader_vector2(south, &"tile_origin", Vector2(0, 9), "South warning phase")
+	_expect_shader_vector2(west, &"tile_origin", Vector2(0, 1), "West warning phase")
+	_expect_shader_vector2(east, &"tile_origin", Vector2(15, 1), "East warning phase")
+
+
+func _expect_plane_size(node: MeshInstance3D, expected: Vector2, label: String) -> void:
+	var plane := node.mesh as PlaneMesh
+	_expect_true(plane != null, "%s should use PlaneMesh." % label)
+	if plane != null:
+		_expect_true(plane.size.is_equal_approx(expected), "%s final size should be serialized." % label)
+
+
+func _expect_shader_vector2(
+	node: MeshInstance3D,
+	parameter: StringName,
+	expected: Vector2,
+	label: String
+) -> void:
+	var actual := Vector2(node.get_instance_shader_parameter(parameter))
+	_expect_true(actual.is_equal_approx(expected), "%s should be serialized." % label)
 
 
 func _expect_ground_enabled(view: Node, expected_size: Vector3) -> void:
 	var ground_body := view.get_ground_body() as StaticBody3D
-	_expect_true(ground_body != null, "Field should own an interaction ground body.")
+	_expect_true(ground_body != null, "Field should own an authored interaction GroundBody.")
 	if ground_body == null:
 		return
-	_expect_equal(ground_body.collision_layer, 1, "Interaction ground collision layer should be enabled.")
+	_expect_equal(ground_body.collision_layer, 1, "Authored GroundBody collision layer should be enabled.")
+	_expect_equal(ground_body.collision_mask, 0, "Authored GroundBody collision mask should stay zero.")
+
 	var ground_shape := ground_body.get_node_or_null("GroundShape") as CollisionShape3D
-	_expect_true(ground_shape != null, "Interaction ground should own GroundShape.")
+	_expect_true(ground_shape != null, "Field should own an authored GroundShape.")
 	if ground_shape == null:
 		return
-	_expect_false(ground_shape.disabled, "Interaction GroundShape should be enabled.")
+	_expect_false(ground_shape.disabled, "Authored GroundShape should be enabled.")
+	_expect_true(
+		ground_shape.position.is_equal_approx(Vector3(8, -0.04, 5)),
+		"GroundShape final position should be serialized."
+	)
 	var box_shape := ground_shape.shape as BoxShape3D
-	_expect_true(box_shape != null, "Interaction GroundShape should use BoxShape3D.")
+	_expect_true(box_shape != null, "Authored GroundShape should use BoxShape3D.")
 	if box_shape != null:
 		_expect_true(
 			box_shape.size.is_equal_approx(expected_size),
-			"Interaction ground should track model geometry."
+			"GroundShape final 16x10 geometry should be serialized."
 		)
 
 
 func _expect_ground_disabled(view: Node) -> void:
 	var ground_body := view.get_ground_body() as StaticBody3D
-	_expect_true(ground_body != null, "Failed projection should retain the authored GroundBody node.")
+	_expect_true(ground_body != null, "Fail-closed field should retain its authored GroundBody.")
 	if ground_body == null:
 		return
-	_expect_equal(ground_body.collision_layer, 0, "Failed projection should disable ground collision.")
+	_expect_equal(ground_body.collision_layer, 0, "Mismatch should disable ground interaction.")
 	var ground_shape := ground_body.get_node_or_null("GroundShape") as CollisionShape3D
-	_expect_true(ground_shape != null, "Failed projection should retain GroundShape.")
+	_expect_true(ground_shape != null, "Fail-closed field should retain its authored GroundShape.")
 	if ground_shape != null:
-		_expect_true(ground_shape.disabled, "Failed projection should disable GroundShape.")
+		_expect_true(ground_shape.disabled, "Mismatch should disable GroundShape without resizing it.")
+		var box_shape := ground_shape.shape as BoxShape3D
+		if box_shape != null:
+			_expect_true(
+				box_shape.size.is_equal_approx(Vector3(16, 0.08, 10)),
+				"Fail-closed validation must not mutate serialized GroundShape geometry."
+			)
 
 
 func _finish() -> void:

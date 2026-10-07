@@ -3,7 +3,6 @@ extends Node3D
 
 const GridModelScript := preload("res://scripts/grid/grid_model.gd")
 
-@export_range(0.01, 0.5, 0.01) var tile_height: float = 0.08
 @export var ground_collision_layer: int = 1
 
 var _tiles_root: Node3D
@@ -14,30 +13,25 @@ var _south_boundary: MeshInstance3D
 var _west_boundary: MeshInstance3D
 var _east_boundary: MeshInstance3D
 var _ground_body: StaticBody3D
+var _ground_shape: CollisionShape3D
 var _surface_active: bool = false
 
 
 func _ready() -> void:
-	_bind_surface_nodes()
-	_set_surface_visible(false)
-	_set_ground_enabled(false)
+	if not _bind_surface_nodes():
+		push_error("GridTileView is missing required authored field nodes.")
 
 
 func draw(model: GridModelScript) -> bool:
-	return rebuild(model)
+	if model == null:
+		return _fail_validation("GridModel is missing.")
+	if not _bind_surface_nodes():
+		return _fail_validation("required authored field nodes are missing.")
 
+	var mismatch := _serialized_field_mismatch(model)
+	if not mismatch.is_empty():
+		return _fail_validation(mismatch)
 
-func rebuild(model: GridModelScript) -> bool:
-	if model == null or not _bind_surface_nodes():
-		_deactivate_field()
-		return false
-	if not _sync_surface_geometry(model) or not _sync_ground_geometry(model):
-		_deactivate_field()
-		return false
-
-	_tiles_root.position = model.local_origin
-	_tiles_root.scale = Vector3.ONE
-	_set_surface_visible(true)
 	_set_ground_enabled(true)
 	_surface_active = true
 	return true
@@ -63,6 +57,7 @@ func _bind_surface_nodes() -> bool:
 		and _west_boundary != null
 		and _east_boundary != null
 		and _ground_body != null
+		and _ground_shape != null
 	):
 		return true
 
@@ -82,6 +77,7 @@ func _bind_surface_nodes() -> bool:
 		"Tiles/SurfaceVisuals/WarningBoundary/EastBoundaryCells"
 	) as MeshInstance3D
 	_ground_body = get_node_or_null("Tiles/GroundBody") as StaticBody3D
+	_ground_shape = get_node_or_null("Tiles/GroundBody/GroundShape") as CollisionShape3D
 	return (
 		_tiles_root != null
 		and _surface_visuals != null
@@ -91,122 +87,195 @@ func _bind_surface_nodes() -> bool:
 		and _west_boundary != null
 		and _east_boundary != null
 		and _ground_body != null
+		and _ground_shape != null
 	)
 
 
-func _sync_surface_geometry(model: GridModelScript) -> bool:
+func _serialized_field_mismatch(model: GridModelScript) -> String:
 	var width := float(model.width) * model.cell_size
 	var height := float(model.height) * model.cell_size
 	var boundary_width := model.cell_size
-	var side_height := maxf(height - boundary_width * 2.0, 0.0)
+	var side_height := height - boundary_width * 2.0
 
-	if not _set_plane_size(_playable_floor, Vector2(width, height)):
-		return false
-	if not _set_plane_size(_north_boundary, Vector2(width, boundary_width)):
-		return false
-	if not _set_plane_size(_south_boundary, Vector2(width, boundary_width)):
-		return false
-	if side_height > 0.0:
-		if not _set_plane_size(_west_boundary, Vector2(boundary_width, side_height)):
-			return false
-		if not _set_plane_size(_east_boundary, Vector2(boundary_width, side_height)):
-			return false
+	if not _tiles_root.position.is_equal_approx(model.local_origin):
+		return "Tiles origin does not match GridModel.local_origin."
+	if not _tiles_root.scale.is_equal_approx(Vector3.ONE):
+		return "Tiles scale must stay at Vector3.ONE."
+	if not _surface_visuals.visible:
+		return "SurfaceVisuals must be authored visible."
+	if side_height <= 0.0:
+		return "GridModel is too small for the authored four-edge warning boundary."
 
-	_set_xz(_playable_floor, width * 0.5, height * 0.5)
-	_set_xz(_north_boundary, width * 0.5, boundary_width * 0.5)
-	_set_xz(_south_boundary, width * 0.5, height - boundary_width * 0.5)
-	_set_xz(_west_boundary, boundary_width * 0.5, height * 0.5)
-	_set_xz(_east_boundary, width - boundary_width * 0.5, height * 0.5)
-
-	_west_boundary.visible = side_height > 0.0
-	_east_boundary.visible = side_height > 0.0
-
-	_playable_floor.set_instance_shader_parameter(
-		&"tile_repeat",
-		Vector2(float(model.width), float(model.height))
+	var mismatch := _plane_mismatch(_playable_floor, Vector2(width, height), "PlayableFloor")
+	if not mismatch.is_empty():
+		return mismatch
+	mismatch = _plane_mismatch(
+		_north_boundary,
+		Vector2(width, boundary_width),
+		"NorthBoundaryCells"
 	)
-	_north_boundary.set_instance_shader_parameter(
-		&"tile_repeat",
-		Vector2(float(model.width), 1.0)
+	if not mismatch.is_empty():
+		return mismatch
+	mismatch = _plane_mismatch(
+		_south_boundary,
+		Vector2(width, boundary_width),
+		"SouthBoundaryCells"
 	)
-	_south_boundary.set_instance_shader_parameter(
-		&"tile_repeat",
-		Vector2(float(model.width), 1.0)
+	if not mismatch.is_empty():
+		return mismatch
+	mismatch = _plane_mismatch(
+		_west_boundary,
+		Vector2(boundary_width, side_height),
+		"WestBoundaryCells"
 	)
-	var side_repeat := maxf(float(model.height - 2), 1.0)
-	_west_boundary.set_instance_shader_parameter(&"tile_repeat", Vector2(1.0, side_repeat))
-	_east_boundary.set_instance_shader_parameter(&"tile_repeat", Vector2(1.0, side_repeat))
+	if not mismatch.is_empty():
+		return mismatch
+	mismatch = _plane_mismatch(
+		_east_boundary,
+		Vector2(boundary_width, side_height),
+		"EastBoundaryCells"
+	)
+	if not mismatch.is_empty():
+		return mismatch
 
-	_north_boundary.set_instance_shader_parameter(&"tile_origin", Vector2.ZERO)
-	_south_boundary.set_instance_shader_parameter(
+	if not _playable_floor.position.is_equal_approx(Vector3(width * 0.5, 0.002, height * 0.5)):
+		return "PlayableFloor position does not match serialized GridModel geometry."
+	if not _north_boundary.position.is_equal_approx(
+		Vector3(width * 0.5, 0.01, boundary_width * 0.5)
+	):
+		return "North warning position does not match serialized GridModel geometry."
+	if not _south_boundary.position.is_equal_approx(
+		Vector3(width * 0.5, 0.01, height - boundary_width * 0.5)
+	):
+		return "South warning position does not match serialized GridModel geometry."
+	if not _west_boundary.position.is_equal_approx(
+		Vector3(boundary_width * 0.5, 0.01, height * 0.5)
+	):
+		return "West warning position does not match serialized GridModel geometry."
+	if not _east_boundary.position.is_equal_approx(
+		Vector3(width - boundary_width * 0.5, 0.01, height * 0.5)
+	):
+		return "East warning position does not match serialized GridModel geometry."
+
+	mismatch = _shader_vector2_mismatch(
+		_playable_floor,
+		&"tile_repeat",
+		Vector2(float(model.width), float(model.height)),
+		"PlayableFloor"
+	)
+	if not mismatch.is_empty():
+		return mismatch
+	mismatch = _shader_vector2_mismatch(
+		_north_boundary,
+		&"tile_repeat",
+		Vector2(float(model.width), 1.0),
+		"NorthBoundaryCells"
+	)
+	if not mismatch.is_empty():
+		return mismatch
+	mismatch = _shader_vector2_mismatch(
+		_south_boundary,
+		&"tile_repeat",
+		Vector2(float(model.width), 1.0),
+		"SouthBoundaryCells"
+	)
+	if not mismatch.is_empty():
+		return mismatch
+	var side_repeat := float(model.height - 2)
+	mismatch = _shader_vector2_mismatch(
+		_west_boundary,
+		&"tile_repeat",
+		Vector2(1.0, side_repeat),
+		"WestBoundaryCells"
+	)
+	if not mismatch.is_empty():
+		return mismatch
+	mismatch = _shader_vector2_mismatch(
+		_east_boundary,
+		&"tile_repeat",
+		Vector2(1.0, side_repeat),
+		"EastBoundaryCells"
+	)
+	if not mismatch.is_empty():
+		return mismatch
+
+	mismatch = _shader_vector2_mismatch(
+		_north_boundary,
 		&"tile_origin",
-		Vector2(0.0, float(model.height - 1))
+		Vector2.ZERO,
+		"NorthBoundaryCells"
 	)
-	_west_boundary.set_instance_shader_parameter(&"tile_origin", Vector2(0.0, 1.0))
-	_east_boundary.set_instance_shader_parameter(
+	if not mismatch.is_empty():
+		return mismatch
+	mismatch = _shader_vector2_mismatch(
+		_south_boundary,
 		&"tile_origin",
-		Vector2(float(model.width - 1), 1.0)
+		Vector2(0.0, float(model.height - 1)),
+		"SouthBoundaryCells"
 	)
-	return true
+	if not mismatch.is_empty():
+		return mismatch
+	mismatch = _shader_vector2_mismatch(
+		_west_boundary,
+		&"tile_origin",
+		Vector2(0.0, 1.0),
+		"WestBoundaryCells"
+	)
+	if not mismatch.is_empty():
+		return mismatch
+	mismatch = _shader_vector2_mismatch(
+		_east_boundary,
+		&"tile_origin",
+		Vector2(float(model.width - 1), 1.0),
+		"EastBoundaryCells"
+	)
+	if not mismatch.is_empty():
+		return mismatch
 
-
-func _sync_ground_geometry(model: GridModelScript) -> bool:
-	if _ground_body == null:
-		return false
-	var ground_shape := _ground_body.get_node_or_null("GroundShape") as CollisionShape3D
-	if ground_shape == null:
-		return false
-	var box_shape := ground_shape.shape as BoxShape3D
+	var box_shape := _ground_shape.shape as BoxShape3D
 	if box_shape == null:
-		return false
+		return "GroundShape must use an authored BoxShape3D."
+	if not box_shape.size.is_equal_approx(Vector3(width, 0.08, height)):
+		return "GroundShape size does not match serialized GridModel geometry."
+	if not _ground_shape.position.is_equal_approx(Vector3(width * 0.5, -0.04, height * 0.5)):
+		return "GroundShape position does not match serialized GridModel geometry."
+	if _ground_body.collision_mask != 0:
+		return "GroundBody collision_mask must stay zero."
 
-	var ground_depth := maxf(tile_height, 0.05)
-	box_shape.size = Vector3(
-		float(model.width) * model.cell_size,
-		ground_depth,
-		float(model.height) * model.cell_size
-	)
-	ground_shape.position = Vector3(
-		float(model.width) * model.cell_size * 0.5,
-		-ground_depth * 0.5,
-		float(model.height) * model.cell_size * 0.5
-	)
-	return true
+	return ""
 
 
-func _set_plane_size(mesh_instance: MeshInstance3D, size: Vector2) -> bool:
-	if mesh_instance == null:
-		return false
-	var plane := mesh_instance.mesh as PlaneMesh
+func _plane_mismatch(node: MeshInstance3D, expected_size: Vector2, label: String) -> String:
+	var plane := node.mesh as PlaneMesh
 	if plane == null:
-		return false
-	plane.size = size
-	return true
+		return "%s must use an authored PlaneMesh." % label
+	if not plane.size.is_equal_approx(expected_size):
+		return "%s PlaneMesh size does not match GridModel." % label
+	return ""
 
 
-func _set_xz(node: Node3D, x: float, z: float) -> void:
-	var position := node.position
-	position.x = x
-	position.z = z
-	node.position = position
+func _shader_vector2_mismatch(
+	node: MeshInstance3D,
+	parameter: StringName,
+	expected: Vector2,
+	label: String
+) -> String:
+	var actual := Vector2(node.get_instance_shader_parameter(parameter))
+	if not actual.is_equal_approx(expected):
+		return "%s %s does not match GridModel." % [label, parameter]
+	return ""
 
 
-func _deactivate_field() -> void:
+func _fail_validation(message: String) -> bool:
 	_surface_active = false
-	_set_surface_visible(false)
 	_set_ground_enabled(false)
-
-
-func _set_surface_visible(visible: bool) -> void:
-	if _surface_visuals != null:
-		_surface_visuals.visible = visible
+	push_error("GridTileView serialized field validation failed: %s" % message)
+	return false
 
 
 func _set_ground_enabled(enabled: bool) -> void:
-	if _ground_body == null:
+	if _ground_body == null or _ground_shape == null:
 		return
 	_ground_body.collision_layer = ground_collision_layer if enabled else 0
 	_ground_body.collision_mask = 0
-	var ground_shape := _ground_body.get_node_or_null("GroundShape") as CollisionShape3D
-	if ground_shape != null:
-		ground_shape.disabled = not enabled
+	_ground_shape.disabled = not enabled
