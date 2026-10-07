@@ -12,8 +12,8 @@ uniform float specular_value : hint_range(0.0, 1.0, 0.01) = 0.30;
 void fragment() {
     vec2 field_tile_uv = UV * tile_repeat + tile_origin;
     float diagonal = field_tile_uv.x + field_tile_uv.y;
-    float band_phase = fract(diagonal * stripe_bands_per_cell * 0.5);
-    float use_yellow = step(0.5, band_phase);
+    float band_index = floor(diagonal * stripe_bands_per_cell * 0.5);
+    float use_yellow = mod(band_index, 2.0);
     ALBEDO = mix(dark_color.rgb, yellow_color.rgb, use_yellow);
     ROUGHNESS = roughness_value;
     METALLIC = metallic_value;
