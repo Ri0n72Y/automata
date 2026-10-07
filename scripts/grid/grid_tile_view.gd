@@ -69,7 +69,7 @@ func _model_compatibility_mismatch(model: GridModelScript) -> String:
 	if plane == null:
 		return "PlayableFloor must provide an authored PlaneMesh compatibility surface."
 
-	var authored_grid_size_variant := _playable_floor.get_instance_shader_parameter(
+	var authored_grid_size_variant: Variant = _playable_floor.get_instance_shader_parameter(
 		PLAYABLE_GRID_SIZE_PARAMETER
 	)
 	if not (authored_grid_size_variant is Vector2):
