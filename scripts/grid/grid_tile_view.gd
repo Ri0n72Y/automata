@@ -136,6 +136,17 @@ func _sync_surface_geometry(model: GridModelScript) -> bool:
 	var side_repeat := maxf(float(model.height - 2), 1.0)
 	_west_boundary.set_instance_shader_parameter(&"tile_repeat", Vector2(1.0, side_repeat))
 	_east_boundary.set_instance_shader_parameter(&"tile_repeat", Vector2(1.0, side_repeat))
+
+	_north_boundary.set_instance_shader_parameter(&"tile_origin", Vector2.ZERO)
+	_south_boundary.set_instance_shader_parameter(
+		&"tile_origin",
+		Vector2(0.0, float(model.height - 1))
+	)
+	_west_boundary.set_instance_shader_parameter(&"tile_origin", Vector2(0.0, 1.0))
+	_east_boundary.set_instance_shader_parameter(
+		&"tile_origin",
+		Vector2(float(model.width - 1), 1.0)
+	)
 	return true
 
 

@@ -150,6 +150,27 @@ func _expect_surface_geometry(
 		"Vertical warning repeat should derive from non-corner boundary cell count."
 	)
 
+	_expect_true(
+		Vector2(north.get_instance_shader_parameter(&"tile_origin")).is_equal_approx(Vector2.ZERO),
+		"North warning edge should start at the field origin for stripe phase."
+	)
+	_expect_true(
+		Vector2(south.get_instance_shader_parameter(&"tile_origin")).is_equal_approx(
+			Vector2(0, expected_repeat.y - 1.0)
+		),
+		"South warning edge should preserve field-space stripe phase."
+	)
+	_expect_true(
+		Vector2(west.get_instance_shader_parameter(&"tile_origin")).is_equal_approx(Vector2(0, 1)),
+		"West warning edge should preserve field-space stripe phase."
+	)
+	_expect_true(
+		Vector2(east.get_instance_shader_parameter(&"tile_origin")).is_equal_approx(
+			Vector2(expected_repeat.x - 1.0, 1)
+		),
+		"East warning edge should preserve field-space stripe phase."
+	)
+
 
 func _expect_ground_enabled(view: Node, expected_size: Vector3) -> void:
 	var ground_body := view.get_ground_body() as StaticBody3D
