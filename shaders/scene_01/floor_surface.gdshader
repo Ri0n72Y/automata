@@ -19,7 +19,13 @@ void fragment() {
     vec3 lifted = mix(contrasted, vec3(1.0), albedo_lift);
     float luma = dot(sampled.rgb, vec3(0.2126, 0.7152, 0.0722));
 
-    ALBEDO = lifted;
+    // A warm-grey porcelain baseline keeps the 4 px tile seams legible without
+    // turning the whole 16x10 field into a high-contrast wireframe.
+    vec3 porcelain = vec3(0.855, 0.868, 0.885);
+    vec3 normal_sample = texture(normal_texture, tiled_uv).rgb;
+    float bevel_slope = clamp(length(normal_sample.rg * 2.0 - vec2(1.0)) * 0.65, 0.0, 1.0);
+    float recessed_line = clamp((0.72 - luma) * 0.85, 0.0, 1.0);
+    ALBEDO = mix(porcelain, lifted, 0.30) * (1.0 - 0.04 * recessed_line - 0.045 * bevel_slope);
     ROUGHNESS = clamp(roughness_value + (0.5 - luma) * roughness_variation, 0.0, 1.0);
     METALLIC = metallic_value;
     SPECULAR = specular_value;
