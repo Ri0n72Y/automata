@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://yrkjurdfr6h0"
+path="res://.godot/imported/rounded_shell.obj-5acf9b892f93cc66c160d45676ea0bfd.mesh"
+
+[deps]
+
+files=["res://.godot/imported/rounded_shell.obj-5acf9b892f93cc66c160d45676ea0bfd.mesh"]
+
+source_file="res://assets/scene_01/meshes/rounded_shell.obj"
+dest_files=["res://.godot/imported/rounded_shell.obj-5acf9b892f93cc66c160d45676ea0bfd.mesh", "res://.godot/imported/rounded_shell.obj-5acf9b892f93cc66c160d45676ea0bfd.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false
