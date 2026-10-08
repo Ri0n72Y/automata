@@ -1,0 +1,773 @@
+[gd_scene load_steps=40 format=3]
+
+[ext_resource type="Material" path="res://scenes/scene_01/materials/lab_structural_white.tres" id="1_white"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/dark_mechanical_metal.tres" id="2_dark"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/cyan_emissive.tres" id="3_cyan"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/lab_platform_coating.tres" id="4_platform"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/lab_glass.tres" id="5_glass"]
+
+[sub_resource type="BoxMesh" id="DeckSlab"]
+size = Vector3(16.82, 0.38, 10.82)
+
+[sub_resource type="BoxMesh" id="EdgeLong"]
+size = Vector3(16.82, 0.18, 0.12)
+
+[sub_resource type="BoxMesh" id="EdgeShort"]
+size = Vector3(0.12, 0.18, 10.82)
+
+[sub_resource type="BoxMesh" id="BaseLong"]
+size = Vector3(16.45, 0.11, 0.1)
+
+[sub_resource type="BoxMesh" id="BaseShort"]
+size = Vector3(0.1, 0.11, 10.45)
+
+[sub_resource type="BoxMesh" id="Leg"]
+size = Vector3(0.3, 0.64, 0.3)
+
+[sub_resource type="BoxMesh" id="LegShoe"]
+size = Vector3(0.49, 0.08, 0.49)
+
+[sub_resource type="BoxMesh" id="LongFascia"]
+size = Vector3(16.7, 0.22, 0.036)
+
+[sub_resource type="BoxMesh" id="ShortFascia"]
+size = Vector3(0.036, 0.22, 10.7)
+
+[sub_resource type="BoxMesh" id="ServicePanel"]
+size = Vector3(1.2, 0.13, 0.024)
+
+[sub_resource type="BoxMesh" id="EndServicePanel"]
+size = Vector3(0.024, 0.13, 1.05)
+
+[sub_resource type="BoxMesh" id="CyanEdgeBar"]
+size = Vector3(1.16, 0.018, 0.025)
+
+[sub_resource type="BoxMesh" id="CyanEndBar"]
+size = Vector3(0.025, 0.018, 1.02)
+
+[sub_resource type="BoxMesh" id="WallLongBase"]
+size = Vector3(13.9, 0.43, 0.22)
+
+[sub_resource type="BoxMesh" id="WallShortBase"]
+size = Vector3(0.22, 0.43, 8.45)
+
+[sub_resource type="BoxMesh" id="LongSill"]
+size = Vector3(14, 0.095, 0.29)
+
+[sub_resource type="BoxMesh" id="ShortSill"]
+size = Vector3(0.29, 0.095, 8.55)
+
+[sub_resource type="BoxMesh" id="LongHeader"]
+size = Vector3(14.05, 0.12, 0.2)
+
+[sub_resource type="BoxMesh" id="ShortHeader"]
+size = Vector3(0.2, 0.12, 8.6)
+
+[sub_resource type="BoxMesh" id="WallColumn"]
+size = Vector3(0.21, 2.08, 0.21)
+
+[sub_resource type="BoxMesh" id="WallColumnFoot"]
+size = Vector3(0.34, 0.14, 0.34)
+
+[sub_resource type="BoxMesh" id="GlassLong"]
+size = Vector3(3.16, 1.71, 0.018)
+
+[sub_resource type="BoxMesh" id="GlassShort"]
+size = Vector3(0.018, 1.71, 1.765)
+
+[sub_resource type="BoxMesh" id="WindowRail"]
+size = Vector3(3.17, 0.025, 0.055)
+
+[sub_resource type="BoxMesh" id="WindowRailEnd"]
+size = Vector3(0.055, 0.025, 1.775)
+
+[sub_resource type="BoxMesh" id="Beacon"]
+size = Vector3(0.052, 0.46, 0.055)
+
+[sub_resource type="BoxMesh" id="ColumnCap"]
+size = Vector3(0.25, 0.055, 0.25)
+
+[sub_resource type="BoxMesh" id="Brace"]
+size = Vector3(0.17, 0.16, 0.17)
+
+[sub_resource type="BoxMesh" id="RearWalkwaySlab"]
+size = Vector3(16.1, 0.3, 0.95)
+
+[sub_resource type="BoxMesh" id="LeftWalkwaySlab"]
+size = Vector3(0.95, 0.3, 10.1)
+
+[sub_resource type="BoxMesh" id="CornerWalkwaySlab"]
+size = Vector3(0.95, 0.3, 0.95)
+
+[sub_resource type="BoxMesh" id="RearWalkwayFascia"]
+size = Vector3(16.1, 0.26, 0.045)
+
+[sub_resource type="BoxMesh" id="LeftWalkwayFascia"]
+size = Vector3(0.045, 0.26, 10.1)
+
+[sub_resource type="BoxMesh" id="WallWalkwaySupport"]
+size = Vector3(0.24, 0.78, 0.24)
+
+[node name="Scene01LabPlatformEnvironment" type="Node3D"]
+
+[node name="Platform" type="Node3D" parent="."]
+
+[node name="RaisedDeck" type="MeshInstance3D" parent="Platform"]
+position = Vector3(8, -0.245, 5)
+mesh = SubResource("DeckSlab")
+material_override = ExtResource("4_platform")
+
+[node name="EdgeFrame" type="Node3D" parent="Platform"]
+
+[node name="NorthUpperLip" type="MeshInstance3D" parent="Platform/EdgeFrame"]
+position = Vector3(8, -0.05, -0.43)
+mesh = SubResource("EdgeLong")
+material_override = ExtResource("1_white")
+
+[node name="NorthUnderRail" type="MeshInstance3D" parent="Platform/EdgeFrame"]
+position = Vector3(8, -0.435, -0.43)
+mesh = SubResource("BaseLong")
+material_override = ExtResource("2_dark")
+
+[node name="NorthSideFascia" type="MeshInstance3D" parent="Platform/EdgeFrame"]
+position = Vector3(8, -0.29, -0.48)
+mesh = SubResource("LongFascia")
+material_override = ExtResource("4_platform")
+
+[node name="SouthUpperLip" type="MeshInstance3D" parent="Platform/EdgeFrame"]
+position = Vector3(8, -0.05, 10.43)
+mesh = SubResource("EdgeLong")
+material_override = ExtResource("1_white")
+
+[node name="SouthUnderRail" type="MeshInstance3D" parent="Platform/EdgeFrame"]
+position = Vector3(8, -0.435, 10.43)
+mesh = SubResource("BaseLong")
+material_override = ExtResource("2_dark")
+
+[node name="SouthSideFascia" type="MeshInstance3D" parent="Platform/EdgeFrame"]
+position = Vector3(8, -0.29, 10.48)
+mesh = SubResource("LongFascia")
+material_override = ExtResource("4_platform")
+
+[node name="WestUpperLip" type="MeshInstance3D" parent="Platform/EdgeFrame"]
+position = Vector3(-0.43, -0.05, 5)
+mesh = SubResource("EdgeShort")
+material_override = ExtResource("1_white")
+
+[node name="WestUnderRail" type="MeshInstance3D" parent="Platform/EdgeFrame"]
+position = Vector3(-0.43, -0.435, 5)
+mesh = SubResource("BaseShort")
+material_override = ExtResource("2_dark")
+
+[node name="WestSideFascia" type="MeshInstance3D" parent="Platform/EdgeFrame"]
+position = Vector3(-0.48, -0.29, 5)
+mesh = SubResource("ShortFascia")
+material_override = ExtResource("4_platform")
+
+[node name="EastUpperLip" type="MeshInstance3D" parent="Platform/EdgeFrame"]
+position = Vector3(16.43, -0.05, 5)
+mesh = SubResource("EdgeShort")
+material_override = ExtResource("1_white")
+
+[node name="EastUnderRail" type="MeshInstance3D" parent="Platform/EdgeFrame"]
+position = Vector3(16.43, -0.435, 5)
+mesh = SubResource("BaseShort")
+material_override = ExtResource("2_dark")
+
+[node name="EastSideFascia" type="MeshInstance3D" parent="Platform/EdgeFrame"]
+position = Vector3(16.48, -0.29, 5)
+mesh = SubResource("ShortFascia")
+material_override = ExtResource("4_platform")
+
+[node name="SupportingStructure" type="Node3D" parent="Platform"]
+
+[node name="SupportNorth0" type="MeshInstance3D" parent="Platform/SupportingStructure"]
+position = Vector3(0.25, -0.756, -0.18)
+mesh = SubResource("Leg")
+material_override = ExtResource("2_dark")
+
+[node name="SupportFootNorth0" type="MeshInstance3D" parent="Platform/SupportingStructure"]
+position = Vector3(0.25, -1.055, -0.18)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="SupportNorth1" type="MeshInstance3D" parent="Platform/SupportingStructure"]
+position = Vector3(5.3, -0.756, -0.18)
+mesh = SubResource("Leg")
+material_override = ExtResource("2_dark")
+
+[node name="SupportFootNorth1" type="MeshInstance3D" parent="Platform/SupportingStructure"]
+position = Vector3(5.3, -1.055, -0.18)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="SupportNorth2" type="MeshInstance3D" parent="Platform/SupportingStructure"]
+position = Vector3(10.7, -0.756, -0.18)
+mesh = SubResource("Leg")
+material_override = ExtResource("2_dark")
+
+[node name="SupportFootNorth2" type="MeshInstance3D" parent="Platform/SupportingStructure"]
+position = Vector3(10.7, -1.055, -0.18)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="SupportNorth3" type="MeshInstance3D" parent="Platform/SupportingStructure"]
+position = Vector3(15.75, -0.756, -0.18)
+mesh = SubResource("Leg")
+material_override = ExtResource("2_dark")
+
+[node name="SupportFootNorth3" type="MeshInstance3D" parent="Platform/SupportingStructure"]
+position = Vector3(15.75, -1.055, -0.18)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="SupportSouth0" type="MeshInstance3D" parent="Platform/SupportingStructure"]
+position = Vector3(0.25, -0.756, 10.18)
+mesh = SubResource("Leg")
+material_override = ExtResource("2_dark")
+
+[node name="SupportFootSouth0" type="MeshInstance3D" parent="Platform/SupportingStructure"]
+position = Vector3(0.25, -1.055, 10.18)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="SupportSouth1" type="MeshInstance3D" parent="Platform/SupportingStructure"]
+position = Vector3(5.3, -0.756, 10.18)
+mesh = SubResource("Leg")
+material_override = ExtResource("2_dark")
+
+[node name="SupportFootSouth1" type="MeshInstance3D" parent="Platform/SupportingStructure"]
+position = Vector3(5.3, -1.055, 10.18)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="SupportSouth2" type="MeshInstance3D" parent="Platform/SupportingStructure"]
+position = Vector3(10.7, -0.756, 10.18)
+mesh = SubResource("Leg")
+material_override = ExtResource("2_dark")
+
+[node name="SupportFootSouth2" type="MeshInstance3D" parent="Platform/SupportingStructure"]
+position = Vector3(10.7, -1.055, 10.18)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="SupportSouth3" type="MeshInstance3D" parent="Platform/SupportingStructure"]
+position = Vector3(15.75, -0.756, 10.18)
+mesh = SubResource("Leg")
+material_override = ExtResource("2_dark")
+
+[node name="SupportFootSouth3" type="MeshInstance3D" parent="Platform/SupportingStructure"]
+position = Vector3(15.75, -1.055, 10.18)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="ServiceCladding" type="Node3D" parent="Platform"]
+
+[node name="FrontServicePanel0" type="MeshInstance3D" parent="Platform/ServiceCladding"]
+position = Vector3(1.7, -0.25, 10.499)
+mesh = SubResource("ServicePanel")
+material_override = ExtResource("1_white")
+
+[node name="FrontSignal0" type="MeshInstance3D" parent="Platform/ServiceCladding"]
+position = Vector3(1.7, -0.34, 10.518)
+mesh = SubResource("CyanEdgeBar")
+material_override = ExtResource("3_cyan")
+cast_shadow = 0
+
+[node name="FrontServicePanel1" type="MeshInstance3D" parent="Platform/ServiceCladding"]
+position = Vector3(4.6, -0.25, 10.499)
+mesh = SubResource("ServicePanel")
+material_override = ExtResource("1_white")
+
+[node name="FrontServicePanel2" type="MeshInstance3D" parent="Platform/ServiceCladding"]
+position = Vector3(7.5, -0.25, 10.499)
+mesh = SubResource("ServicePanel")
+material_override = ExtResource("1_white")
+
+[node name="FrontSignal2" type="MeshInstance3D" parent="Platform/ServiceCladding"]
+position = Vector3(7.5, -0.34, 10.518)
+mesh = SubResource("CyanEdgeBar")
+material_override = ExtResource("3_cyan")
+cast_shadow = 0
+
+[node name="FrontServicePanel3" type="MeshInstance3D" parent="Platform/ServiceCladding"]
+position = Vector3(10.4, -0.25, 10.499)
+mesh = SubResource("ServicePanel")
+material_override = ExtResource("1_white")
+
+[node name="FrontServicePanel4" type="MeshInstance3D" parent="Platform/ServiceCladding"]
+position = Vector3(13.3, -0.25, 10.499)
+mesh = SubResource("ServicePanel")
+material_override = ExtResource("1_white")
+
+[node name="FrontSignal4" type="MeshInstance3D" parent="Platform/ServiceCladding"]
+position = Vector3(13.3, -0.34, 10.518)
+mesh = SubResource("CyanEdgeBar")
+material_override = ExtResource("3_cyan")
+cast_shadow = 0
+
+[node name="EastServicePanel0" type="MeshInstance3D" parent="Platform/ServiceCladding"]
+position = Vector3(16.499, -0.25, 2)
+mesh = SubResource("EndServicePanel")
+material_override = ExtResource("1_white")
+
+[node name="EastSignal0" type="MeshInstance3D" parent="Platform/ServiceCladding"]
+position = Vector3(16.521, -0.35, 2)
+mesh = SubResource("CyanEndBar")
+material_override = ExtResource("3_cyan")
+cast_shadow = 0
+
+[node name="EastServicePanel1" type="MeshInstance3D" parent="Platform/ServiceCladding"]
+position = Vector3(16.499, -0.25, 4.95)
+mesh = SubResource("EndServicePanel")
+material_override = ExtResource("1_white")
+
+[node name="EastServicePanel2" type="MeshInstance3D" parent="Platform/ServiceCladding"]
+position = Vector3(16.499, -0.25, 7.9)
+mesh = SubResource("EndServicePanel")
+material_override = ExtResource("1_white")
+
+[node name="EastSignal2" type="MeshInstance3D" parent="Platform/ServiceCladding"]
+position = Vector3(16.521, -0.35, 7.9)
+mesh = SubResource("CyanEndBar")
+material_override = ExtResource("3_cyan")
+cast_shadow = 0
+
+[node name="WallFoundation" type="Node3D" parent="."]
+
+[node name="RearServiceWalk" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(7.45, -0.16, -0.9)
+mesh = SubResource("RearWalkwaySlab")
+material_override = ExtResource("1_white")
+
+[node name="LeftServiceWalk" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-0.9, -0.16, 4.45)
+mesh = SubResource("LeftWalkwaySlab")
+material_override = ExtResource("1_white")
+
+[node name="CornerServiceWalk" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-0.9, -0.16, -0.9)
+mesh = SubResource("CornerWalkwaySlab")
+material_override = ExtResource("1_white")
+
+[node name="RearServiceSkirt" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(7.45, -0.32, -1.389)
+mesh = SubResource("RearWalkwayFascia")
+material_override = ExtResource("4_platform")
+
+[node name="LeftServiceSkirt" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.389, -0.32, 4.45)
+mesh = SubResource("LeftWalkwayFascia")
+material_override = ExtResource("4_platform")
+
+[node name="RearWalkSupport0" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(1.1, -0.7, -1.02)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="RearWalkFoot0" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(1.1, -1.07, -1.02)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="RearWalkSupport1" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(4.55, -0.7, -1.02)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="RearWalkFoot1" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(4.55, -1.07, -1.02)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="RearWalkSupport2" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(8, -0.7, -1.02)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="RearWalkFoot2" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(8, -1.07, -1.02)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="RearWalkSupport3" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(11.45, -0.7, -1.02)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="RearWalkFoot3" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(11.45, -1.07, -1.02)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="RearWalkSupport4" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(14.9, -0.7, -1.02)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="RearWalkFoot4" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(14.9, -1.07, -1.02)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="LeftWalkSupport0" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -0.7, 0.825)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="LeftWalkFoot0" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -1.07, 0.825)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="LeftWalkSupport1" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -0.7, 2.9125)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="LeftWalkFoot1" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -1.07, 2.9125)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="LeftWalkSupport2" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -0.7, 5)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="LeftWalkFoot2" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -1.07, 5)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="LeftWalkSupport3" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -0.7, 7.0875)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="LeftWalkFoot3" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -1.07, 7.0875)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="LeftWalkSupport4" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -0.7, 9.175)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="LeftWalkFoot4" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -1.07, 9.175)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="LabBoundary" type="Node3D" parent="."]
+
+[node name="RearGlassWall" type="Node3D" parent="LabBoundary"]
+
+[node name="RearKneeWall" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(8, 0.21, -1.02)
+mesh = SubResource("WallLongBase")
+material_override = ExtResource("4_platform")
+
+[node name="RearWindowSill" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(8, 0.465, -1.02)
+mesh = SubResource("LongSill")
+material_override = ExtResource("1_white")
+
+[node name="RearWindowHeader" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(8, 2.31, -1.02)
+mesh = SubResource("LongHeader")
+material_override = ExtResource("1_white")
+
+[node name="RearFrameColumn0" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(1.1, 1.27, -1.02)
+mesh = SubResource("WallColumn")
+material_override = ExtResource("1_white")
+
+[node name="RearColumnFoot0" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(1.1, 0.16, -1.02)
+mesh = SubResource("WallColumnFoot")
+material_override = ExtResource("2_dark")
+
+[node name="RearColumnCap0" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(1.1, 2.395, -1.02)
+mesh = SubResource("ColumnCap")
+material_override = ExtResource("2_dark")
+
+[node name="RearGlassPane0" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(2.825, 1.395, -1.02)
+mesh = SubResource("GlassLong")
+material_override = ExtResource("5_glass")
+cast_shadow = 0
+
+[node name="RearGlassRail0" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(2.825, 1.35, -1.02)
+mesh = SubResource("WindowRail")
+material_override = ExtResource("2_dark")
+
+[node name="RearFrameColumn1" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(4.55, 1.27, -1.02)
+mesh = SubResource("WallColumn")
+material_override = ExtResource("1_white")
+
+[node name="RearColumnFoot1" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(4.55, 0.16, -1.02)
+mesh = SubResource("WallColumnFoot")
+material_override = ExtResource("2_dark")
+
+[node name="RearColumnCap1" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(4.55, 2.395, -1.02)
+mesh = SubResource("ColumnCap")
+material_override = ExtResource("2_dark")
+
+[node name="RearGlassPane1" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(6.275, 1.395, -1.02)
+mesh = SubResource("GlassLong")
+material_override = ExtResource("5_glass")
+cast_shadow = 0
+
+[node name="RearGlassRail1" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(6.275, 1.35, -1.02)
+mesh = SubResource("WindowRail")
+material_override = ExtResource("2_dark")
+
+[node name="RearFrameColumn2" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(8, 1.27, -1.02)
+mesh = SubResource("WallColumn")
+material_override = ExtResource("1_white")
+
+[node name="RearColumnFoot2" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(8, 0.16, -1.02)
+mesh = SubResource("WallColumnFoot")
+material_override = ExtResource("2_dark")
+
+[node name="RearColumnCap2" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(8, 2.395, -1.02)
+mesh = SubResource("ColumnCap")
+material_override = ExtResource("2_dark")
+
+[node name="RearGlassPane2" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(9.725, 1.395, -1.02)
+mesh = SubResource("GlassLong")
+material_override = ExtResource("5_glass")
+cast_shadow = 0
+
+[node name="RearGlassRail2" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(9.725, 1.35, -1.02)
+mesh = SubResource("WindowRail")
+material_override = ExtResource("2_dark")
+
+[node name="RearFrameColumn3" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(11.45, 1.27, -1.02)
+mesh = SubResource("WallColumn")
+material_override = ExtResource("1_white")
+
+[node name="RearColumnFoot3" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(11.45, 0.16, -1.02)
+mesh = SubResource("WallColumnFoot")
+material_override = ExtResource("2_dark")
+
+[node name="RearColumnCap3" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(11.45, 2.395, -1.02)
+mesh = SubResource("ColumnCap")
+material_override = ExtResource("2_dark")
+
+[node name="RearGlassPane3" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(13.175, 1.395, -1.02)
+mesh = SubResource("GlassLong")
+material_override = ExtResource("5_glass")
+cast_shadow = 0
+
+[node name="RearGlassRail3" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(13.175, 1.35, -1.02)
+mesh = SubResource("WindowRail")
+material_override = ExtResource("2_dark")
+
+[node name="RearFrameColumn4" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(14.9, 1.27, -1.02)
+mesh = SubResource("WallColumn")
+material_override = ExtResource("1_white")
+
+[node name="RearColumnFoot4" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(14.9, 0.16, -1.02)
+mesh = SubResource("WallColumnFoot")
+material_override = ExtResource("2_dark")
+
+[node name="RearColumnCap4" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(14.9, 2.395, -1.02)
+mesh = SubResource("ColumnCap")
+material_override = ExtResource("2_dark")
+
+[node name="LeftGlassWall" type="Node3D" parent="LabBoundary"]
+
+[node name="LeftKneeWall" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 0.21, 5)
+mesh = SubResource("WallShortBase")
+material_override = ExtResource("4_platform")
+
+[node name="LeftWindowSill" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 0.465, 5)
+mesh = SubResource("ShortSill")
+material_override = ExtResource("1_white")
+
+[node name="LeftWindowHeader" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 2.31, 5)
+mesh = SubResource("ShortHeader")
+material_override = ExtResource("1_white")
+
+[node name="LeftFrameColumn0" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 1.27, 0.825)
+mesh = SubResource("WallColumn")
+material_override = ExtResource("1_white")
+
+[node name="LeftColumnFoot0" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 0.16, 0.825)
+mesh = SubResource("WallColumnFoot")
+material_override = ExtResource("2_dark")
+
+[node name="LeftColumnCap0" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 2.395, 0.825)
+mesh = SubResource("ColumnCap")
+material_override = ExtResource("2_dark")
+
+[node name="LeftGlassPane0" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 1.395, 1.8687)
+mesh = SubResource("GlassShort")
+material_override = ExtResource("5_glass")
+cast_shadow = 0
+
+[node name="LeftGlassRail0" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 1.35, 1.8687)
+mesh = SubResource("WindowRailEnd")
+material_override = ExtResource("2_dark")
+
+[node name="LeftFrameColumn1" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 1.27, 2.9125)
+mesh = SubResource("WallColumn")
+material_override = ExtResource("1_white")
+
+[node name="LeftColumnFoot1" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 0.16, 2.9125)
+mesh = SubResource("WallColumnFoot")
+material_override = ExtResource("2_dark")
+
+[node name="LeftColumnCap1" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 2.395, 2.9125)
+mesh = SubResource("ColumnCap")
+material_override = ExtResource("2_dark")
+
+[node name="LeftGlassPane1" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 1.395, 3.9562)
+mesh = SubResource("GlassShort")
+material_override = ExtResource("5_glass")
+cast_shadow = 0
+
+[node name="LeftGlassRail1" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 1.35, 3.9562)
+mesh = SubResource("WindowRailEnd")
+material_override = ExtResource("2_dark")
+
+[node name="LeftFrameColumn2" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 1.27, 5)
+mesh = SubResource("WallColumn")
+material_override = ExtResource("1_white")
+
+[node name="LeftColumnFoot2" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 0.16, 5)
+mesh = SubResource("WallColumnFoot")
+material_override = ExtResource("2_dark")
+
+[node name="LeftColumnCap2" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 2.395, 5)
+mesh = SubResource("ColumnCap")
+material_override = ExtResource("2_dark")
+
+[node name="LeftGlassPane2" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 1.395, 6.0438)
+mesh = SubResource("GlassShort")
+material_override = ExtResource("5_glass")
+cast_shadow = 0
+
+[node name="LeftGlassRail2" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 1.35, 6.0438)
+mesh = SubResource("WindowRailEnd")
+material_override = ExtResource("2_dark")
+
+[node name="LeftFrameColumn3" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 1.27, 7.0875)
+mesh = SubResource("WallColumn")
+material_override = ExtResource("1_white")
+
+[node name="LeftColumnFoot3" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 0.16, 7.0875)
+mesh = SubResource("WallColumnFoot")
+material_override = ExtResource("2_dark")
+
+[node name="LeftColumnCap3" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 2.395, 7.0875)
+mesh = SubResource("ColumnCap")
+material_override = ExtResource("2_dark")
+
+[node name="LeftGlassPane3" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 1.395, 8.1312)
+mesh = SubResource("GlassShort")
+material_override = ExtResource("5_glass")
+cast_shadow = 0
+
+[node name="LeftGlassRail3" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 1.35, 8.1312)
+mesh = SubResource("WindowRailEnd")
+material_override = ExtResource("2_dark")
+
+[node name="LeftFrameColumn4" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 1.27, 9.175)
+mesh = SubResource("WallColumn")
+material_override = ExtResource("1_white")
+
+[node name="LeftColumnFoot4" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 0.16, 9.175)
+mesh = SubResource("WallColumnFoot")
+material_override = ExtResource("2_dark")
+
+[node name="LeftColumnCap4" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 2.395, 9.175)
+mesh = SubResource("ColumnCap")
+material_override = ExtResource("2_dark")
+
+[node name="LabSignalAccents" type="Node3D" parent="."]
+
+[node name="RearBeacon0" type="MeshInstance3D" parent="LabSignalAccents"]
+position = Vector3(1.1, 1.57, -0.903)
+mesh = SubResource("Beacon")
+material_override = ExtResource("3_cyan")
+cast_shadow = 0
+
+[node name="RearBeacon1" type="MeshInstance3D" parent="LabSignalAccents"]
+position = Vector3(8, 1.57, -0.903)
+mesh = SubResource("Beacon")
+material_override = ExtResource("3_cyan")
+cast_shadow = 0
+
+[node name="RearBeacon2" type="MeshInstance3D" parent="LabSignalAccents"]
+position = Vector3(14.9, 1.57, -0.903)
+mesh = SubResource("Beacon")
+material_override = ExtResource("3_cyan")
+cast_shadow = 0
+
+[node name="LeftBeacon0" type="MeshInstance3D" parent="LabSignalAccents"]
+position = Vector3(-0.903, 1.57, 0.825)
+mesh = SubResource("Beacon")
+material_override = ExtResource("3_cyan")
+cast_shadow = 0
+
+[node name="LeftBeacon1" type="MeshInstance3D" parent="LabSignalAccents"]
+position = Vector3(-0.903, 1.57, 5)
+mesh = SubResource("Beacon")
+material_override = ExtResource("3_cyan")
+cast_shadow = 0
+
+[node name="LeftBeacon2" type="MeshInstance3D" parent="LabSignalAccents"]
+position = Vector3(-0.903, 1.57, 9.175)
+mesh = SubResource("Beacon")
+material_override = ExtResource("3_cyan")
+cast_shadow = 0
