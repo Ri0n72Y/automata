@@ -1,6 +1,6 @@
-[gd_scene load_steps=34 format=3]
+[gd_scene load_steps=40 format=3]
 
-[ext_resource type="Material" path="res://scenes/scene_01/materials/painted_white.tres" id="1_white"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/lab_structural_white.tres" id="1_white"]
 [ext_resource type="Material" path="res://scenes/scene_01/materials/dark_mechanical_metal.tres" id="2_dark"]
 [ext_resource type="Material" path="res://scenes/scene_01/materials/cyan_emissive.tres" id="3_cyan"]
 [ext_resource type="Material" path="res://scenes/scene_01/materials/lab_platform_coating.tres" id="4_platform"]
@@ -89,6 +89,24 @@ size = Vector3(0.25, 0.055, 0.25)
 
 [sub_resource type="BoxMesh" id="Brace"]
 size = Vector3(0.17, 0.16, 0.17)
+
+[sub_resource type="BoxMesh" id="RearWalkwaySlab"]
+size = Vector3(16.1, 0.3, 0.95)
+
+[sub_resource type="BoxMesh" id="LeftWalkwaySlab"]
+size = Vector3(0.95, 0.3, 10.1)
+
+[sub_resource type="BoxMesh" id="CornerWalkwaySlab"]
+size = Vector3(0.95, 0.3, 0.95)
+
+[sub_resource type="BoxMesh" id="RearWalkwayFascia"]
+size = Vector3(16.1, 0.26, 0.045)
+
+[sub_resource type="BoxMesh" id="LeftWalkwayFascia"]
+size = Vector3(0.045, 0.26, 10.1)
+
+[sub_resource type="BoxMesh" id="WallWalkwaySupport"]
+size = Vector3(0.24, 0.78, 0.24)
 
 [node name="Scene01LabPlatformEnvironment" type="Node3D"]
 
@@ -314,6 +332,133 @@ position = Vector3(16.521, -0.35, 7.9)
 mesh = SubResource("CyanEndBar")
 material_override = ExtResource("3_cyan")
 cast_shadow = 0
+
+[node name="WallFoundation" type="Node3D" parent="."]
+
+[node name="RearServiceWalk" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(7.45, -0.16, -0.9)
+mesh = SubResource("RearWalkwaySlab")
+material_override = ExtResource("1_white")
+
+[node name="LeftServiceWalk" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-0.9, -0.16, 4.45)
+mesh = SubResource("LeftWalkwaySlab")
+material_override = ExtResource("1_white")
+
+[node name="CornerServiceWalk" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-0.9, -0.16, -0.9)
+mesh = SubResource("CornerWalkwaySlab")
+material_override = ExtResource("1_white")
+
+[node name="RearServiceSkirt" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(7.45, -0.32, -1.389)
+mesh = SubResource("RearWalkwayFascia")
+material_override = ExtResource("4_platform")
+
+[node name="LeftServiceSkirt" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.389, -0.32, 4.45)
+mesh = SubResource("LeftWalkwayFascia")
+material_override = ExtResource("4_platform")
+
+[node name="RearWalkSupport0" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(1.1, -0.7, -1.02)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="RearWalkFoot0" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(1.1, -1.07, -1.02)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="RearWalkSupport1" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(4.55, -0.7, -1.02)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="RearWalkFoot1" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(4.55, -1.07, -1.02)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="RearWalkSupport2" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(8, -0.7, -1.02)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="RearWalkFoot2" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(8, -1.07, -1.02)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="RearWalkSupport3" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(11.45, -0.7, -1.02)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="RearWalkFoot3" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(11.45, -1.07, -1.02)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="RearWalkSupport4" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(14.9, -0.7, -1.02)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="RearWalkFoot4" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(14.9, -1.07, -1.02)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="LeftWalkSupport0" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -0.7, 0.825)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="LeftWalkFoot0" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -1.07, 0.825)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="LeftWalkSupport1" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -0.7, 2.9125)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="LeftWalkFoot1" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -1.07, 2.9125)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="LeftWalkSupport2" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -0.7, 5)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="LeftWalkFoot2" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -1.07, 5)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="LeftWalkSupport3" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -0.7, 7.0875)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="LeftWalkFoot3" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -1.07, 7.0875)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
+
+[node name="LeftWalkSupport4" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -0.7, 9.175)
+mesh = SubResource("WallWalkwaySupport")
+material_override = ExtResource("2_dark")
+
+[node name="LeftWalkFoot4" type="MeshInstance3D" parent="WallFoundation"]
+position = Vector3(-1.02, -1.07, 9.175)
+mesh = SubResource("LegShoe")
+material_override = ExtResource("4_platform")
 
 [node name="LabBoundary" type="Node3D" parent="."]
 
