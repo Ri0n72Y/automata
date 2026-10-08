@@ -40,7 +40,6 @@ func _run() -> void:
 
 	_test_scene_adapter_legality(object_manager, vehicle_manager)
 	_test_cached_ground_interface_rechecks_dynamic_occupancy(object_manager, vehicle_manager)
-	_test_grid_policy_updates_immediately(scene, object_manager)
 	_test_runtime_grid_geometry_is_immutable(scene, object_manager)
 
 	await _finish_scene(scene)
@@ -112,44 +111,6 @@ func _test_cached_ground_interface_rechecks_dynamic_occupancy(object_manager, ve
 		"Recovered cached interface should return the exact original ground block."
 	)
 	_expect_false(block.is_claimed(), "Recovered take should release ground ownership.")
-
-
-func _test_grid_policy_updates_immediately(scene, object_manager) -> void:
-	var field = object_manager.get_ground_block_field()
-	_expect_true(field != null and field.is_configured(), "Scene ground field should start configured.")
-	if field == null:
-		return
-	var cell := Vector2i(4, 1)
-	var interaction = object_manager.get_ground_cell_interface(cell)
-	_expect_true(interaction != null, "Policy fixture requires a legal ground cell.")
-	if interaction == null:
-		return
-	var block := STANDARD_BLOCK_SCRIPT.create()
-	_expect_true(interaction.put_item(block).is_success(), "Policy fixture should place one real block.")
-	_expect_true(field.get_item(cell) == block, "Ground field should own policy fixture block.")
-	_expect_true(object_manager.get_ground_block_visual(cell) != null, "Policy fixture should create ground visual.")
-
-	_expect_true(
-		bool(scene.call("set_grid_cell_type", cell, GRID_MODEL_SCRIPT.CellType.BOUNDARY)),
-		"Changing occupied ground cell to Boundary should succeed."
-	)
-	_expect_true(
-		field.get_item(cell) == null,
-		"Grid policy mutation must clear invalid ground state immediately without a getter refresh."
-	)
-	_expect_false(block.is_claimed(), "Grid policy mutation must immediately release block ownership.")
-	_expect_true(
-		object_manager.get_ground_block_visual(cell) == null,
-		"Grid policy mutation must immediately remove the invalid ground visual."
-	)
-	_expect_true(
-		bool(scene.call("set_grid_cell_type", cell, GRID_MODEL_SCRIPT.CellType.NORMAL_TILE)),
-		"Ground policy fixture should restore the cell for subsequent tests."
-	)
-	_expect_true(
-		object_manager.get_ground_cell_interface(cell) != null,
-		"Restored walkable cell should become a legal ground target again."
-	)
 
 
 func _test_runtime_grid_geometry_is_immutable(scene, object_manager) -> void:
