@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3]
+[gd_scene load_steps=24 format=3]
 
 [ext_resource type="Script" path="res://scripts/vehicles/vehicle_actor.gd" id="1_actor"]
 [ext_resource type="Script" path="res://scripts/vehicles/vehicle_state_visual.gd" id="2_state"]
@@ -7,18 +7,8 @@
 [ext_resource type="Material" path="res://scenes/scene_01/materials/dark_mechanical_metal.tres" id="5_dark"]
 [ext_resource type="Material" path="res://scenes/scene_01/materials/rubber.tres" id="6_rubber"]
 [ext_resource type="Material" path="res://scenes/scene_01/materials/cyan_emissive.tres" id="7_cyan"]
-
-[sub_resource type="BoxMesh" id="LowerChassisMesh"]
-size = Vector3(0.74, 0.16, 0.7)
-
-[sub_resource type="BoxMesh" id="ChassisShellMesh"]
-size = Vector3(0.66, 0.24, 0.62)
-
-[sub_resource type="BoxMesh" id="TopDeckMesh"]
-size = Vector3(0.52, 0.08, 0.5)
-
-[sub_resource type="BoxMesh" id="BumperMesh"]
-size = Vector3(0.56, 0.08, 0.07)
+[ext_resource type="ArrayMesh" path="res://assets/scene_01/meshes/rounded_shell.obj" id="8_shell"]
+[ext_resource type="ArrayMesh" path="res://assets/scene_01/meshes/beveled_panel.obj" id="9_panel"]
 
 [sub_resource type="BoxMesh" id="StatusStripMesh"]
 size = Vector3(0.34, 0.035, 0.025)
@@ -47,17 +37,44 @@ bottom_radius = 0.105
 height = 0.22
 radial_segments = 24
 
-[sub_resource type="BoxMesh" id="UpperArmMesh"]
-size = Vector3(0.14, 0.48, 0.14)
+[sub_resource type="BoxMesh" id="ArmorSkirtMesh"]
+size = Vector3(0.035, 0.105, 0.42)
 
-[sub_resource type="BoxMesh" id="LowerArmMesh"]
-size = Vector3(0.13, 0.42, 0.13)
+[sub_resource type="CylinderMesh" id="WheelRimMesh"]
+top_radius = 0.111
+bottom_radius = 0.111
+height = 0.018
+radial_segments = 32
 
-[sub_resource type="BoxMesh" id="ToolHeadMesh"]
-size = Vector3(0.34, 0.14, 0.16)
+[sub_resource type="CylinderMesh" id="WheelCapMesh"]
+top_radius = 0.068
+bottom_radius = 0.068
+height = 0.022
+radial_segments = 32
 
-[sub_resource type="BoxMesh" id="FingerMesh"]
-size = Vector3(0.07, 0.09, 0.25)
+[sub_resource type="CylinderMesh" id="JointCapMesh"]
+top_radius = 0.087
+bottom_radius = 0.087
+height = 0.03
+radial_segments = 32
+
+[sub_resource type="CylinderMesh" id="JointCenterMesh"]
+top_radius = 0.042
+bottom_radius = 0.042
+height = 0.035
+radial_segments = 24
+
+[sub_resource type="BoxMesh" id="CoverStripMesh"]
+size = Vector3(0.017, 0.048, 0.23)
+
+[sub_resource type="BoxMesh" id="GripPadMesh"]
+size = Vector3(0.028, 0.066, 0.16)
+
+[sub_resource type="CylinderMesh" id="BaseRingMesh"]
+top_radius = 0.194
+bottom_radius = 0.194
+height = 0.037
+radial_segments = 32
 
 [sub_resource type="BoxShape3D" id="SelectionShape"]
 size = Vector3(0.91, 1.7, 0.91)
@@ -73,27 +90,32 @@ script = ExtResource("2_state")
 
 [node name="LowerChassis" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.2, 0)
-mesh = SubResource("LowerChassisMesh")
+scale = Vector3(0.74, 0.16, 0.7)
+mesh = ExtResource("9_panel")
 material_override = ExtResource("5_dark")
 
 [node name="Body" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.36, 0)
-mesh = SubResource("ChassisShellMesh")
+scale = Vector3(0.66, 0.24, 0.62)
+mesh = ExtResource("8_shell")
 material_override = ExtResource("4_white")
 
 [node name="TopDeck" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.52, 0.015)
-mesh = SubResource("TopDeckMesh")
+scale = Vector3(0.52, 0.08, 0.5)
+mesh = ExtResource("9_panel")
 material_override = ExtResource("5_dark")
 
 [node name="FrontBumper" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.24, -0.365)
-mesh = SubResource("BumperMesh")
+scale = Vector3(0.56, 0.08, 0.07)
+mesh = ExtResource("9_panel")
 material_override = ExtResource("5_dark")
 
 [node name="RearBumper" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.24, 0.365)
-mesh = SubResource("BumperMesh")
+scale = Vector3(0.56, 0.08, 0.07)
+mesh = ExtResource("9_panel")
 material_override = ExtResource("5_dark")
 
 [node name="DirectionMarker" type="MeshInstance3D" parent="VisualRoot"]
@@ -163,7 +185,8 @@ material_override = ExtResource("5_dark")
 [node name="UpperArm" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.94, 0.0)
 rotation = Vector3(-0.48, 0, 0)
-mesh = SubResource("UpperArmMesh")
+scale = Vector3(0.14, 0.48, 0.14)
+mesh = ExtResource("9_panel")
 material_override = ExtResource("4_white")
 
 [node name="Elbow" type="MeshInstance3D" parent="VisualRoot"]
@@ -175,7 +198,8 @@ material_override = ExtResource("5_dark")
 [node name="LowerArm" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 1.28, -0.22)
 rotation = Vector3(0.58, 0, 0)
-mesh = SubResource("LowerArmMesh")
+scale = Vector3(0.13, 0.42, 0.13)
+mesh = ExtResource("9_panel")
 material_override = ExtResource("4_white")
 
 [node name="Wrist" type="MeshInstance3D" parent="VisualRoot"]
@@ -186,22 +210,231 @@ material_override = ExtResource("5_dark")
 
 [node name="WorkHead" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 1.42, -0.45)
-mesh = SubResource("ToolHeadMesh")
+scale = Vector3(0.34, 0.14, 0.16)
+mesh = ExtResource("8_shell")
 material_override = ExtResource("5_dark")
 
 [node name="GripperLeft" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(-0.13, 1.37, -0.62)
-mesh = SubResource("FingerMesh")
+scale = Vector3(0.07, 0.09, 0.25)
+mesh = ExtResource("9_panel")
 material_override = ExtResource("4_white")
 
 [node name="GripperRight" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0.13, 1.37, -0.62)
-mesh = SubResource("FingerMesh")
+scale = Vector3(0.07, 0.09, 0.25)
+mesh = ExtResource("9_panel")
 material_override = ExtResource("4_white")
 
 [node name="WristStatus" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 1.47, -0.455)
 scale = Vector3(0.52, 0.52, 0.52)
+mesh = SubResource("StatusStripMesh")
+material_override = ExtResource("7_cyan")
+
+[node name="ArmorSkirtLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.347, 0.323, 0)
+mesh = SubResource("ArmorSkirtMesh")
+material_override = ExtResource("5_dark")
+
+[node name="ArmorSkirtRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.347, 0.323, 0)
+mesh = SubResource("ArmorSkirtMesh")
+material_override = ExtResource("5_dark")
+
+[node name="FenderFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.367, 0.339, -0.27)
+scale = Vector3(0.218, 0.057, 0.192)
+mesh = ExtResource("9_panel")
+material_override = ExtResource("4_white")
+
+[node name="RimFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.435, 0.16, -0.27)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelRimMesh")
+material_override = ExtResource("5_dark")
+
+[node name="HubHighlightFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.447, 0.16, -0.27)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelCapMesh")
+material_override = ExtResource("7_cyan")
+
+[node name="FenderRearLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.367, 0.339, 0.27)
+scale = Vector3(0.218, 0.057, 0.192)
+mesh = ExtResource("9_panel")
+material_override = ExtResource("4_white")
+
+[node name="RimRearLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.435, 0.16, 0.27)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelRimMesh")
+material_override = ExtResource("5_dark")
+
+[node name="HubHighlightRearLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.447, 0.16, 0.27)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelCapMesh")
+material_override = ExtResource("4_white")
+
+[node name="FenderFrontRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.367, 0.339, -0.27)
+scale = Vector3(0.218, 0.057, 0.192)
+mesh = ExtResource("9_panel")
+material_override = ExtResource("4_white")
+
+[node name="RimFrontRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.435, 0.16, -0.27)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelRimMesh")
+material_override = ExtResource("5_dark")
+
+[node name="HubHighlightFrontRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.447, 0.16, -0.27)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelCapMesh")
+material_override = ExtResource("7_cyan")
+
+[node name="FenderRearRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.367, 0.339, 0.27)
+scale = Vector3(0.218, 0.057, 0.192)
+mesh = ExtResource("9_panel")
+material_override = ExtResource("4_white")
+
+[node name="RimRearRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.435, 0.16, 0.27)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelRimMesh")
+material_override = ExtResource("5_dark")
+
+[node name="HubHighlightRearRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.447, 0.16, 0.27)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelCapMesh")
+material_override = ExtResource("4_white")
+
+[node name="ArmBaseBezel" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.57, 0.08)
+mesh = SubResource("BaseRingMesh")
+material_override = ExtResource("4_white")
+
+[node name="ShoulderCoverLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.12, 0.75, 0.08)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("JointCapMesh")
+material_override = ExtResource("4_white")
+
+[node name="ShoulderCoreLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.14, 0.75, 0.08)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("JointCenterMesh")
+material_override = ExtResource("5_dark")
+
+[node name="ShoulderCoverRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.12, 0.75, 0.08)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("JointCapMesh")
+material_override = ExtResource("4_white")
+
+[node name="ShoulderCoreRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.14, 0.75, 0.08)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("JointCenterMesh")
+material_override = ExtResource("5_dark")
+
+[node name="ElbowCoverLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.12, 1.13, -0.11)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("JointCapMesh")
+material_override = ExtResource("4_white")
+
+[node name="ElbowCoreLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.14, 1.13, -0.11)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("JointCenterMesh")
+material_override = ExtResource("5_dark")
+
+[node name="ElbowCoverRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.12, 1.13, -0.11)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("JointCapMesh")
+material_override = ExtResource("4_white")
+
+[node name="ElbowCoreRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.14, 1.13, -0.11)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("JointCenterMesh")
+material_override = ExtResource("5_dark")
+
+[node name="WristCoverLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.12, 1.43, -0.34)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("JointCapMesh")
+material_override = ExtResource("4_white")
+
+[node name="WristCoreLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.14, 1.43, -0.34)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("JointCenterMesh")
+material_override = ExtResource("5_dark")
+
+[node name="WristCoverRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.12, 1.43, -0.34)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("JointCapMesh")
+material_override = ExtResource("4_white")
+
+[node name="WristCoreRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.14, 1.43, -0.34)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("JointCenterMesh")
+material_override = ExtResource("5_dark")
+
+[node name="UpperArmOuterPanel" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.94, 0.005)
+rotation = Vector3(-0.48, 0, 0)
+scale = Vector3(0.162, 0.4, 0.159)
+mesh = ExtResource("9_panel")
+material_override = ExtResource("4_white")
+
+[node name="LowerArmOuterPanel" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 1.285, -0.22)
+rotation = Vector3(0.58, 0, 0)
+scale = Vector3(0.153, 0.345, 0.152)
+mesh = ExtResource("9_panel")
+material_override = ExtResource("4_white")
+
+[node name="ForearmPinLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.095, 1.272, -0.22)
+rotation = Vector3(0.58, 0, 0)
+mesh = SubResource("CoverStripMesh")
+material_override = ExtResource("5_dark")
+
+[node name="ForearmPinRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.095, 1.272, -0.22)
+rotation = Vector3(0.58, 0, 0)
+mesh = SubResource("CoverStripMesh")
+material_override = ExtResource("5_dark")
+
+[node name="ToolPadLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.085, 1.37, -0.72)
+mesh = SubResource("GripPadMesh")
+material_override = ExtResource("5_dark")
+
+[node name="ToolPadRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.085, 1.37, -0.72)
+mesh = SubResource("GripPadMesh")
+material_override = ExtResource("5_dark")
+
+[node name="ChassisTopServicePanel" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.57, 0.29)
+scale = Vector3(0.36, 0.028, 0.115)
+mesh = ExtResource("9_panel")
+material_override = ExtResource("4_white")
+
+[node name="RearBeacon" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.572, 0.349)
 mesh = SubResource("StatusStripMesh")
 material_override = ExtResource("7_cyan")
 
