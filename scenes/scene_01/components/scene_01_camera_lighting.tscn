@@ -4,12 +4,15 @@
 
 [sub_resource type="Environment" id="SceneEnvironment"]
 background_mode = 1
-background_color = Color(0.055, 0.075, 0.11, 1)
+background_color = Color(0.6, 0.64, 0.69, 1)
 ambient_light_source = 3
-ambient_light_color = Color(0.62, 0.7, 0.82, 1)
-ambient_light_energy = 0.72
+ambient_light_color = Color(0.88, 0.92, 0.97, 1)
+ambient_light_energy = 0.55
 reflected_light_source = 2
 tonemap_mode = 2
+ssao_enabled = true
+ssao_radius = 0.9
+ssao_intensity = 1.42
 
 [node name="Scene01CameraRig" type="Node3D"]
 script = ExtResource("1_camera_rig")
@@ -29,14 +32,14 @@ current = true
 
 [node name="KeyLight" type="DirectionalLight3D" parent="."]
 rotation_degrees = Vector3(-58, -32, 0)
-light_color = Color(1, 0.92, 0.8, 1)
-light_energy = 1.25
+light_color = Color(1, 0.95, 0.9, 1)
+light_energy = 0.92
 shadow_enabled = true
 
 [node name="FillLight" type="DirectionalLight3D" parent="."]
 rotation_degrees = Vector3(-38, 145, 0)
-light_color = Color(0.48, 0.64, 1, 1)
-light_energy = 0.48
+light_color = Color(0.7, 0.82, 0.98, 1)
+light_energy = 0.16
 shadow_enabled = false
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]

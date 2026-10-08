@@ -14,6 +14,7 @@ class FakeVehicleManager extends Node:
 		return vehicles.duplicate()
 
 var test := CONTRACT_TEST_SCRIPT.new()
+var fixture_root := Node.new()
 
 
 func _init() -> void:
@@ -27,16 +28,19 @@ func _init() -> void:
 	_test_reconfigure_clears_runtime_state_but_preserves_cache()
 	_test_invalidate_vehicle_clears_published_batch_but_preserves_other_cache()
 	_test_same_revision_changed_structure_is_rejected_until_invalidated()
+	fixture_root.free()
 	test.finish(self, "Scene 01 assembly compile gate contract tests")
 
 
 func _test_successful_prepare_publishes_all_results_and_reuses_cache() -> void:
 	var manager := FakeVehicleManager.new()
+	fixture_root.add_child(manager)
 	manager.vehicles = [
 		_make_actor(_make_arm_definition()),
 		_make_actor(_make_transport_definition()),
 	]
 	var gate := GATE_SCRIPT.new()
+	fixture_root.add_child(gate)
 	gate.configure(manager)
 	test.expect_true(gate.prepare_scene_run(), "Configured Scene 01 presets should pass run preparation.")
 	var first_arm_result = gate.get_compile_result(&"arm_vehicle")
@@ -55,11 +59,13 @@ func _test_successful_prepare_publishes_all_results_and_reuses_cache() -> void:
 
 func _test_probe_does_not_publish_runtime_state() -> void:
 	var manager := FakeVehicleManager.new()
+	fixture_root.add_child(manager)
 	manager.vehicles = [
 		_make_actor(_make_arm_definition()),
 		_make_actor(_make_transport_definition()),
 	]
 	var gate := GATE_SCRIPT.new()
+	fixture_root.add_child(gate)
 	gate.configure(manager)
 	gate.set_required_capabilities(
 		&"transport_vehicle",
@@ -101,11 +107,13 @@ func _test_probe_does_not_publish_runtime_state() -> void:
 
 func _test_capability_failure_publishes_no_partial_runtime_state() -> void:
 	var manager := FakeVehicleManager.new()
+	fixture_root.add_child(manager)
 	manager.vehicles = [
 		_make_actor(_make_arm_definition()),
 		_make_actor(_make_transport_definition()),
 	]
 	var gate := GATE_SCRIPT.new()
+	fixture_root.add_child(gate)
 	gate.configure(manager)
 	gate.set_required_capabilities(
 		&"transport_vehicle",
@@ -126,11 +134,13 @@ func _test_capability_failure_publishes_no_partial_runtime_state() -> void:
 
 func _test_requirement_changes_invalidate_publication_but_preserve_cache() -> void:
 	var manager := FakeVehicleManager.new()
+	fixture_root.add_child(manager)
 	manager.vehicles = [
 		_make_actor(_make_arm_definition()),
 		_make_actor(_make_transport_definition()),
 	]
 	var gate := GATE_SCRIPT.new()
+	fixture_root.add_child(gate)
 	gate.configure(manager)
 	test.expect_true(gate.prepare_scene_run(), "Initial valid batch should publish before requirements change.")
 	gate.set_required_capabilities(
@@ -151,11 +161,13 @@ func _test_requirement_changes_invalidate_publication_but_preserve_cache() -> vo
 
 func _test_missing_required_vehicle_rejects_and_clears_publication() -> void:
 	var manager := FakeVehicleManager.new()
+	fixture_root.add_child(manager)
 	manager.vehicles = [
 		_make_actor(_make_arm_definition()),
 		_make_actor(_make_transport_definition()),
 	]
 	var gate := GATE_SCRIPT.new()
+	fixture_root.add_child(gate)
 	gate.configure(manager)
 	test.expect_true(gate.prepare_scene_run(), "Initial valid batch should publish runtime results.")
 	gate.set_required_capabilities(
@@ -171,11 +183,13 @@ func _test_missing_required_vehicle_rejects_and_clears_publication() -> void:
 
 func _test_empty_capability_requirement_does_not_require_missing_vehicle() -> void:
 	var manager := FakeVehicleManager.new()
+	fixture_root.add_child(manager)
 	manager.vehicles = [
 		_make_actor(_make_arm_definition()),
 		_make_actor(_make_transport_definition()),
 	]
 	var gate := GATE_SCRIPT.new()
+	fixture_root.add_child(gate)
 	gate.configure(manager)
 	gate.set_required_capabilities(&"missing_vehicle", [&"", &""])
 	gate.set_required_capabilities(
@@ -198,8 +212,10 @@ func _test_empty_capability_requirement_does_not_require_missing_vehicle() -> vo
 
 func _test_unconfigured_vehicle_definition_is_rejected_as_invalid() -> void:
 	var manager := FakeVehicleManager.new()
+	fixture_root.add_child(manager)
 	manager.vehicles = [_make_actor(VEHICLE_DEFINITION_SCRIPT.new())]
 	var gate := GATE_SCRIPT.new()
+	fixture_root.add_child(gate)
 	gate.configure(manager)
 	test.expect_false(gate.prepare_scene_run(), "Unconfigured vehicle definitions must reject run preparation.")
 	var diagnostics := gate.get_last_diagnostics()
@@ -216,19 +232,23 @@ func _test_unconfigured_vehicle_definition_is_rejected_as_invalid() -> void:
 
 func _test_reconfigure_clears_runtime_state_but_preserves_cache() -> void:
 	var first_manager := FakeVehicleManager.new()
+	fixture_root.add_child(first_manager)
 	first_manager.vehicles = [
 		_make_actor(_make_arm_definition()),
 		_make_actor(_make_transport_definition()),
 	]
 	var second_manager := FakeVehicleManager.new()
+	fixture_root.add_child(second_manager)
 	second_manager.vehicles = [
 		_make_actor(_make_arm_definition()),
 		_make_actor(_make_transport_definition()),
 	]
 	var third_manager := FakeVehicleManager.new()
+	fixture_root.add_child(third_manager)
 	third_manager.vehicles = second_manager.vehicles.duplicate()
 
 	var gate := GATE_SCRIPT.new()
+	fixture_root.add_child(gate)
 	gate.configure(first_manager)
 	test.expect_true(gate.prepare_scene_run(), "Initial manager should publish a complete batch.")
 	test.expect_equal(gate.get_compile_cache_size(), 2, "Initial preparation should populate both compile cache entries.")
@@ -251,11 +271,13 @@ func _test_reconfigure_clears_runtime_state_but_preserves_cache() -> void:
 
 func _test_invalidate_vehicle_clears_published_batch_but_preserves_other_cache() -> void:
 	var manager := FakeVehicleManager.new()
+	fixture_root.add_child(manager)
 	manager.vehicles = [
 		_make_actor(_make_arm_definition()),
 		_make_actor(_make_transport_definition()),
 	]
 	var gate := GATE_SCRIPT.new()
+	fixture_root.add_child(gate)
 	gate.configure(manager)
 	test.expect_true(gate.prepare_scene_run(), "Initial batch should compile before invalidation.")
 	var first_transport_result = gate.get_compile_result(&"transport_vehicle")
@@ -274,8 +296,10 @@ func _test_invalidate_vehicle_clears_published_batch_but_preserves_other_cache()
 func _test_same_revision_changed_structure_is_rejected_until_invalidated() -> void:
 	var arm_actor = _make_actor(_make_arm_definition())
 	var manager := FakeVehicleManager.new()
+	fixture_root.add_child(manager)
 	manager.vehicles = [arm_actor]
 	var gate := GATE_SCRIPT.new()
+	fixture_root.add_child(gate)
 	gate.configure(manager)
 	test.expect_true(gate.prepare_scene_run(), "Initial arm preset should compile.")
 
@@ -301,6 +325,7 @@ func _has_diagnostic(diagnostics: Array, code: StringName) -> bool:
 
 func _make_actor(definition):
 	var actor := VEHICLE_ACTOR_SCRIPT.new()
+	fixture_root.add_child(actor)
 	actor.definition = definition
 	return actor
 

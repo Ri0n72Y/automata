@@ -2,296 +2,114 @@ class_name GridTileView
 extends Node3D
 
 const GridModelScript := preload("res://scripts/grid/grid_model.gd")
+const PLAYABLE_GRID_SIZE_PARAMETER := &"tile_repeat"
 
-enum RenderMode {
-	NONE,
-	STATIC,
-	DYNAMIC,
-}
-
-@export_range(0.0, 0.25, 0.01) var tile_gap: float = 0.04
-@export_range(0.01, 0.5, 0.01) var tile_height: float = 0.08
-@export var normal_tile_color: Color = Color(0.45, 0.48, 0.52, 1.0)
-@export var power_tile_color: Color = Color(0.92, 0.96, 1.0, 1.0)
-@export var boundary_color: Color = Color(0.12, 0.15, 0.2, 1.0)
 @export var ground_collision_layer: int = 1
 
-@export_group("Static Scene")
-@export var use_static_scene_tiles: bool = false
-@export_range(1, 256, 1) var static_grid_width: int = 12
-@export_range(1, 256, 1) var static_grid_height: int = 8
-@export var normal_tile_material: Material
-@export var power_tile_material: Material
-@export var boundary_tile_material: Material
-
-var _active_tile_container: Node3D
-var _static_tile_container: Node3D
-var _render_mode: int = RenderMode.NONE
-var _draw_generation: int = 0
-var _tile_count: int = 0
+var _tiles_root: Node3D
+var _playable_floor: MeshInstance3D
+var _ground_body: StaticBody3D
+var _ground_shape: CollisionShape3D
+var _surface_active: bool = false
 
 
 func _ready() -> void:
-	if use_static_scene_tiles and _bind_static_scene():
-		_activate_static_scene()
+	if not _bind_surface_nodes():
+		push_error("GridTileView is missing required authored field nodes.")
 
 
-func draw(model: GridModelScript) -> void:
-	rebuild(model)
+func draw(model: GridModelScript) -> bool:
+	if model == null:
+		return _fail_validation("GridModel is missing.")
+	if not _bind_surface_nodes():
+		return _fail_validation("required authored field nodes are missing.")
+
+	var mismatch := _model_compatibility_mismatch(model)
+	if not mismatch.is_empty():
+		return _fail_validation(mismatch)
+
+	_set_ground_enabled(true)
+	_surface_active = true
+	return true
 
 
-func rebuild(model: GridModelScript) -> void:
-	if use_static_scene_tiles and _apply_model_to_static_scene(model):
-		return
-	_rebuild_dynamic(model)
-
-
-func get_tile_count() -> int:
-	return _tile_count
-
-
-func is_using_static_scene() -> bool:
-	return _render_mode == RenderMode.STATIC
-
-
-func is_using_dynamic_scene() -> bool:
-	return _render_mode == RenderMode.DYNAMIC
-
-
-func get_tile_node(cell: Vector2i) -> MeshInstance3D:
-	if _render_mode == RenderMode.STATIC:
-		return get_node_or_null(
-			"Tiles/Row_%d/Tile_%d" % [cell.y, cell.x]
-		) as MeshInstance3D
-	if _render_mode != RenderMode.DYNAMIC or _active_tile_container == null:
-		return null
-	return _active_tile_container.get_node_or_null(
-		"Tiles/Tile_%d_%d" % [cell.x, cell.y]
-	) as MeshInstance3D
+func is_surface_active() -> bool:
+	return _surface_active
 
 
 func get_ground_body() -> StaticBody3D:
-	if _render_mode == RenderMode.STATIC:
-		return get_node_or_null("Tiles/GroundBody") as StaticBody3D
-	if _render_mode != RenderMode.DYNAMIC or _active_tile_container == null:
-		return null
-	return _active_tile_container.get_node_or_null("GroundBody") as StaticBody3D
+	if _ground_body == null:
+		_bind_surface_nodes()
+	return _ground_body
 
 
-func _bind_static_scene() -> bool:
-	var tiles := get_node_or_null("Tiles") as Node3D
-	var ground_body := get_node_or_null("Tiles/GroundBody") as StaticBody3D
-	if tiles == null or ground_body == null:
-		return false
-	_static_tile_container = tiles
-	return true
+func _bind_surface_nodes() -> bool:
+	if (
+		_tiles_root != null
+		and _playable_floor != null
+		and _ground_body != null
+		and _ground_shape != null
+	):
+		return true
+
+	_tiles_root = get_node_or_null("Tiles") as Node3D
+	_playable_floor = get_node_or_null("Tiles/SurfaceVisuals/PlayableFloor") as MeshInstance3D
+	_ground_body = get_node_or_null("Tiles/GroundBody") as StaticBody3D
+	_ground_shape = get_node_or_null("Tiles/GroundBody/GroundShape") as CollisionShape3D
+	return (
+		_tiles_root != null
+		and _playable_floor != null
+		and _ground_body != null
+		and _ground_shape != null
+	)
 
 
-func _activate_static_scene() -> bool:
-	if _static_tile_container == null and not _bind_static_scene():
-		return false
-	_release_dynamic_container()
-	_static_tile_container.visible = true
-	var ground_body := _static_tile_container.get_node_or_null("GroundBody") as StaticBody3D
-	if ground_body == null:
-		return false
-	ground_body.collision_layer = ground_collision_layer
-	ground_body.collision_mask = 0
-	var ground_shape := ground_body.get_node_or_null("GroundShape") as CollisionShape3D
-	if ground_shape != null:
-		ground_shape.disabled = false
-	_active_tile_container = _static_tile_container
-	_render_mode = RenderMode.STATIC
-	return true
+func _model_compatibility_mismatch(model: GridModelScript) -> String:
+	var plane := _playable_floor.mesh as PlaneMesh
+	if plane == null:
+		return "PlayableFloor must provide an authored PlaneMesh compatibility surface."
 
+	var authored_grid_size_variant: Variant = _playable_floor.get_instance_shader_parameter(
+		PLAYABLE_GRID_SIZE_PARAMETER
+	)
+	if not (authored_grid_size_variant is Vector2):
+		return "PlayableFloor is missing its authored logical grid size."
+	var authored_grid_size: Vector2 = authored_grid_size_variant
+	var model_grid_size := Vector2(float(model.width), float(model.height))
+	if not authored_grid_size.is_equal_approx(model_grid_size):
+		return "GridModel dimensions do not match the authored PlayableFloor grid."
 
-func _deactivate_static_scene() -> void:
-	if _static_tile_container == null and not _bind_static_scene():
-		return
-	_static_tile_container.visible = false
-	var ground_body := _static_tile_container.get_node_or_null("GroundBody") as StaticBody3D
-	if ground_body == null:
-		return
-	ground_body.collision_layer = 0
-	var ground_shape := ground_body.get_node_or_null("GroundShape") as CollisionShape3D
-	if ground_shape != null:
-		ground_shape.disabled = true
-
-
-func _apply_model_to_static_scene(model: GridModelScript) -> bool:
-	if model == null:
-		return false
-	if model.width > static_grid_width or model.height > static_grid_height:
-		return false
-	if not _activate_static_scene():
-		return false
-
-	var tiles := _static_tile_container
-	tiles.position = model.local_origin
-	tiles.scale = Vector3.ONE
-
-	_tile_count = 0
-	for cell_y in range(static_grid_height):
-		var row := get_node_or_null("Tiles/Row_%d" % cell_y) as Node3D
-		if row != null:
-			row.position = Vector3(0.0, 0.0, (float(cell_y) + 0.5) * model.cell_size)
-		for cell_x in range(static_grid_width):
-			var cell := Vector2i(cell_x, cell_y)
-			var tile := get_tile_node(cell)
-			if tile == null:
-				continue
-			tile.position = Vector3(
-				(float(cell_x) + 0.5) * model.cell_size,
-				-tile_height * 0.5,
-				0.0
-			)
-			tile.scale = Vector3(model.cell_size, 1.0, model.cell_size)
-			var inside_model := cell_x < model.width and cell_y < model.height
-			tile.visible = inside_model
-			if not inside_model:
-				continue
-			tile.material_override = _static_material_for_cell_type(model.get_cell_type(cell))
-			_tile_count += 1
-
-	var ground_body := get_ground_body()
-	if ground_body != null:
-		ground_body.collision_layer = ground_collision_layer
-		var ground_shape := ground_body.get_node_or_null("GroundShape") as CollisionShape3D
-		if ground_shape != null:
-			var box_shape := ground_shape.shape as BoxShape3D
-			if box_shape != null:
-				var ground_depth := maxf(tile_height, 0.05)
-				box_shape.size = Vector3(
-					float(model.width) * model.cell_size,
-					ground_depth,
-					float(model.height) * model.cell_size
-				)
-				ground_shape.position = Vector3(
-					float(model.width) * model.cell_size * 0.5,
-					-ground_depth * 0.5,
-					float(model.height) * model.cell_size * 0.5
-				)
-	return true
-
-
-func _static_material_for_cell_type(cell_type: int) -> Material:
-	match cell_type:
-		GridModelScript.CellType.NORMAL_TILE:
-			return normal_tile_material
-		GridModelScript.CellType.WHITE_POWER_TILE:
-			return power_tile_material
-		_:
-			return boundary_tile_material
-
-
-func _rebuild_dynamic(model: GridModelScript) -> void:
-	_deactivate_static_scene()
-	_release_dynamic_container()
-	_tile_count = 0
-	_render_mode = RenderMode.NONE
-
-	if model == null:
-		return
-
-	_draw_generation += 1
-	var container := Node3D.new()
-	container.name = "TileBatch_%d" % _draw_generation
-	add_child(container)
-	_active_tile_container = container
-	_render_mode = RenderMode.DYNAMIC
-
-	var tiles := Node3D.new()
-	tiles.name = "Tiles"
-	container.add_child(tiles)
-
-	var tile_mesh := BoxMesh.new()
-	var tile_size := maxf(model.cell_size - tile_gap, 0.01)
-	tile_mesh.size = Vector3(tile_size, tile_height, tile_size)
-
-	var normal_material := _create_tile_material(normal_tile_color)
-	var power_material := _create_tile_material(power_tile_color, true)
-	var boundary_material := _create_tile_material(boundary_color)
-
-	for cell_y in range(model.height):
-		for cell_x in range(model.width):
-			var cell := Vector2i(cell_x, cell_y)
-			var tile := MeshInstance3D.new()
-			tile.name = "Tile_%d_%d" % [cell_x, cell_y]
-			tile.mesh = tile_mesh
-			tile.material_override = _material_for_cell_type(
-				model.get_cell_type(cell),
-				normal_material,
-				power_material,
-				boundary_material
-			)
-			tile.position = model.cell_to_position(cell) - Vector3.UP * tile_height * 0.5
-			tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-			tiles.add_child(tile)
-			_tile_count += 1
-
-	var ground_body := StaticBody3D.new()
-	ground_body.name = "GroundBody"
-	ground_body.collision_layer = ground_collision_layer
-	ground_body.collision_mask = 0
-	container.add_child(ground_body)
-
-	var ground_shape := CollisionShape3D.new()
-	ground_shape.name = "GroundShape"
-	var box_shape := BoxShape3D.new()
-	var ground_depth := maxf(tile_height, 0.05)
-	box_shape.size = Vector3(
+	var model_physical_size := Vector2(
 		float(model.width) * model.cell_size,
-		ground_depth,
 		float(model.height) * model.cell_size
 	)
-	ground_shape.shape = box_shape
-	ground_shape.position = model.local_origin + Vector3(
-		float(model.width) * model.cell_size * 0.5,
-		-ground_depth * 0.5,
-		float(model.height) * model.cell_size * 0.5
+	if not plane.size.is_equal_approx(model_physical_size):
+		return "GridModel physical size does not match the authored PlayableFloor bounds."
+
+	var authored_origin := _tiles_root.position + Vector3(
+		_playable_floor.position.x - plane.size.x * 0.5,
+		0.0,
+		_playable_floor.position.z - plane.size.y * 0.5
 	)
-	ground_body.add_child(ground_shape)
+	if not authored_origin.is_equal_approx(model.local_origin):
+		return "GridModel origin does not match the authored PlayableFloor bounds."
+
+	if not (_ground_shape.shape is BoxShape3D):
+		return "GroundShape must provide an authored BoxShape3D interaction surface."
+
+	return ""
 
 
-func _release_dynamic_container() -> void:
-	if _render_mode != RenderMode.DYNAMIC or _active_tile_container == null:
+func _fail_validation(message: String) -> bool:
+	_surface_active = false
+	_set_ground_enabled(false)
+	push_error("GridTileView serialized field validation failed: %s" % message)
+	return false
+
+
+func _set_ground_enabled(enabled: bool) -> void:
+	if _ground_body == null or _ground_shape == null:
 		return
-	_active_tile_container.visible = false
-	var ground_body := _active_tile_container.get_node_or_null("GroundBody") as StaticBody3D
-	if ground_body != null:
-		ground_body.collision_layer = 0
-		var ground_shape := ground_body.get_node_or_null("GroundShape") as CollisionShape3D
-		if ground_shape != null:
-			ground_shape.disabled = true
-	if _active_tile_container.is_inside_tree():
-		_active_tile_container.queue_free()
-	else:
-		_active_tile_container.free()
-	_active_tile_container = null
-
-
-func _create_tile_material(color: Color, use_emission: bool = false) -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
-	material.albedo_color = color
-	material.metallic = 0.04
-	material.roughness = 0.8
-	if use_emission:
-		material.emission_enabled = true
-		material.emission = color * 0.18
-		material.emission_energy_multiplier = 0.35
-	return material
-
-
-func _material_for_cell_type(
-	cell_type: int,
-	normal_material: StandardMaterial3D,
-	power_material: StandardMaterial3D,
-	boundary_material: StandardMaterial3D
-) -> StandardMaterial3D:
-	match cell_type:
-		GridModelScript.CellType.NORMAL_TILE:
-			return normal_material
-		GridModelScript.CellType.WHITE_POWER_TILE:
-			return power_material
-		_:
-			return boundary_material
+	_ground_body.collision_layer = ground_collision_layer if enabled else 0
+	_ground_body.collision_mask = 0
+	_ground_shape.disabled = not enabled
