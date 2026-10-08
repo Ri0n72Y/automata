@@ -1,4 +1,4 @@
-[gd_scene load_steps=34 format=3]
+[gd_scene load_steps=30 format=3]
 
 [ext_resource type="Script" path="res://scripts/vehicles/vehicle_actor.gd" id="1_actor"]
 [ext_resource type="PackedScene" path="res://scenes/scene_01/objects/standard_block_placeholder.tscn" id="2_block"]
@@ -8,30 +8,14 @@
 [ext_resource type="Material" path="res://scenes/scene_01/materials/dark_mechanical_metal.tres" id="6_dark"]
 [ext_resource type="Material" path="res://scenes/scene_01/materials/rubber.tres" id="7_rubber"]
 [ext_resource type="Material" path="res://scenes/scene_01/materials/cyan_emissive.tres" id="8_cyan"]
-
-[sub_resource type="BoxMesh" id="BellyPanMesh"]
-size = Vector3(0.7, 0.11, 0.64)
-
-[sub_resource type="BoxMesh" id="ChassisShellMesh"]
-size = Vector3(0.62, 0.2, 0.54)
+[ext_resource type="ArrayMesh" path="res://assets/scene_01/meshes/rounded_shell.obj" id="9_shell"]
+[ext_resource type="ArrayMesh" path="res://assets/scene_01/meshes/beveled_panel.obj" id="10_panel"]
 
 [sub_resource type="CylinderMesh" id="ShellCornerMesh"]
-top_radius = 0.075
-bottom_radius = 0.075
-height = 0.2
-radial_segments = 16
-
-[sub_resource type="BoxMesh" id="BellyShieldMesh"]
-size = Vector3(0.59, 0.035, 0.54)
-
-[sub_resource type="BoxMesh" id="SideSkirtMesh"]
-size = Vector3(0.045, 0.11, 0.45)
-
-[sub_resource type="BoxMesh" id="BumperMesh"]
-size = Vector3(0.56, 0.08, 0.075)
-
-[sub_resource type="BoxMesh" id="FrontPanelMesh"]
-size = Vector3(0.41, 0.1, 0.022)
+top_radius = 0.027
+bottom_radius = 0.027
+height = 0.014
+radial_segments = 20
 
 [sub_resource type="BoxMesh" id="PanelSeamMesh"]
 size = Vector3(0.012, 0.09, 0.28)
@@ -57,24 +41,6 @@ bottom_radius = 0.065
 height = 0.133
 radial_segments = 24
 
-[sub_resource type="BoxMesh" id="TraySupportMesh"]
-size = Vector3(0.54, 0.12, 0.09)
-
-[sub_resource type="BoxMesh" id="TrayFrameMesh"]
-size = Vector3(0.75, 0.065, 0.71)
-
-[sub_resource type="BoxMesh" id="TrayMesh"]
-size = Vector3(0.71, 0.075, 0.665)
-
-[sub_resource type="BoxMesh" id="TrayBedInsetMesh"]
-size = Vector3(0.63, 0.017, 0.565)
-
-[sub_resource type="BoxMesh" id="SideRailMesh"]
-size = Vector3(0.046, 0.15, 0.6)
-
-[sub_resource type="BoxMesh" id="EndRailMesh"]
-size = Vector3(0.645, 0.135, 0.045)
-
 [sub_resource type="CylinderMesh" id="CornerPostMesh"]
 top_radius = 0.035
 bottom_radius = 0.035
@@ -96,8 +62,35 @@ size = Vector3(0.045, 0.04, 0.022)
 [sub_resource type="BoxMesh" id="TrayTabMesh"]
 size = Vector3(0.085, 0.025, 0.06)
 
-[sub_resource type="BoxMesh" id="HitchMesh"]
-size = Vector3(0.16, 0.065, 0.085)
+[sub_resource type="CylinderMesh" id="WheelRingMesh"]
+top_radius = 0.118
+bottom_radius = 0.118
+height = 0.018
+radial_segments = 32
+
+[sub_resource type="CylinderMesh" id="WheelCenterMesh"]
+top_radius = 0.064
+bottom_radius = 0.064
+height = 0.022
+radial_segments = 32
+
+[sub_resource type="BoxMesh" id="LightbarMesh"]
+size = Vector3(0.32, 0.024, 0.025)
+
+[sub_resource type="BoxMesh" id="CargoTrackMesh"]
+size = Vector3(0.028, 0.015, 0.56)
+
+[sub_resource type="BoxMesh" id="CargoTieMesh"]
+size = Vector3(0.060, 0.022, 0.045)
+
+[sub_resource type="BoxMesh" id="VentMesh"]
+size = Vector3(0.012, 0.052, 0.033)
+
+[sub_resource type="CylinderMesh" id="RailCapMesh"]
+top_radius = 0.042
+bottom_radius = 0.042
+height = 0.016
+radial_segments = 24
 
 [sub_resource type="BoxShape3D" id="SelectionShape"]
 size = Vector3(0.91, 1.15, 0.91)
@@ -113,47 +106,52 @@ script = ExtResource("3_state")
 
 [node name="LowerChassis" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.215, 0)
-mesh = SubResource("BellyPanMesh")
+scale = Vector3(0.7, 0.11, 0.64)
+mesh = ExtResource("9_shell")
 material_override = ExtResource("6_dark")
 
 [node name="BellyShield" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.142, 0)
-mesh = SubResource("BellyShieldMesh")
+scale = Vector3(0.59, 0.035, 0.54)
+mesh = ExtResource("10_panel")
 material_override = ExtResource("6_dark")
 
 [node name="Body" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.363, 0)
-mesh = SubResource("ChassisShellMesh")
+scale = Vector3(0.62, 0.2, 0.54)
+mesh = ExtResource("9_shell")
 material_override = ExtResource("5_white")
 
 [node name="ShellCornerFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(-0.28, 0.363, -0.245)
+position = Vector3(-0.245, 0.473, -0.2)
 mesh = SubResource("ShellCornerMesh")
-material_override = ExtResource("5_white")
+material_override = ExtResource("6_dark")
 
 [node name="ShellCornerFrontRight" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(0.28, 0.363, -0.245)
+position = Vector3(0.245, 0.473, -0.2)
 mesh = SubResource("ShellCornerMesh")
-material_override = ExtResource("5_white")
+material_override = ExtResource("6_dark")
 
 [node name="ShellCornerRearLeft" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(-0.28, 0.363, 0.245)
+position = Vector3(-0.245, 0.473, 0.2)
 mesh = SubResource("ShellCornerMesh")
-material_override = ExtResource("5_white")
+material_override = ExtResource("6_dark")
 
 [node name="ShellCornerRearRight" type="MeshInstance3D" parent="VisualRoot"]
-position = Vector3(0.28, 0.363, 0.245)
+position = Vector3(0.245, 0.473, 0.2)
 mesh = SubResource("ShellCornerMesh")
-material_override = ExtResource("5_white")
+material_override = ExtResource("6_dark")
 
 [node name="SideSkirtLeft" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(-0.36, 0.276, 0)
-mesh = SubResource("SideSkirtMesh")
+scale = Vector3(0.045, 0.11, 0.45)
+mesh = ExtResource("10_panel")
 material_override = ExtResource("6_dark")
 
 [node name="SideSkirtRight" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0.36, 0.276, 0)
-mesh = SubResource("SideSkirtMesh")
+scale = Vector3(0.045, 0.11, 0.45)
+mesh = ExtResource("10_panel")
 material_override = ExtResource("6_dark")
 
 [node name="PanelSeamLeft" type="MeshInstance3D" parent="VisualRoot"]
@@ -168,17 +166,20 @@ material_override = ExtResource("6_dark")
 
 [node name="FrontBumper" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.251, -0.365)
-mesh = SubResource("BumperMesh")
+scale = Vector3(0.56, 0.08, 0.075)
+mesh = ExtResource("10_panel")
 material_override = ExtResource("6_dark")
 
 [node name="RearBumper" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.251, 0.365)
-mesh = SubResource("BumperMesh")
+scale = Vector3(0.56, 0.08, 0.075)
+mesh = ExtResource("10_panel")
 material_override = ExtResource("6_dark")
 
 [node name="FrontControlPanel" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.4, -0.319)
-mesh = SubResource("FrontPanelMesh")
+scale = Vector3(0.41, 0.1, 0.022)
+mesh = ExtResource("10_panel")
 material_override = ExtResource("6_dark")
 
 [node name="DirectionMarker" type="MeshInstance3D" parent="VisualRoot"]
@@ -198,7 +199,8 @@ material_override = ExtResource("8_cyan")
 
 [node name="RearTowBracket" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.25, 0.38)
-mesh = SubResource("HitchMesh")
+scale = Vector3(0.16, 0.065, 0.085)
+mesh = ExtResource("10_panel")
 material_override = ExtResource("6_dark")
 
 [node name="FrontAxleHousing" type="MeshInstance3D" parent="VisualRoot"]
@@ -285,47 +287,56 @@ material_override = ExtResource("5_white")
 
 [node name="TraySupportFront" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.51, -0.23)
-mesh = SubResource("TraySupportMesh")
+scale = Vector3(0.54, 0.12, 0.09)
+mesh = ExtResource("10_panel")
 material_override = ExtResource("6_dark")
 
 [node name="TraySupportRear" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.51, 0.23)
-mesh = SubResource("TraySupportMesh")
+scale = Vector3(0.54, 0.12, 0.09)
+mesh = ExtResource("10_panel")
 material_override = ExtResource("6_dark")
 
 [node name="TrayFrame" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.559, 0)
-mesh = SubResource("TrayFrameMesh")
+scale = Vector3(0.75, 0.065, 0.71)
+mesh = ExtResource("9_shell")
 material_override = ExtResource("6_dark")
 
 [node name="Tray" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.624, 0)
-mesh = SubResource("TrayMesh")
+scale = Vector3(0.71, 0.075, 0.665)
+mesh = ExtResource("9_shell")
 material_override = ExtResource("5_white")
 
 [node name="TrayBedInset" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.667, 0)
-mesh = SubResource("TrayBedInsetMesh")
+scale = Vector3(0.63, 0.017, 0.565)
+mesh = ExtResource("10_panel")
 material_override = ExtResource("6_dark")
 
 [node name="TrayRailLeft" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(-0.357, 0.764, 0)
-mesh = SubResource("SideRailMesh")
+scale = Vector3(0.046, 0.15, 0.6)
+mesh = ExtResource("10_panel")
 material_override = ExtResource("5_white")
 
 [node name="TrayRailRight" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0.357, 0.764, 0)
-mesh = SubResource("SideRailMesh")
+scale = Vector3(0.046, 0.15, 0.6)
+mesh = ExtResource("10_panel")
 material_override = ExtResource("5_white")
 
 [node name="TrayRailFront" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.766, -0.34)
-mesh = SubResource("EndRailMesh")
+scale = Vector3(0.645, 0.135, 0.045)
+mesh = ExtResource("10_panel")
 material_override = ExtResource("5_white")
 
 [node name="TrayRailRear" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.766, 0.34)
-mesh = SubResource("EndRailMesh")
+scale = Vector3(0.645, 0.135, 0.045)
+mesh = ExtResource("10_panel")
 material_override = ExtResource("5_white")
 
 [node name="TrayPostFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
@@ -387,6 +398,180 @@ material_override = ExtResource("6_dark")
 position = Vector3(0.257, 0.845, 0.34)
 mesh = SubResource("TrayTabMesh")
 material_override = ExtResource("6_dark")
+
+[node name="WheelFenderFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.365, 0.34, -0.265)
+scale = Vector3(0.21, 0.055, 0.204)
+mesh = ExtResource("10_panel")
+material_override = ExtResource("5_white")
+
+[node name="WheelLipFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.44, 0.164, -0.265)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelRingMesh")
+material_override = ExtResource("6_dark")
+
+[node name="WheelCenterFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.452, 0.164, -0.265)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelCenterMesh")
+material_override = ExtResource("8_cyan")
+
+[node name="WheelFenderRearLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.365, 0.34, 0.265)
+scale = Vector3(0.21, 0.055, 0.204)
+mesh = ExtResource("10_panel")
+material_override = ExtResource("5_white")
+
+[node name="WheelLipRearLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.44, 0.164, 0.265)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelRingMesh")
+material_override = ExtResource("6_dark")
+
+[node name="WheelCenterRearLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.452, 0.164, 0.265)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelCenterMesh")
+material_override = ExtResource("5_white")
+
+[node name="Vent1Left" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.323, 0.385, -0.15)
+mesh = SubResource("VentMesh")
+material_override = ExtResource("6_dark")
+
+[node name="Vent2Left" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.323, 0.385, 0)
+mesh = SubResource("VentMesh")
+material_override = ExtResource("6_dark")
+
+[node name="Vent3Left" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.323, 0.385, 0.15)
+mesh = SubResource("VentMesh")
+material_override = ExtResource("6_dark")
+
+[node name="WheelFenderFrontRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.365, 0.34, -0.265)
+scale = Vector3(0.21, 0.055, 0.204)
+mesh = ExtResource("10_panel")
+material_override = ExtResource("5_white")
+
+[node name="WheelLipFrontRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.44, 0.164, -0.265)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelRingMesh")
+material_override = ExtResource("6_dark")
+
+[node name="WheelCenterFrontRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.452, 0.164, -0.265)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelCenterMesh")
+material_override = ExtResource("8_cyan")
+
+[node name="WheelFenderRearRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.365, 0.34, 0.265)
+scale = Vector3(0.21, 0.055, 0.204)
+mesh = ExtResource("10_panel")
+material_override = ExtResource("5_white")
+
+[node name="WheelLipRearRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.44, 0.164, 0.265)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelRingMesh")
+material_override = ExtResource("6_dark")
+
+[node name="WheelCenterRearRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.452, 0.164, 0.265)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("WheelCenterMesh")
+material_override = ExtResource("5_white")
+
+[node name="Vent1Right" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.323, 0.385, -0.15)
+mesh = SubResource("VentMesh")
+material_override = ExtResource("6_dark")
+
+[node name="Vent2Right" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.323, 0.385, 0)
+mesh = SubResource("VentMesh")
+material_override = ExtResource("6_dark")
+
+[node name="Vent3Right" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.323, 0.385, 0.15)
+mesh = SubResource("VentMesh")
+material_override = ExtResource("6_dark")
+
+[node name="FrontLightingBar" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.435, -0.334)
+mesh = SubResource("LightbarMesh")
+material_override = ExtResource("8_cyan")
+
+[node name="RearServicePanel" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.388, 0.297)
+scale = Vector3(0.33, 0.093, 0.023)
+mesh = ExtResource("10_panel")
+material_override = ExtResource("5_white")
+
+[node name="RearLightingBar" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.428, 0.316)
+mesh = SubResource("LightbarMesh")
+material_override = ExtResource("8_cyan")
+
+[node name="CargoGuideLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.265, 0.681, 0)
+mesh = SubResource("CargoTrackMesh")
+material_override = ExtResource("5_white")
+
+[node name="CargoTieFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.265, 0.689, -0.3)
+mesh = SubResource("CargoTieMesh")
+material_override = ExtResource("6_dark")
+
+[node name="CargoTieRearLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.265, 0.689, 0.3)
+mesh = SubResource("CargoTieMesh")
+material_override = ExtResource("6_dark")
+
+[node name="CargoGuideRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.265, 0.681, 0)
+mesh = SubResource("CargoTrackMesh")
+material_override = ExtResource("5_white")
+
+[node name="CargoTieFrontRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.265, 0.689, -0.3)
+mesh = SubResource("CargoTieMesh")
+material_override = ExtResource("6_dark")
+
+[node name="CargoTieRearRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.265, 0.689, 0.3)
+mesh = SubResource("CargoTieMesh")
+material_override = ExtResource("6_dark")
+
+[node name="CornerRailCapFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.34, 0.881, -0.32)
+mesh = SubResource("RailCapMesh")
+material_override = ExtResource("5_white")
+
+[node name="CornerRailCapRearLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.34, 0.881, 0.32)
+mesh = SubResource("RailCapMesh")
+material_override = ExtResource("5_white")
+
+[node name="CornerRailCapFrontRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.34, 0.881, -0.32)
+mesh = SubResource("RailCapMesh")
+material_override = ExtResource("5_white")
+
+[node name="CornerRailCapRearRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.34, 0.881, 0.32)
+mesh = SubResource("RailCapMesh")
+material_override = ExtResource("5_white")
+
+[node name="RaisedTrayLock" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.702, -0.283)
+scale = Vector3(0.24, 0.026, 0.042)
+mesh = ExtResource("10_panel")
+material_override = ExtResource("5_white")
 
 [node name="TraySlots" type="Node3D" parent="VisualRoot"]
 unique_name_in_owner = true
