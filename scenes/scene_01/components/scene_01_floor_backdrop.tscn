@@ -7,6 +7,6 @@ size = Vector2(200, 200)
 material = ExtResource("1_floor")
 
 [node name="Scene01FloorBackdrop" type="MeshInstance3D"]
-position = Vector3(8, -0.01, 5)
+position = Vector3(8, -1.11, 5)
 mesh = SubResource("FloorMesh")
 cast_shadow = 0
