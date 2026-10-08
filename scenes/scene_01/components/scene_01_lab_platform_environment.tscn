@@ -46,46 +46,46 @@ size = Vector3(1.16, 0.018, 0.025)
 size = Vector3(0.025, 0.018, 1.02)
 
 [sub_resource type="BoxMesh" id="WallLongBase"]
-size = Vector3(9.6, 0.43, 0.22)
+size = Vector3(13.9, 0.43, 0.22)
 
 [sub_resource type="BoxMesh" id="WallShortBase"]
-size = Vector3(0.22, 0.43, 6.45)
+size = Vector3(0.22, 0.43, 8.45)
 
 [sub_resource type="BoxMesh" id="LongSill"]
-size = Vector3(9.7, 0.095, 0.29)
+size = Vector3(14, 0.095, 0.29)
 
 [sub_resource type="BoxMesh" id="ShortSill"]
-size = Vector3(0.29, 0.095, 6.55)
+size = Vector3(0.29, 0.095, 8.55)
 
 [sub_resource type="BoxMesh" id="LongHeader"]
-size = Vector3(9.75, 0.12, 0.2)
+size = Vector3(14.05, 0.12, 0.2)
 
 [sub_resource type="BoxMesh" id="ShortHeader"]
-size = Vector3(0.2, 0.12, 6.6)
+size = Vector3(0.2, 0.12, 8.6)
 
 [sub_resource type="BoxMesh" id="WallColumn"]
-size = Vector3(0.18, 1.56, 0.18)
+size = Vector3(0.21, 2.08, 0.21)
 
 [sub_resource type="BoxMesh" id="WallColumnFoot"]
-size = Vector3(0.31, 0.14, 0.31)
+size = Vector3(0.34, 0.14, 0.34)
 
 [sub_resource type="BoxMesh" id="GlassLong"]
-size = Vector3(3.02, 1.04, 0.018)
+size = Vector3(3.16, 1.71, 0.018)
 
 [sub_resource type="BoxMesh" id="GlassShort"]
-size = Vector3(0.018, 1.04, 2.02)
+size = Vector3(0.018, 1.71, 1.765)
 
 [sub_resource type="BoxMesh" id="WindowRail"]
-size = Vector3(3.03, 0.025, 0.055)
+size = Vector3(3.17, 0.025, 0.055)
 
 [sub_resource type="BoxMesh" id="WindowRailEnd"]
-size = Vector3(0.055, 0.025, 2.03)
+size = Vector3(0.055, 0.025, 1.775)
 
 [sub_resource type="BoxMesh" id="Beacon"]
-size = Vector3(0.052, 0.36, 0.055)
+size = Vector3(0.052, 0.46, 0.055)
 
 [sub_resource type="BoxMesh" id="ColumnCap"]
-size = Vector3(0.22, 0.055, 0.22)
+size = Vector3(0.25, 0.055, 0.25)
 
 [sub_resource type="BoxMesh" id="Brace"]
 size = Vector3(0.17, 0.16, 0.17)
@@ -330,100 +330,126 @@ mesh = SubResource("LongSill")
 material_override = ExtResource("1_white")
 
 [node name="RearWindowHeader" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(8, 1.68, -1.02)
+position = Vector3(8, 2.31, -1.02)
 mesh = SubResource("LongHeader")
 material_override = ExtResource("1_white")
 
 [node name="RearFrameColumn0" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(3.2, 0.94, -1.02)
+position = Vector3(1.1, 1.27, -1.02)
 mesh = SubResource("WallColumn")
 material_override = ExtResource("1_white")
 
 [node name="RearColumnFoot0" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(3.2, 0.16, -1.02)
+position = Vector3(1.1, 0.16, -1.02)
 mesh = SubResource("WallColumnFoot")
 material_override = ExtResource("2_dark")
 
 [node name="RearColumnCap0" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(3.2, 1.75, -1.02)
+position = Vector3(1.1, 2.395, -1.02)
 mesh = SubResource("ColumnCap")
 material_override = ExtResource("2_dark")
 
 [node name="RearGlassPane0" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(4.8, 1.065, -1.02)
+position = Vector3(2.825, 1.395, -1.02)
 mesh = SubResource("GlassLong")
 material_override = ExtResource("5_glass")
 cast_shadow = 0
 
 [node name="RearGlassRail0" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(4.8, 0.93, -1.02)
+position = Vector3(2.825, 1.35, -1.02)
 mesh = SubResource("WindowRail")
 material_override = ExtResource("2_dark")
 
 [node name="RearFrameColumn1" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(6.4, 0.94, -1.02)
+position = Vector3(4.55, 1.27, -1.02)
 mesh = SubResource("WallColumn")
 material_override = ExtResource("1_white")
 
 [node name="RearColumnFoot1" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(6.4, 0.16, -1.02)
+position = Vector3(4.55, 0.16, -1.02)
 mesh = SubResource("WallColumnFoot")
 material_override = ExtResource("2_dark")
 
 [node name="RearColumnCap1" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(6.4, 1.75, -1.02)
+position = Vector3(4.55, 2.395, -1.02)
 mesh = SubResource("ColumnCap")
 material_override = ExtResource("2_dark")
 
 [node name="RearGlassPane1" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(8, 1.065, -1.02)
+position = Vector3(6.275, 1.395, -1.02)
 mesh = SubResource("GlassLong")
 material_override = ExtResource("5_glass")
 cast_shadow = 0
 
 [node name="RearGlassRail1" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(8, 0.93, -1.02)
+position = Vector3(6.275, 1.35, -1.02)
 mesh = SubResource("WindowRail")
 material_override = ExtResource("2_dark")
 
 [node name="RearFrameColumn2" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(9.6, 0.94, -1.02)
+position = Vector3(8, 1.27, -1.02)
 mesh = SubResource("WallColumn")
 material_override = ExtResource("1_white")
 
 [node name="RearColumnFoot2" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(9.6, 0.16, -1.02)
+position = Vector3(8, 0.16, -1.02)
 mesh = SubResource("WallColumnFoot")
 material_override = ExtResource("2_dark")
 
 [node name="RearColumnCap2" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(9.6, 1.75, -1.02)
+position = Vector3(8, 2.395, -1.02)
 mesh = SubResource("ColumnCap")
 material_override = ExtResource("2_dark")
 
 [node name="RearGlassPane2" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(11.2, 1.065, -1.02)
+position = Vector3(9.725, 1.395, -1.02)
 mesh = SubResource("GlassLong")
 material_override = ExtResource("5_glass")
 cast_shadow = 0
 
 [node name="RearGlassRail2" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(11.2, 0.93, -1.02)
+position = Vector3(9.725, 1.35, -1.02)
 mesh = SubResource("WindowRail")
 material_override = ExtResource("2_dark")
 
 [node name="RearFrameColumn3" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(12.8, 0.94, -1.02)
+position = Vector3(11.45, 1.27, -1.02)
 mesh = SubResource("WallColumn")
 material_override = ExtResource("1_white")
 
 [node name="RearColumnFoot3" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(12.8, 0.16, -1.02)
+position = Vector3(11.45, 0.16, -1.02)
 mesh = SubResource("WallColumnFoot")
 material_override = ExtResource("2_dark")
 
 [node name="RearColumnCap3" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
-position = Vector3(12.8, 1.75, -1.02)
+position = Vector3(11.45, 2.395, -1.02)
+mesh = SubResource("ColumnCap")
+material_override = ExtResource("2_dark")
+
+[node name="RearGlassPane3" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(13.175, 1.395, -1.02)
+mesh = SubResource("GlassLong")
+material_override = ExtResource("5_glass")
+cast_shadow = 0
+
+[node name="RearGlassRail3" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(13.175, 1.35, -1.02)
+mesh = SubResource("WindowRail")
+material_override = ExtResource("2_dark")
+
+[node name="RearFrameColumn4" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(14.9, 1.27, -1.02)
+mesh = SubResource("WallColumn")
+material_override = ExtResource("1_white")
+
+[node name="RearColumnFoot4" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(14.9, 0.16, -1.02)
+mesh = SubResource("WallColumnFoot")
+material_override = ExtResource("2_dark")
+
+[node name="RearColumnCap4" type="MeshInstance3D" parent="LabBoundary/RearGlassWall"]
+position = Vector3(14.9, 2.395, -1.02)
 mesh = SubResource("ColumnCap")
 material_override = ExtResource("2_dark")
 
@@ -440,132 +466,163 @@ mesh = SubResource("ShortSill")
 material_override = ExtResource("1_white")
 
 [node name="LeftWindowHeader" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 1.68, 5)
+position = Vector3(-1.02, 2.31, 5)
 mesh = SubResource("ShortHeader")
 material_override = ExtResource("1_white")
 
 [node name="LeftFrameColumn0" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 0.94, 1.8)
+position = Vector3(-1.02, 1.27, 0.825)
 mesh = SubResource("WallColumn")
 material_override = ExtResource("1_white")
 
 [node name="LeftColumnFoot0" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 0.16, 1.8)
+position = Vector3(-1.02, 0.16, 0.825)
 mesh = SubResource("WallColumnFoot")
 material_override = ExtResource("2_dark")
 
 [node name="LeftColumnCap0" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 1.75, 1.8)
+position = Vector3(-1.02, 2.395, 0.825)
 mesh = SubResource("ColumnCap")
 material_override = ExtResource("2_dark")
 
 [node name="LeftGlassPane0" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 1.065, 2.865)
+position = Vector3(-1.02, 1.395, 1.8687)
 mesh = SubResource("GlassShort")
 material_override = ExtResource("5_glass")
 cast_shadow = 0
 
 [node name="LeftGlassRail0" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 0.93, 2.865)
+position = Vector3(-1.02, 1.35, 1.8687)
 mesh = SubResource("WindowRailEnd")
 material_override = ExtResource("2_dark")
 
 [node name="LeftFrameColumn1" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 0.94, 3.93)
+position = Vector3(-1.02, 1.27, 2.9125)
 mesh = SubResource("WallColumn")
 material_override = ExtResource("1_white")
 
 [node name="LeftColumnFoot1" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 0.16, 3.93)
+position = Vector3(-1.02, 0.16, 2.9125)
 mesh = SubResource("WallColumnFoot")
 material_override = ExtResource("2_dark")
 
 [node name="LeftColumnCap1" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 1.75, 3.93)
+position = Vector3(-1.02, 2.395, 2.9125)
 mesh = SubResource("ColumnCap")
 material_override = ExtResource("2_dark")
 
 [node name="LeftGlassPane1" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 1.065, 4.995)
+position = Vector3(-1.02, 1.395, 3.9562)
 mesh = SubResource("GlassShort")
 material_override = ExtResource("5_glass")
 cast_shadow = 0
 
 [node name="LeftGlassRail1" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 0.93, 4.995)
+position = Vector3(-1.02, 1.35, 3.9562)
 mesh = SubResource("WindowRailEnd")
 material_override = ExtResource("2_dark")
 
 [node name="LeftFrameColumn2" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 0.94, 6.06)
+position = Vector3(-1.02, 1.27, 5)
 mesh = SubResource("WallColumn")
 material_override = ExtResource("1_white")
 
 [node name="LeftColumnFoot2" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 0.16, 6.06)
+position = Vector3(-1.02, 0.16, 5)
 mesh = SubResource("WallColumnFoot")
 material_override = ExtResource("2_dark")
 
 [node name="LeftColumnCap2" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 1.75, 6.06)
+position = Vector3(-1.02, 2.395, 5)
 mesh = SubResource("ColumnCap")
 material_override = ExtResource("2_dark")
 
 [node name="LeftGlassPane2" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 1.065, 7.125)
+position = Vector3(-1.02, 1.395, 6.0438)
 mesh = SubResource("GlassShort")
 material_override = ExtResource("5_glass")
 cast_shadow = 0
 
 [node name="LeftGlassRail2" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 0.93, 7.125)
+position = Vector3(-1.02, 1.35, 6.0438)
 mesh = SubResource("WindowRailEnd")
 material_override = ExtResource("2_dark")
 
 [node name="LeftFrameColumn3" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 0.94, 8.19)
+position = Vector3(-1.02, 1.27, 7.0875)
 mesh = SubResource("WallColumn")
 material_override = ExtResource("1_white")
 
 [node name="LeftColumnFoot3" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 0.16, 8.19)
+position = Vector3(-1.02, 0.16, 7.0875)
 mesh = SubResource("WallColumnFoot")
 material_override = ExtResource("2_dark")
 
 [node name="LeftColumnCap3" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
-position = Vector3(-1.02, 1.75, 8.19)
+position = Vector3(-1.02, 2.395, 7.0875)
+mesh = SubResource("ColumnCap")
+material_override = ExtResource("2_dark")
+
+[node name="LeftGlassPane3" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 1.395, 8.1312)
+mesh = SubResource("GlassShort")
+material_override = ExtResource("5_glass")
+cast_shadow = 0
+
+[node name="LeftGlassRail3" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 1.35, 8.1312)
+mesh = SubResource("WindowRailEnd")
+material_override = ExtResource("2_dark")
+
+[node name="LeftFrameColumn4" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 1.27, 9.175)
+mesh = SubResource("WallColumn")
+material_override = ExtResource("1_white")
+
+[node name="LeftColumnFoot4" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 0.16, 9.175)
+mesh = SubResource("WallColumnFoot")
+material_override = ExtResource("2_dark")
+
+[node name="LeftColumnCap4" type="MeshInstance3D" parent="LabBoundary/LeftGlassWall"]
+position = Vector3(-1.02, 2.395, 9.175)
 mesh = SubResource("ColumnCap")
 material_override = ExtResource("2_dark")
 
 [node name="LabSignalAccents" type="Node3D" parent="."]
 
 [node name="RearBeacon0" type="MeshInstance3D" parent="LabSignalAccents"]
-position = Vector3(3.2, 1.18, -0.903)
+position = Vector3(1.1, 1.57, -0.903)
 mesh = SubResource("Beacon")
 material_override = ExtResource("3_cyan")
 cast_shadow = 0
 
 [node name="RearBeacon1" type="MeshInstance3D" parent="LabSignalAccents"]
-position = Vector3(9.6, 1.18, -0.903)
+position = Vector3(8, 1.57, -0.903)
 mesh = SubResource("Beacon")
 material_override = ExtResource("3_cyan")
 cast_shadow = 0
 
 [node name="RearBeacon2" type="MeshInstance3D" parent="LabSignalAccents"]
-position = Vector3(12.8, 1.18, -0.903)
+position = Vector3(14.9, 1.57, -0.903)
 mesh = SubResource("Beacon")
 material_override = ExtResource("3_cyan")
 cast_shadow = 0
 
 [node name="LeftBeacon0" type="MeshInstance3D" parent="LabSignalAccents"]
-position = Vector3(-0.903, 1.18, 1.8)
+position = Vector3(-0.903, 1.57, 0.825)
 mesh = SubResource("Beacon")
 material_override = ExtResource("3_cyan")
 cast_shadow = 0
 
 [node name="LeftBeacon1" type="MeshInstance3D" parent="LabSignalAccents"]
-position = Vector3(-0.903, 1.18, 6.06)
+position = Vector3(-0.903, 1.57, 5)
 mesh = SubResource("Beacon")
 material_override = ExtResource("3_cyan")
 cast_shadow = 0
 
+[node name="LeftBeacon2" type="MeshInstance3D" parent="LabSignalAccents"]
+position = Vector3(-0.903, 1.57, 9.175)
+mesh = SubResource("Beacon")
+material_override = ExtResource("3_cyan")
+cast_shadow = 0
