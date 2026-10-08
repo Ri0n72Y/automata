@@ -19,7 +19,12 @@ void fragment() {
     vec3 lifted = mix(contrasted, vec3(1.0), albedo_lift);
     float luma = dot(sampled.rgb, vec3(0.2126, 0.7152, 0.0722));
 
-    ALBEDO = lifted;
+    // Distant tiles remain quieter than the playable floor.
+    vec3 porcelain = vec3(0.865, 0.878, 0.893);
+    vec3 normal_sample = texture(normal_texture, tiled_uv).rgb;
+    float bevel_slope = clamp(length(normal_sample.rg * 2.0 - vec2(1.0)) * 0.65, 0.0, 1.0);
+    float recessed_line = clamp((0.72 - luma) * 0.85, 0.0, 1.0);
+    ALBEDO = mix(porcelain, lifted, 0.22) * (1.0 - 0.027 * recessed_line - 0.028 * bevel_slope);
     ROUGHNESS = clamp(roughness_value + (0.5 - luma) * roughness_variation, 0.0, 1.0);
     METALLIC = metallic_value;
     SPECULAR = specular_value;
