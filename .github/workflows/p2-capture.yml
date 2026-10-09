@@ -1,0 +1,39 @@
+name: Scene 01 P2 Review Capture
+
+on:
+  push:
+    branches:
+      - codex/86-p2-object-visuals
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Godot 4.7.2
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+
+      - name: Import project
+        run: godot --headless --path . --editor --quit
+
+      - name: Capture review images
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: |
+          xvfb-run -a godot             --path .             --resolution 1600x900             --rendering-method gl_compatibility             --audio-driver Dummy             --script tools/capture_scene01_p2.gd
+
+      - name: Upload review images
+        uses: actions/upload-artifact@v4
+        with:
+          name: scene-01-p2-review
+          path: p2_capture_output/*.png
+          if-no-files-found: error
