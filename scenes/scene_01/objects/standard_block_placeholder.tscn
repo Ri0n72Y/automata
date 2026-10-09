@@ -1,31 +1,35 @@
-[gd_scene load_steps=5 format=3 uid="uid://d3qj10block01"]
+[gd_scene load_steps=7 format=3 uid="uid://d3qj10block01"]
 
-[sub_resource type="StandardMaterial3D" id="BlockMaterial"]
-albedo_color = Color(0.96, 0.48, 0.06, 1)
-metallic = 0.12
-roughness = 0.52
+[ext_resource type="Material" path="res://scenes/scene_01/materials/painted_white.tres" id="1_white"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/dark_mechanical_metal.tres" id="2_dark"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/cyan_emissive.tres" id="3_cyan"]
+[ext_resource type="ArrayMesh" path="res://assets/scene_01/meshes/rounded_shell.obj" id="4_shell"]
+[ext_resource type="ArrayMesh" path="res://assets/scene_01/meshes/beveled_panel.obj" id="5_panel"]
 
-[sub_resource type="StandardMaterial3D" id="BandMaterial"]
-albedo_color = Color(1, 0.82, 0.12, 1)
-emission_enabled = true
-emission = Color(0.32, 0.16, 0.01, 1)
-emission_energy_multiplier = 0.35
-roughness = 0.4
-
-[sub_resource type="BoxMesh" id="BlockMesh"]
-size = Vector3(0.42, 0.42, 0.42)
-
-[sub_resource type="BoxMesh" id="BandMesh"]
-size = Vector3(0.46, 0.07, 0.46)
+[sub_resource type="BoxMesh" id="StatusMarkerMesh"]
+size = Vector3(0.16, 0.022, 0.045)
 
 [node name="StandardBlockVisual" type="Node3D"]
 
-[node name="BlockBody" type="MeshInstance3D" parent="."]
-position = Vector3(0, 0.21, 0)
-mesh = SubResource("BlockMesh")
-material_override = SubResource("BlockMaterial")
+[node name="LowerFrame" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.075, 0)
+scale = Vector3(0.42, 0.12, 0.42)
+mesh = ExtResource("5_panel")
+material_override = ExtResource("2_dark")
 
-[node name="TopBand" type="MeshInstance3D" parent="."]
-position = Vector3(0, 0.425, 0)
-mesh = SubResource("BandMesh")
-material_override = SubResource("BandMaterial")
+[node name="BlockBody" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.245, 0)
+scale = Vector3(0.37, 0.31, 0.37)
+mesh = ExtResource("4_shell")
+material_override = ExtResource("1_white")
+
+[node name="TopServicePanel" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.405, 0)
+scale = Vector3(0.27, 0.025, 0.27)
+mesh = ExtResource("5_panel")
+material_override = ExtResource("2_dark")
+
+[node name="StatusMarker" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.425, -0.055)
+mesh = SubResource("StatusMarkerMesh")
+material_override = ExtResource("3_cyan")
