@@ -1,31 +1,75 @@
-[gd_scene load_steps=5 format=3 uid="uid://d3qj10block01"]
+[gd_scene load_steps=10 format=3 uid="uid://d3qj10block01"]
 
-[sub_resource type="StandardMaterial3D" id="BlockMaterial"]
-albedo_color = Color(0.96, 0.48, 0.06, 1)
-metallic = 0.12
-roughness = 0.52
+[ext_resource type="Material" path="res://scenes/scene_01/materials/painted_white.tres" id="1_white"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/dark_mechanical_metal.tres" id="2_dark"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/cargo_signal_amber.tres" id="3_amber"]
+[ext_resource type="ArrayMesh" path="res://assets/scene_01/meshes/rounded_shell.obj" id="4_shell"]
 
-[sub_resource type="StandardMaterial3D" id="BandMaterial"]
-albedo_color = Color(1, 0.82, 0.12, 1)
-emission_enabled = true
-emission = Color(0.32, 0.16, 0.01, 1)
-emission_energy_multiplier = 0.35
-roughness = 0.4
+[sub_resource type="BoxMesh" id="TopInsetMesh"]
+size = Vector3(0.29, 0.018, 0.29)
 
-[sub_resource type="BoxMesh" id="BlockMesh"]
-size = Vector3(0.42, 0.42, 0.42)
+[sub_resource type="BoxMesh" id="BottomSkidMesh"]
+size = Vector3(0.36, 0.065, 0.36)
 
-[sub_resource type="BoxMesh" id="BandMesh"]
-size = Vector3(0.46, 0.07, 0.46)
+[sub_resource type="BoxMesh" id="CornerClampMesh"]
+size = Vector3(0.035, 0.33, 0.035)
+
+[sub_resource type="BoxMesh" id="AmberMarkMesh"]
+size = Vector3(0.17, 0.034, 0.015)
+
+[sub_resource type="BoxMesh" id="TopBadgeMesh"]
+size = Vector3(0.11, 0.016, 0.11)
 
 [node name="StandardBlockVisual" type="Node3D"]
 
-[node name="BlockBody" type="MeshInstance3D" parent="."]
+[node name="BlockBody" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.21, 0)
-mesh = SubResource("BlockMesh")
-material_override = SubResource("BlockMaterial")
+scale = Vector3(0.42, 0.42, 0.42)
+mesh = ExtResource("4_shell")
+material_override = ExtResource("1_white")
 
-[node name="TopBand" type="MeshInstance3D" parent="."]
-position = Vector3(0, 0.425, 0)
-mesh = SubResource("BandMesh")
-material_override = SubResource("BandMaterial")
+[node name="BottomCarrier" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.055, 0)
+mesh = SubResource("BottomSkidMesh")
+material_override = ExtResource("2_dark")
+
+[node name="TopInset" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.428, 0)
+mesh = SubResource("TopInsetMesh")
+material_override = ExtResource("2_dark")
+
+[node name="TopBadge" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.439, 0)
+mesh = SubResource("TopBadgeMesh")
+material_override = ExtResource("3_amber")
+
+[node name="CornerClampFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.201, 0.21, -0.201)
+mesh = SubResource("CornerClampMesh")
+material_override = ExtResource("2_dark")
+
+[node name="CornerClampRearLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.201, 0.21, 0.201)
+mesh = SubResource("CornerClampMesh")
+material_override = ExtResource("2_dark")
+
+[node name="CornerClampFrontRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.201, 0.21, -0.201)
+mesh = SubResource("CornerClampMesh")
+material_override = ExtResource("2_dark")
+
+[node name="CornerClampRearRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.201, 0.21, 0.201)
+mesh = SubResource("CornerClampMesh")
+material_override = ExtResource("2_dark")
+
+[node name="CargoMarkFront" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.235, -0.216)
+mesh = SubResource("AmberMarkMesh")
+material_override = ExtResource("3_amber")
+
+[node name="CargoMarkRear" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.235, 0.216)
+mesh = SubResource("AmberMarkMesh")
+material_override = ExtResource("3_amber")
+

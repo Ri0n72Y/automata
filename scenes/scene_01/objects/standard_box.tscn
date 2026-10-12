@@ -1,8 +1,14 @@
-[gd_scene load_steps=10 format=3 uid="uid://d3qj14box001"]
+[gd_scene load_steps=20 format=3 uid="uid://d3qj14box001"]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_item_receiver_node.gd" id="1_node"]
 [ext_resource type="Script" path="res://scripts/objects/standard_box.gd" id="2_resource"]
 [ext_resource type="PackedScene" path="res://scenes/scene_01/objects/standard_block_placeholder.tscn" id="3_block"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/painted_white.tres" id="4_white"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/dark_mechanical_metal.tres" id="5_dark"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/cyan_emissive.tres" id="6_cyan"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/cargo_signal_amber.tres" id="7_amber"]
+[ext_resource type="ArrayMesh" path="res://assets/scene_01/meshes/rounded_shell.obj" id="8_shell"]
+[ext_resource type="ArrayMesh" path="res://assets/scene_01/meshes/beveled_panel.obj" id="9_panel"]
 
 [sub_resource type="Resource" id="Resource_box"]
 resource_local_to_scene = true
@@ -11,24 +17,32 @@ interaction_cells = Array[Vector2i]([Vector2i(15, 3)])
 capacity = 8
 initial_count = 3
 
-[sub_resource type="StandardMaterial3D" id="CrateMaterial"]
-albedo_color = Color(0.36, 0.18, 0.07, 1)
-metallic = 0.08
-roughness = 0.78
+[sub_resource type="BoxMesh" id="InteriorMesh"]
+size = Vector3(0.715, 0.025, 0.635)
 
-[sub_resource type="StandardMaterial3D" id="RimMaterial"]
-albedo_color = Color(0.72, 0.42, 0.12, 1)
-metallic = 0.18
-roughness = 0.58
+[sub_resource type="BoxMesh" id="LipLongMesh"]
+size = Vector3(0.87, 0.045, 0.062)
 
-[sub_resource type="BoxMesh" id="BaseMesh"]
-size = Vector3(0.9, 0.18, 0.82)
+[sub_resource type="BoxMesh" id="LipShortMesh"]
+size = Vector3(0.066, 0.045, 0.76)
 
-[sub_resource type="BoxMesh" id="SideWallMesh"]
-size = Vector3(0.08, 0.62, 0.82)
+[sub_resource type="BoxMesh" id="CornerPostMesh"]
+size = Vector3(0.085, 0.7, 0.085)
 
-[sub_resource type="BoxMesh" id="FrontWallMesh"]
-size = Vector3(0.9, 0.62, 0.08)
+[sub_resource type="BoxMesh" id="FrontBadgeMesh"]
+size = Vector3(0.39, 0.17, 0.018)
+
+[sub_resource type="BoxMesh" id="SignalMesh"]
+size = Vector3(0.27, 0.04, 0.022)
+
+[sub_resource type="BoxMesh" id="BoltMesh"]
+size = Vector3(0.045, 0.02, 0.045)
+
+[sub_resource type="BoxMesh" id="LowerStripMesh"]
+size = Vector3(0.7, 0.052, 0.019)
+
+[sub_resource type="BoxMesh" id="SideInsetMesh"]
+size = Vector3(0.018, 0.25, 0.36)
 
 [node name="StandardBox" type="Node3D"]
 script = ExtResource("1_node")
@@ -40,28 +54,123 @@ unique_name_in_owner = true
 
 [node name="Base" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.09, 0)
-mesh = SubResource("BaseMesh")
-material_override = SubResource("CrateMaterial")
+scale = Vector3(0.9, 0.18, 0.82)
+mesh = ExtResource("8_shell")
+material_override = ExtResource("5_dark")
+
+[node name="InteriorBed" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.194, 0)
+mesh = SubResource("InteriorMesh")
+material_override = ExtResource("5_dark")
 
 [node name="WallLeft" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(-0.41, 0.4, 0)
-mesh = SubResource("SideWallMesh")
-material_override = SubResource("RimMaterial")
+scale = Vector3(0.08, 0.62, 0.82)
+mesh = ExtResource("9_panel")
+material_override = ExtResource("4_white")
 
 [node name="WallRight" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0.41, 0.4, 0)
-mesh = SubResource("SideWallMesh")
-material_override = SubResource("RimMaterial")
+scale = Vector3(0.08, 0.62, 0.82)
+mesh = ExtResource("9_panel")
+material_override = ExtResource("4_white")
 
 [node name="WallFront" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.4, -0.37)
-mesh = SubResource("FrontWallMesh")
-material_override = SubResource("RimMaterial")
+scale = Vector3(0.9, 0.62, 0.08)
+mesh = ExtResource("9_panel")
+material_override = ExtResource("4_white")
 
 [node name="WallRear" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.4, 0.37)
-mesh = SubResource("FrontWallMesh")
-material_override = SubResource("RimMaterial")
+scale = Vector3(0.9, 0.62, 0.08)
+mesh = ExtResource("9_panel")
+material_override = ExtResource("4_white")
+
+[node name="UpperLipFront" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.728, -0.37)
+mesh = SubResource("LipLongMesh")
+material_override = ExtResource("5_dark")
+
+[node name="UpperLipRear" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.728, 0.37)
+mesh = SubResource("LipLongMesh")
+material_override = ExtResource("5_dark")
+
+[node name="UpperLipLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.41, 0.728, 0)
+mesh = SubResource("LipShortMesh")
+material_override = ExtResource("5_dark")
+
+[node name="UpperLipRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.41, 0.728, 0)
+mesh = SubResource("LipShortMesh")
+material_override = ExtResource("5_dark")
+
+[node name="CornerPostFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.425, 0.38, -0.38)
+mesh = SubResource("CornerPostMesh")
+material_override = ExtResource("4_white")
+
+[node name="CornerFastenerFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.425, 0.747, -0.38)
+mesh = SubResource("BoltMesh")
+material_override = ExtResource("5_dark")
+
+[node name="CornerPostRearLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.425, 0.38, 0.38)
+mesh = SubResource("CornerPostMesh")
+material_override = ExtResource("4_white")
+
+[node name="CornerFastenerRearLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.425, 0.747, 0.38)
+mesh = SubResource("BoltMesh")
+material_override = ExtResource("5_dark")
+
+[node name="CornerPostFrontRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.425, 0.38, -0.38)
+mesh = SubResource("CornerPostMesh")
+material_override = ExtResource("4_white")
+
+[node name="CornerFastenerFrontRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.425, 0.747, -0.38)
+mesh = SubResource("BoltMesh")
+material_override = ExtResource("5_dark")
+
+[node name="CornerPostRearRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.425, 0.38, 0.38)
+mesh = SubResource("CornerPostMesh")
+material_override = ExtResource("4_white")
+
+[node name="CornerFastenerRearRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.425, 0.747, 0.38)
+mesh = SubResource("BoltMesh")
+material_override = ExtResource("5_dark")
+
+[node name="ReceiverControlPanel" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.42, -0.422)
+mesh = SubResource("FrontBadgeMesh")
+material_override = ExtResource("5_dark")
+
+[node name="ReceiverStatusBar" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.44, -0.434)
+mesh = SubResource("SignalMesh")
+material_override = ExtResource("7_amber")
+
+[node name="ReceiverLowerSeam" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.13, -0.425)
+mesh = SubResource("LowerStripMesh")
+material_override = ExtResource("6_cyan")
+
+[node name="SideServiceInsetLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.455, 0.405, 0)
+mesh = SubResource("SideInsetMesh")
+material_override = ExtResource("5_dark")
+
+[node name="SideServiceInsetRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.455, 0.405, 0)
+mesh = SubResource("SideInsetMesh")
+material_override = ExtResource("5_dark")
 
 [node name="CapacitySlots" type="Node3D" parent="VisualRoot"]
 unique_name_in_owner = true
