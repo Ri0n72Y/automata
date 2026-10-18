@@ -1,0 +1,207 @@
+[gd_scene load_steps=34 format=3]
+
+[ext_resource type="Script" path="res://scripts/scene_02/bean_sorting_controller.gd" id="1_controller"]
+[ext_resource type="Script" path="res://scripts/grid/grid_debug_view.gd" id="2_grid_debug"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_field_surface.tscn" id="3_static_field"]
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_lifecycle_grid_selection_controller.gd" id="4_grid_selection"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_camera_lighting.tscn" id="5_camera_lighting"]
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_vehicle_manager.gd" id="6_vehicle_manager"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/vehicles/arm_vehicle_placeholder.tscn" id="7_arm_vehicle"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/vehicles/transport_vehicle_placeholder.tscn" id="8_transport_vehicle"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_manual_ui.tscn" id="9_manual_ui"]
+[ext_resource type="Script" path="res://scripts/input/vehicle_selection_controller.gd" id="10_vehicle_selection"]
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_lifecycle_vehicle_move_controller.gd" id="11_vehicle_move"]
+[ext_resource type="Script" path="res://scripts/scene_02/bean_object_manager.gd" id="12_object_manager"]
+[ext_resource type="Script" path="res://scripts/scene_01/grid_transform_follower.gd" id="15_grid_follower"]
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_lifecycle_grab_drop_controller.gd" id="16_grab_drop"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/grab_drop_interaction_preview.tscn" id="18_grab_drop_preview"]
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_assembly_compile_gate.gd" id="19_assembly_gate"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_debug_ui.tscn" id="20_debug_ui"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_lifecycle_controls.tscn" id="21_lifecycle_ui"]
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_observable_state.gd" id="22_observable"]
+[ext_resource type="PackedScene" path="res://scenes/scene_02/components/bean_hud.tscn" id="23_bean_hud"]
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_program_runner.gd" id="24_program_runner"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/grid_selection_visuals.tscn" id="29_grid_selection_visuals"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/vehicle_move_preview.tscn" id="30_vehicle_move_preview"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_operations_panel.tscn" id="31_operations_ui"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_floor_backdrop.tscn" id="33_floor_backdrop"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_lab_platform_environment.tscn" id="34_lab_platform"]
+[ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_blueprint_ui.tscn" id="35_blueprint_ui"]
+[ext_resource type="Script" path="res://scripts/scene_02/bean_source_node.gd" id="36_bean_source"]
+[ext_resource type="Script" path="res://scripts/scene_02/bean_target_node.gd" id="37_bean_target"]
+[ext_resource type="Script" path="res://scripts/ui/level_switcher.gd" id="38_level_switch"]
+[ext_resource type="PackedScene" path="res://scenes/ui/esc_menu.tscn" id="39_esc_menu"]
+[ext_resource type="Script" path="res://scripts/flow/level_session.gd" id="40_level_session"]
+[ext_resource type="Script" path="res://scripts/scene_01/level_deployment_point.gd" id="41_deployment_point"]
+
+[node name="Scene02BeanSorting" type="Node3D"]
+script = ExtResource("1_controller")
+grid_width = 16
+grid_height = 10
+run_preparation_gate_path = NodePath("SceneRoot/Scene01AssemblyCompileGate")
+
+[node name="SceneRoot" type="Node3D" parent="."]
+unique_name_in_owner = true
+
+[node name="Scene01AssemblyCompileGate" type="Node" parent="SceneRoot"]
+unique_name_in_owner = true
+script = ExtResource("19_assembly_gate")
+vehicle_manager_path = NodePath("../RobotRoot/Scene01VehicleManager")
+
+[node name="Scene01ObservableState" type="Node" parent="SceneRoot"]
+unique_name_in_owner = true
+script = ExtResource("22_observable")
+
+[node name="Scene01ProgramRunner" type="Node" parent="SceneRoot"]
+unique_name_in_owner = true
+script = ExtResource("24_program_runner")
+
+[node name="GridRoot" type="Node3D" parent="SceneRoot"]
+unique_name_in_owner = true
+
+[node name="GridTileView" parent="SceneRoot/GridRoot" instance=ExtResource("3_static_field")]
+unique_name_in_owner = true
+
+[node name="FloorBackdrop" parent="SceneRoot/GridRoot" instance=ExtResource("33_floor_backdrop")]
+
+[node name="LabPlatformEnvironment" parent="SceneRoot/GridRoot" instance=ExtResource("34_lab_platform")]
+
+[node name="GridDebugView" type="Node3D" parent="SceneRoot/GridRoot"]
+unique_name_in_owner = true
+script = ExtResource("2_grid_debug")
+
+[node name="VehicleSelectionController" type="Node3D" parent="SceneRoot/GridRoot"]
+unique_name_in_owner = true
+script = ExtResource("10_vehicle_selection")
+
+[node name="VehicleMoveController" type="Node3D" parent="SceneRoot/GridRoot"]
+unique_name_in_owner = true
+script = ExtResource("11_vehicle_move")
+
+[node name="VehicleMovePreview" parent="SceneRoot/GridRoot/VehicleMoveController" instance=ExtResource("30_vehicle_move_preview")]
+
+[node name="VehicleGrabDropController" type="Node3D" parent="SceneRoot/GridRoot"]
+unique_name_in_owner = true
+script = ExtResource("16_grab_drop")
+
+[node name="GrabDropInteractionPreview" parent="SceneRoot/GridRoot/VehicleGrabDropController" instance=ExtResource("18_grab_drop_preview")]
+
+[node name="GridSelectionController" type="Node3D" parent="SceneRoot/GridRoot"]
+unique_name_in_owner = true
+script = ExtResource("4_grid_selection")
+
+[node name="GridSelectionVisuals" parent="SceneRoot/GridRoot/GridSelectionController" instance=ExtResource("29_grid_selection_visuals")]
+
+[node name="RobotRoot" type="Node3D" parent="SceneRoot"]
+unique_name_in_owner = true
+
+[node name="Scene01VehicleManager" type="Node3D" parent="SceneRoot/RobotRoot"]
+unique_name_in_owner = true
+script = ExtResource("6_vehicle_manager")
+arm_start_cell = Vector2i(4, 3)
+transport_start_cell = Vector2i(9, 6)
+
+[node name="ArmVehicle" parent="SceneRoot/RobotRoot/Scene01VehicleManager" instance=ExtResource("7_arm_vehicle")]
+position = Vector3(4.5, 0, 3.5)
+rotation = Vector3(0, -1.5708, 0)
+
+[node name="TransportVehicle" parent="SceneRoot/RobotRoot/Scene01VehicleManager" instance=ExtResource("8_transport_vehicle")]
+position = Vector3(9.5, 0, 6.5)
+rotation = Vector3(0, 1.5708, 0)
+
+[node name="ObjectRoot" type="Node3D" parent="SceneRoot"]
+unique_name_in_owner = true
+script = ExtResource("15_grid_follower")
+
+[node name="Scene01ObjectManager" type="Node3D" parent="SceneRoot/ObjectRoot"]
+unique_name_in_owner = true
+script = ExtResource("12_object_manager")
+scene_controller_path = NodePath("../../..")
+vehicle_manager_path = NodePath("../../RobotRoot/Scene01VehicleManager")
+
+[node name="BeanSourceSoy" type="Node3D" parent="SceneRoot/ObjectRoot/Scene01ObjectManager"]
+script = ExtResource("36_bean_source")
+bean_type = &"soybean"
+capacity_grams = 1000
+interaction_cell = Vector2i(3, 2)
+
+[node name="BeanSourceMung" type="Node3D" parent="SceneRoot/ObjectRoot/Scene01ObjectManager"]
+script = ExtResource("36_bean_source")
+bean_type = &"mung_bean"
+capacity_grams = 1000
+interaction_cell = Vector2i(3, 5)
+
+[node name="BeanSourceWhite" type="Node3D" parent="SceneRoot/ObjectRoot/Scene01ObjectManager"]
+script = ExtResource("36_bean_source")
+bean_type = &"white_bean"
+capacity_grams = 1000
+interaction_cell = Vector2i(3, 8)
+
+[node name="BeanTargetA" type="Node3D" parent="SceneRoot/ObjectRoot/Scene01ObjectManager"]
+script = ExtResource("37_bean_target")
+capacity_grams = 1000
+interaction_cell = Vector2i(13, 1)
+
+[node name="BeanTargetB" type="Node3D" parent="SceneRoot/ObjectRoot/Scene01ObjectManager"]
+script = ExtResource("37_bean_target")
+capacity_grams = 1000
+interaction_cell = Vector2i(13, 3)
+
+[node name="BeanTargetC" type="Node3D" parent="SceneRoot/ObjectRoot/Scene01ObjectManager"]
+script = ExtResource("37_bean_target")
+capacity_grams = 1000
+interaction_cell = Vector2i(13, 5)
+
+[node name="BeanTargetD" type="Node3D" parent="SceneRoot/ObjectRoot/Scene01ObjectManager"]
+script = ExtResource("37_bean_target")
+capacity_grams = 1000
+interaction_cell = Vector2i(13, 7)
+
+[node name="BeanTargetE" type="Node3D" parent="SceneRoot/ObjectRoot/Scene01ObjectManager"]
+script = ExtResource("37_bean_target")
+capacity_grams = 1000
+interaction_cell = Vector2i(11, 8)
+
+[node name="CameraRoot" type="Node3D" parent="SceneRoot"]
+unique_name_in_owner = true
+
+[node name="Scene01CameraRig" parent="SceneRoot/CameraRoot" instance=ExtResource("5_camera_lighting")]
+unique_name_in_owner = true
+position = Vector3(8, 0, 5)
+
+[node name="BeanHUDRoot" parent="." instance=ExtResource("23_bean_hud")]
+unique_name_in_owner = true
+scene_controller_path = NodePath("..")
+
+[node name="OperationsUIRoot" parent="." instance=ExtResource("31_operations_ui")]
+unique_name_in_owner = true
+
+[node name="UIRoot" parent="." instance=ExtResource("9_manual_ui")]
+unique_name_in_owner = true
+scene_controller_path = NodePath("..")
+
+[node name="LifecycleUIRoot" parent="." instance=ExtResource("21_lifecycle_ui")]
+unique_name_in_owner = true
+scene_controller_path = NodePath("..")
+
+[node name="DebugUIRoot" parent="." instance=ExtResource("20_debug_ui")]
+unique_name_in_owner = true
+scene_controller_path = NodePath("..")
+
+[node name="BlueprintUIRoot" parent="." instance=ExtResource("35_blueprint_ui")]
+scene_controller_path = NodePath("..")
+
+[node name="LevelSwitcher" type="Node" parent="."]
+script = ExtResource("38_level_switch")
+target_scene = "res://scenes/scene_01/scene_01_basic_packing.tscn"
+keycode = 49
+
+[node name="EscMenu" parent="." instance=ExtResource("39_esc_menu")]
+
+[node name="LevelSession" type="Node" parent="."]
+script = ExtResource("40_level_session")
+
+[node name="LevelDeploymentPoint" type="Node3D" parent="."]
+script = ExtResource("41_deployment_point")
+cell = Vector2i(7, 8)
+facing = 0

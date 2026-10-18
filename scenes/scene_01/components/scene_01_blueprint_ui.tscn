@@ -1,0 +1,413 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/scene_01/scene_01_blueprint_ui.gd" id="1_script"]
+[ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_editor"]
+bg_color = Color(0.960784, 0.972549, 0.980392, 0.99)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.415686, 0.760784, 0.8, 0.55)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0.023529, 0.054902, 0.074510, 0.32)
+shadow_size = 28
+shadow_offset = Vector2(0, 10)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_preview"]
+bg_color = Color(0.043137, 0.082353, 0.109804, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.415686, 0.760784, 0.8, 0.28)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_props"]
+bg_color = Color(0.996078, 1, 1, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.815686, 0.878431, 0.905882, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_shelf"]
+bg_color = Color(0.913725, 0.941176, 0.952941, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.815686, 0.878431, 0.905882, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_primary_normal"]
+bg_color = Color(0.070588, 0.627451, 0.686275, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+content_margin_left = 14.0
+content_margin_right = 14.0
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_primary_hover"]
+bg_color = Color(0.086275, 0.698039, 0.760784, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_primary_pressed"]
+bg_color = Color(0.054902, 0.521569, 0.572549, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="Environment" id="PreviewEnvironment"]
+background_mode = 1
+background_color = Color(0.043137, 0.082353, 0.109804, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.729412, 0.811765, 0.850980, 1)
+ambient_light_energy = 0.9
+tonemap_mode = 3
+
+[node name="BlueprintUIRoot" type="CanvasLayer"]
+layer = 6
+script = ExtResource("1_script")
+
+[node name="RootControl" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+theme = ExtResource("2_theme")
+
+[node name="Dim" type="ColorRect" parent="RootControl"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.019608, 0.043137, 0.058824, 0.62)
+
+[node name="EditorPanel" type="PanelContainer" parent="RootControl"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_editor")
+
+[node name="EditorMargin" type="MarginContainer" parent="RootControl/EditorPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="EditorVBox" type="VBoxContainer" parent="RootControl/EditorPanel/EditorMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="HBoxContainer" parent="RootControl/EditorPanel/EditorMargin/EditorVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleBlock" type="VBoxContainer" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Header"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Title" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Header/TitleBlock"]
+layout_mode = 2
+text = "装配蓝图"
+theme_override_font_sizes/font_size = 20
+
+[node name="Caption" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Header/TitleBlock"]
+layout_mode = 2
+text = "ASSEMBLY BAY · 3D WORKBENCH"
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
+theme_override_font_sizes/font_size = 11
+
+[node name="HeaderSpacer" type="Control" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Header"]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="NameCaption" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Header"]
+layout_mode = 2
+text = "名称"
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
+theme_override_font_sizes/font_size = 11
+
+[node name="NameEdit" type="LineEdit" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 30)
+layout_mode = 2
+text = "侦察车"
+
+[node name="SaveButton" type="Button" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(68, 30)
+layout_mode = 2
+text = "保存"
+
+[node name="LoadButton" type="Button" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(68, 30)
+layout_mode = 2
+text = "读取"
+
+[node name="DeployButton" type="Button" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(104, 30)
+layout_mode = 2
+text = "部署到场地"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_primary_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_primary_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_primary_pressed")
+
+[node name="CloseButton" type="Button" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(68, 30)
+layout_mode = 2
+text = "关闭"
+
+[node name="Body" type="HBoxContainer" parent="RootControl/EditorPanel/EditorMargin/EditorVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="PreviewPanel" type="PanelContainer" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_preview")
+
+[node name="PreviewStack" type="Control" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PreviewPanel"]
+layout_mode = 2
+
+[node name="PreviewContainer" type="SubViewportContainer" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PreviewPanel/PreviewStack"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+mouse_filter = 0
+
+[node name="PreviewViewport" type="SubViewport" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PreviewPanel/PreviewStack/PreviewContainer"]
+unique_name_in_owner = true
+own_world_3d = true
+size = Vector2i(640, 360)
+render_target_update_mode = 2
+
+[node name="PreviewCamera" type="Camera3D" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PreviewPanel/PreviewStack/PreviewContainer/PreviewViewport"]
+unique_name_in_owner = true
+current = true
+fov = 40.0
+position = Vector3(2.2, 1.9, 2.4)
+
+[node name="KeyLight" type="DirectionalLight3D" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PreviewPanel/PreviewStack/PreviewContainer/PreviewViewport"]
+rotation = Vector3(-0.9, -0.7, 0)
+light_energy = 1.5
+shadow_enabled = true
+
+[node name="FillLight" type="DirectionalLight3D" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PreviewPanel/PreviewStack/PreviewContainer/PreviewViewport"]
+rotation = Vector3(-0.5, 2.4, 0)
+light_energy = 0.6
+
+[node name="PreviewWorldEnvironment" type="WorldEnvironment" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PreviewPanel/PreviewStack/PreviewContainer/PreviewViewport"]
+environment = SubResource("PreviewEnvironment")
+
+[node name="PreviewModelRoot" type="Node3D" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PreviewPanel/PreviewStack/PreviewContainer/PreviewViewport"]
+unique_name_in_owner = true
+
+[node name="SlotBadge" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PreviewPanel/PreviewStack"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 16.0
+offset_top = 14.0
+offset_right = 480.0
+offset_bottom = 38.0
+theme_override_colors/font_color = Color(0.756863, 0.929412, 0.968627, 1)
+theme_override_font_sizes/font_size = 14
+text = "选中安装位：底盘 · 点击模型切换"
+
+[node name="PropsPanel" type="PanelContainer" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_props")
+
+[node name="PropsMargin" type="MarginContainer" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PropsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="PropsVBox" type="VBoxContainer" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PropsPanel/PropsMargin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="PropsCaption" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PropsPanel/PropsMargin/PropsVBox"]
+layout_mode = 2
+text = "属性检查器 · INSPECTOR"
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
+theme_override_font_sizes/font_size = 11
+
+[node name="SlotValue" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PropsPanel/PropsMargin/PropsVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "底盘 · SLOT"
+theme_override_colors/font_color = Color(0.070588, 0.627451, 0.686275, 1)
+theme_override_font_sizes/font_size = 11
+
+[node name="PartName" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PropsPanel/PropsMargin/PropsVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "差速底盘"
+theme_override_font_sizes/font_size = 18
+
+[node name="PartDescription" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PropsPanel/PropsMargin/PropsVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "部件说明"
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
+theme_override_font_sizes/font_size = 12
+
+[node name="ActionsCaption" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PropsPanel/PropsMargin/PropsVBox"]
+layout_mode = 2
+text = "可用动作"
+theme_override_font_sizes/font_size = 12
+
+[node name="ActionsLabel" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PropsPanel/PropsMargin/PropsVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "MoveTo · Rotate"
+theme_override_colors/font_color = Color(0.070588, 0.627451, 0.686275, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="StatsCaption" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PropsPanel/PropsMargin/PropsVBox"]
+layout_mode = 2
+text = "部件属性"
+theme_override_font_sizes/font_size = 12
+
+[node name="StatsLabel" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PropsPanel/PropsMargin/PropsVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "速度 2.00   载重 30 kg   成本 12"
+autowrap_mode = 3
+
+[node name="LevelsLabel" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PropsPanel/PropsMargin/PropsVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "通用"
+autowrap_mode = 3
+
+[node name="PropsSpacer" type="Control" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PropsPanel/PropsMargin/PropsVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="AssemblyLabel" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PropsPanel/PropsMargin/PropsVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "整机"
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 11
+
+[node name="ShelfPanel" type="PanelContainer" parent="RootControl/EditorPanel/EditorMargin/EditorVBox"]
+custom_minimum_size = Vector2(0, 156)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_shelf")
+
+[node name="ShelfMargin" type="MarginContainer" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/ShelfPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
+
+[node name="ShelfVBox" type="VBoxContainer" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/ShelfPanel/ShelfMargin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ShelfHeader" type="HBoxContainer" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/ShelfPanel/ShelfMargin/ShelfVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ShelfTitle" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/ShelfPanel/ShelfMargin/ShelfVBox/ShelfHeader"]
+layout_mode = 2
+text = "配件库 · PARTS"
+theme_override_font_sizes/font_size = 12
+
+[node name="ShelfSlotLabel" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/ShelfPanel/ShelfMargin/ShelfVBox/ShelfHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "底盘 · 差速底盘"
+theme_override_colors/font_color = Color(0.070588, 0.627451, 0.686275, 1)
+theme_override_font_sizes/font_size = 12
+
+[node name="ShelfSpacer" type="Control" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/ShelfPanel/ShelfMargin/ShelfVBox/ShelfHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="ShelfHint" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/ShelfPanel/ShelfMargin/ShelfVBox/ShelfHeader"]
+layout_mode = 2
+text = "点击模型切换安装位 · 拖动旋转 · 滚轮缩放"
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
+theme_override_font_sizes/font_size = 10
+
+[node name="PartScroll" type="ScrollContainer" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/ShelfPanel/ShelfMargin/ShelfVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 2
+
+[node name="PartShelf" type="HBoxContainer" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/ShelfPanel/ShelfMargin/ShelfVBox/PartScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StatusLabel" type="Label" parent="RootControl/EditorPanel/EditorMargin/EditorVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "拖动旋转 · 点击部件切换安装位 · 底部选择配件"
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
+theme_override_font_sizes/font_size = 10

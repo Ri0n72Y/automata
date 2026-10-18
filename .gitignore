@@ -3,3 +3,5 @@
 /android/
 .reasonix
 .vscode/
+.dsh-scope.*
+.dsh-visual/

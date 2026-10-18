@@ -1,0 +1,278 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_script"]
+[ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_left"]
+bg_color = Color(0.039216, 0.074510, 0.098039, 0.99)
+border_width_right = 1
+border_color = Color(0.415686, 0.760784, 0.8, 0.35)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_normal"]
+bg_color = Color(0.086275, 0.137255, 0.168627, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.266667, 0.388235, 0.435294, 0.9)
+content_margin_left = 18.0
+content_margin_right = 18.0
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_hover"]
+bg_color = Color(0.109804, 0.176471, 0.211765, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.070588, 0.627451, 0.686275, 1)
+content_margin_left = 18.0
+content_margin_right = 18.0
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_pressed"]
+bg_color = Color(0.070588, 0.627451, 0.686275, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.070588, 0.627451, 0.686275, 1)
+content_margin_left = 18.0
+content_margin_right = 18.0
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ghost"]
+bg_color = Color(0, 0, 0, 0)
+content_margin_left = 18.0
+content_margin_right = 18.0
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="Environment" id="MenuEnvironment"]
+background_mode = 1
+background_color = Color(0.031373, 0.062745, 0.082353, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.678431, 0.772549, 0.815686, 1)
+ambient_light_energy = 0.85
+tonemap_mode = 3
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="Layout" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="LeftPanel" type="PanelContainer" parent="Layout"]
+custom_minimum_size = Vector2(660, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_left")
+
+[node name="LeftMargin" type="MarginContainer" parent="Layout/LeftPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 54
+theme_override_constants/margin_top = 46
+theme_override_constants/margin_right = 54
+theme_override_constants/margin_bottom = 36
+
+[node name="LeftVBox" type="VBoxContainer" parent="Layout/LeftPanel/LeftMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="BrandRow" type="HBoxContainer" parent="Layout/LeftPanel/LeftMargin/LeftVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BrandDot" type="ColorRect" parent="Layout/LeftPanel/LeftMargin/LeftVBox/BrandRow"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+size_flags_vertical = 4
+color = Color(0.070588, 0.627451, 0.686275, 1)
+
+[node name="Brand" type="Label" parent="Layout/LeftPanel/LeftMargin/LeftVBox/BrandRow"]
+layout_mode = 2
+text = "AUTOMATA LAB · TEST CHAMBER"
+theme_override_colors/font_color = Color(0.756863, 0.878431, 0.913725, 1)
+theme_override_font_sizes/font_size = 12
+
+[node name="Title" type="Label" parent="Layout/LeftPanel/LeftMargin/LeftVBox"]
+layout_mode = 2
+text = "自复制机械"
+theme_override_colors/font_color = Color(0.964706, 0.984314, 0.992157, 1)
+theme_override_font_sizes/font_size = 46
+
+[node name="Subtitle" type="Label" parent="Layout/LeftPanel/LeftMargin/LeftVBox"]
+layout_mode = 2
+text = "装配 · 编程 · 分拣"
+theme_override_colors/font_color = Color(0.572549, 0.701961, 0.760784, 1)
+theme_override_font_sizes/font_size = 18
+
+[node name="Gap" type="Control" parent="Layout/LeftPanel/LeftMargin/LeftVBox"]
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="SelectCaption" type="Label" parent="Layout/LeftPanel/LeftMargin/LeftVBox"]
+layout_mode = 2
+text = "选择入口 · SELECT PROTOCOL"
+theme_override_colors/font_color = Color(0.070588, 0.627451, 0.686275, 1)
+theme_override_font_sizes/font_size = 11
+
+[node name="Entries" type="VBoxContainer" parent="Layout/LeftPanel/LeftMargin/LeftVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SceneOneButton" type="Button" parent="Layout/LeftPanel/LeftMargin/LeftVBox/Entries"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 66)
+layout_mode = 2
+text = "01   装箱测试\n     SCENE 01 · CONTAINER SORTING"
+alignment = 0
+theme_override_colors/font_color = Color(0.945098, 0.976471, 0.988235, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.039216, 0.074510, 0.098039, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBoxFlat_card_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_card_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_card_pressed")
+
+[node name="SceneTwoButton" type="Button" parent="Layout/LeftPanel/LeftMargin/LeftVBox/Entries"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 66)
+layout_mode = 2
+text = "02   豆类分拣\n     SCENE 02 · BEAN SORTING"
+alignment = 0
+theme_override_colors/font_color = Color(0.945098, 0.976471, 0.988235, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.039216, 0.074510, 0.098039, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBoxFlat_card_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_card_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_card_pressed")
+
+[node name="WorkshopButton" type="Button" parent="Layout/LeftPanel/LeftMargin/LeftVBox/Entries"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 66)
+layout_mode = 2
+text = "03   装配工坊\n     WORKSHOP · BLUEPRINT BAY"
+alignment = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBoxFlat_card_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_card_pressed")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_card_normal")
+
+[node name="QuitButton" type="Button" parent="Layout/LeftPanel/LeftMargin/LeftVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+text = "退出游戏"
+flat = true
+theme_override_colors/font_color = Color(0.572549, 0.701961, 0.760784, 1)
+theme_override_colors/font_hover_color = Color(0.964706, 0.984314, 0.992157, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_ghost")
+theme_override_styles/hover = SubResource("StyleBoxFlat_card_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_card_pressed")
+
+[node name="InfoGap" type="Control" parent="Layout/LeftPanel/LeftMargin/LeftVBox"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="InfoRule" type="HSeparator" parent="Layout/LeftPanel/LeftMargin/LeftVBox"]
+layout_mode = 2
+
+[node name="Info" type="Label" parent="Layout/LeftPanel/LeftMargin/LeftVBox"]
+layout_mode = 2
+text = "两个关卡 + 一个装配工坊。\n关卡中按 ESC 可直接打开工坊，无需离开关卡。"
+theme_override_colors/font_color = Color(0.572549, 0.701961, 0.760784, 1)
+theme_override_font_sizes/font_size = 12
+
+[node name="FlexGap" type="Control" parent="Layout/LeftPanel/LeftMargin/LeftVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="Footer" type="Label" parent="Layout/LeftPanel/LeftMargin/LeftVBox"]
+layout_mode = 2
+text = "GODOT 4.7 · FORWARD+ · BUILD 2026.10\nESC 在关卡中呼出暂停菜单"
+theme_override_colors/font_color = Color(0.396078, 0.517647, 0.576471, 1)
+theme_override_font_sizes/font_size = 10
+
+[node name="RightShowcase" type="SubViewportContainer" parent="Layout"]
+layout_mode = 2
+size_flags_horizontal = 3
+stretch = true
+mouse_filter = 2
+
+[node name="ShowcaseViewport" type="SubViewport" parent="Layout/RightShowcase"]
+own_world_3d = true
+size = Vector2i(900, 720)
+render_target_update_mode = 4
+
+[node name="ShowcaseCamera" type="Camera3D" parent="Layout/RightShowcase/ShowcaseViewport"]
+unique_name_in_owner = true
+current = true
+fov = 38.0
+position = Vector3(3.0, 2.2, 3.6)
+
+[node name="KeyLight" type="DirectionalLight3D" parent="Layout/RightShowcase/ShowcaseViewport"]
+rotation = Vector3(-0.85, -0.6, 0)
+light_energy = 1.5
+shadow_enabled = true
+
+[node name="FillLight" type="DirectionalLight3D" parent="Layout/RightShowcase/ShowcaseViewport"]
+rotation = Vector3(-0.4, 2.5, 0)
+light_energy = 0.55
+
+[node name="ShowcaseEnvironment" type="WorldEnvironment" parent="Layout/RightShowcase/ShowcaseViewport"]
+environment = SubResource("MenuEnvironment")
+
+[node name="ShowcasePivot" type="Node3D" parent="Layout/RightShowcase/ShowcaseViewport"]
+unique_name_in_owner = true
+
+[node name="ShowcaseModelRoot" type="Node3D" parent="Layout/RightShowcase/ShowcaseViewport/ShowcasePivot"]
+unique_name_in_owner = true
+
+[node name="Caption" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -360.0
+offset_top = -52.0
+offset_right = -36.0
+offset_bottom = -28.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "SHOWCASE · DIFFERENTIAL / GRIPPER"
+horizontal_alignment = 2
+theme_override_colors/font_color = Color(0.396078, 0.517647, 0.576471, 1)
+theme_override_font_sizes/font_size = 10

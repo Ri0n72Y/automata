@@ -29,8 +29,8 @@ const PREVIEW_SLOT_PATHS: Array[NodePath] = [
 	NodePath("GrabDropInteractionPreview/Slot1"),
 ]
 
-@export var valid_interaction_color: Color = Color(0.2, 0.92, 0.38, 0.28)
-@export var invalid_interaction_color: Color = Color(1.0, 0.24, 0.18, 0.28)
+@export var valid_interaction_color: Color = Color(0.247, 0.776, 0.808, 0.3)
+@export var invalid_interaction_color: Color = Color(0.886, 0.231, 0.196, 0.3)
 @export_range(0.01, 0.2, 0.01) var preview_height: float = 0.06
 @export_range(0.5, 1.0, 0.01) var preview_scale: float = 0.86
 
@@ -365,8 +365,7 @@ func _is_target_ready(runtime: VehicleRuntimeStateScript, target: Variant) -> bo
 			return false
 		if not drop_receiver.accepts_item_type(runtime.carried_item.get_item_type()):
 			return false
-		var capacity := drop_receiver.get_capacity()
-		return capacity <= 0 or drop_receiver.get_current_count() < capacity
+		return drop_receiver.can_accept_item(runtime.carried_item)
 	var source := target as ItemSourceInterfaceScript
 	if source != null:
 		return source.is_available()

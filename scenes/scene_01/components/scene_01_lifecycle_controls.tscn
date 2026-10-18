@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_lifecycle_controls.gd" id="1_controls"]
 [ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
@@ -6,26 +6,27 @@
 [ext_resource type="Texture2D" path="res://assets/ui/icons/reset.svg" id="4_reset"]
 [ext_resource type="Texture2D" path="res://assets/ui/icons/chevron_down.svg" id="5_chevron"]
 [ext_resource type="Texture2D" path="res://assets/ui/icons/status_dot.svg" id="6_dot"]
+[ext_resource type="SystemFont" path="res://assets/ui/fonts/lab_mono.tres" id="7_lab_mono"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_capsule"]
-bg_color = Color(0.975, 0.988, 1, 0.95)
-corner_radius_top_left = 22
-corner_radius_top_right = 22
-corner_radius_bottom_right = 22
-corner_radius_bottom_left = 22
-shadow_color = Color(0.11, 0.17, 0.24, 0.17)
-shadow_size = 7
+bg_color = Color(0.062745, 0.109804, 0.137255, 0.96)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.039216, 0.078431, 0.101961, 0.12)
+shadow_size = 6
 shadow_offset = Vector2(0, 2)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_control_group"]
-bg_color = Color(0.91, 0.955, 0.995, 0.94)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-shadow_color = Color(0.11, 0.17, 0.24, 0.13)
+bg_color = Color(0.976471, 0.984314, 0.992157, 0.96)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.039216, 0.078431, 0.101961, 0.1)
 shadow_size = 3
-shadow_offset = Vector2(0, 1)
+shadow_offset = Vector2(0, 2)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_action_normal"]
 bg_color = Color(1, 1, 1, 0)
@@ -33,32 +34,32 @@ content_margin_left = 0.0
 content_margin_top = 0.0
 content_margin_right = 0.0
 content_margin_bottom = 0.0
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_action_hover"]
-bg_color = Color(0.79, 0.9, 0.99, 0.95)
+bg_color = Color(0.878431, 0.956863, 0.976471, 0.95)
 content_margin_left = 0.0
 content_margin_top = 0.0
 content_margin_right = 0.0
 content_margin_bottom = 0.0
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_action_pressed"]
-bg_color = Color(0.72, 0.85, 0.97, 1)
+bg_color = Color(0.070588, 0.627451, 0.686275, 1)
 content_margin_left = 0.0
 content_margin_top = 0.0
 content_margin_right = 0.0
 content_margin_bottom = 0.0
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_speed_normal"]
 bg_color = Color(1, 1, 1, 0)
@@ -66,32 +67,42 @@ content_margin_left = 8.0
 content_margin_top = 0.0
 content_margin_right = 8.0
 content_margin_bottom = 0.0
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_speed_hover"]
-bg_color = Color(0.91, 0.96, 1, 0.48)
+bg_color = Color(0.878431, 0.956863, 0.976471, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.070588, 0.627451, 0.686275, 1)
 content_margin_left = 8.0
 content_margin_top = 0.0
 content_margin_right = 8.0
 content_margin_bottom = 0.0
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_speed_pressed"]
-bg_color = Color(0.86, 0.93, 0.99, 0.62)
+bg_color = Color(0.070588, 0.627451, 0.686275, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.070588, 0.627451, 0.686275, 1)
 content_margin_left = 8.0
 content_margin_top = 0.0
 content_margin_right = 8.0
 content_margin_bottom = 0.0
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [node name="LifecycleUIRoot" type="CanvasLayer"]
 script = ExtResource("1_controls")
@@ -142,24 +153,26 @@ layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("6_dot")
 stretch_mode = 5
-modulate = Color(0.23, 0.58, 0.9, 1)
+modulate = Color(0.070588, 0.627451, 0.686275, 1)
 
 [node name="StateLabel" type="Label" parent="RootControl/Panel/Margin/Controls/StatusGroup"]
+theme_override_fonts/font = ExtResource("7_lab_mono")
 unique_name_in_owner = true
 custom_minimum_size = Vector2(42, 0)
 layout_mode = 2
 text = "就绪"
 theme_override_font_sizes/font_size = 14
-theme_override_colors/font_color = Color(0.17, 0.34, 0.52, 1)
+theme_override_colors/font_color = Color(0.784314, 0.878431, 0.913725, 1)
 
 [node name="TimeLabel" type="Label" parent="RootControl/Panel/Margin/Controls"]
+theme_override_fonts/font = ExtResource("7_lab_mono")
 unique_name_in_owner = true
 custom_minimum_size = Vector2(61, 0)
 layout_mode = 2
 text = "00:00.0"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 14
-theme_override_colors/font_color = Color(0.08, 0.13, 0.19, 1)
+theme_override_colors/font_color = Color(0.945098, 0.976471, 0.988235, 1)
 
 [node name="RunResetGroup" type="PanelContainer" parent="RootControl/Panel/Margin/Controls"]
 unique_name_in_owner = true
@@ -196,7 +209,7 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_action_normal")
 [node name="Divider" type="VSeparator" parent="RootControl/Panel/Margin/Controls/RunResetGroup/InnerMargin/Controls"]
 custom_minimum_size = Vector2(1, 18)
 layout_mode = 2
-modulate = Color(1, 1, 1, 0.38)
+modulate = Color(0.062745, 0.109804, 0.137255, 0.22)
 
 [node name="ResetButton" type="Button" parent="RootControl/Panel/Margin/Controls/RunResetGroup/InnerMargin/Controls"]
 unique_name_in_owner = true
@@ -219,17 +232,18 @@ size_flags_horizontal = 3
 mouse_filter = 2
 
 [node name="SpeedOption" type="OptionButton" parent="RootControl/Panel/Margin/Controls"]
+theme_override_fonts/font = ExtResource("7_lab_mono")
 unique_name_in_owner = true
 custom_minimum_size = Vector2(64, 30)
 layout_mode = 2
 focus_mode = 0
 fit_to_longest_item = false
 tooltip_text = "仿真倍速"
-theme_override_colors/font_color = Color(0.08, 0.13, 0.19, 1)
-theme_override_colors/font_hover_color = Color(0.08, 0.13, 0.19, 1)
-theme_override_colors/font_pressed_color = Color(0.08, 0.13, 0.19, 1)
-theme_override_colors/font_focus_color = Color(0.08, 0.13, 0.19, 1)
-theme_override_colors/font_hover_pressed_color = Color(0.08, 0.13, 0.19, 1)
+theme_override_colors/font_color = Color(0.945098, 0.976471, 0.988235, 1)
+theme_override_colors/font_hover_color = Color(0.945098, 0.976471, 0.988235, 1)
+theme_override_colors/font_pressed_color = Color(0.945098, 0.976471, 0.988235, 1)
+theme_override_colors/font_focus_color = Color(0.945098, 0.976471, 0.988235, 1)
+theme_override_colors/font_hover_pressed_color = Color(0.945098, 0.976471, 0.988235, 1)
 theme_override_font_sizes/font_size = 14
 theme_override_constants/arrow_margin = 0
 theme_override_constants/h_separation = 3

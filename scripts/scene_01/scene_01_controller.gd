@@ -27,6 +27,11 @@ var grid_root: Node3D
 @onready var object_root: Node3D = %ObjectRoot
 @onready var scene_object_manager: Scene01ObjectManagerScript = %Scene01ObjectManager
 @onready var scene_camera_rig: SceneCameraRigScript = %Scene01CameraRig
+@onready var vehicle_grab_drop_controller: Node = get_node_or_null(
+	"SceneRoot/GridRoot/VehicleGrabDropController"
+)
+@onready var scene_observable_state: Node = %Scene01ObservableState
+@onready var scene_assembly_compile_gate: Node = %Scene01AssemblyCompileGate
 
 var grid_model: GridModelScript
 var timer: float = 0.0
@@ -167,6 +172,63 @@ func reset_scene_state() -> bool:
 	return _restore_base_scene_state()
 
 
+# ---------------------------------------------------------------------------
+# Blueprint deployment (design module: vehicle assembly)
+# ---------------------------------------------------------------------------
+
+## Deploy a blueprint cart into the current scene. Only allowed while READY,
+## so the new participant joins before any gameplay command is issued.
+func deploy_blueprint_vehicle(blueprint, anchor_cell: Vector2i, facing: int = 0) -> bool:
+	if has_method("is_scene_initialized") and not bool(call("is_scene_initialized")):
+		push_error("Scene 01 is not initialized; blueprint deployment is unavailable.")
+		return false
+	var gameplay_running: bool = (
+		has_method("is_gameplay_running") and bool(call("is_gameplay_running"))
+	)
+	var scene_paused: bool = has_method("is_scene_paused") and bool(call("is_scene_paused"))
+	if gameplay_running or scene_paused:
+		push_error("Blueprint deployment is only allowed in READY state.")
+		return false
+	var actor = scene_vehicle_manager.deploy_blueprint(blueprint, anchor_cell, facing)
+	if actor == null:
+		return false
+	_refresh_vehicle_participants()
+	return true
+
+
+## Re-run controller configuration after the vehicle set changes, so
+## selection / movement / grab / observable / compile gate all see the new cart.
+func _refresh_vehicle_participants() -> void:
+	var active_camera: Camera3D = (
+		scene_camera_rig.get_camera() if scene_camera_rig != null else null
+	)
+	if vehicle_selection_controller != null:
+		vehicle_selection_controller.configure(active_camera, scene_vehicle_manager)
+	if grid_selection_controller != null:
+		grid_selection_controller.configure(self, active_camera, grid_model.cell_size)
+	if vehicle_move_controller != null:
+		vehicle_move_controller.configure(
+			self,
+			vehicle_selection_controller,
+			grid_selection_controller,
+			scene_vehicle_manager
+		)
+	if vehicle_grab_drop_controller != null and vehicle_grab_drop_controller.has_method("configure"):
+		vehicle_grab_drop_controller.call(
+			"configure",
+			vehicle_selection_controller,
+			scene_vehicle_manager,
+			scene_object_manager
+		)
+	if scene_observable_state != null and scene_observable_state.has_method("refresh_vehicles"):
+		scene_observable_state.call("refresh_vehicles")
+	if scene_assembly_compile_gate != null:
+		scene_assembly_compile_gate.call("clear_runtime_results")
+	scene_vehicle_manager.sync_vehicles_from_state()
+	if vehicle_selection_controller != null:
+		vehicle_selection_controller.refresh_highlight()
+
+
 func _initialize_scene_state() -> bool:
 	if not _initialize_scene_composition():
 		return false
@@ -199,7 +261,7 @@ func _is_scene_running() -> bool:
 func _initialize_scene_composition() -> bool:
 	if not _has_required_scene_nodes():
 		return false
-	if scene_vehicle_manager.get_vehicle_count() != Scene01VehicleManagerScript.REQUIRED_VEHICLE_COUNT:
+	if scene_vehicle_manager.get_vehicle_count() < Scene01VehicleManagerScript.REQUIRED_VEHICLE_COUNT:
 		return false
 	if not scene_object_manager.is_initialized() and not scene_object_manager.initialize_objects():
 		return false
@@ -209,7 +271,7 @@ func _initialize_scene_composition() -> bool:
 func _is_scene_composition_ready() -> bool:
 	return (
 		_has_required_scene_nodes()
-		and scene_vehicle_manager.get_vehicle_count() == Scene01VehicleManagerScript.REQUIRED_VEHICLE_COUNT
+		and scene_vehicle_manager.get_vehicle_count() >= Scene01VehicleManagerScript.REQUIRED_VEHICLE_COUNT
 		and scene_object_manager.is_initialized()
 	)
 

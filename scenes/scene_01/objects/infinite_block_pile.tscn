@@ -1,21 +1,42 @@
-[gd_scene load_steps=7 format=3 uid="uid://d3qj14pile01"]
+[gd_scene load_steps=18 format=3 uid="uid://d3qj14pile01"]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_item_source_node.gd" id="1_node"]
 [ext_resource type="Script" path="res://scripts/objects/infinite_block_pile.gd" id="2_resource"]
 [ext_resource type="PackedScene" path="res://scenes/scene_01/objects/standard_block_placeholder.tscn" id="3_block"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/painted_white.tres" id="4_white"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/dark_mechanical_metal.tres" id="5_dark"]
+[ext_resource type="Material" path="res://scenes/scene_01/materials/cyan_emissive.tres" id="6_cyan"]
+[ext_resource type="ArrayMesh" path="res://assets/scene_01/meshes/rounded_shell.obj" id="7_shell"]
+[ext_resource type="ArrayMesh" path="res://assets/scene_01/meshes/beveled_panel.obj" id="8_panel"]
 
 [sub_resource type="Resource" id="Resource_pile"]
 resource_local_to_scene = true
 script = ExtResource("2_resource")
 interaction_cells = Array[Vector2i]([Vector2i(0, 3)])
 
-[sub_resource type="StandardMaterial3D" id="BaseMaterial"]
-albedo_color = Color(0.16, 0.19, 0.24, 1)
-metallic = 0.35
-roughness = 0.58
+[sub_resource type="BoxMesh" id="DeckInsetMesh"]
+size = Vector3(0.71, 0.023, 0.69)
 
-[sub_resource type="BoxMesh" id="BaseMesh"]
-size = Vector3(0.86, 0.2, 0.86)
+[sub_resource type="BoxMesh" id="SourceRailLongMesh"]
+size = Vector3(0.82, 0.075, 0.062)
+
+[sub_resource type="BoxMesh" id="SourceRailShortMesh"]
+size = Vector3(0.062, 0.075, 0.72)
+
+[sub_resource type="BoxMesh" id="MachinePostMesh"]
+size = Vector3(0.078, 0.26, 0.078)
+
+[sub_resource type="BoxMesh" id="ControlPanelMesh"]
+size = Vector3(0.29, 0.1, 0.016)
+
+[sub_resource type="BoxMesh" id="StatusMesh"]
+size = Vector3(0.25, 0.035, 0.018)
+
+[sub_resource type="BoxMesh" id="GuideBoltMesh"]
+size = Vector3(0.045, 0.025, 0.045)
+
+[sub_resource type="BoxMesh" id="RearMachineVentMesh"]
+size = Vector3(0.095, 0.06, 0.025)
 
 [node name="InfiniteBlockPile" type="Node3D"]
 script = ExtResource("1_node")
@@ -26,8 +47,100 @@ unique_name_in_owner = true
 
 [node name="Base" type="MeshInstance3D" parent="VisualRoot"]
 position = Vector3(0, 0.1, 0)
-mesh = SubResource("BaseMesh")
-material_override = SubResource("BaseMaterial")
+scale = Vector3(0.86, 0.2, 0.86)
+mesh = ExtResource("7_shell")
+material_override = ExtResource("5_dark")
+
+[node name="DeckRim" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.198, 0)
+scale = Vector3(0.8, 0.067, 0.8)
+mesh = ExtResource("8_panel")
+material_override = ExtResource("4_white")
+
+[node name="DeckInset" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.227, 0)
+mesh = SubResource("DeckInsetMesh")
+material_override = ExtResource("5_dark")
+
+[node name="GuideLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.417, 0.285, 0)
+mesh = SubResource("SourceRailShortMesh")
+material_override = ExtResource("4_white")
+
+[node name="GuideRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.417, 0.285, 0)
+mesh = SubResource("SourceRailShortMesh")
+material_override = ExtResource("4_white")
+
+[node name="GuideFront" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.285, -0.42)
+mesh = SubResource("SourceRailLongMesh")
+material_override = ExtResource("4_white")
+
+[node name="GuideRear" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.285, 0.42)
+mesh = SubResource("SourceRailLongMesh")
+material_override = ExtResource("4_white")
+
+[node name="MachinePostFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.414, 0.245, -0.413)
+mesh = SubResource("MachinePostMesh")
+material_override = ExtResource("5_dark")
+
+[node name="MachineFastenerFrontLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.414, 0.385, -0.413)
+mesh = SubResource("GuideBoltMesh")
+material_override = ExtResource("4_white")
+
+[node name="MachinePostRearLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.414, 0.245, 0.413)
+mesh = SubResource("MachinePostMesh")
+material_override = ExtResource("5_dark")
+
+[node name="MachineFastenerRearLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.414, 0.385, 0.413)
+mesh = SubResource("GuideBoltMesh")
+material_override = ExtResource("4_white")
+
+[node name="MachinePostFrontRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.414, 0.245, -0.413)
+mesh = SubResource("MachinePostMesh")
+material_override = ExtResource("5_dark")
+
+[node name="MachineFastenerFrontRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.414, 0.385, -0.413)
+mesh = SubResource("GuideBoltMesh")
+material_override = ExtResource("4_white")
+
+[node name="MachinePostRearRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.414, 0.245, 0.413)
+mesh = SubResource("MachinePostMesh")
+material_override = ExtResource("5_dark")
+
+[node name="MachineFastenerRearRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.414, 0.385, 0.413)
+mesh = SubResource("GuideBoltMesh")
+material_override = ExtResource("4_white")
+
+[node name="FeedControlPanel" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.16, -0.437)
+mesh = SubResource("ControlPanelMesh")
+material_override = ExtResource("5_dark")
+
+[node name="FeedStatusBar" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 0.16, -0.45)
+mesh = SubResource("StatusMesh")
+material_override = ExtResource("6_cyan")
+
+[node name="FeedRearVentLeft" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(-0.235, 0.14, 0.437)
+mesh = SubResource("RearMachineVentMesh")
+material_override = ExtResource("5_dark")
+
+[node name="FeedRearVentRight" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0.235, 0.14, 0.437)
+mesh = SubResource("RearMachineVentMesh")
+material_override = ExtResource("5_dark")
 
 [node name="BlockA" parent="VisualRoot" instance=ExtResource("3_block")]
 position = Vector3(-0.18, 0.2, -0.16)
@@ -56,4 +169,4 @@ no_depth_test = true
 text = "∞ 供料"
 font_size = 30
 outline_size = 8
-modulate = Color(1, 0.8, 0.2, 1)
+modulate = Color(0.72, 0.96, 1, 1)

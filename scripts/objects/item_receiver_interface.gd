@@ -23,6 +23,15 @@ func accepts_item_type(item_type: StringName) -> bool:
 	return get_accepted_item_types().has(item_type)
 
 
+func can_accept_item(item: Variant) -> bool:
+	if item == null or not item.has_method("get_item_type"):
+		return false
+	if not accepts_item_type(item.call("get_item_type")):
+		return false
+	var capacity := get_capacity()
+	return capacity <= 0 or get_current_count() < capacity
+
+
 func can_take_item() -> bool:
 	return false
 

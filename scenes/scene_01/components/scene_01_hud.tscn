@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_hud.gd" id="1_hud"]
 [ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
@@ -7,30 +7,42 @@
 [ext_resource type="Texture2D" path="res://assets/ui/icons/chevron_down.svg" id="5_chevron_down"]
 [ext_resource type="Texture2D" path="res://assets/ui/icons/chevron_right.svg" id="6_chevron_right"]
 [ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_sidebar_scroll_theme.tres" id="7_scroll_theme"]
+[ext_resource type="SystemFont" path="res://assets/ui/fonts/lab_mono.tres" id="8_lab_mono"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sidebar_shell"]
-bg_color = Color(0.975, 0.986, 0.996, 0.92)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_color = Color(0.08, 0.14, 0.2, 0.16)
-shadow_size = 7
+bg_color = Color(0.968627, 0.976471, 0.984314, 0.97)
+border_width_left = 1
+border_width_top = 2
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.070588, 0.627451, 0.686275, 0.55)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.039216, 0.078431, 0.101961, 0.1)
+shadow_size = 10
 shadow_offset = Vector2(0, 2)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_section_header"]
-bg_color = Color(0.91, 0.945, 0.975, 0.88)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.913725, 0.937255, 0.952941, 0.96)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+border_width_left = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_section_body"]
-bg_color = Color(0.99, 0.995, 1, 0.78)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.984314, 0.988235, 0.992157, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.878431, 0.913725, 0.937255, 0.9)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_header_button_normal"]
 bg_color = Color(1, 1, 1, 0)
@@ -38,99 +50,114 @@ content_margin_left = 0.0
 content_margin_top = 0.0
 content_margin_right = 0.0
 content_margin_bottom = 0.0
-corner_radius_top_left = 11
-corner_radius_top_right = 11
-corner_radius_bottom_right = 11
-corner_radius_bottom_left = 11
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_header_button_hover"]
-bg_color = Color(0.82, 0.9, 0.97, 0.74)
+bg_color = Color(0.878431, 0.956863, 0.976471, 0.85)
 content_margin_left = 0.0
 content_margin_top = 0.0
 content_margin_right = 0.0
 content_margin_bottom = 0.0
-corner_radius_top_left = 11
-corner_radius_top_right = 11
-corner_radius_bottom_right = 11
-corner_radius_bottom_left = 11
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tutorial_button_normal"]
-bg_color = Color(0.985, 0.991, 0.997, 1)
+bg_color = Color(1, 1, 1, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.76, 0.81, 0.86, 0.9)
+border_color = Color(0.815686, 0.878431, 0.905882, 1)
 content_margin_left = 6.0
 content_margin_top = 5.0
 content_margin_right = 6.0
 content_margin_bottom = 5.0
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tutorial_button_hover"]
-bg_color = Color(0.91, 0.96, 1, 1)
+bg_color = Color(0.878431, 0.956863, 0.976471, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.26, 0.61, 0.92, 0.95)
+border_color = Color(0.070588, 0.627451, 0.686275, 1)
 content_margin_left = 6.0
 content_margin_top = 5.0
 content_margin_right = 6.0
 content_margin_bottom = 5.0
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tutorial_button_pressed"]
-bg_color = Color(0.82, 0.91, 0.99, 1)
+bg_color = Color(0.070588, 0.627451, 0.686275, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.1, 0.47, 0.86, 1)
+border_color = Color(0.070588, 0.627451, 0.686275, 1)
 content_margin_left = 6.0
 content_margin_top = 5.0
 content_margin_right = 6.0
 content_margin_bottom = 5.0
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tutorial_button_disabled"]
-bg_color = Color(0.94, 0.95, 0.96, 0.8)
+bg_color = Color(0.941176, 0.956863, 0.968627, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.84, 0.86, 0.89, 0.75)
+border_color = Color(0.866667, 0.905882, 0.929412, 1)
 content_margin_left = 6.0
 content_margin_top = 5.0
 content_margin_right = 6.0
 content_margin_bottom = 5.0
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_bg"]
-bg_color = Color(0.81, 0.86, 0.91, 0.8)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+bg_color = Color(0.913725, 0.937255, 0.952941, 1)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_right = 1
+corner_radius_bottom_left = 1
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_fill"]
-bg_color = Color(0.12, 0.53, 0.95, 0.92)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+bg_color = Color(0.247059, 0.776471, 0.807843, 1)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_right = 1
+corner_radius_bottom_left = 1
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_completion_panel"]
+bg_color = Color(0.062745, 0.109804, 0.137255, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.070588, 0.627451, 0.686275, 0.4)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.039216, 0.078431, 0.101961, 0.28)
+shadow_size = 20
+shadow_offset = Vector2(0, 6)
 
 [node name="HUDRoot" type="CanvasLayer"]
 layer = 5
@@ -232,7 +259,7 @@ theme_override_constants/margin_bottom = 3
 [node name="Title" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Header/Margin"]
 layout_mode = 2
 text = "任务"
-theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_colors/font_color = Color(0.062745, 0.109804, 0.137255, 1)
 theme_override_font_sizes/font_size = 15
 
 [node name="Card" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection"]
@@ -250,6 +277,12 @@ theme_override_constants/margin_bottom = 7
 layout_mode = 2
 theme_override_constants/separation = 7
 
+[node name="MissionCaption" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Card/Margin/VBox"]
+layout_mode = 2
+text = "MISSION · CONTAINER SORTING"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
+
 [node name="Row" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Card/Margin/VBox"]
 layout_mode = 2
 
@@ -258,14 +291,15 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "标准箱"
-theme_override_colors/font_color = Color(0.11, 0.18, 0.26, 1)
+theme_override_colors/font_color = Color(0.062745, 0.109804, 0.137255, 1)
 theme_override_font_sizes/font_size = 15
 
 [node name="MissionValueLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Card/Margin/VBox/Row"]
+theme_override_fonts/font = ExtResource("8_lab_mono")
 unique_name_in_owner = true
 layout_mode = 2
 text = "3 / 8"
-theme_override_colors/font_color = Color(0.26, 0.36, 0.48, 1)
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
 theme_override_font_sizes/font_size = 15
 
 [node name="MissionProgress" type="ProgressBar" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/MissionSection/Card/Margin/VBox"]
@@ -298,7 +332,7 @@ theme_override_constants/margin_bottom = 3
 [node name="Title" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/VehicleSection/Header/Margin"]
 layout_mode = 2
 text = "当前车辆"
-theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_colors/font_color = Color(0.062745, 0.109804, 0.137255, 1)
 theme_override_font_sizes/font_size = 15
 
 [node name="Card" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/VehicleSection"]
@@ -316,7 +350,7 @@ theme_override_constants/margin_bottom = 7
 unique_name_in_owner = true
 layout_mode = 2
 text = "未选择"
-theme_override_colors/font_color = Color(0.11, 0.18, 0.26, 1)
+theme_override_colors/font_color = Color(0.062745, 0.109804, 0.137255, 1)
 theme_override_font_sizes/font_size = 15
 
 [node name="StatusSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
@@ -342,7 +376,7 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "状态"
-theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_colors/font_color = Color(0.062745, 0.109804, 0.137255, 1)
 theme_override_font_sizes/font_size = 15
 
 [node name="StatusCollapseButton" type="Button" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/Header/Margin/Row"]
@@ -383,13 +417,14 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "位置"
-theme_override_colors/font_color = Color(0.38, 0.46, 0.55, 1)
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
 
 [node name="PositionValueLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/PositionRow"]
+theme_override_fonts/font = ExtResource("8_lab_mono")
 unique_name_in_owner = true
 layout_mode = 2
 text = "—"
-theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_colors/font_color = Color(0.062745, 0.109804, 0.137255, 1)
 
 [node name="FacingRow" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody"]
 layout_mode = 2
@@ -398,13 +433,14 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "朝向"
-theme_override_colors/font_color = Color(0.38, 0.46, 0.55, 1)
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
 
 [node name="FacingValueLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/FacingRow"]
+theme_override_fonts/font = ExtResource("8_lab_mono")
 unique_name_in_owner = true
 layout_mode = 2
 text = "—"
-theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_colors/font_color = Color(0.062745, 0.109804, 0.137255, 1)
 
 [node name="CargoRow" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody"]
 layout_mode = 2
@@ -414,13 +450,14 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "载荷"
-theme_override_colors/font_color = Color(0.38, 0.46, 0.55, 1)
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
 
 [node name="CargoValueLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/CargoRow"]
+theme_override_fonts/font = ExtResource("8_lab_mono")
 unique_name_in_owner = true
 layout_mode = 2
 text = "—"
-theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_colors/font_color = Color(0.062745, 0.109804, 0.137255, 1)
 
 [node name="MoveRow" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody"]
 layout_mode = 2
@@ -429,13 +466,14 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "移动"
-theme_override_colors/font_color = Color(0.38, 0.46, 0.55, 1)
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
 
 [node name="MoveValueLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/MoveRow"]
+theme_override_fonts/font = ExtResource("8_lab_mono")
 unique_name_in_owner = true
 layout_mode = 2
 text = "—"
-theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_colors/font_color = Color(0.062745, 0.109804, 0.137255, 1)
 
 [node name="RotateRow" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody"]
 layout_mode = 2
@@ -444,13 +482,14 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "旋转"
-theme_override_colors/font_color = Color(0.38, 0.46, 0.55, 1)
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
 
 [node name="RotateValueLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/RotateRow"]
+theme_override_fonts/font = ExtResource("8_lab_mono")
 unique_name_in_owner = true
 layout_mode = 2
 text = "—"
-theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_colors/font_color = Color(0.062745, 0.109804, 0.137255, 1)
 
 [node name="GrabRow" type="HBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody"]
 layout_mode = 2
@@ -459,22 +498,24 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "抓放"
-theme_override_colors/font_color = Color(0.38, 0.46, 0.55, 1)
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
 
 [node name="GrabValueLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody/GrabRow"]
+theme_override_fonts/font = ExtResource("8_lab_mono")
 unique_name_in_owner = true
 layout_mode = 2
 text = "—"
-theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_colors/font_color = Color(0.062745, 0.109804, 0.137255, 1)
 
 [node name="FeedbackLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/StatusSection/StatusCard/Margin/StatusBody"]
-unique_name_in_owner = true
+
+theme_override_fonts/font = ExtResource("8_lab_mono")unique_name_in_owner = true
 visible = false
 layout_mode = 2
 text = ""
 clip_text = true
 text_overrun_behavior = 3
-theme_override_colors/font_color = Color(0.29, 0.36, 0.44, 1)
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
 
 [node name="PointerSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
 unique_name_in_owner = true
@@ -495,7 +536,7 @@ theme_override_constants/margin_bottom = 3
 [node name="Title" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/PointerSection/Header/Margin"]
 layout_mode = 2
 text = "指针"
-theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_colors/font_color = Color(0.062745, 0.109804, 0.137255, 1)
 theme_override_font_sizes/font_size = 15
 
 [node name="Card" type="PanelContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/PointerSection"]
@@ -510,10 +551,11 @@ theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 7
 
 [node name="PointerLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/PointerSection/Card/Margin"]
+theme_override_fonts/font = ExtResource("8_lab_mono")
 unique_name_in_owner = true
 layout_mode = 2
 text = "X —   Y —"
-theme_override_colors/font_color = Color(0.26, 0.36, 0.48, 1)
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
 theme_override_font_sizes/font_size = 15
 
 [node name="TutorialSection" type="VBoxContainer" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar"]
@@ -541,14 +583,14 @@ theme_override_constants/separation = 8
 layout_mode = 2
 size_flags_horizontal = 3
 text = "教学"
-theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_colors/font_color = Color(0.062745, 0.109804, 0.137255, 1)
 theme_override_font_sizes/font_size = 15
 
 [node name="ProgressLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/Header/Margin/HeaderRow"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "目标 0 / 5"
-theme_override_colors/font_color = Color(0.25, 0.42, 0.61, 1)
+theme_override_colors/font_color = Color(0.070588, 0.627451, 0.686275, 1)
 
 [node name="CollapseButton" type="Button" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/Header/Margin/HeaderRow"]
 unique_name_in_owner = true
@@ -592,7 +634,7 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "左键点击机械臂小车。"
 autowrap_mode = 2
-theme_override_colors/font_color = Color(0.3, 0.34, 0.39, 1)
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
 
 [node name="GoalLabel" type="Label" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/TutorialContentMargin/VBox"]
 unique_name_in_owner = true
@@ -600,7 +642,7 @@ layout_mode = 2
 text = "本页目标：选择机械臂车（0/1）\n场景目标：填满标准箱（3/8）"
 autowrap_mode = 2
 theme_override_constants/line_spacing = 3
-theme_override_colors/font_color = Color(0.08, 0.48, 0.34, 1)
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
 
 [node name="Rule" type="HSeparator" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/TutorialSection/TutorialBody/TutorialContentMargin/VBox"]
 layout_mode = 2
@@ -674,7 +716,7 @@ theme_override_constants/separation = 8
 layout_mode = 2
 size_flags_horizontal = 3
 text = "操作指南"
-theme_override_colors/font_color = Color(0.1, 0.16, 0.23, 1)
+theme_override_colors/font_color = Color(0.062745, 0.109804, 0.137255, 1)
 theme_override_font_sizes/font_size = 15
 
 [node name="TutorialButton" type="Button" parent="RootControl/SidebarPanel/Margin/SidebarScroll/Sidebar/GuideSection/Header/Margin/HeaderRow"]
@@ -699,11 +741,12 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "左键选择车辆 · M 移动 · X 停止\nA / D 旋转 · 机械臂 C 抓放 · Q / E 旋转相机"
 autowrap_mode = 2
-theme_override_colors/font_color = Color(0.32, 0.37, 0.43, 1)
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
 
 [node name="CompletionPanel" type="PanelContainer" parent="RootControl"]
 unique_name_in_owner = true
 visible = false
+theme_override_styles/panel = SubResource("StyleBoxFlat_completion_panel")
 layout_mode = 0
 anchor_left = 0.5
 anchor_top = 0.5
@@ -734,11 +777,19 @@ layout_mode = 2
 text = "任务完成"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 28
-theme_override_colors/font_color = Color(0.06, 0.48, 0.34, 1)
+theme_override_colors/font_color = Color(0.945098, 0.976471, 0.988235, 1)
+
+[node name="CompletionCaption" type="Label" parent="RootControl/CompletionPanel/Margin/VBox"]
+layout_mode = 2
+text = "MISSION COMPLETE · SORTING PROTOCOL"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.639216, 0.745098, 0.803922, 1)
 
 [node name="CompletionSummaryLabel" type="Label" parent="RootControl/CompletionPanel/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(0.945098, 0.976471, 0.988235, 1)
 text = "标准箱 8/8 · 任务已完成"
 horizontal_alignment = 1
 
@@ -746,7 +797,7 @@ horizontal_alignment = 1
 layout_mode = 2
 text = "时间 —   组件 —   自动化率 —"
 horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.38, 0.43, 0.49, 1)
+theme_override_colors/font_color = Color(0.639216, 0.745098, 0.803922, 1)
 
 [node name="ScorePresenter" type="Node" parent="."]
 script = ExtResource("3_score_presenter")

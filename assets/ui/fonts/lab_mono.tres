@@ -1,0 +1,5 @@
+[gd_resource type="SystemFont" format=3]
+
+[resource]
+font_names = PackedStringArray("Cascadia Mono", "Consolas", "JetBrains Mono", "Segoe UI Variable Text", "Microsoft YaHei UI")
+allow_system_fallback = true

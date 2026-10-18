@@ -67,7 +67,7 @@ func build_definition(vehicle: VehicleActorScript) -> AssemblyDefinitionScript:
 		occupied_cells,
 		capabilities,
 		interfaces,
-		0,
+		vehicle_definition.assembly_cost,
 		vehicle_definition.total_weight
 	)
 	return AssemblyDefinitionScript.new(
@@ -83,4 +83,6 @@ func _component_type_for(vehicle_definition: VehicleDefinitionScript) -> StringN
 			return &"scene01_arm_vehicle_preset"
 		VehicleDefinitionScript.VehicleKind.TRANSPORT:
 			return &"scene01_transport_vehicle_preset"
+		VehicleDefinitionScript.VehicleKind.ASSEMBLED:
+			return &"blueprint_vehicle_preset"
 	return &""

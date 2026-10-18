@@ -99,15 +99,18 @@ func _refresh_state_values(arm_has_item: bool, tray_count: int) -> void:
 
 func _refresh_tray_visual(tray_count: int) -> void:
 	var slot_count: int = _tray_slots_root.get_child_count() if _tray_slots_root != null else 0
-	var visible_count: int = clampi(tray_count, 0, slot_count)
+	var capacity: int = slot_count
+	var has_tray := slot_count > 0
+	if not Engine.is_editor_hint() and _actor != null and _actor.definition != null:
+		capacity = _actor.definition.tray_capacity
+		has_tray = capacity > 0
+	var visible_count: int = clampi(tray_count, 0, capacity) if has_tray else 0
 	if _tray_slots_root != null:
 		for index in range(slot_count):
 			var slot := _tray_slots_root.get_child(index) as Node3D
 			if slot != null:
-				slot.visible = index < visible_count
+				slot.visible = has_tray and index < visible_count
 	if _tray_count_label != null:
-		var capacity: int = slot_count
-		if not Engine.is_editor_hint() and _actor != null and _actor.definition != null:
-			if _actor.definition.tray_capacity > 0:
-				capacity = _actor.definition.tray_capacity
-		_tray_count_label.text = "%d/%d" % [tray_count, capacity]
+		_tray_count_label.visible = has_tray
+		if has_tray:
+			_tray_count_label.text = "%d/%d" % [tray_count, capacity]
