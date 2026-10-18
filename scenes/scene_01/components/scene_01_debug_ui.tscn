@@ -106,7 +106,7 @@ visible = false
 layout_mode = 2
 text = "快捷键：Shift+Q/E 旋转网格 · G 切换偏移 · R 重置 · Home 恢复"
 autowrap_mode = 2
-theme_override_colors/font_color = Color(0.36, 0.45, 0.56, 1)
+theme_override_colors/font_color = Color(0.352941, 0.384314, 0.415686, 1)
 
 [node name="StatusLabel" type="Label" parent="RootControl/Panel/Margin/VBox"]
 unique_name_in_owner = true
@@ -114,7 +114,7 @@ visible = false
 layout_mode = 2
 text = "调试面板已就绪"
 autowrap_mode = 2
-theme_override_colors/font_color = Color(0.09, 0.55, 0.39, 1)
+theme_override_colors/font_color = Color(0.352941, 0.384314, 0.415686, 1)
 
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/HeaderRow/CollapseButton" to="." method="_on_collapse_pressed"]
 [connection signal="pressed" from="RootControl/Panel/Margin/VBox/RotateRow/RotateLeft" to="." method="_on_rotate_left_pressed"]

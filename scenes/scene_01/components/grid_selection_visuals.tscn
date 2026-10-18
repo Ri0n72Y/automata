@@ -12,13 +12,13 @@ size = Vector3(0.88, 0.015, 0.88)
 resource_local_to_scene = true
 transparency = 1
 shading_mode = 0
-albedo_color = Color(0.25, 0.75, 1, 0.18)
+albedo_color = Color(0.247, 0.776, 0.808, 0.2)
 
 [sub_resource type="StandardMaterial3D" id="Material_selected"]
 resource_local_to_scene = true
 transparency = 1
 shading_mode = 0
-albedo_color = Color(1, 0.68, 0.1, 0.26)
+albedo_color = Color(0.106, 0.498, 0.831, 0.26)
 
 [node name="GridSelectionVisuals" type="Node3D"]
 

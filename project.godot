@@ -12,7 +12,7 @@ config_version=5
 
 config/name="automata"
 run/main_scene="res://scenes/scene_01/scene_01_basic_packing.tscn"
-config/features=PackedStringArray("4.7", "GL Compatibility")
+config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 
 [display]
@@ -64,5 +64,6 @@ vehicle_rotate_clockwise={
 
 [rendering]
 
-renderer/rendering_method="gl_compatibility"
-renderer/rendering_method.mobile="gl_compatibility"
+renderer/rendering_method="forward_plus"
+renderer/rendering_method.mobile="mobile"
+renderer/rendering_method.web="gl_compatibility"

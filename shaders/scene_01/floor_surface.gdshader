@@ -11,28 +11,50 @@ uniform float roughness_value : hint_range(0.0, 1.0, 0.01) = 0.72;
 uniform float roughness_variation : hint_range(0.0, 0.12, 0.005) = 0.0;
 uniform float metallic_value : hint_range(0.0, 1.0, 0.01) = 0.02;
 uniform float specular_value : hint_range(0.0, 1.0, 0.01) = 0.35;
+uniform float seam_width : hint_range(0.0, 0.10, 0.005) = 0.018;
+uniform float seam_darkness : hint_range(0.0, 0.8, 0.01) = 0.34;
+uniform float tile_tone_jitter : hint_range(0.0, 0.06, 0.005) = 0.018;
+
+varying vec3 v_local;
+
+float hash21(vec2 p) {
+	p = fract(p * vec2(123.34, 456.21));
+	p += dot(p, p + 45.32);
+	return fract(p.x * p.y);
+}
+
+void vertex() {
+	v_local = VERTEX;
+}
 
 void fragment() {
-    vec2 tiled_uv = UV * tile_repeat;
-    vec4 sampled = texture(albedo_texture, tiled_uv) * tint;
-    vec3 contrasted = (sampled.rgb - vec3(0.5)) * albedo_contrast + vec3(0.5);
-    vec3 lifted = mix(contrasted, vec3(1.0), albedo_lift);
-    float luma = dot(sampled.rgb, vec3(0.2126, 0.7152, 0.0722));
+	vec2 tiled_uv = UV * tile_repeat;
+	vec4 sampled = texture(albedo_texture, tiled_uv) * tint;
+	vec3 contrasted = (sampled.rgb - vec3(0.5)) * albedo_contrast + vec3(0.5);
+	vec3 lifted = mix(contrasted, vec3(1.0), albedo_lift);
+	float luma = dot(sampled.rgb, vec3(0.2126, 0.7152, 0.0722));
 
-    // A warm-grey porcelain baseline keeps the 4 px tile seams legible without
-    // turning the whole 16x10 field into a high-contrast wireframe.
-    vec3 porcelain = vec3(0.77, 0.79, 0.82);
-    vec3 normal_sample = texture(normal_texture, tiled_uv).rgb;
-    float bevel_slope = clamp(length(normal_sample.rg * 2.0 - vec2(1.0)) * 0.65, 0.0, 1.0);
-    float recessed_line = clamp((0.72 - luma) * 0.85, 0.0, 1.0);
-    // Preserve the raster-authored perimeter seam and central cross at gameplay zoom.
-    // Raise the contrast of the ink without reverting to harsh black grid lines.
-    float ink_mask = 1.0 - smoothstep(0.62, 0.94, luma);
-    vec3 ceramic = mix(porcelain, lifted, 0.14);
-    ALBEDO = ceramic * (1.0 - 0.04 * recessed_line - 0.035 * bevel_slope - 0.15 * ink_mask);
-    ROUGHNESS = clamp(roughness_value + (0.5 - luma) * roughness_variation, 0.0, 1.0);
-    METALLIC = metallic_value;
-    SPECULAR = specular_value;
-    NORMAL_MAP = texture(normal_texture, tiled_uv).rgb;
-    NORMAL_MAP_DEPTH = normal_depth;
+	// Geometry-aligned 1 m panel seams: independent of the authored raster tile,
+	// so the playable grid reads crisply at every camera angle.
+	vec2 cell_uv = v_local.xz;
+	vec2 cell = floor(cell_uv);
+	vec2 edge_distance = min(fract(cell_uv), 1.0 - fract(cell_uv));
+	float seam = 1.0 - smoothstep(seam_width, seam_width + 0.012, min(edge_distance.x, edge_distance.y));
+	float tone = mix(1.0 - tile_tone_jitter, 1.0 + tile_tone_jitter, hash21(cell));
+
+	// Aperture porcelain: near-white warm-neutral tile with legible but thin seams.
+	vec3 porcelain = vec3(0.76, 0.775, 0.735);
+	vec3 normal_sample = texture(normal_texture, tiled_uv).rgb;
+	float bevel_slope = clamp(length(normal_sample.rg * 2.0 - vec2(1.0)) * 0.65, 0.0, 1.0);
+	float recessed_line = clamp((0.72 - luma) * 0.85, 0.0, 1.0);
+	float ink_mask = 1.0 - smoothstep(0.62, 0.94, luma);
+	vec3 ceramic = mix(porcelain, lifted, 0.12) * tone;
+	ceramic *= 1.0 - 0.05 * recessed_line - 0.04 * bevel_slope - 0.18 * ink_mask;
+	ceramic *= 1.0 - seam_darkness * seam;
+	ALBEDO = ceramic;
+	ROUGHNESS = clamp(roughness_value + (0.5 - luma) * roughness_variation + 0.12 * seam, 0.0, 1.0);
+	METALLIC = metallic_value;
+	SPECULAR = specular_value;
+	NORMAL_MAP = texture(normal_texture, tiled_uv).rgb;
+	NORMAL_MAP_DEPTH = normal_depth;
 }

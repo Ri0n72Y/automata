@@ -1,0 +1,11 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://shaders/scene_01/aperture_led_dots.gdshader" id="1_shader"]
+
+[resource]
+shader = ExtResource("1_shader")
+shader_parameter/dot_color = Color(0.247, 0.776, 0.808, 1)
+shader_parameter/dot_spacing = 0.5
+shader_parameter/dot_radius = 0.055
+shader_parameter/intensity = 2.6
+shader_parameter/softness = 0.02

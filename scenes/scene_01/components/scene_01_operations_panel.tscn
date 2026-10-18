@@ -87,6 +87,7 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "未选择车辆"
 autowrap_mode = 2
+theme_override_colors/font_color = Color(0.352941, 0.384314, 0.415686, 1)
 theme_override_font_sizes/font_size = 12
 
 [node name="MoveButton" type="Button" parent="RootControl/OperationsPanel/Margin/VBox/MoveRow"]
@@ -116,6 +117,7 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "未选择车辆"
 autowrap_mode = 2
+theme_override_colors/font_color = Color(0.352941, 0.384314, 0.415686, 1)
 theme_override_font_sizes/font_size = 12
 
 [node name="RotateButtons" type="HBoxContainer" parent="RootControl/OperationsPanel/Margin/VBox/RotateRow"]
@@ -159,6 +161,7 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "未选择车辆"
 autowrap_mode = 2
+theme_override_colors/font_color = Color(0.352941, 0.384314, 0.415686, 1)
 theme_override_font_sizes/font_size = 12
 
 [node name="GrabDropButton" type="Button" parent="RootControl/OperationsPanel/Margin/VBox/GrabDropRow"]

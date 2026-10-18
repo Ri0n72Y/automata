@@ -4,19 +4,51 @@
 
 [sub_resource type="Environment" id="SceneEnvironment"]
 background_mode = 1
-background_color = Color(0.6, 0.64, 0.69, 1)
-ambient_light_source = 3
-ambient_light_color = Color(0.88, 0.92, 0.97, 1)
-ambient_light_energy = 0.34
-reflected_light_source = 2
+background_color = Color(0.014, 0.017, 0.021, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.52, 0.56, 0.60, 1)
+ambient_light_energy = 0.3
+reflected_light_source = 1
 tonemap_mode = 2
+tonemap_exposure = 1.06
+tonemap_white = 1.6
 ssao_enabled = true
-ssao_radius = 0.9
-ssao_intensity = 1.42
+ssao_radius = 1.1
+ssao_intensity = 1.5
+ssao_power = 1.5
+ssao_detail = 0.5
+ssao_light_affect = 0.15
+glow_enabled = true
+glow_intensity = 0.45
+glow_strength = 0.9
+glow_bloom = 0.05
+glow_hdr_threshold = 0.92
+glow_blend_mode = 1
+fog_enabled = true
+fog_light_color = Color(0.421, 0.500, 0.579, 1)
+fog_light_energy = 0.9
+fog_density = 0.006
+fog_aerial_perspective = 0.35
+fog_sky_affect = 0.1
+fog_height = 0.6
+fog_height_density = 0.04
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.014
+volumetric_fog_albedo = Color(0.66, 0.71, 0.76, 1)
+volumetric_fog_length = 80.0
+volumetric_fog_detail_spread = 1.4
+volumetric_fog_ambient_inject = 0.08
+volumetric_fog_anisotropy = 0.3
+volumetric_fog_sky_affect = 0.0
+adjustment_enabled = true
+adjustment_brightness = 1.0
+adjustment_contrast = 1.1
+adjustment_saturation = 0.92
 
 [node name="Scene01CameraRig" type="Node3D"]
 script = ExtResource("1_camera_rig")
 auto_frame_grid = true
+framing_margin = 1.25
 elevation_degrees = 30.0
 rotation_duration = 0.28
 
@@ -31,15 +63,21 @@ far = 120
 current = true
 
 [node name="KeyLight" type="DirectionalLight3D" parent="."]
-rotation_degrees = Vector3(-58, -32, 0)
-light_color = Color(1, 0.95, 0.9, 1)
-light_energy = 0.77
+rotation_degrees = Vector3(-53, -35, 0)
+light_color = Color(1, 0.96, 0.93, 1)
+light_energy = 1.5
+light_angular_distance = 1.0
 shadow_enabled = true
+shadow_bias = 0.03
+shadow_normal_bias = 1.5
+shadow_blur = 1.2
+directional_shadow_mode = 2
+directional_shadow_max_distance = 60.0
 
 [node name="FillLight" type="DirectionalLight3D" parent="."]
 rotation_degrees = Vector3(-38, 145, 0)
-light_color = Color(0.7, 0.82, 0.98, 1)
-light_energy = 0.11
+light_color = Color(0.75, 0.8, 0.86, 1)
+light_energy = 0.2
 shadow_enabled = false
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]

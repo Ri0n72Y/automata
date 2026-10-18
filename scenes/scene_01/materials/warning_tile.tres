@@ -4,9 +4,10 @@
 
 [resource]
 shader = ExtResource("1_shader")
-shader_parameter/yellow_color = Color(0.94, 0.72, 0.08, 1)
-shader_parameter/dark_color = Color(0.10, 0.09, 0.08, 1)
-shader_parameter/stripe_bands_per_cell = 5.0
-shader_parameter/roughness_value = 0.72
-shader_parameter/metallic_value = 0.01
-shader_parameter/specular_value = 0.30
+shader_parameter/base_color = Color(0.075, 0.082, 0.09, 1)
+shader_parameter/tread_color = Color(0.115, 0.125, 0.138, 1)
+shader_parameter/stripe_bands_per_cell = 8.0
+shader_parameter/stripe_contrast = 0.55
+shader_parameter/roughness_value = 0.6
+shader_parameter/metallic_value = 0.2
+shader_parameter/specular_value = 0.35

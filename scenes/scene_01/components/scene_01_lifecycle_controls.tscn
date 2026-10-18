@@ -8,22 +8,22 @@
 [ext_resource type="Texture2D" path="res://assets/ui/icons/status_dot.svg" id="6_dot"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_capsule"]
-bg_color = Color(0.975, 0.988, 1, 0.95)
-corner_radius_top_left = 22
-corner_radius_top_right = 22
-corner_radius_bottom_right = 22
-corner_radius_bottom_left = 22
-shadow_color = Color(0.11, 0.17, 0.24, 0.17)
-shadow_size = 7
-shadow_offset = Vector2(0, 2)
+bg_color = Color(0.945098, 0.94902, 0.933333, 0.97)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0.0784314, 0.0980392, 0.117647, 0.12)
+shadow_size = 6
+shadow_offset = Vector2(0, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_control_group"]
-bg_color = Color(0.91, 0.955, 0.995, 0.94)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-shadow_color = Color(0.11, 0.17, 0.24, 0.13)
+bg_color = Color(0.905882, 0.913725, 0.898039, 0.95)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0.0784314, 0.0980392, 0.117647, 0.1)
 shadow_size = 3
 shadow_offset = Vector2(0, 1)
 
@@ -33,32 +33,32 @@ content_margin_left = 0.0
 content_margin_top = 0.0
 content_margin_right = 0.0
 content_margin_bottom = 0.0
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_action_hover"]
-bg_color = Color(0.79, 0.9, 0.99, 0.95)
+bg_color = Color(0.917647, 0.952941, 0.980392, 0.95)
 content_margin_left = 0.0
 content_margin_top = 0.0
 content_margin_right = 0.0
 content_margin_bottom = 0.0
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_action_pressed"]
-bg_color = Color(0.72, 0.85, 0.97, 1)
+bg_color = Color(0.105882, 0.498039, 0.831373, 1)
 content_margin_left = 0.0
 content_margin_top = 0.0
 content_margin_right = 0.0
 content_margin_bottom = 0.0
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_speed_normal"]
 bg_color = Color(1, 1, 1, 0)
@@ -66,32 +66,42 @@ content_margin_left = 8.0
 content_margin_top = 0.0
 content_margin_right = 8.0
 content_margin_bottom = 0.0
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_speed_hover"]
-bg_color = Color(0.91, 0.96, 1, 0.48)
+bg_color = Color(0.917647, 0.952941, 0.980392, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.105882, 0.498039, 0.831373, 1)
 content_margin_left = 8.0
 content_margin_top = 0.0
 content_margin_right = 8.0
 content_margin_bottom = 0.0
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_speed_pressed"]
-bg_color = Color(0.86, 0.93, 0.99, 0.62)
+bg_color = Color(0.105882, 0.498039, 0.831373, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.105882, 0.498039, 0.831373, 1)
 content_margin_left = 8.0
 content_margin_top = 0.0
 content_margin_right = 8.0
 content_margin_bottom = 0.0
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [node name="LifecycleUIRoot" type="CanvasLayer"]
 script = ExtResource("1_controls")
@@ -142,7 +152,7 @@ layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("6_dot")
 stretch_mode = 5
-modulate = Color(0.23, 0.58, 0.9, 1)
+modulate = Color(0.105882, 0.498039, 0.831373, 1)
 
 [node name="StateLabel" type="Label" parent="RootControl/Panel/Margin/Controls/StatusGroup"]
 unique_name_in_owner = true
@@ -150,7 +160,7 @@ custom_minimum_size = Vector2(42, 0)
 layout_mode = 2
 text = "就绪"
 theme_override_font_sizes/font_size = 14
-theme_override_colors/font_color = Color(0.17, 0.34, 0.52, 1)
+theme_override_colors/font_color = Color(0.352941, 0.384314, 0.415686, 1)
 
 [node name="TimeLabel" type="Label" parent="RootControl/Panel/Margin/Controls"]
 unique_name_in_owner = true
@@ -159,7 +169,7 @@ layout_mode = 2
 text = "00:00.0"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 14
-theme_override_colors/font_color = Color(0.08, 0.13, 0.19, 1)
+theme_override_colors/font_color = Color(0.109804, 0.121569, 0.133333, 1)
 
 [node name="RunResetGroup" type="PanelContainer" parent="RootControl/Panel/Margin/Controls"]
 unique_name_in_owner = true
@@ -196,7 +206,7 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_action_normal")
 [node name="Divider" type="VSeparator" parent="RootControl/Panel/Margin/Controls/RunResetGroup/InnerMargin/Controls"]
 custom_minimum_size = Vector2(1, 18)
 layout_mode = 2
-modulate = Color(1, 1, 1, 0.38)
+modulate = Color(1, 1, 1, 1)
 
 [node name="ResetButton" type="Button" parent="RootControl/Panel/Margin/Controls/RunResetGroup/InnerMargin/Controls"]
 unique_name_in_owner = true
@@ -225,11 +235,11 @@ layout_mode = 2
 focus_mode = 0
 fit_to_longest_item = false
 tooltip_text = "仿真倍速"
-theme_override_colors/font_color = Color(0.08, 0.13, 0.19, 1)
-theme_override_colors/font_hover_color = Color(0.08, 0.13, 0.19, 1)
-theme_override_colors/font_pressed_color = Color(0.08, 0.13, 0.19, 1)
-theme_override_colors/font_focus_color = Color(0.08, 0.13, 0.19, 1)
-theme_override_colors/font_hover_pressed_color = Color(0.08, 0.13, 0.19, 1)
+theme_override_colors/font_color = Color(0.109804, 0.121569, 0.133333, 1)
+theme_override_colors/font_hover_color = Color(0.105882, 0.498039, 0.831373, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(0.109804, 0.121569, 0.133333, 1)
+theme_override_colors/font_hover_pressed_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 14
 theme_override_constants/arrow_margin = 0
 theme_override_constants/h_separation = 3

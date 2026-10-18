@@ -41,12 +41,14 @@ text = "运行"
 [node name="SourceTitle" type="Label" parent="."]
 layout_mode = 2
 text = "源码 · 规范 v2"
+theme_override_colors/font_color = Color(0.352941, 0.384314, 0.415686, 1)
 theme_override_font_sizes/font_size = 14
 
 [node name="Hint" type="Label" parent="."]
 layout_mode = 2
 text = "上方操作会把当前车辆命令插入光标所在源码位置；参数可直接在源码中编辑。"
 autowrap_mode = 2
+theme_override_colors/font_color = Color(0.352941, 0.384314, 0.415686, 1)
 
 [node name="SourceEditor" type="CodeEdit" parent="."]
 unique_name_in_owner = true
@@ -68,7 +70,7 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "语法有效 · 0 条语句"
 autowrap_mode = 2
-modulate = Color(0.68, 0.86, 1, 1)
+theme_override_colors/font_color = Color(0.352941, 0.384314, 0.415686, 1)
 
 [node name="ProgramToolsDivider" type="HSeparator" parent="."]
 layout_mode = 2

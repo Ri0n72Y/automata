@@ -3,12 +3,12 @@
 importer="svg"
 type="DPITexture"
 uid="uid://b71p8obwa13fg"
-path="res://.godot/imported/pause.svg-bde28a8e0f0edef914227ceec8160bbe.dpitex"
+path="res://.godot/imported/pause.svg-bde28a8e0f0edef914227ceec8160bbe-ui1.dpitex"
 
 [deps]
 
 source_file="res://assets/ui/icons/pause.svg"
-dest_files=["res://.godot/imported/pause.svg-bde28a8e0f0edef914227ceec8160bbe.dpitex"]
+dest_files=["res://.godot/imported/pause.svg-bde28a8e0f0edef914227ceec8160bbe-ui1.dpitex"]
 
 [params]
 

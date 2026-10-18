@@ -50,16 +50,16 @@ func _refresh_state(state: int) -> void:
 	match state:
 		LifecycleStateScript.State.RUNNING:
 			state_label.text = "运行中"
-			state_label.add_theme_color_override("font_color", Color(0.04, 0.55, 0.39, 1))
-			status_dot.modulate = Color(0.04, 0.72, 0.49, 1)
+			state_label.add_theme_color_override("font_color", Color(0.02, 0.36, 0.4, 1))
+			status_dot.modulate = Color(0.247, 0.776, 0.808, 1)
 		LifecycleStateScript.State.PAUSED:
 			state_label.text = "已暂停"
-			state_label.add_theme_color_override("font_color", Color(0.7, 0.42, 0.07, 1))
-			status_dot.modulate = Color(0.9, 0.58, 0.1, 1)
+			state_label.add_theme_color_override("font_color", Color(0.56, 0.34, 0.06, 1))
+			status_dot.modulate = Color(0.91, 0.54, 0.17, 1)
 		_:
 			state_label.text = "就绪"
-			state_label.add_theme_color_override("font_color", Color(0.17, 0.34, 0.52, 1))
-			status_dot.modulate = Color(0.23, 0.58, 0.9, 1)
+			state_label.add_theme_color_override("font_color", Color(0.09, 0.27, 0.44, 1))
+			status_dot.modulate = Color(0.106, 0.498, 0.831, 1)
 
 
 func _refresh_speed(controller: Node) -> void:

@@ -7,8 +7,9 @@ const VehicleActorScript := preload("res://scripts/vehicles/vehicle_actor.gd")
 
 @export var vehicle_collision_mask: int = 2
 @export_range(1.0, 1000.0, 1.0) var ray_length: float = 200.0
-@export var selection_color: Color = Color(1.0, 0.85, 0.15, 0.28)
-@export_range(1.0, 1.3, 0.01) var highlight_scale: float = 1.08
+# Aperture blue selection glow; additive so the white shell stays readable.
+@export var selection_color: Color = Color(0.04, 0.16, 0.26, 1.0)
+@export_range(1.0, 1.3, 0.01) var highlight_scale: float = 1.05
 
 var camera: Camera3D
 var vehicle_manager: Node
@@ -186,7 +187,9 @@ func _create_selection_highlight() -> MeshInstance3D:
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.albedo_color = selection_color
-	material.no_depth_test = true
+	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	# Depth-tested so the additive glow applies once over the vehicle.
+	material.no_depth_test = false
 	highlight.material_override = material
 	return highlight
 
