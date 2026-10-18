@@ -257,6 +257,7 @@ godot --headless --path . --script res://tools/acceptance_blueprint_flow.gd
 2. **蓝图托盘车缺货物显示结构**：`blueprint_vehicle_placeholder.tscn` 复用运输车的 8 个 `TraySlots` + `TrayCountLabel`；`VehicleStateVisual` 按 `definition.tray_capacity` 控制槽位/标签可见性（无托盘能力的车隐藏标签）。
 3. **成本未进入编译结果**：`VehicleDefinition` 新增 `assembly_cost`；`VehicleBlueprint.to_vehicle_definition()` 传入 `get_total_cost()`；adapter 用 `assembly_cost` 填充 `AssemblyComponentDefinition.cost`，编译结果 `metrics.cost` 与蓝图 UI 一致。
 4. **托盘载货未减速**：`VehicleRuntimeState.get_effective_speed()` 同时判断 `arm_has_item` 与托盘非空，继续由 Movement 单一入口消费。
+5. **重新打开编辑器未解除部署状态**：`_open()` 先 `_cancel_deployment()`，编辑与放置互斥；部件改动也会清掉缓存候选，世界点击不再可能部署旧组合。
 
 验证：流程验收 `FLOW RESULT failures=0`（含成本一致、托盘显示/装载、重复部署候选、载货减速与卸货恢复）；legacy 46/46 PASS；图形截图 `fix_08_blueprint_deployed.png`、`fix_09_tray_loaded.png`（本地 `.dsh-visual/`）。`warning_surface.gdshader` 的深灰踏纹属于既定视觉目标，保留。
 - 车辆 id 重复时自动追加 `_2/_3` 后缀。

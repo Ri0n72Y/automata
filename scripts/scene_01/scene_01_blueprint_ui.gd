@@ -86,6 +86,10 @@ func _input(event: InputEvent) -> void:
 
 
 func _open() -> void:
+	# Editing and placement are mutually exclusive: reopening the editor must
+	# discard any in-flight placement candidate, otherwise a later world click
+	# could deploy the previously cached combination.
+	_cancel_deployment()
 	visible = true
 	_refresh()
 
@@ -96,6 +100,8 @@ func _close() -> void:
 
 
 func _on_part_selected(_index: int) -> void:
+	# Defensive: part edits invalidate any cached placement candidate.
+	_cancel_deployment()
 	var chassis_id: StringName = _selected_id(chassis_option, _chassis_ids)
 	var wheel_id: StringName = _selected_id(wheel_option, _wheel_ids)
 	var module_id: StringName = _selected_id(module_option, _module_ids)

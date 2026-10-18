@@ -117,6 +117,18 @@ func _run() -> void:
 				)
 		blueprint_ui.call("_cancel_deployment")
 
+		# 重新打开编辑器必须解除放置状态（编辑/放置互斥）。
+		blueprint_ui.set("blueprint", tray_blueprint)
+		blueprint_ui.call("_begin_deployment")
+		_check(bool(blueprint_ui.get("_placing")), "部署模式进入放置状态")
+		blueprint_ui.call("_open")
+		_check(
+			not bool(blueprint_ui.get("_placing"))
+			and blueprint_ui.get("_deployment_blueprint") == null,
+			"重新打开编辑器会取消放置状态与候选蓝图"
+		)
+		blueprint_ui.call("_close")
+
 	# 2. Program 驱动蓝图车移动
 	var anchor: Vector2i = tray_actor.runtime_state.anchor_cell
 	var target := anchor + Vector2i(2, 0)
