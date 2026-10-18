@@ -222,6 +222,17 @@ Tutorial 五个互相独立的目标（无先后）：选中 Arm；非 RUNNING �
 - 验收方式：`tools/acceptance_blueprint_flow.gd` 全流程验收（部署→编译→Program 移动→能力差异→HUD→Reset）；**不再为装配模块新增防御性单测**（用户 2026-10-18 指示），原 46 例 legacy 套件保留。
 - **待实现**：综合关「装配站」（预算/评分/2×2 装配台）、部署 ghost 的图形细节、多蓝图库、`fabricator` 自复制终局。
 
+### 4.10 Bean Sorting / Scene 02（2026-10-18 起，第一个可玩谜题）
+
+- 设计文档：[bean_sorting_v1.md](../design/bean_sorting_v1.md)（规则、issue 映射、场景组成、验证、已知差距）。
+- 场景：`scenes/scene_02/scene_02_bean_sorting.tscn`，根脚本 `scripts/scene_02/bean_sorting_controller.gd`（extends `Scene01LifecycleController`）；Scene 01 按 `2` 进入、Scene 02 按 `1` 返回（`scripts/ui/level_switcher.gd`，纯本地便利）。
+- 物料领域：`scripts/beans/`：`BeanBatch`（继承 `StandardBlock`，复用 claim/ownership）、`BeanSourceInventory`（1000g，单次 Grab ≤300g）、`BeanTargetInventory`（1000g，任意豆种，receiver-only）。
+- 场景对象：`BeanSourceNode` / `BeanTargetNode` 自建视觉（颜色堆/编号箱），`BeanObjectManager`（extends Scene01ObjectManager）向 GrabDrop 暴露接口并禁用地面拾取/丢弃。
+- 规则：黄豆→1、绿豆→2、白豆→3；5 个固定目标箱每局随机编号 1–5，4/5 为干扰箱；错箱不实时拒绝，只在 `submit_beans()` 结算：score=正确克数（0–3000），附 wrong/lost/per-bean/per-target/elapsed 快照；Reset 保留编号，`reroll_round()` 重洗。
+- HUD：`scenes/scene_02/components/bean_hud.tscn` + `bean_hud.gd`（规则、编号、来源余量、提交/新一局、结果面板）；Operations/Program/Blueprint（`B`）仍可用。
+- 复用改动：`Scene01ProgramRunner`/`Scene01ProgramPreflight` 的类型约束从 MissionController 放宽到 LifecycleController（Scene 01 行为不变）。
+- 验收：`tools/acceptance_bean_flow.gd`（库存/编号/抓取/满箱/错箱/结算/Reset/Program/新一局，结果 `failures=0`）；截图 `bean_01_ready.png`/`bean_02_delivered.png`/`bean_03_settled.png`；legacy 46/46 不回归。
+
 ---
 
 ## 5. 进度现状

@@ -54,7 +54,7 @@ Status: **第一轮已落地（2026-10-18）**，后续视觉轮次继续迭代�
 | 环境合并 | 实验室环境（墙/梁/观察窗/LED/门/平台周边，原 106 个可见 MeshInstance）按材质合并为 1 个 9-surface 网格；生成脚本 `tools/build_environment_meshes.gd`；`aperture_panel_wall.gdshader` 改为按法线选择面板轴向，便于任意旋转/合并后的墙体 |
 | 交互语义色 | 悬停格 = 青 `#3FC6CE` 20%；已选格 = 蓝 `#1B7FD4` 26%；MoveTo 有效路径/目标 = 青（α 0.22/0.85）；无效 = 红 `#E23B32`（α 0.25/0.8）；抓放预览有效 = 青 α0.3；lifecycle 状态：就绪蓝 / 运行中青 / 已暂停橙 |
 | 材质 | `lab_structural_white`、`painted_white`、`dark_mechanical_metal`、`lab_platform_coating`、`cyan_emissive`、`lab_glass`、`warning_tile` 全部按上表重整 |
-| UI | 面板 `#F1F2EE` a0.97 / 1px `#C9CDD1` / 圆角 3；按钮白底→hover 蓝边→pressed 蓝底白字；进度条青 `#3FC6CE`；CodeEdit 等宽字体；5 px 细滚动条；图标 play 蓝 / 其余深灰；**布局与节点结构零改动** |
+| UI | 面板 `#F7F9FB` a0.97 / 1px `#D0E0E6` / 顶部 2px 青色强调边 / 圆角 6；按钮白底→hover 青色边→pressed 青色底白字；主行动（运行/部署/提交）实心青 `#12A0AF`；进度条青 `#3FC6CE`；CodeEdit 等宽；5 px 细滚动条；lifecycle 顶部控制条为深色控制台（`#101C23`），状态/计时用等宽字体；分区标题带 3px 青色左标线；小标题字幕（MISSION / OPERATIONS / ASSEMBLY BLUEPRINT / SORTING PROTOCOL）；图标 play 蓝 / 其余深灰 |
 
 ## 5. 验收（2026-10-18）
 
@@ -82,6 +82,28 @@ godot --headless --path . --script res://tools/build_environment_meshes.gd
 - 环境场景保留 `ChamberNumber`/`ChamberCaption` 两个 Label3D 与 `DustMotes` 粒子，其余静态几何进合并网格。
 - **环境 bake 是单向的**：合并后场景里只剩 `StaticShell`，再次运行环境脚本会因找不到 authored `material_override` 而中止（脚本已加保护）。要继续改环境几何，需要以 git 历史中的 authored 场景为起点重建，或另写程序化环境构建脚本。
 - 注意：本机 DSH 命令沙箱以 Low 完整性运行，无法写入 `assets/`、`scenes/components/`、`docs/`、`tests/` 等目录；生成脚本需要用更宽权限的会话/正常编辑器运行一次。CI 与普通开发者机器不在此限制内。
+
+## 5.2 UI v2：现代实验室控制台（2026-10-18 晚）
+
+在保持节点名/脚本契约不变的前提下，成套重绘 Scene 01 / Scene 02 的 UI：
+
+- **深色控制台顶栏**：lifecycle 状态条改为 `#101C23` 深色胶囊，状态灯/计时/倍速为浅色等宽字，运行/重置保持浅色内嵌控制组，形成"仪器面板"对比。
+- **冷白面板 + 青色强调**：面板底色 `#F7F9FB`、边框 `#D0E0E6`、圆角 6、更柔和的投影；面板顶部 2px 青色描边；分区标题左侧 3px 青色标线。
+- **主行动实心化**：Program「运行」、Blueprint「部署」、Bean「提交 / 结算」改为实心青底白字（`#12A0AF`，hover/pressed 有独立色阶），其余按钮维持克制的描边风格。
+- **仪表字幕与等宽遥测**：HUD 增 `MISSION · CONTAINER SORTING`、Operations 增 `OPERATIONS · MANUAL / PROGRAM`、Blueprint 增 `ASSEMBLY BLUEPRINT · [B]`、Bean HUD 增 `SORTING PROTOCOL 01`；位置/朝向/载荷/任务进度/来源克数/结算明细改用 `lab_mono` 等宽字体。
+- 字体栈升级为 `Segoe UI Variable Text` → `Segoe UI` → 中文回退；等宽栈 `Cascadia Mono` → `Consolas`。
+
+验证：UI 契约测试与 46/46 全量测试通过；蓝图与 Bean 流程验收 `failures=0`；截图 `ui7_01_ready.png`、`ui7_07_blueprint_panel.png`、`bean_01_ready.png`（本地 `.dsh-visual/captures/`）。draw call 未增加（ready 188，仍在 ~190 区间）。
+
+### 5.3 UI 全量收敛（2026-10-18，第二轮）
+
+把剩余界面统一到同一套实验室语言：
+
+- **Debug 面板**：改为深色「诊断台」控制台（`#101C23`、青色描边、深阴影），标题/折叠按钮浅色，展开内容保留稳定路径；新增 `DIAGNOSTICS · DEV TOOLS` 字幕并纳入折叠 body（折叠时不占位）。
+- **任务完成面板**：深色结算控制台（12px 圆角、20px 投影），白色标题 + `MISSION COMPLETE · SORTING PROTOCOL` 字幕 + 浅色统计行，与顶部 lifecycle 控制台呼应。
+- **Program 工作区**：`源码 · 规范 v2` 标题收敛为统一字幕 `PROGRAM · DSL V2`，语法状态行改用等宽字体；修掉新增内容导致的面板底部溢出（清空按钮恢复可见）。
+- **等宽状态**：Blueprint `StatusLabel`、Bean `StateLabel`、HUD `FeedbackLabel` 统一 `lab_mono`；所有 UI 面板字号/字幕/间距一致。
+- 验证：46/46 PASS、Bean/Blueprint 流程 `failures=0`；截图 `ui9_10_completion.png`、`ui9_03_program_open.png`、`ui9_01_ready.png`（本地）。
 
 ## 6. 下一轮候选（未做）
 

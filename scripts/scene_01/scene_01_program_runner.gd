@@ -9,7 +9,7 @@ signal execution_reset()
 const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
 const PreflightScript := preload("res://scripts/scene_01/scene_01_program_preflight.gd")
 const CommandExecutorScript := preload("res://scripts/scene_01/scene_01_program_command_executor.gd")
-const MissionControllerScript := preload("res://scripts/scene_01/scene_01_mission_controller.gd")
+const LifecycleControllerScript := preload("res://scripts/scene_01/scene_01_lifecycle_controller.gd")
 const MoveControllerScript := preload("res://scripts/scene_01/scene_01_lifecycle_vehicle_move_controller.gd")
 const GrabDropControllerScript := preload("res://scripts/scene_01/scene_01_lifecycle_grab_drop_controller.gd")
 const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
@@ -20,7 +20,7 @@ const STATE_COMPLETED := 2
 const STATE_FAILED := 3
 var _preflight := PreflightScript.new()
 var _command_executor := CommandExecutorScript.new()
-var _scene_controller: MissionControllerScript
+var _scene_controller: LifecycleControllerScript
 var _vehicle_manager: VehicleManagerScript
 var _compile_gate: CompileGateScript
 var _program: Scene01Program
@@ -31,7 +31,7 @@ var _repeat_remaining: Dictionary = {}
 var _requirements_vehicle_ids: Array[StringName] = []
 var _last_error: StringName = &""
 func _ready() -> void:
-	_scene_controller = get_parent().get_parent() as MissionControllerScript
+	_scene_controller = get_parent().get_parent() as LifecycleControllerScript
 	_vehicle_manager = get_node("../RobotRoot/Scene01VehicleManager") as VehicleManagerScript
 	_compile_gate = get_node("../Scene01AssemblyCompileGate") as CompileGateScript
 	_command_executor.configure(

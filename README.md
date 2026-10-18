@@ -12,13 +12,16 @@ godot --headless --path . --editor --quit   # 首次/干净 worktree 先导入
 godot --path .                              # 图形运行
 ```
 
-操作：左键选车 · `M` 移动 · `A`/`D` 转向 · `C` 抓放 · `X` 停止 · `Q`/`E` 旋转相机 · **`B` 打开装配蓝图**（选底盘/轮组/工作件，部署蓝图车并编程）。
+操作：左键选车 · `M` 移动 · `A`/`D` 转向 · `C` 抓放 · `X` 停止 · `Q`/`E` 旋转相机 · **`B` 打开装配蓝图**（选底盘/轮组/工作件，部署蓝图车并编程）· **`2` 进入 Bean Sorting 关卡**（Scene 02 内按 `1` 返回）。
 
 ## 测试与 CI
 
 ```powershell
 # 蓝图装配流程验收（设计→部署→编程→Reset）
 godot --headless --path . --script res://tools/acceptance_blueprint_flow.gd
+
+# Bean Sorting 流程验收（库存/编号/抓取/结算/Reset/Program）
+godot --headless --path . --script res://tools/acceptance_bean_flow.gd
 
 godot --headless --path . --script res://tests/stability/scene_01_lifecycle_state_smoke_test.gd
 ```

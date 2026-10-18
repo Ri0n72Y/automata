@@ -1,22 +1,62 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_blueprint_ui.gd" id="1_script"]
 [ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
+[ext_resource type="SystemFont" path="res://assets/ui/fonts/lab_mono.tres" id="4_lab_mono"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_blueprint_panel"]
-bg_color = Color(0.945, 0.949, 0.933, 0.97)
+bg_color = Color(0.968627, 0.976471, 0.984314, 0.97)
+border_width_left = 1
+border_width_top = 2
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.070588, 0.627451, 0.686275, 0.55)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.039216, 0.078431, 0.101961, 0.12)
+shadow_size = 10
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_primary_normal"]
+bg_color = Color(0.070588, 0.627451, 0.686275, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.788, 0.804, 0.82, 0.95)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-shadow_color = Color(0.078, 0.098, 0.118, 0.12)
-shadow_size = 4
-shadow_offset = Vector2(0, 1)
+content_margin_left = 10.0
+content_margin_right = 10.0
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_primary_hover"]
+bg_color = Color(0.086275, 0.698039, 0.760784, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+content_margin_left = 10.0
+content_margin_right = 10.0
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_primary_pressed"]
+bg_color = Color(0.054902, 0.521569, 0.572549, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+content_margin_left = 10.0
+content_margin_right = 10.0
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [node name="BlueprintUIRoot" type="CanvasLayer"]
 layer = 6
@@ -71,6 +111,12 @@ theme_override_font_sizes/font_size = 18
 unique_name_in_owner = true
 layout_mode = 2
 text = "关闭"
+
+[node name="BlueprintCaption" type="Label" parent="RootControl/BlueprintPanel/Margin/VBox"]
+layout_mode = 2
+text = "ASSEMBLY BLUEPRINT · [B]"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
 
 [node name="Separator1" type="HSeparator" parent="RootControl/BlueprintPanel/Margin/VBox"]
 layout_mode = 2
@@ -127,12 +173,14 @@ text = "可用动作"
 theme_override_font_sizes/font_size = 15
 
 [node name="ActionsLabel" type="Label" parent="RootControl/BlueprintPanel/Margin/VBox"]
+theme_override_fonts/font = ExtResource("4_lab_mono")
 unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 3
 text = "MoveTo"
 
 [node name="StatsLabel" type="Label" parent="RootControl/BlueprintPanel/Margin/VBox"]
+theme_override_fonts/font = ExtResource("4_lab_mono")
 unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 3
@@ -141,7 +189,8 @@ autowrap_mode = 3
 layout_mode = 2
 
 [node name="StatusLabel" type="Label" parent="RootControl/BlueprintPanel/Margin/VBox"]
-unique_name_in_owner = true
+
+theme_override_fonts/font = ExtResource("4_lab_mono")unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 autowrap_mode = 3
@@ -164,6 +213,13 @@ size_flags_horizontal = 3
 text = "读取"
 
 [node name="DeployButton" type="Button" parent="RootControl/BlueprintPanel/Margin/VBox/Buttons"]
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_primary_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_primary_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_primary_pressed")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_primary_pressed")
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3

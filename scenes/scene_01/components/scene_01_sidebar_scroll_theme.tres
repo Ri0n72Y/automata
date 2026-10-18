@@ -1,16 +1,16 @@
 [gd_resource type="Theme" load_steps=5 format=3]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_track"]
-bg_color = Color(0.352941, 0.384314, 0.415686, 0.05)
+bg_color = Color(0.352941, 0.439216, 0.486275, 0.05)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_grabber"]
-bg_color = Color(0.352941, 0.384314, 0.415686, 0.28)
+bg_color = Color(0.352941, 0.439216, 0.486275, 0.28)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_grabber_hover"]
-bg_color = Color(0.105882, 0.498039, 0.831373, 0.55)
+bg_color = Color(0.070588, 0.627451, 0.686275, 0.55)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_grabber_pressed"]
-bg_color = Color(0.105882, 0.498039, 0.831373, 0.8)
+bg_color = Color(0.070588, 0.627451, 0.686275, 0.8)
 
 [resource]
 VScrollBar/constants/scroll_size = 5

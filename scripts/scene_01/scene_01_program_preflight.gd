@@ -5,13 +5,13 @@ const ProgramScript := preload("res://scripts/scene_01/scene_01_program.gd")
 const ValidatorScript := preload("res://scripts/scene_01/scene_01_program_validator.gd")
 const VehicleManagerScript := preload("res://scripts/scene_01/scene_01_vehicle_manager.gd")
 const CompileGateScript := preload("res://scripts/scene_01/scene_01_assembly_compile_gate.gd")
-const MissionControllerScript := preload("res://scripts/scene_01/scene_01_mission_controller.gd")
+const LifecycleControllerScript := preload("res://scripts/scene_01/scene_01_lifecycle_controller.gd")
 
 var _validator := ValidatorScript.new()
 
 func prepare(
 	program: Scene01Program,
-	scene_controller: MissionControllerScript,
+	scene_controller: LifecycleControllerScript,
 	vehicle_manager: VehicleManagerScript,
 	compile_gate: CompileGateScript
 ) -> Dictionary:

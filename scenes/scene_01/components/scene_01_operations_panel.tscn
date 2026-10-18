@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_operations_panel.gd" id="1_operations"]
 [ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
 [ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_program_ui.tscn" id="3_program"]
+[ext_resource type="SystemFont" path="res://assets/ui/fonts/lab_mono.tres" id="4_lab_mono"]
 
 [node name="OperationsUIRoot" type="CanvasLayer"]
 layer = 4
@@ -59,6 +60,12 @@ layout_mode = 2
 focus_mode = 0
 text = "展开"
 
+[node name="DeckCaption" type="Label" parent="RootControl/OperationsPanel/Margin/VBox"]
+layout_mode = 2
+text = "OPERATIONS · MANUAL / PROGRAM"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
+
 [node name="VehicleLabel" type="Label" parent="RootControl/OperationsPanel/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -87,7 +94,7 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "未选择车辆"
 autowrap_mode = 2
-theme_override_colors/font_color = Color(0.352941, 0.384314, 0.415686, 1)
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
 theme_override_font_sizes/font_size = 12
 
 [node name="MoveButton" type="Button" parent="RootControl/OperationsPanel/Margin/VBox/MoveRow"]
@@ -117,7 +124,7 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "未选择车辆"
 autowrap_mode = 2
-theme_override_colors/font_color = Color(0.352941, 0.384314, 0.415686, 1)
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
 theme_override_font_sizes/font_size = 12
 
 [node name="RotateButtons" type="HBoxContainer" parent="RootControl/OperationsPanel/Margin/VBox/RotateRow"]
@@ -161,7 +168,7 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "未选择车辆"
 autowrap_mode = 2
-theme_override_colors/font_color = Color(0.352941, 0.384314, 0.415686, 1)
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
 theme_override_font_sizes/font_size = 12
 
 [node name="GrabDropButton" type="Button" parent="RootControl/OperationsPanel/Margin/VBox/GrabDropRow"]

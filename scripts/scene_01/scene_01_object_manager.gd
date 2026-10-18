@@ -12,9 +12,13 @@ signal ground_block_changed(cell: Vector2i, has_item: bool)
 @export var scene_controller_path: NodePath = NodePath("../../..")
 @export var vehicle_manager_path: NodePath = NodePath("../../RobotRoot/Scene01VehicleManager")
 
-@onready var _block_pile_node: Scene01ItemSourceNode = %InfiniteBlockPile
-@onready var _standard_box_node: Scene01ItemReceiverNode = %StandardBox
-@onready var _ground_visual_root: Node3D = %GroundBlockVisuals
+@onready var _block_pile_node: Scene01ItemSourceNode = get_node_or_null(
+	"%InfiniteBlockPile"
+) as Scene01ItemSourceNode
+@onready var _standard_box_node: Scene01ItemReceiverNode = get_node_or_null(
+	"%StandardBox"
+) as Scene01ItemReceiverNode
+@onready var _ground_visual_root: Node3D = get_node_or_null("%GroundBlockVisuals") as Node3D
 
 var _ground_visuals: Dictionary = {}
 var _static_item_interaction_interfaces: Array[Variant] = []

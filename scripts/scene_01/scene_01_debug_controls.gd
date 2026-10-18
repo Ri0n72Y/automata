@@ -2,13 +2,14 @@ class_name Scene01DebugControls
 extends CanvasLayer
 
 const COLLAPSED_SIZE := Vector2(132.0, 48.0)
-const EXPANDED_SIZE := Vector2(360.0, 244.0)
+const EXPANDED_SIZE := Vector2(360.0, 268.0)
 const BODY_PATHS := [
 	NodePath("RootControl/Panel/Margin/VBox/RotateRow"),
 	NodePath("RootControl/Panel/Margin/VBox/TransformRow"),
 	NodePath("RootControl/Panel/Margin/VBox/ResetRow"),
 	NodePath("RootControl/Panel/Margin/VBox/ShortcutNote"),
 	NodePath("RootControl/Panel/Margin/VBox/StatusLabel"),
+	NodePath("RootControl/Panel/Margin/VBox/DiagnosticsCaption"),
 ]
 
 @export var start_collapsed: bool = true
