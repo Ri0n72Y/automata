@@ -181,6 +181,15 @@ func deploy_blueprint(blueprint, anchor_cell: Vector2i, facing: int = 0):
 		actor.queue_free()
 		return null
 	body.mesh = _visual_mesh_for(definition)
+	if not definition.has_capability(VehicleDefinitionScript.CAPABILITY_HAS_TRAY):
+		# Blueprint scenes ship one shared tray rig; strip it for non-tray
+		# modules so arm carts do not carry eight hidden cargo nodes.
+		var tray_slots := actor.get_node_or_null("VisualRoot/TraySlots")
+		if tray_slots != null:
+			tray_slots.free()
+		var tray_label := actor.get_node_or_null("VisualRoot/TrayCountLabel")
+		if tray_label != null:
+			tray_label.free()
 	add_child(actor)
 	actor.use_static_scene_visual = true
 	if not _configure_actor(

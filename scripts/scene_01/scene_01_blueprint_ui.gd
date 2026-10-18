@@ -79,7 +79,11 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		# Placement clicks must only land on the world: never deploy while the
+		# pointer is over any GUI (Operations/HUD/blueprint panel included).
 		if _is_point_on_panel(event.position):
+			return
+		if get_viewport().gui_get_hovered_control() != null:
 			return
 		_place_from_screen(event.position)
 		get_viewport().set_input_as_handled()

@@ -127,6 +127,18 @@ func _run() -> void:
 			and blueprint_ui.get("_deployment_blueprint") == null,
 			"重新打开编辑器会取消放置状态与候选蓝图"
 		)
+		# 保存/读取往返（读取后编辑器蓝图应与保存时一致）。
+		var saved_blueprint = CatalogScript.default_blueprints()[3]
+		blueprint_ui.set("blueprint", saved_blueprint)
+		blueprint_ui.call("_save_blueprint")
+		blueprint_ui.set("blueprint", CatalogScript.default_blueprints()[0])
+		blueprint_ui.call("_load_blueprint")
+		var loaded_blueprint = blueprint_ui.get("blueprint")
+		_check(
+			loaded_blueprint != null
+			and loaded_blueprint.blueprint_id == saved_blueprint.blueprint_id,
+			"蓝图保存/读取往返"
+		)
 		blueprint_ui.call("_close")
 
 	# 2. Program 驱动蓝图车移动
@@ -152,9 +164,34 @@ func _run() -> void:
 		"蓝图车到达 Program 目标格 %s" % str(target)
 	)
 
+	# 运行中部署必须被拒绝（部署只允许 READY）。
+	var running_blueprint = CatalogScript.default_blueprints()[2]
+	var running_cell := _find_deploy_cell(manager, running_blueprint)
+	var vehicle_count_before: int = manager.get_vehicle_count()
+	_check(
+		running_cell == Vector2i(-1, -1)
+		or not bool(controller.call("deploy_blueprint_vehicle", running_blueprint, running_cell, 0)),
+		"运行中拒绝部署蓝图车"
+	)
+	_check(manager.get_vehicle_count() == vehicle_count_before, "运行中部署不改变车辆数量")
+
 	# 3. 抓取蓝图：能力差异（先 Reset 回 READY，部署只允许 READY）
 	scene.call("reset_scene_state")
 	await process_frame
+
+	# 托盘车执行 GrabDrop 必须被能力校验拒绝（Program 不得绕过蓝图能力）。
+	var bad_source := "automata_scene01_program 2\n[%s:grabDrop]\n" % String(
+		tray_blueprint.blueprint_id
+	)
+	var bad_parsed: Dictionary = ProgramSourceScript.new().parse(bad_source)
+	var bad_program = bad_parsed.get("program")
+	_check(
+		bad_program != null
+		and not bool(runner.call("start_program", bad_program))
+		and runner.call("get_last_error") == &"program_capability_rejected",
+		"托盘车 GrabDrop 被能力校验拒绝"
+	)
+
 	var arm_blueprint = CatalogScript.default_blueprints()[0]
 	var arm_cell := _find_deploy_cell(manager, arm_blueprint)
 	if arm_cell != Vector2i(-1, -1):
@@ -170,14 +207,58 @@ func _run() -> void:
 		)
 		_check(
 			arm_actor != null
-			and not arm_actor.get_node("VisualRoot/TrayCountLabel").visible,
+			and (
+				arm_actor.get_node_or_null("VisualRoot/TrayCountLabel") == null
+				or not arm_actor.get_node("VisualRoot/TrayCountLabel").visible
+			),
 			"无托盘能力的蓝图车隐藏托盘标签"
 		)
 		_check(manager.get_vehicle_count() == 4, "第二台蓝图车注册成功")
 	else:
 		_check(false, "第二台蓝图车部署格")
 
-	# 4. HUD 选中蓝图车
+	# 4. 全向底盘：MoveTo 不改变朝向（holonomic）
+	var omni_blueprint = CatalogScript.default_blueprints()[3]
+	var omni_cell := _find_deploy_cell(manager, omni_blueprint)
+	if omni_cell != Vector2i(-1, -1):
+		_check(
+			bool(controller.call("deploy_blueprint_vehicle", omni_blueprint, omni_cell, 0)),
+			"全向蓝图车部署成功"
+		)
+		var omni_actor = manager.get_vehicle_by_id(omni_blueprint.blueprint_id)
+		if omni_actor != null:
+			var omni_target := _find_move_target(scene, manager, omni_actor)
+			_check(omni_target != Vector2i(-1, -1), "全向蓝图车有可移动目标")
+			if omni_target != Vector2i(-1, -1):
+				var facing_before: int = omni_actor.runtime_state.facing
+				var omni_source := "automata_scene01_program 2\n[%s:moveTo] %d %d\n" % [
+					String(omni_blueprint.blueprint_id), omni_target.x, omni_target.y
+				]
+				var omni_parsed: Dictionary = ProgramSourceScript.new().parse(omni_source)
+				var omni_done := {"value": false, "failed": false}
+				runner.execution_completed.connect(func(): omni_done["value"] = true)
+				runner.execution_failed.connect(func(_i, _r): omni_done["failed"] = true)
+				_check(
+					bool(runner.call("start_program", omni_parsed.get("program"))),
+					"全向车 Program 启动"
+				)
+				var omni_frames := 0
+				while not omni_done["value"] and not omni_done["failed"] and omni_frames < 900:
+					await process_frame
+					omni_frames += 1
+				_check(omni_done["value"], "全向车 Program 完成")
+				_check(
+					omni_actor.runtime_state.anchor_cell == omni_target,
+					"全向车到达目标格"
+				)
+				_check(
+					omni_actor.runtime_state.facing == facing_before,
+					"全向车 MoveTo 不改变朝向（%d）" % facing_before
+				)
+	else:
+		_check(false, "全向蓝图车部署格")
+
+	# 5. HUD 选中蓝图车
 	var selection = scene.get_node("SceneRoot/GridRoot/VehicleSelectionController")
 	selection.select_vehicle(tray_actor)
 	await process_frame
@@ -208,6 +289,24 @@ func _find_deploy_cell(manager, blueprint) -> Vector2i:
 			var cell := Vector2i(x, y)
 			if manager.can_deploy_blueprint(blueprint, cell):
 				return cell
+	return Vector2i(-1, -1)
+
+
+func _find_move_target(scene: Node, manager, actor) -> Vector2i:
+	var definition = actor.definition
+	var anchor: Vector2i = actor.runtime_state.anchor_cell
+	for offset in [Vector2i(2, 0), Vector2i(0, 2), Vector2i(-2, 0), Vector2i(0, -2)]:
+		var mid: Vector2i = anchor + Vector2i(offset.x / 2, offset.y / 2)
+		var target: Vector2i = anchor + offset
+		if not bool(scene.call("is_grid_footprint_walkable", mid, definition.footprint)):
+			continue
+		if not manager.is_footprint_free_of_vehicles(definition, mid):
+			continue
+		if not bool(scene.call("is_grid_footprint_walkable", target, definition.footprint)):
+			continue
+		if not manager.is_footprint_free_of_vehicles(definition, target):
+			continue
+		return target
 	return Vector2i(-1, -1)
 
 
