@@ -12,11 +12,14 @@ godot --headless --path . --editor --quit   # 首次/干净 worktree 先导入
 godot --path .                              # 图形运行
 ```
 
-操作：左键选车 · `M` 移动 · `A`/`D` 转向 · `C` 抓放 · `X` 停止 · `Q`/`E` 旋转相机。
+操作：左键选车 · `M` 移动 · `A`/`D` 转向 · `C` 抓放 · `X` 停止 · `Q`/`E` 旋转相机 · **`B` 打开装配蓝图**（选底盘/轮组/工作件，部署蓝图车并编程）。
 
 ## 测试与 CI
 
 ```powershell
+# 蓝图装配流程验收（设计→部署→编程→Reset）
+godot --headless --path . --script res://tools/acceptance_blueprint_flow.gd
+
 godot --headless --path . --script res://tests/stability/scene_01_lifecycle_state_smoke_test.gd
 ```
 
@@ -37,6 +40,7 @@ assets/ shaders/   美术素材与地面着色器
 ## 文档入口
 
 - **[docs/context/project_context.md](docs/context/project_context.md)** —— 当前开发上下文：架构、真值归属、手动/Program 闭环、进度与开放议题、已知风险、约定与下一步（新接手或 AI agent 先读这份）。
+- [docs/design/vehicle_assembly_v1.md](docs/design/vehicle_assembly_v1.md) —— 小车组装与蓝图系统设计：底盘/轮组/工作件目录、能力→动作、蓝图 UI、综合关与自复制路线。
 - [docs/art/aperture_visual_v1.md](docs/art/aperture_visual_v1.md) —— Aperture / Portal 2 视觉方向、调色板、实现状态与下一轮计划。
 - [docs/Skill-UI-implement-flow.md](docs/Skill-UI-implement-flow.md) —— 高保真 UI 复刻流程。
 - [docs/specs/scene_01_ui_layout_v1.md](docs/specs/scene_01_ui_layout_v1.md) —— UI 布局规范（部分内容已被 #82/#85 实现超越，见上下文文档 §7）。

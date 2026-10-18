@@ -83,4 +83,6 @@ func _component_type_for(vehicle_definition: VehicleDefinitionScript) -> StringN
 			return &"scene01_arm_vehicle_preset"
 		VehicleDefinitionScript.VehicleKind.TRANSPORT:
 			return &"scene01_transport_vehicle_preset"
+		VehicleDefinitionScript.VehicleKind.ASSEMBLED:
+			return &"blueprint_vehicle_preset"
 	return &""

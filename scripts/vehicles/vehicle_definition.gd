@@ -4,6 +4,7 @@ extends Resource
 enum VehicleKind {
 	ARM,
 	TRANSPORT,
+	ASSEMBLED,
 }
 
 const CAPABILITY_CAN_MOVE := "can_move"
@@ -11,11 +12,13 @@ const CAPABILITY_CAN_ROTATE := "can_rotate"
 const CAPABILITY_CAN_GRAB := "can_grab"
 const CAPABILITY_CAN_CARRY := "can_carry"
 const CAPABILITY_HAS_TRAY := "has_tray"
+## Holonomic chassis: MoveTo does not consume a turn or change facing.
+const CAPABILITY_CAN_STRAFE := "can_strafe"
 
 @export_group("Identity")
 @export var assembly_id: StringName = &""
 @export var display_name: String = ""
-@export_enum("Arm", "Transport") var vehicle_kind: int = VehicleKind.ARM
+@export_enum("Arm", "Transport", "Assembled") var vehicle_kind: int = VehicleKind.ARM
 
 @export_group("Geometry")
 @export var footprint: Vector2i = Vector2i.ONE
@@ -53,7 +56,7 @@ func configure(
 	if p_assembly_id == &"":
 		push_error("Vehicle assembly id must not be empty.")
 		return false
-	if p_vehicle_kind < VehicleKind.ARM or p_vehicle_kind > VehicleKind.TRANSPORT:
+	if p_vehicle_kind < VehicleKind.ARM or p_vehicle_kind > VehicleKind.ASSEMBLED:
 		push_error("Vehicle kind is invalid.")
 		return false
 	if p_footprint.x <= 0 or p_footprint.y <= 0:
@@ -93,7 +96,7 @@ func is_configured() -> bool:
 	return (
 		assembly_id != &""
 		and vehicle_kind >= VehicleKind.ARM
-		and vehicle_kind <= VehicleKind.TRANSPORT
+		and vehicle_kind <= VehicleKind.ASSEMBLED
 		and footprint.x > 0
 		and footprint.y > 0
 		and base_speed > 0.0

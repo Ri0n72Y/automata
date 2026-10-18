@@ -304,6 +304,12 @@ func _begin_required_move_turn() -> bool:
 		return false
 	if runtime_state == null or runtime_state.active_move_command == null or is_turning():
 		return false
+	if (
+		definition != null
+		and definition.has_capability(VehicleDefinitionScript.CAPABILITY_CAN_STRAFE)
+	):
+		# Holonomic chassis translate without turning; facing stays player-controlled.
+		return false
 	var command: MoveCommandScript = runtime_state.active_move_command
 	if command.path_index >= command.path.size() - 1:
 		return false
@@ -431,6 +437,10 @@ func _rebuild_visual() -> void:
 	if definition.vehicle_kind == VehicleDefinitionScript.VehicleKind.ARM:
 		_build_arm_visual(footprint_size)
 	elif definition.vehicle_kind == VehicleDefinitionScript.VehicleKind.TRANSPORT:
+		_build_transport_visual(footprint_size)
+	elif definition.vehicle_kind == VehicleDefinitionScript.VehicleKind.ASSEMBLED:
+		# Blueprint vehicles normally use the authored static scene visual;
+		# this fallback keeps runtime-generated vehicles renderable.
 		_build_transport_visual(footprint_size)
 
 	_selection_area = Area3D.new()

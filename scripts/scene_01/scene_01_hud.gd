@@ -166,6 +166,8 @@ func _bind_signals() -> void:
 	_observable.vehicle_state_changed.connect(_on_observable_changed)
 	_observable.vehicle_pose_changed.connect(_on_observable_changed)
 	_observable.vehicle_turning_changed.connect(_on_observable_changed)
+	_observable.vehicle_cargo_changed.connect(_on_observable_changed)
+	_observable.vehicle_tray_count_changed.connect(_on_observable_changed)
 	_observable.arm_has_item_changed.connect(_on_observable_changed)
 	_observable.tray_count_changed.connect(_on_observable_changed)
 	_observable.standard_box_count_changed.connect(_on_observable_changed)
@@ -246,8 +248,25 @@ func _refresh_vehicle_status(selected_id: StringName) -> void:
 			cargo_name_label.text = "托盘"
 			cargo_value_label.text = str(_observable.get_tray_count())
 		_:
-			cargo_name_label.text = "载荷"
-			cargo_value_label.text = "—"
+			# Blueprint-deployed cart: read its own runtime through the observable.
+			var selected_vehicle = (
+				_vehicle_manager.get_vehicle_by_id(selected_id)
+				if _vehicle_manager != null
+				else null
+			)
+			var has_tray: bool = (
+				selected_vehicle != null
+				and selected_vehicle.definition != null
+				and selected_vehicle.definition.has_capability("has_tray")
+			)
+			if has_tray:
+				cargo_name_label.text = "托盘"
+				cargo_value_label.text = str(_observable.get_vehicle_tray_count(selected_id))
+			else:
+				cargo_name_label.text = "手持"
+				cargo_value_label.text = (
+					"方块" if _observable.get_vehicle_has_item(selected_id) else "空"
+				)
 
 	_set_availability(
 		move_value_label,

@@ -1,0 +1,47 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_actor.gd" id="1_actor"]
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_state_visual.gd" id="2_state"]
+
+[sub_resource type="BoxShape3D" id="SelectionShape"]
+size = Vector3(0.91, 1.16, 0.91)
+
+[node name="BlueprintVehicle" type="Node3D"]
+script = ExtResource("1_actor")
+use_static_scene_visual = false
+
+[node name="VisualRoot" type="Node3D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_state")
+
+[node name="BodyMesh" type="MeshInstance3D" parent="VisualRoot"]
+
+[node name="VehicleSelectionArea" type="Area3D" parent="VisualRoot"]
+unique_name_in_owner = true
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="VisualRoot/VehicleSelectionArea"]
+position = Vector3(0, 0.58, 0)
+shape = SubResource("SelectionShape")
+
+[node name="CarryWarning" type="Label3D" parent="VisualRoot"]
+unique_name_in_owner = true
+visible = false
+position = Vector3(0, 2.1, 0)
+billboard = 1
+no_depth_test = true
+text = "!"
+font_size = 58
+outline_size = 12
+modulate = Color(0.91, 0.537, 0.173, 1)
+
+[node name="DebugLabel" type="Label3D" parent="VisualRoot"]
+unique_name_in_owner = true
+position = Vector3(0, 1.56, 0)
+billboard = 1
+no_depth_test = true
+text = "蓝图车"
+font_size = 28
+outline_size = 7
+modulate = Color(0.14, 0.18, 0.16, 1)

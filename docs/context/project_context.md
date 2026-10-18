@@ -208,6 +208,20 @@ Tutorial 五个互相独立的目标（无先后）：选中 Arm；非 RUNNING �
 - 性能基线（1920×1080，ready 场景）：draw call **364 → 149**（−59%），其中车辆节点约 60×2 → 1×2。
 - 限制：本机命令沙箱以 Low 完整性运行，无法写 `assets/`、`scenes/components/`、`docs/`、`tests/`；重新生成网格需用更宽权限的会话跑上述脚本（CI/普通机器不受限）。
 
+### 4.9 小车组装 / 蓝图模块（2026-10-18 起）
+
+- 设计文档：[vehicle_assembly_v1.md](../design/vehicle_assembly_v1.md)（底盘/轮组/工作件目录、能力→动作、蓝图 UI、综合关与自复制路线）。
+- 数据模型与投影链路（已实现）：
+  - `scripts/assembly/vehicle_part_definition.gd`、`vehicle_part_catalog.gd`（3 底盘 / 3 轮组 / 2 工作件 + 4 模板 + 成本）、`vehicle_blueprint.gd`（能力/成本/重量/托盘推导、序列化）。
+  - `VehicleBlueprint → VehicleDefinition(kind=ASSEMBLED) → Scene01AssemblyDefinitionAdapter(blueprint_vehicle_preset) → AssemblyCompiler / ProgramCapabilityValidator`。
+  - 全向底盘 `can_strafe`：MoveTo 不转身；托盘上限 = `min(module.tray_capacity, floor(chassis.max_payload / 2kg))`。
+- 界面与部署（已实现）：
+  - `scene_01_blueprint_ui.tscn` + `scripts/scene_01/scene_01_blueprint_ui.gd`：`B` 键开关，右侧覆盖面板，槽位下拉 / 动作投影 / 速度重量成本 / 保存读取 / 部署（READY 限定 + 网格 ghost 合法性）。
+  - `Scene01VehicleManager.deploy_blueprint()`：实例化 `blueprint_vehicle_placeholder.tscn`（合并网格按工作件选择）、动态注册；`Scene01Controller.deploy_blueprint_vehicle()` 重配置选择/移动/抓放/Observable/CompileGate。
+  - `Scene01ObservableState.register_dynamic_vehicles()` + HUD 通用读取：部署车可被选中、HUD 显示状态/载荷、Reset 保留并回到部署格。
+- 验收方式：`tools/acceptance_blueprint_flow.gd` 全流程验收（部署→编译→Program 移动→能力差异→HUD→Reset）；**不再为装配模块新增防御性单测**（用户 2026-10-18 指示），原 46 例 legacy 套件保留。
+- **待实现**：综合关「装配站」（预算/评分/2×2 装配台）、部署 ghost 的图形细节、多蓝图库、`fabricator` 自复制终局。
+
 ---
 
 ## 5. 进度现状
@@ -246,15 +260,16 @@ Tutorial 五个互相独立的目标（无先后）：选中 Arm；非 RUNNING �
 
 ## 6. 开发约定（动代码前必读）
 
-1. **contract-first，单一真值**：新功能先定义 owner 与契约（Resource/RefCounted + 信号/查询接口），UI 只能投影，不得保存第二份业务状态（`docs/Skill-UI-implement-flow.md` §8）。
-2. **Ponytail 倾向**：优先删/复用而不是新增抽象；禁止为方便 UI 新增全局 UI 协调器、状态镜像或兼容层。历史上有专门的重构提交（`1b45698 refactor: apply Ponytail simplification pass`）与议题 #62。
-3. **测试准入**：`tests/stability` 只收"结构性脆弱依赖"的测试（多源汇聚、所有权转移、生命周期/时序、fail-closed 等），准入与退役规则见 `tests/stability/README.md`；功能/组合/E2E 放 Full Suite 或人工验收。
-4. **测试骨架**：`extends SceneTree` + `tests/support/contract_test.gd`；场景实例化后 `await process_frame`/`physics_frame` 再取节点；输入用 `root.push_input`（前先 await）或直接调控制器；`test.finish(self, "suite name")` 决定退出码。详见 `.reasonix/skills/godot-automated-playtest/SKILL.md`。
-5. **中文 canonical 文案**：玩家可见字符串直接写中文，DSL token / vehicle_id / 快捷键名保持原值；i18n 延后到 #66，不引入临时翻译抽象。
-6. **UI 复刻流程**：先冻结范围 → Reference+Current 双图 → 差异表 → 组件角色/视觉权重 → design contract（logical px + 比例）→ 改 presentation tree → CI + 同屏截图逐区域收敛。禁止用 magic number 拼旧布局、禁止用 Unicode 字符冒充 control icon（用 `assets/ui/icons/*.svg` + DPITexture）。
-7. **场景/资源**：静态内容用 `.tscn`/`.tres` 序列化（编辑器可见），运行期只创建"可变运行态 / 源码派生投影 / 玩法生成物"；`unique_name_in_owner = true` 用于 `%` 引用。
-8. **提交与分支**：`codex/<issue>-<slug>` 分支；`type(scope): 中文摘要 (#PR)` 提交；PR 合并方式为 squash（历史如此）。
-9. **导入缓存**：`.godot/` 已在 gitignore；干净 worktree 首次跑 Godot 前需 `godot --headless --path . --editor --quit`（或 `--import`），否则 `class_name` 解析失败。
+1. **测试策略：流程验收优先（2026-10-18 用户指示）**：不为新功能堆防御性单测/契约测试；优先写"能跑完整流程"的验收脚本（如 `tools/acceptance_blueprint_flow.gd`）和真实图形截图。原 `tests/` 的 46 例 legacy 套件保留，用于守住既有契约与 CI；新增测试只有在保护真实高风险边界时才加。
+2. **contract-first，单一真值**：新功能先定义 owner 与契约（Resource/RefCounted + 信号/查询接口），UI 只能投影，不得保存第二份业务状态（`docs/Skill-UI-implement-flow.md` §8）。
+3. **Ponytail 倾向**：优先删/复用而不是新增抽象；禁止为方便 UI 新增全局 UI 协调器、状态镜像或兼容层。历史上有专门的重构提交（`1b45698 refactor: apply Ponytail simplification pass`）与议题 #62。
+4. **稳定性测试准入**：`tests/stability` 只收"结构性脆弱依赖"的测试（多源汇聚、所有权转移、生命周期/时序、fail-closed 等），准入与退役规则见 `tests/stability/README.md`；功能/组合/E2E 放 Full Suite 或流程验收。
+5. **测试骨架**：`extends SceneTree` + `tests/support/contract_test.gd`；场景实例化后 `await process_frame`/`physics_frame` 再取节点；输入用 `root.push_input`（前先 await）或直接调控制器；`test.finish(self, "suite name")` 决定退出码。详见 `.reasonix/skills/godot-automated-playtest/SKILL.md`。
+6. **中文 canonical 文案**：玩家可见字符串直接写中文，DSL token / vehicle_id / 快捷键名保持原值；i18n 延后到 #66，不引入临时翻译抽象。
+7. **UI 复刻流程**：先冻结范围 → Reference+Current 双图 → 差异表 → 组件角色/视觉权重 → design contract（logical px + 比例）→ 改 presentation tree → CI + 同屏截图逐区域收敛。禁止用 magic number 拼旧布局、禁止用 Unicode 字符冒充 control icon（用 `assets/ui/icons/*.svg` + DPITexture）。
+8. **场景/资源**：静态内容用 `.tscn`/`.tres` 序列化（编辑器可见），运行期只创建"可变运行态 / 源码派生投影 / 玩法生成物"；`unique_name_in_owner = true` 用于 `%` 引用。
+9. **提交与分支**：`codex/<issue>-<slug>` 分支；`type(scope): 中文摘要 (#PR)` 提交；PR 合并方式为 squash（历史如此）。
+10. **导入缓存**：`.godot/` 已在 gitignore；干净 worktree 首次跑 Godot 前需 `godot --headless --path . --editor --quit`（或 `--import`），否则 `class_name` 解析失败。
 
 ---
 
@@ -296,6 +311,9 @@ godot --headless --path . --script res://tests/stability/scene_01_lifecycle_stat
 # 3.5) 重新生成合并网格（改车形/环境后；需要可写 assets 的会话）
 godot --headless --path . --script res://tools/build_vehicle_meshes.gd
 godot --headless --path . --script res://tools/build_environment_meshes.gd
+
+# 3.6) 蓝图装配模块流程验收（部署 → 编译 → Program 移动 → 能力差异 → HUD → Reset）
+godot --headless --path . --script res://tools/acceptance_blueprint_flow.gd
 
 # 4) 全量套件（CI full 口径：tests/**/*_test.gd 与 *_smoke_test.gd，排除 fixtures/support）
 Get-ChildItem -Recurse -File tests -Include *_test.gd,*_smoke_test.gd |
