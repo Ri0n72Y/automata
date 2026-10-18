@@ -238,7 +238,10 @@ func get_item_interaction_interfaces_readonly() -> Array[Variant]:
 func get_effective_speed() -> float:
 	if _definition == null:
 		return 0.0
-	if arm_has_item:
+	var carrying_load := arm_has_item
+	if not carrying_load and _tray_state != null:
+		carrying_load = _tray_state.get_current_count() > 0
+	if carrying_load:
 		return _definition.base_speed * _definition.carrying_speed_multiplier
 	return _definition.base_speed
 

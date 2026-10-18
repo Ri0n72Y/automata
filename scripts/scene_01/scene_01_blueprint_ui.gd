@@ -32,6 +32,10 @@ const SAVE_PATH := "user://blueprints/last_blueprint.json"
 var controller: Node
 var blueprint: Resource
 var _placing := false
+## Blueprint resolved for the current placement session. Preview and final
+## submission must consume this same candidate (a repeated blueprint id gets a
+## free-id clone before placement starts, not at click time).
+var _deployment_blueprint: Resource
 var _ghost: MeshInstance3D
 var _ghost_material: StandardMaterial3D
 var _chassis_ids: Array[StringName] = []
@@ -164,8 +168,16 @@ func _begin_deployment() -> void:
 	if not blueprint.is_configured():
 		status_label.text = blueprint.get_last_error()
 		return
+	var manager := controller.get("scene_vehicle_manager") as VehicleManagerScript
+	if manager == null:
+		status_label.text = "车辆管理器不可用。"
+		return
+	_deployment_blueprint = _blueprint_with_free_id(manager)
+	if _deployment_blueprint == null:
+		status_label.text = "无法生成唯一车辆 id。"
+		return
 	_placing = true
-	_ghost.visible = true
+	_ghost.visible = false
 	status_label.text = "在场地内点击放置：青色=可放置，红色=占用/越界。"
 	visible = false
 
@@ -177,7 +189,9 @@ func _place_from_screen(screen_position: Vector2) -> void:
 	var manager := controller.get("scene_vehicle_manager") as VehicleManagerScript
 	if manager == null:
 		return
-	var deployment_blueprint: Resource = _blueprint_with_free_id(manager)
+	var deployment_blueprint: Resource = (
+		_deployment_blueprint if _deployment_blueprint != null else _blueprint_with_free_id(manager)
+	)
 	if deployment_blueprint == null:
 		status_label.text = "无法生成唯一车辆 id。"
 		return
@@ -200,18 +214,28 @@ func _place_from_screen(screen_position: Vector2) -> void:
 
 func _cancel_deployment() -> void:
 	_placing = false
+	_deployment_blueprint = null
 	if _ghost != null:
 		_ghost.visible = false
 
 
+func _candidate_blueprint() -> Resource:
+	if _deployment_blueprint != null:
+		return _deployment_blueprint
+	return blueprint
+
+
 func _update_ghost(screen_position: Vector2) -> void:
+	var candidate := _candidate_blueprint()
+	if candidate == null:
+		return
 	var cell := _cell_from_screen(screen_position)
 	if cell == Vector2i(-1, -1):
 		_ghost.visible = false
 		return
 	var manager := controller.get("scene_vehicle_manager") as VehicleManagerScript
-	var valid: bool = manager != null and manager.can_deploy_blueprint(blueprint, cell)
-	var footprint: Vector2i = blueprint.get_footprint()
+	var valid: bool = manager != null and manager.can_deploy_blueprint(candidate, cell)
+	var footprint: Vector2i = candidate.get_footprint()
 	var ghost_mesh := _ghost.mesh as BoxMesh
 	ghost_mesh.size = Vector3(
 		float(footprint.x) * 0.94,
@@ -231,7 +255,8 @@ func _update_ghost(screen_position: Vector2) -> void:
 
 func _cell_from_screen(screen_position: Vector2) -> Vector2i:
 	var camera := get_viewport().get_camera_3d()
-	if camera == null or controller == null or blueprint == null:
+	var candidate := _candidate_blueprint()
+	if camera == null or controller == null or candidate == null:
 		return Vector2i(-1, -1)
 	var origin := camera.project_ray_origin(screen_position)
 	var direction := camera.project_ray_normal(screen_position)
@@ -239,7 +264,7 @@ func _cell_from_screen(screen_position: Vector2) -> Vector2i:
 	if hit == null:
 		return Vector2i(-1, -1)
 	return controller.call(
-		"world_to_nearest_grid_anchor", hit, blueprint.get_footprint()
+		"world_to_nearest_grid_anchor", hit, candidate.get_footprint()
 	)
 
 

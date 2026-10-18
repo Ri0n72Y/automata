@@ -7,6 +7,7 @@ extends SceneTree
 const CatalogScript := preload("res://scripts/assembly/vehicle_part_catalog.gd")
 const AssemblyCapabilitiesScript := preload("res://scripts/assembly/assembly_capabilities.gd")
 const ProgramSourceScript := preload("res://scripts/scene_01/scene_01_program_source.gd")
+const StandardBlockScript := preload("res://scripts/objects/standard_block.gd")
 
 var _failures := 0
 
@@ -46,6 +47,75 @@ func _run() -> void:
 	gate.set_required_capabilities(tray_blueprint.blueprint_id, caps)
 	_check(bool(gate.call("prepare_scene_run")), "编译闸门接受监听蓝图车")
 	_check(gate.call("get_compile_result", tray_blueprint.blueprint_id) != null, "蓝图车获得汇编编译结果")
+	var compile_result = gate.call("get_compile_result", tray_blueprint.blueprint_id)
+	if compile_result != null:
+		_check(
+			compile_result.get_metrics().get_cost() == tray_blueprint.get_total_cost(),
+			"蓝图成本进入编译结果（%d）" % compile_result.get_metrics().get_cost()
+		)
+
+	# 托盘车必须有静态货物显示结构（槽位 + 计数标签），并受托盘能力控制。
+	await process_frame
+	await process_frame
+	await process_frame
+	var tray_visual = tray_actor.get_node("VisualRoot")
+	var tray_slots = tray_visual.get_node_or_null("TraySlots")
+	_check(tray_slots != null and tray_slots.get_child_count() == 8, "蓝图托盘车包含 8 个货物槽位")
+	_check(
+		tray_visual.get_tray_count_label_text() == "0/8",
+		"蓝图托盘车计数标签 0/8"
+	)
+
+	# 托盘载货：货物显示 + 载重速度惩罚（设计中的底盘载货倍率）。
+	var tray_state = tray_actor.runtime_state.tray_state
+	var test_block = StandardBlockScript.create()
+	_check(tray_state.put_item(test_block).is_success(), "托盘车可装载货物")
+	await process_frame
+	await process_frame
+	_check(tray_visual.get_visible_tray_slot_count() == 1, "装载后显示 1 个货物槽位")
+	_check(
+		tray_actor.runtime_state.get_effective_speed()
+		< tray_blueprint.get_base_speed(),
+		"托盘载货触发速度惩罚"
+	)
+	tray_state.take_item()
+	await process_frame
+	_check(
+		is_equal_approx(
+			tray_actor.runtime_state.get_effective_speed(),
+			tray_blueprint.get_base_speed()
+		),
+		"卸货后恢复空载速度"
+	)
+
+	# 重复部署同一蓝图：预览候选必须与提交候选一致（自动后缀 id）。
+	var blueprint_ui = scene.get_node_or_null("BlueprintUIRoot")
+	if blueprint_ui != null:
+		blueprint_ui.set("blueprint", tray_blueprint)
+		blueprint_ui.call("_begin_deployment")
+		var candidate = blueprint_ui.get("_deployment_blueprint")
+		_check(
+			candidate != null and candidate.blueprint_id != tray_blueprint.blueprint_id,
+			"重复部署生成唯一候选 id"
+		)
+		if candidate != null:
+			var repeat_cell := _find_deploy_cell(manager, candidate)
+			_check(repeat_cell != Vector2i(-1, -1), "候选蓝图有可用部署格")
+			if repeat_cell != Vector2i(-1, -1):
+				var camera = scene.get_node("SceneRoot/CameraRoot/Scene01CameraRig/SceneCamera")
+				var screen_pos: Vector2 = camera.unproject_position(
+					scene.grid_cell_to_world(repeat_cell)
+				)
+				blueprint_ui.call("_update_ghost", screen_pos)
+				var ghost_material = blueprint_ui.get("_ghost_material")
+				_check(
+					ghost_material != null
+					and ghost_material.albedo_color.is_equal_approx(
+						Color(0.247, 0.776, 0.808, 0.45)
+					),
+					"预览与提交使用同一候选（ghost 青色）"
+				)
+		blueprint_ui.call("_cancel_deployment")
 
 	# 2. Program 驱动蓝图车移动
 	var anchor: Vector2i = tray_actor.runtime_state.anchor_cell
@@ -85,6 +155,11 @@ func _run() -> void:
 		_check(
 			not tray_actor.definition.has_capability("can_grab"),
 			"托盘蓝图不具备 Grab 能力"
+		)
+		_check(
+			arm_actor != null
+			and not arm_actor.get_node("VisualRoot/TrayCountLabel").visible,
+			"无托盘能力的蓝图车隐藏托盘标签"
 		)
 		_check(manager.get_vehicle_count() == 4, "第二台蓝图车注册成功")
 	else:

@@ -248,6 +248,17 @@ godot --headless --path . --script res://tools/acceptance_blueprint_flow.gd
 - 蓝图面板覆盖在 Operations 右栏之上（MVP 不做面板切换/互斥）。
 - 车辆视觉只按工作件复用机械臂/托盘两种合并网格，底盘差异暂不体现。
 - 蓝图保存为单个 `user://blueprints/last_blueprint.json`，暂不做多蓝图库。
+
+### 11.3 PR #92 审查修复（2026-10-18）
+
+四处 Medium 已逐条核实并修复，流程验收脚本新增对应检查（`tools/acceptance_blueprint_flow.gd`）：
+
+1. **重复部署预览/提交不一致**：部署会话开始时把 `blueprint` 解析为带唯一后缀的 `_deployment_blueprint`，ghost 预览与点击提交消费同一候选；`_cancel_deployment` 清理。
+2. **蓝图托盘车缺货物显示结构**：`blueprint_vehicle_placeholder.tscn` 复用运输车的 8 个 `TraySlots` + `TrayCountLabel`；`VehicleStateVisual` 按 `definition.tray_capacity` 控制槽位/标签可见性（无托盘能力的车隐藏标签）。
+3. **成本未进入编译结果**：`VehicleDefinition` 新增 `assembly_cost`；`VehicleBlueprint.to_vehicle_definition()` 传入 `get_total_cost()`；adapter 用 `assembly_cost` 填充 `AssemblyComponentDefinition.cost`，编译结果 `metrics.cost` 与蓝图 UI 一致。
+4. **托盘载货未减速**：`VehicleRuntimeState.get_effective_speed()` 同时判断 `arm_has_item` 与托盘非空，继续由 Movement 单一入口消费。
+
+验证：流程验收 `FLOW RESULT failures=0`（含成本一致、托盘显示/装载、重复部署候选、载货减速与卸货恢复）；legacy 46/46 PASS；图形截图 `fix_08_blueprint_deployed.png`、`fix_09_tray_loaded.png`（本地 `.dsh-visual/`）。`warning_surface.gdshader` 的深灰踏纹属于既定视觉目标，保留。
 - 车辆 id 重复时自动追加 `_2/_3` 后缀。
 
 ---

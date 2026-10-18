@@ -202,7 +202,8 @@ func to_vehicle_definition() -> VehicleDefinition:
 		chassis.max_payload,
 		get_capability_tags(),
 		get_carrying_speed_multiplier(),
-		get_tray_capacity()
+		get_tray_capacity(),
+		get_total_cost()
 	)
 	return definition if configured else null
 

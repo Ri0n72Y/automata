@@ -36,6 +36,9 @@ const CAPABILITY_CAN_STRAFE := "can_strafe"
 @export var capability_tags: PackedStringArray = PackedStringArray()
 @export_range(0, 128, 1) var tray_capacity: int = 0
 
+@export_group("Assembly")
+@export_range(0, 100000, 1) var assembly_cost: int = 0
+
 
 func configure(
 	p_assembly_id: StringName,
@@ -48,7 +51,8 @@ func configure(
 	p_max_payload: float,
 	p_capability_tags: PackedStringArray,
 	p_carrying_speed_multiplier: float = 1.0,
-	p_tray_capacity: int = 0
+	p_tray_capacity: int = 0,
+	p_assembly_cost: int = 0
 ) -> bool:
 	if is_configured():
 		push_error("Vehicle definition is immutable after configuration.")
@@ -77,6 +81,9 @@ func configure(
 	if p_tray_capacity < 0:
 		push_error("Vehicle tray capacity must not be negative.")
 		return false
+	if p_assembly_cost < 0:
+		push_error("Vehicle assembly cost must not be negative.")
+		return false
 
 	assembly_id = p_assembly_id
 	display_name = p_display_name
@@ -89,6 +96,7 @@ func configure(
 	capability_tags = p_capability_tags.duplicate()
 	carrying_speed_multiplier = p_carrying_speed_multiplier
 	tray_capacity = p_tray_capacity
+	assembly_cost = p_assembly_cost
 	return true
 
 
@@ -106,6 +114,7 @@ func is_configured() -> bool:
 		and carrying_speed_multiplier > 0.0
 		and carrying_speed_multiplier <= 1.0
 		and tray_capacity >= 0
+		and assembly_cost >= 0
 	)
 
 

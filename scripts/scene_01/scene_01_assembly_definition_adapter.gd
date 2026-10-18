@@ -67,7 +67,7 @@ func build_definition(vehicle: VehicleActorScript) -> AssemblyDefinitionScript:
 		occupied_cells,
 		capabilities,
 		interfaces,
-		0,
+		vehicle_definition.assembly_cost,
 		vehicle_definition.total_weight
 	)
 	return AssemblyDefinitionScript.new(
