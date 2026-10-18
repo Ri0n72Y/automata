@@ -50,12 +50,14 @@ func configure(
 	if wheel == null:
 		_last_error = "未知轮组：%s" % String(p_wheel_id)
 		return false
-	var work_module := VehiclePartCatalogScript.find_part(
-		VehiclePartDefinitionScript.Slot.WORK_MODULE, p_work_module_id
-	)
-	if work_module == null:
-		_last_error = "未知工作件：%s" % String(p_work_module_id)
-		return false
+	var work_module: VehiclePartDefinition = null
+	if p_work_module_id != &"":
+		work_module = VehiclePartCatalogScript.find_part(
+			VehiclePartDefinitionScript.Slot.WORK_MODULE, p_work_module_id
+		)
+		if work_module == null:
+			_last_error = "未知工作件：%s" % String(p_work_module_id)
+			return false
 
 	blueprint_id = p_blueprint_id
 	chassis_id = p_chassis_id
@@ -73,7 +75,7 @@ func is_configured() -> bool:
 		and display_name != ""
 		and get_chassis() != null
 		and get_wheel() != null
-		and get_work_module() != null
+		and (work_module_id == &"" or get_work_module() != null)
 	)
 
 
@@ -238,4 +240,6 @@ func _is_valid_id(candidate: StringName) -> bool:
 
 
 func _default_display_name(chassis: VehiclePartDefinition, work_module: VehiclePartDefinition) -> String:
+	if work_module == null:
+		return "%s + 空置工作位" % chassis.display_name
 	return "%s + %s" % [chassis.display_name, work_module.display_name]

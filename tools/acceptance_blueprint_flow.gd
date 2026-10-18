@@ -6,6 +6,7 @@ extends SceneTree
 
 const CatalogScript := preload("res://scripts/assembly/vehicle_part_catalog.gd")
 const AssemblyCapabilitiesScript := preload("res://scripts/assembly/assembly_capabilities.gd")
+const BlueprintScript = preload("res://scripts/assembly/vehicle_blueprint.gd")
 const ProgramSourceScript := preload("res://scripts/scene_01/scene_01_program_source.gd")
 const StandardBlockScript := preload("res://scripts/objects/standard_block.gd")
 
@@ -88,45 +89,18 @@ func _run() -> void:
 		"卸货后恢复空载速度"
 	)
 
-	# 重复部署同一蓝图：预览候选必须与提交候选一致（自动后缀 id）。
+	# 场景部署点：每关一个可调位置，工作台从这里部署。
 	var blueprint_ui = scene.get_node_or_null("BlueprintUIRoot")
+	_check(blueprint_ui != null, "场景存在装配工作台")
+	var deployment_point = scene.get_node_or_null("LevelDeploymentPoint")
+	_check(deployment_point != null, "场景配置了可调部署点")
+	if deployment_point != null:
+		var configured_cell: Vector2i = deployment_point.call("get_deploy_cell")
+		_check(
+			bool(scene.is_grid_footprint_walkable(configured_cell, Vector2i.ONE)),
+			"部署点在可走格上"
+		)
 	if blueprint_ui != null:
-		blueprint_ui.set("blueprint", tray_blueprint)
-		blueprint_ui.call("_begin_deployment")
-		var candidate = blueprint_ui.get("_deployment_blueprint")
-		_check(
-			candidate != null and candidate.blueprint_id != tray_blueprint.blueprint_id,
-			"重复部署生成唯一候选 id"
-		)
-		if candidate != null:
-			var repeat_cell := _find_deploy_cell(manager, candidate)
-			_check(repeat_cell != Vector2i(-1, -1), "候选蓝图有可用部署格")
-			if repeat_cell != Vector2i(-1, -1):
-				var camera = scene.get_node("SceneRoot/CameraRoot/Scene01CameraRig/SceneCamera")
-				var screen_pos: Vector2 = camera.unproject_position(
-					scene.grid_cell_to_world(repeat_cell)
-				)
-				blueprint_ui.call("_update_ghost", screen_pos)
-				var ghost_material = blueprint_ui.get("_ghost_material")
-				_check(
-					ghost_material != null
-					and ghost_material.albedo_color.is_equal_approx(
-						Color(0.247, 0.776, 0.808, 0.45)
-					),
-					"预览与提交使用同一候选（ghost 青色）"
-				)
-		blueprint_ui.call("_cancel_deployment")
-
-		# 重新打开编辑器必须解除放置状态（编辑/放置互斥）。
-		blueprint_ui.set("blueprint", tray_blueprint)
-		blueprint_ui.call("_begin_deployment")
-		_check(bool(blueprint_ui.get("_placing")), "部署模式进入放置状态")
-		blueprint_ui.call("_open")
-		_check(
-			not bool(blueprint_ui.get("_placing"))
-			and blueprint_ui.get("_deployment_blueprint") == null,
-			"重新打开编辑器会取消放置状态与候选蓝图"
-		)
 		# 保存/读取往返（读取后编辑器蓝图应与保存时一致）。
 		var saved_blueprint = CatalogScript.default_blueprints()[3]
 		blueprint_ui.set("blueprint", saved_blueprint)
@@ -139,6 +113,47 @@ func _run() -> void:
 			and loaded_blueprint.blueprint_id == saved_blueprint.blueprint_id,
 			"蓝图保存/读取往返"
 		)
+		blueprint_ui.call("_close")
+
+		# 工作台结构：默认差速+标准轮组+空工作件；点击安装位切换底部配件列表。
+		var default_blueprint = BlueprintScript.new()
+		_check(
+			default_blueprint.configure(&"bp_ui_default", "侦察车", &"differential", &"standard", &""),
+			"默认蓝图允许空工作位"
+		)
+		var empty_definition = default_blueprint.to_vehicle_definition()
+		_check(
+			empty_definition != null
+			and empty_definition.has_capability("can_move")
+			and empty_definition.has_capability("can_rotate")
+			and empty_definition.tray_capacity == 0,
+			"空工作位投影为仅移动/旋转能力"
+		)
+		blueprint_ui.set("blueprint", default_blueprint)
+		blueprint_ui.call("_open")
+		await process_frame
+		_check(blueprint_ui.blueprint.work_module_id == &"", "默认工作件为空位占位")
+		_check(blueprint_ui.get("_preview_root") != null, "3D 预览模型已构建")
+		blueprint_ui.call("_select_slot", 2)
+		await process_frame
+		var shelf = blueprint_ui.get_node("RootControl/EditorPanel/EditorMargin/EditorVBox/ShelfPanel/ShelfMargin/ShelfVBox/PartScroll/PartShelf")
+		_check(shelf.get_child_count() == 3, "工作件安装位列出空槽 + 2 个工作件")
+		var preview_camera = blueprint_ui.get_node("RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PreviewPanel/PreviewStack/PreviewContainer/PreviewViewport/PreviewCamera")
+		var preview_model = blueprint_ui.get_node("RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PreviewPanel/PreviewStack/PreviewContainer/PreviewViewport/PreviewModelRoot")
+		blueprint_ui.call(
+			"_select_slot_at",
+			preview_camera.unproject_position(preview_model.to_global(Vector3(0.6, 0.2, 0.35)))
+		)
+		_check(int(blueprint_ui.get("_selected_slot")) == 1, "点击轮组区域切换到底盘/轮组安装位")
+		blueprint_ui.call(
+			"_select_slot_at",
+			preview_camera.unproject_position(preview_model.to_global(Vector3(0, 0.8, 0)))
+		)
+		_check(int(blueprint_ui.get("_selected_slot")) == 2, "点击空工作位虚线框切到工作件安装位")
+		blueprint_ui.call("_apply_part", 2, &"gripper_arm")
+		_check(blueprint_ui.blueprint.work_module_id == &"gripper_arm", "安装机械臂工作件")
+		blueprint_ui.call("_apply_part", 2, &"")
+		_check(blueprint_ui.blueprint.work_module_id == &"", "可恢复空置工作位")
 		blueprint_ui.call("_close")
 
 	# 2. Program 驱动蓝图车移动
@@ -277,6 +292,38 @@ func _run() -> void:
 		tray_actor.runtime_state.anchor_cell == tray_cell,
 		"Reset 后蓝图车回到部署格"
 	)
+
+	# 部署点：工作台直接从每关的可调部署点出场；被占用时拒绝并提示。
+	var spawn_blueprint = BlueprintScript.new()
+	spawn_blueprint.configure(&"bp_spawn_test", "部署点测试车", &"differential", &"standard", &"")
+	var spawn_point = scene.get_node_or_null("LevelDeploymentPoint")
+	var spawn_cell := _find_deploy_cell(manager, spawn_blueprint)
+	if spawn_point != null and spawn_cell != Vector2i(-1, -1):
+		spawn_point.call("set_deploy_cell", spawn_cell)
+		var count_before_spawn: int = manager.get_vehicle_count()
+		blueprint_ui.set("blueprint", spawn_blueprint)
+		var deployed: bool = bool(blueprint_ui.call("_begin_deployment"))
+		_check(deployed and manager.get_vehicle_count() == count_before_spawn + 1, "工作台从部署点部署车辆")
+		var spawned_actor = manager.get_vehicle_by_id(spawn_blueprint.blueprint_id)
+		_check(
+			spawned_actor != null and spawned_actor.runtime_state.anchor_cell == spawn_cell,
+			"部署车辆落在部署点格"
+		)
+		var second_deploy: bool = bool(blueprint_ui.call("_begin_deployment"))
+		var occupied_status: String = blueprint_ui.get_node("%StatusLabel").text
+		_check(
+			not second_deploy
+			and manager.get_vehicle_count() == count_before_spawn + 1
+			and occupied_status.contains("被占用"),
+			"部署点被占用时拒绝部署并提示"
+		)
+		var adjusted_cell := _find_deploy_cell(manager, spawn_blueprint)
+		if adjusted_cell != Vector2i(-1, -1):
+			spawn_point.call("set_deploy_cell", adjusted_cell)
+			_check(
+				spawn_point.call("get_deploy_cell") == adjusted_cell,
+				"部署点位置可调整"
+			)
 
 	scene.queue_free()
 	await process_frame

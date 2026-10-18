@@ -1,4 +1,4 @@
-[gd_scene load_steps=35 format=3 uid="uid://scene01basicpacking"]
+[gd_scene load_steps=38 format=3 uid="uid://scene01basicpacking"]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_mission_controller.gd" id="1_controller"]
 [ext_resource type="Script" path="res://scripts/grid/grid_debug_view.gd" id="2_grid_debug"]
@@ -33,6 +33,9 @@
 [ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_lab_platform_environment.tscn" id="34_lab_platform"]
 [ext_resource type="PackedScene" path="res://scenes/scene_01/components/scene_01_blueprint_ui.tscn" id="35_blueprint_ui"]
 [ext_resource type="Script" path="res://scripts/ui/level_switcher.gd" id="36_level_switch"]
+[ext_resource type="PackedScene" path="res://scenes/ui/esc_menu.tscn" id="37_esc_menu"]
+[ext_resource type="Script" path="res://scripts/flow/level_session.gd" id="38_level_session"]
+[ext_resource type="Script" path="res://scripts/scene_01/level_deployment_point.gd" id="39_deployment_point"]
 
 [sub_resource type="Resource" id="Resource_ground_field"]
 resource_local_to_scene = true
@@ -175,3 +178,13 @@ scene_controller_path = NodePath("..")
 script = ExtResource("36_level_switch")
 target_scene = "res://scenes/scene_02/scene_02_bean_sorting.tscn"
 keycode = 50
+
+[node name="EscMenu" parent="." instance=ExtResource("37_esc_menu")]
+
+[node name="LevelSession" type="Node" parent="."]
+script = ExtResource("38_level_session")
+
+[node name="LevelDeploymentPoint" type="Node3D" parent="."]
+script = ExtResource("39_deployment_point")
+cell = Vector2i(12, 6)
+facing = 0

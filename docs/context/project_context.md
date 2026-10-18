@@ -216,11 +216,12 @@ Tutorial 五个互相独立的目标（无先后）：选中 Arm；非 RUNNING �
   - `VehicleBlueprint → VehicleDefinition(kind=ASSEMBLED) → Scene01AssemblyDefinitionAdapter(blueprint_vehicle_preset) → AssemblyCompiler / ProgramCapabilityValidator`。
   - 全向底盘 `can_strafe`：MoveTo 不转身；托盘上限 = `min(module.tray_capacity, floor(chassis.max_payload / 2kg))`。
 - 界面与部署（已实现）：
-  - `scene_01_blueprint_ui.tscn` + `scripts/scene_01/scene_01_blueprint_ui.gd`：`B` 键开关，右侧覆盖面板，槽位下拉 / 动作投影 / 速度重量成本 / 保存读取 / 部署（READY 限定 + 网格 ghost 合法性）。
+  - **独立 3D 装配工作台**：`scene_01_blueprint_ui.tscn` + `scripts/scene_01/scene_01_blueprint_ui.gd`：`B` 键打开全屏工作台（SubViewport 3D 预览 + 底部 Besiege 式配件库 + 右侧属性检查器）；默认差速底盘 + 标准轮组 + 空工作位虚线框；点击 3D 模型切换安装位，拖动旋转/滚轮缩放；工作位可空置（`work_module_id=&""`）。视觉模型在 `scripts/assembly/vehicle_part_visual.gd`（机械臂为实体连杆链），底部卡片为独立 SubViewport 45° 3D 预览并支持 hover 旋转（`scripts/ui/blueprint_part_card.gd`）。
+  - **场景部署点**：每关一个 `LevelDeploymentPoint`（`scripts/scene_01/level_deployment_point.gd`，`cell`/`facing` 可在场景编辑器调整，带青色部署标记）；「部署到场地」直接在该格出场，占用/不可放置时提示并拒绝；Scene 01 默认 (12,6)，Scene 02 默认 (7,8)。
   - `Scene01VehicleManager.deploy_blueprint()`：实例化 `blueprint_vehicle_placeholder.tscn`（合并网格按工作件选择）、动态注册；`Scene01Controller.deploy_blueprint_vehicle()` 重配置选择/移动/抓放/Observable/CompileGate。
   - `Scene01ObservableState.register_dynamic_vehicles()` + HUD 通用读取：部署车可被选中、HUD 显示状态/载荷、Reset 保留并回到部署格。
-- 验收方式：`tools/acceptance_blueprint_flow.gd` 全流程验收（部署→编译→Program 移动→能力差异→HUD→Reset）；**不再为装配模块新增防御性单测**（用户 2026-10-18 指示），原 46 例 legacy 套件保留。
-- **待实现**：综合关「装配站」（预算/评分/2×2 装配台）、部署 ghost 的图形细节、多蓝图库、`fabricator` 自复制终局。
+- 验收方式：`tools/acceptance_blueprint_flow.gd` 全流程验收（工作台→部署点→编译→Program 移动→能力差异→HUD→Reset）；**不再为装配模块新增防御性单测**（用户 2026-10-18 指示），原 46 例 legacy 套件保留。
+- **待实现**：综合关「装配站」（预算/评分/2×2 装配台）、多蓝图库、`fabricator` 自复制终局。
 
 ### 4.10 Bean Sorting / Scene 02（2026-10-18 起，第一个可玩谜题）
 
@@ -232,6 +233,13 @@ Tutorial 五个互相独立的目标（无先后）：选中 Arm；非 RUNNING �
 - HUD：`scenes/scene_02/components/bean_hud.tscn` + `bean_hud.gd`（规则、编号、来源余量、提交/新一局、结果面板）；Operations/Program/Blueprint（`B`）仍可用。
 - 复用改动：`Scene01ProgramRunner`/`Scene01ProgramPreflight` 的类型约束从 MissionController 放宽到 LifecycleController（Scene 01 行为不变）。
 - 验收：`tools/acceptance_bean_flow.gd`（库存/编号/抓取/满箱/错箱/结算/Reset/Program/新一局，结果 `failures=0`）；截图 `bean_01_ready.png`/`bean_02_delivered.png`/`bean_03_settled.png`；legacy 46/46 不回归。
+
+### 4.11 主菜单 / Esc 菜单 / 关卡入口（2026-10-18 起）
+
+- **主菜单** `scenes/ui/main_menu.tscn` + `scripts/ui/main_menu.gd`（项目 `run/main_scene`）：三个入口（Scene 01 装箱测试、Scene 02 豆类分拣、Workshop 装配工坊），右侧 SubViewport 展示缓慢旋转的差速+抓手模型；退出按钮与构建信息。
+- **Esc 菜单** `scenes/ui/esc_menu.tscn` + `scripts/ui/esc_menu.gd`，挂在两个关卡场景：Esc 暂停（`get_tree().paused`，菜单 `PROCESS_MODE_ALWAYS`）；按钮为继续、打开装配工坊（解除暂停后调用 `BlueprintUIRoot._open()`，不切换场景）、重开本关、返回主菜单、退出。工作台/文本框有焦点时 Esc 优先关闭工作台，不叠加菜单。
+- **入口标记** `scripts/flow/game_flow.gd`（`GameFlow.start_in_workshop` 静态标记，无 autoload）+ `scripts/flow/level_session.gd`（关卡内消费标记并自动打开工作台）；主菜单 Workshop 入口 = 加载 Scene 01 并自动打开工作台。
+- 验收：`tools/acceptance_menu_flow.gd`（主菜单三入口、Esc 开/关与暂停、工作台内 Esc 不叠加、工坊入口自动打开、Scene 02 Esc 菜单，`failures=0`）；截图 `menu_01_start.png`、`menu_02_esc.png`、`menu_03_workshop.png`；`godot --headless --path . --quit-after 90` 主场景启动无脚本错误。
 
 ---
 

@@ -105,6 +105,17 @@ godot --headless --path . --script res://tools/build_environment_meshes.gd
 - **等宽状态**：Blueprint `StatusLabel`、Bean `StateLabel`、HUD `FeedbackLabel` 统一 `lab_mono`；所有 UI 面板字号/字幕/间距一致。
 - 验证：46/46 PASS、Bean/Blueprint 流程 `failures=0`；截图 `ui9_10_completion.png`、`ui9_03_program_open.png`、`ui9_01_ready.png`（本地）。
 
+### 5.4 鲜明化光照/调色（2026-10-18 晚）
+
+针对"整体灰蒙蒙"的反馈，只改场景光照与环境后处理（不改几何/材质烘焙）：
+
+- **Tonemap**：Filmic → **ACES**，exposure 0.86，white 2.0；饱和度 0.92 → **1.34**，对比度 1.1 → **1.14**，亮度 0.98。
+- **光比**：KeyLight 1.5 → 1.25（配合曝光降低过曝），色温略暖；FillLight 改为青蓝 `#70B9D1`（0.28）。
+- **强调光**：新增 2 个青色 OmniLight（`#26D4EA`，左侧 2.0 / 右侧 1.6）与 1 个橙色 OmniLight（`#FF6E21`，门区 1.1），让白墙/地面出现 Portal 式冷暖光池。
+- **去灰雾**：fog density 0.006 → 0.0022、aerial 0.35 → 0.12；volumetric fog 0.014 → 0.004，albedo 更蓝；glow 抬到 0.72 / strength 1.15 / threshold 0.82，让青色灯带与部署点发光。
+- SSAO 略增强（intensity 1.8）以保留硬阴影边缘；背景近黑蓝 `#020304`。
+- 验证：真实渲染截图 `vivid3_01_ready.png`（Scene 01）、`bean_03_settled.png`（Scene 02）；46/46 测试与三套流程验收保持通过。
+
 ## 6. 下一轮候选（未做）
 
 1. **光照氛围**：假体积光柱（从顶梁缺口斜射）、墙面反射探针 / SSR 轻微地板反射、悬挂式 Chamberlock 装置。

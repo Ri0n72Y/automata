@@ -1,0 +1,139 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/esc_menu.gd" id="1_script"]
+[ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_menu"]
+bg_color = Color(0.960784, 0.972549, 0.980392, 0.99)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.415686, 0.760784, 0.8, 0.55)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.019608, 0.043137, 0.058824, 0.34)
+shadow_size = 24
+shadow_offset = Vector2(0, 8)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_primary_normal"]
+bg_color = Color(0.070588, 0.627451, 0.686275, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 12.0
+content_margin_right = 12.0
+
+[node name="EscMenu" type="CanvasLayer"]
+layer = 30
+process_mode = 3
+script = ExtResource("1_script")
+
+[node name="RootControl" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("2_theme")
+
+[node name="Dim" type="ColorRect" parent="RootControl"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.019608, 0.043137, 0.058824, 0.58)
+
+[node name="MenuPanel" type="PanelContainer" parent="RootControl"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = -190.0
+offset_right = 210.0
+offset_bottom = 190.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_menu")
+
+[node name="MenuMargin" type="MarginContainer" parent="RootControl/MenuPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 22
+theme_override_constants/margin_bottom = 18
+
+[node name="MenuVBox" type="VBoxContainer" parent="RootControl/MenuPanel/MenuMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Caption" type="Label" parent="RootControl/MenuPanel/MenuMargin/MenuVBox"]
+layout_mode = 2
+text = "PAUSED · ESC"
+theme_override_colors/font_color = Color(0.070588, 0.627451, 0.686275, 1)
+theme_override_font_sizes/font_size = 11
+
+[node name="Title" type="Label" parent="RootControl/MenuPanel/MenuMargin/MenuVBox"]
+layout_mode = 2
+text = "暂停"
+theme_override_font_sizes/font_size = 26
+
+[node name="Separator" type="HSeparator" parent="RootControl/MenuPanel/MenuMargin/MenuVBox"]
+layout_mode = 2
+
+[node name="ContinueButton" type="Button" parent="RootControl/MenuPanel/MenuMargin/MenuVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "继续关卡"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_primary_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_primary_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_primary_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_primary_normal")
+
+[node name="WorkshopButton" type="Button" parent="RootControl/MenuPanel/MenuMargin/MenuVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "打开装配工坊（不离开关卡）"
+
+[node name="RestartButton" type="Button" parent="RootControl/MenuPanel/MenuMargin/MenuVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "重新开始本关"
+
+[node name="MenuButton" type="Button" parent="RootControl/MenuPanel/MenuMargin/MenuVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "返回主菜单"
+
+[node name="QuitButton" type="Button" parent="RootControl/MenuPanel/MenuMargin/MenuVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "退出游戏"
+
+[node name="StatusLabel" type="Label" parent="RootControl/MenuPanel/MenuMargin/MenuVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "ESC 关闭菜单 · 关卡将继续运行"
+theme_override_colors/font_color = Color(0.352941, 0.439216, 0.486275, 1)
+theme_override_font_sizes/font_size = 10
