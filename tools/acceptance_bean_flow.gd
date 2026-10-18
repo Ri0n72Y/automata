@@ -153,6 +153,24 @@ func _run() -> void:
 	_check(numbers_after == [1, 2, 3, 4, 5], "新一局编号仍为 1-5 的排列")
 	_check(bean_manager.get_sources()[0].inventory.remaining_grams == 1000, "新一局恢复来源")
 
+	# Program 完成后仍可提交（runner 进入 COMPLETED 不应锁死结算），结算后可新一局。
+	scene.call("run_scene")
+	await process_frame
+	var settle_source := "automata_scene01_program 2\n[arm_vehicle:moveTo] 4 4\n"
+	var settle_parsed: Dictionary = ProgramSourceScript.new().parse(settle_source)
+	var settle_done := {"value": false, "failed": false}
+	runner.execution_completed.connect(func(): settle_done["value"] = true)
+	runner.execution_failed.connect(func(_i, _r): settle_done["failed"] = true)
+	_check(bool(runner.call("start_program", settle_parsed.get("program"))), "结算前 Program 启动")
+	var settle_frames := 0
+	while not settle_done["value"] and not settle_done["failed"] and settle_frames < 900:
+		await process_frame
+		settle_frames += 1
+	_check(settle_done["value"], "结算前 Program 完成")
+	_check(bool(scene.call("submit_beans")), "Program 完成后仍可提交结算")
+	_check(bool(scene.call("is_settled")), "提交后进入已结算状态")
+	_check(bool(scene.call("reroll_round")), "结算后可直接开始新一局")
+
 	scene.queue_free()
 	await process_frame
 	_finish()

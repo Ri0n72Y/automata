@@ -32,7 +32,7 @@ godot --headless --path . --script res://tools/acceptance_bean_flow.gd
 godot --headless --path . --script res://tests/stability/scene_01_lifecycle_state_smoke_test.gd
 ```
 
-- 全部测试：46 个运行时套件，见 `tests/`；单例退出码即结果。
+- 全部测试：47 个运行时套件，见 `tests/`；单例退出码即结果。
 - CI：`.github/workflows/godot-ci.yml`（导入检查 + 运行时测试，PR/push 默认跑 `tests/stability`，手动 `workflow_dispatch` 可选 full）。
 - 本地 `user://` 不可写时 Save/Load 测试会假失败，重定向 `APPDATA` 到可写目录即可复现 CI 结果。
 

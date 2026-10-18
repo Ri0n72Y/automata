@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/scene_01/scene_01_blueprint_ui.gd" id="1_script"]
 [ext_resource type="Theme" path="res://scenes/scene_01/components/scene_01_ui_theme.tres" id="2_theme"]
@@ -100,7 +100,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
+mouse_filter = 0
 theme = ExtResource("2_theme")
 
 [node name="Dim" type="ColorRect" parent="RootControl"]
@@ -233,7 +233,7 @@ mouse_filter = 0
 unique_name_in_owner = true
 own_world_3d = true
 size = Vector2i(640, 360)
-render_target_update_mode = 4
+render_target_update_mode = 2
 
 [node name="PreviewCamera" type="Camera3D" parent="RootControl/EditorPanel/EditorMargin/EditorVBox/Body/PreviewPanel/PreviewStack/PreviewContainer/PreviewViewport"]
 unique_name_in_owner = true

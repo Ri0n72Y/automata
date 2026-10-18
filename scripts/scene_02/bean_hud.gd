@@ -56,11 +56,11 @@ func _refresh() -> void:
 	targets_label.text = _targets_text()
 	sources_label.text = _sources_text()
 	var runner := controller.get_node_or_null("SceneRoot/Scene01ProgramRunner")
-	var runner_idle := runner == null or int(runner.call("get_state")) == 0
+	var runner_busy := runner != null and bool(runner.call("is_busy"))
 	submit_button.disabled = (
 		state != BeanSortingControllerScript.BeanState.RUNNING
 		or controller.is_settled()
-		or not runner_idle
+		or runner_busy
 	)
 	reroll_button.disabled = (
 		state == BeanSortingControllerScript.BeanState.RUNNING

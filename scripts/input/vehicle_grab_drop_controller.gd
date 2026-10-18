@@ -365,8 +365,7 @@ func _is_target_ready(runtime: VehicleRuntimeStateScript, target: Variant) -> bo
 			return false
 		if not drop_receiver.accepts_item_type(runtime.carried_item.get_item_type()):
 			return false
-		var capacity := drop_receiver.get_capacity()
-		return capacity <= 0 or drop_receiver.get_current_count() < capacity
+		return drop_receiver.can_accept_item(runtime.carried_item)
 	var source := target as ItemSourceInterfaceScript
 	if source != null:
 		return source.is_available()

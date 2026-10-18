@@ -48,7 +48,7 @@ func _process(delta: float) -> void:
 	if not _hover or _pivot == null or _viewport == null:
 		return
 	_pivot.rotation.y += delta * 1.5
-	_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 
 func set_selected(value: bool) -> void:
@@ -59,7 +59,7 @@ func set_selected(value: bool) -> void:
 func _on_hover_changed(hover: bool) -> void:
 	_hover = hover
 	if _viewport != null:
-		_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	queue_redraw()
 
 
@@ -74,7 +74,7 @@ func _build_preview() -> void:
 	_viewport.size = VIEW_SIZE
 	_viewport.transparent_bg = true
 	_viewport.own_world_3d = true
-	_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	container.add_child(_viewport)
 
 	var camera := Camera3D.new()

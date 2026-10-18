@@ -52,9 +52,12 @@ var _orbit_distance := 2.9
 var _dragging := false
 var _drag_distance := 0.0
 var _syncing_name := false
+var _selection_cage: Node3D
+var _level_input_disabled := false
 
 
 func _ready() -> void:
+	add_to_group(&"blueprint_ui")
 	controller = get_node_or_null(scene_controller_path)
 	visible = false
 	save_button.pressed.connect(_save_blueprint)
@@ -77,15 +80,23 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			_open()
 		get_viewport().set_input_as_handled()
-	elif visible and event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+	elif (
+		visible
+		and not _is_text_input_focused()
+		and event is InputEventKey
+		and event.pressed
+		and event.keycode == KEY_ESCAPE
+	):
 		_close()
 		get_viewport().set_input_as_handled()
 
 
 func _open() -> void:
 	_ensure_default_blueprint()
+	_set_level_input_enabled(false)
 	visible = true
 	set_process(true)
+	preview_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	_rebuild_preview()
 	_refresh_editor()
 
@@ -93,6 +104,33 @@ func _open() -> void:
 func _close() -> void:
 	visible = false
 	set_process(false)
+	preview_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	get_viewport().gui_release_focus()
+	_set_level_input_enabled(true)
+
+
+func _set_level_input_enabled(enabled: bool) -> void:
+	if _level_input_disabled == not enabled:
+		return
+	_level_input_disabled = not enabled
+	if controller == null:
+		return
+	var nodes: Array = [
+		controller.get("vehicle_move_controller"),
+		controller.get("vehicle_selection_controller"),
+		controller.get("grid_selection_controller"),
+		controller.get("vehicle_grab_drop_controller"),
+		controller.get("scene_camera_rig"),
+	]
+	var level_switcher := get_parent().get_node_or_null("LevelSwitcher") if get_parent() != null else null
+	nodes.append(level_switcher)
+	for node in nodes:
+		if node is Node:
+			node.set_process_input(enabled)
+			node.set_process_unhandled_input(enabled)
+	var move_controller = controller.get("vehicle_move_controller")
+	if move_controller != null and move_controller.has_method("set_vehicle_ui_open"):
+		move_controller.call("set_vehicle_ui_open", not enabled)
 
 
 func _process(_delta: float) -> void:
@@ -161,7 +199,22 @@ func _on_part_card_pressed(slot: int, part_id: StringName) -> void:
 
 func _select_slot(slot: int) -> void:
 	_selected_slot = slot
+	_update_selection_cage()
 	_refresh_editor()
+
+
+func _update_selection_cage() -> void:
+	if _selection_cage != null and is_instance_valid(_selection_cage):
+		_selection_cage.queue_free()
+	_selection_cage = null
+	if _preview_root == null or _selected_slot == PartScript.Slot.WORK_MODULE:
+		return
+	var slot_node := VisualScript.slot_node(_preview_root, _selected_slot)
+	var bounds := VisualScript.slot_aabb(slot_node)
+	if bounds.size == Vector3.ZERO:
+		return
+	_selection_cage = VisualScript.make_selection_box(bounds)
+	_preview_root.add_child(_selection_cage)
 
 
 func _on_name_changed(new_name: String) -> void:
@@ -194,13 +247,8 @@ func _rebuild_preview() -> void:
 		blueprint.wheel_id,
 		blueprint.work_module_id
 	)
-	var slot_node := VisualScript.slot_node(_preview_root, _selected_slot)
-	var bounds := VisualScript.slot_aabb(slot_node)
-	# The work-module slot has its own amber dashed placeholder; a second cage
-	# around the arm only adds clutter.
-	if bounds.size != Vector3.ZERO and _selected_slot != PartScript.Slot.WORK_MODULE:
-		_preview_root.add_child(VisualScript.make_selection_box(bounds))
 	preview_model_root.add_child(_preview_root)
+	_update_selection_cage()
 	_update_camera()
 
 
@@ -406,20 +454,33 @@ func _build_preview_stage() -> void:
 	var line_material := StandardMaterial3D.new()
 	line_material.albedo_color = Color(0.145, 0.239, 0.278, 1)
 	line_material.roughness = 0.8
-	for index in range(-6, 7):
-		var offset := float(index) * 0.5
-		for axis in [0, 1]:
-			var line := MeshInstance3D.new()
-			var line_mesh := BoxMesh.new()
-			line_mesh.size = Vector3(9.0, 0.012, 0.018) if axis == 0 else Vector3(0.018, 0.012, 9.0)
-			line.mesh = line_mesh
-			line.position = Vector3(0, -0.005, offset) if axis == 0 else Vector3(offset, -0.005, 0)
-			line.material_override = line_material
-			preview_viewport.add_child(line)
+	var z_line_mesh := BoxMesh.new()
+	z_line_mesh.size = Vector3(9.0, 0.012, 0.018)
+	var z_lines := MultiMesh.new()
+	z_lines.transform_format = MultiMesh.TRANSFORM_3D
+	z_lines.mesh = z_line_mesh
+	z_lines.instance_count = 13
+	var x_line_mesh := BoxMesh.new()
+	x_line_mesh.size = Vector3(0.018, 0.012, 9.0)
+	var x_lines := MultiMesh.new()
+	x_lines.transform_format = MultiMesh.TRANSFORM_3D
+	x_lines.mesh = x_line_mesh
+	x_lines.instance_count = 13
+	for index in range(13):
+		var offset := float(index - 6) * 0.5
+		z_lines.set_instance_transform(index, Transform3D(Basis.IDENTITY, Vector3(0, -0.005, offset)))
+		x_lines.set_instance_transform(index, Transform3D(Basis.IDENTITY, Vector3(offset, -0.005, 0)))
+	for lines in [z_lines, x_lines]:
+		var line_instance := MultiMeshInstance3D.new()
+		line_instance.multimesh = lines
+		line_instance.material_override = line_material
+		preview_viewport.add_child(line_instance)
 
 
 func _deployment_point() -> Node:
-	var point := get_parent().get_node_or_null("LevelDeploymentPoint") if get_parent() != null else null
+	var point := get_tree().get_first_node_in_group(&"level_deployment_point")
+	if point == null and get_parent() != null:
+		point = get_parent().get_node_or_null("LevelDeploymentPoint")
 	return point
 
 
@@ -438,21 +499,23 @@ func _begin_deployment() -> bool:
 	if point == null:
 		status_label.text = "本关没有配置部署点（LevelDeploymentPoint）。"
 		return false
+	if not point.has_method("get_deploy_cell") or not point.has_method("get_facing"):
+		status_label.text = "部署点节点缺少 get_deploy_cell/get_facing。"
+		return false
 	var cell: Vector2i = point.call("get_deploy_cell")
 	var facing: int = int(point.call("get_facing"))
-	if not bool(manager.can_deploy_blueprint(blueprint, cell)):
-		status_label.text = "部署点 %s 被占用或不可放置，无法部署。" % str(cell)
-		return false
 	var candidate := _blueprint_with_free_id(manager)
 	if candidate == null:
 		status_label.text = "无法生成唯一车辆 id。"
 		return false
+	if not bool(manager.can_deploy_blueprint(candidate, cell)):
+		status_label.text = "部署点 %s 被占用或不可放置，无法部署。" % str(cell)
+		return false
 	if not bool(controller.call("deploy_blueprint_vehicle", candidate, cell, facing)):
 		status_label.text = "部署失败：请查看输出日志。"
 		return false
-	blueprint = candidate
 	_close()
-	var actor = manager.get_vehicle_by_id(blueprint.blueprint_id)
+	var actor = manager.get_vehicle_by_id(candidate.blueprint_id)
 	if actor != null:
 		var selection = controller.get("vehicle_selection_controller")
 		if selection != null:
@@ -464,10 +527,11 @@ func _begin_deployment() -> bool:
 func _blueprint_with_free_id(manager: VehicleManagerScript) -> Resource:
 	if blueprint == null:
 		return null
+	var base_id := _base_blueprint_id()
 	for index in range(100):
-		var candidate_id: StringName = blueprint.blueprint_id
+		var candidate_id: StringName = base_id
 		if index > 0:
-			candidate_id = StringName("%s_%d" % [String(blueprint.blueprint_id), index + 1])
+			candidate_id = StringName("%s_%d" % [base_id, index + 1])
 		if manager.get_vehicle_by_id(candidate_id) == null:
 			var candidate := BlueprintScript.new()
 			if not candidate.configure(
@@ -480,6 +544,16 @@ func _blueprint_with_free_id(manager: VehicleManagerScript) -> Resource:
 				return null
 			return candidate
 	return null
+
+
+func _base_blueprint_id() -> String:
+	var base := String(blueprint.blueprint_id)
+	while true:
+		var last := base.get_slice("_", -1)
+		if not last.is_valid_int() or base.rfind("_") <= 0:
+			break
+		base = base.left(base.rfind("_"))
+	return base
 
 
 # ---------------------------------------------------------------- save/load

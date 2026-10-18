@@ -17,7 +17,9 @@ var _blueprint_ui: Node
 func _ready() -> void:
 	visible = false
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_blueprint_ui = get_parent().get_node_or_null("BlueprintUIRoot")
+	_blueprint_ui = get_tree().get_first_node_in_group(&"blueprint_ui")
+	if _blueprint_ui == null and get_parent() != null:
+		_blueprint_ui = get_parent().get_node_or_null("BlueprintUIRoot")
 	continue_button.pressed.connect(_close_menu)
 	workshop_button.pressed.connect(_open_workshop)
 	restart_button.pressed.connect(_restart_level)

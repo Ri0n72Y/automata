@@ -10,7 +10,8 @@ extends Node3D
 
 
 func _ready() -> void:
-	position = Vector3(cell.x + 0.5, 0.0, cell.y + 0.5)
+	add_to_group(&"level_deployment_point")
+	_refresh_position()
 	if show_marker:
 		_build_marker()
 
@@ -25,7 +26,15 @@ func get_facing() -> int:
 
 func set_deploy_cell(value: Vector2i) -> void:
 	cell = value
-	position = Vector3(cell.x + 0.5, 0.0, cell.y + 0.5)
+	_refresh_position()
+
+
+func _refresh_position() -> void:
+	var scene_root := get_parent() if get_parent() != null else self
+	if scene_root.has_method("grid_cell_to_world"):
+		position = scene_root.call("grid_cell_to_world", cell)
+	else:
+		position = Vector3(cell.x + 0.5, 0.0, cell.y + 0.5)
 
 
 func _build_marker() -> void:
@@ -88,7 +97,7 @@ func _build_marker() -> void:
 	add_child(beam)
 
 	var label := Label3D.new()
-	label.text = "部署点 · DEPLOY"
+	label.text = "DEPLOY POINT"
 	label.font_size = 30
 	label.outline_size = 8
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED

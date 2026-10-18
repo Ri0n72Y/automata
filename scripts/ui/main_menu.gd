@@ -55,16 +55,27 @@ func _build_showcase_stage() -> void:
 	var line_material := StandardMaterial3D.new()
 	line_material.albedo_color = Color(0.11, 0.2, 0.235, 1)
 	line_material.roughness = 0.8
-	for index in range(-6, 7):
-		var offset := float(index) * 0.5
-		for axis in [0, 1]:
-			var line := MeshInstance3D.new()
-			var line_mesh := BoxMesh.new()
-			line_mesh.size = Vector3(9.0, 0.012, 0.018) if axis == 0 else Vector3(0.018, 0.012, 9.0)
-			line.mesh = line_mesh
-			line.position = Vector3(0, -0.005, offset) if axis == 0 else Vector3(offset, -0.005, 0)
-			line.material_override = line_material
-			viewport.add_child(line)
+	var z_line_mesh := BoxMesh.new()
+	z_line_mesh.size = Vector3(9.0, 0.012, 0.018)
+	var z_lines := MultiMesh.new()
+	z_lines.transform_format = MultiMesh.TRANSFORM_3D
+	z_lines.mesh = z_line_mesh
+	z_lines.instance_count = 13
+	var x_line_mesh := BoxMesh.new()
+	x_line_mesh.size = Vector3(0.018, 0.012, 9.0)
+	var x_lines := MultiMesh.new()
+	x_lines.transform_format = MultiMesh.TRANSFORM_3D
+	x_lines.mesh = x_line_mesh
+	x_lines.instance_count = 13
+	for index in range(13):
+		var offset := float(index - 6) * 0.5
+		z_lines.set_instance_transform(index, Transform3D(Basis.IDENTITY, Vector3(0, -0.005, offset)))
+		x_lines.set_instance_transform(index, Transform3D(Basis.IDENTITY, Vector3(offset, -0.005, 0)))
+	for lines in [z_lines, x_lines]:
+		var line_instance := MultiMeshInstance3D.new()
+		line_instance.multimesh = lines
+		line_instance.material_override = line_material
+		viewport.add_child(line_instance)
 
 
 func _open_level(path: String) -> void:

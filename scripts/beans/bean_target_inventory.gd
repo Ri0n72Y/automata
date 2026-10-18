@@ -74,6 +74,15 @@ func take_item() -> ItemTransferResult:
 	return ItemTransferResult.rejected(ItemTransferResult.Status.INVALID_TARGET)
 
 
+func can_accept_item(item: Variant) -> bool:
+	if not item is BeanBatch:
+		return false
+	var batch := item as BeanBatch
+	return get_total_grams() + batch.grams <= capacity_grams
+
+
 func reset() -> void:
+	for batch in _batches:
+		_release_item(batch)
 	_batches.clear()
 	grams_changed.emit(0)

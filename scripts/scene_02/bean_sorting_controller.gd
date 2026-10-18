@@ -59,7 +59,16 @@ func get_batch_limit_grams() -> int:
 
 
 func get_total_initial_grams() -> int:
-	return TOTAL_INITIAL_GRAMS
+	if not _has_bean_scene():
+		return TOTAL_INITIAL_GRAMS
+	var total := 0
+	for source in bean_object_manager.get_sources():
+		total += source.inventory.capacity_grams
+	return total
+
+
+func get_mission_elapsed_time() -> float:
+	return timer
 
 
 func get_box_number_for_slot(slot_index: int) -> int:
@@ -84,17 +93,18 @@ func submit_beans() -> bool:
 	if _completed or not is_gameplay_running():
 		return false
 	var runner := get_node_or_null("SceneRoot/Scene01ProgramRunner")
-	if runner != null and int(runner.call("get_state")) != 0:
+	if runner != null and bool(runner.call("is_busy")):
 		return false
 	_settlement = _build_settlement()
 	_completed = true
 	settlement_ready.emit(get_settlement())
 	bean_state_changed.emit(BeanState.COMPLETED)
+	pause_scene()
 	return true
 
 
 func reroll_round() -> bool:
-	if is_gameplay_running() or is_scene_paused():
+	if not _completed and (is_gameplay_running() or is_scene_paused()):
 		return false
 	if not reset_scene_state():
 		return false
@@ -178,19 +188,24 @@ func _build_settlement() -> Dictionary:
 		var carried_item = vehicle.runtime_state.carried_item
 		if carried_item is BeanBatch:
 			carried_grams += (carried_item as BeanBatch).grams
+		if vehicle.runtime_state.tray_state != null:
+			for tray_item in vehicle.runtime_state.tray_state.get_items():
+				if tray_item is BeanBatch:
+					carried_grams += (tray_item as BeanBatch).grams
 
-	var lost := clampi(TOTAL_INITIAL_GRAMS - placed_grams - source_remaining - carried_grams, 0, TOTAL_INITIAL_GRAMS)
+	var total_initial := get_total_initial_grams()
+	var lost := clampi(total_initial - placed_grams - source_remaining - carried_grams, 0, total_initial)
 	var wrong := maxi(placed_grams - correct_grams, 0)
 	return {
 		"score": correct_grams,
-		"max_score": TOTAL_INITIAL_GRAMS,
+		"max_score": total_initial,
 		"correct_grams": correct_grams,
 		"wrong_box_grams": wrong,
 		"lost_or_unsubmitted_grams": lost,
 		"placed_grams": placed_grams,
 		"source_remaining_grams": source_remaining,
 		"carried_grams": carried_grams,
-		"total_initial_grams": TOTAL_INITIAL_GRAMS,
+		"total_initial_grams": total_initial,
 		"per_bean_correct": per_bean_correct,
 		"per_target": per_target,
 		"elapsed_time": timer,

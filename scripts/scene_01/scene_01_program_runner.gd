@@ -70,6 +70,10 @@ func start_program(program: Scene01Program) -> bool:
 	return true
 func get_state() -> int:
 	return _state
+
+
+func is_busy() -> bool:
+	return _state == STATE_RUNNING
 func get_current_statement_index() -> int:
 	return _pc
 func get_last_error() -> StringName:

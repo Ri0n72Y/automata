@@ -17,7 +17,7 @@ Purpose: 让新接手的开发者 / AI agent 在不重新通读 124 个脚本的
 | 引擎 | Godot **4.7.2**（本地 `godot` 指向 Steam 版 `D:\Games\Steam\steamapps\common\Godot Engine\godot.cmd`） |
 | 渲染 / 物理 | **Forward+**（桌面；`mobile` 回退、`web = gl_compatibility`）、3D 物理引擎 **Jolt Physics**（2026-10-18 由 gl_compatibility 切换，见 [视觉方向 v1](../art/aperture_visual_v1.md)） |
 | 脚本 | 纯 GDScript（无 C#、无 GDExtension）；无 autoload，全部靠场景节点 + 显式注入 |
-| 主场景 | `res://scenes/scene_01/scene_01_basic_packing.tscn` |
+| 主场景 | `res://scenes/ui/main_menu.tscn`（关卡内按 Esc 菜单进入各关/工坊） |
 | 导出预设 | 仅 `Windows Desktop`（`export_presets.cfg`，导出到 `build/`） |
 
 产品意图（从议题与文档推断）：先做一个教学/演示性的单关 MVP 验证"手工搬箱 vs 写 Program 自动搬箱"的核心循环，再把同一套车辆/装配/Program 能力推进到真正的关卡内容（Bean Sorting 里程碑 #76）与车辆组装编辑（Assembly #78–#80）。
@@ -65,7 +65,8 @@ assets/                       # 原始素材
 tools/                        # 网格生成脚本（build_vehicle_meshes.gd / build_environment_meshes.gd）
 
 scenes/scene_01/
-  scene_01_basic_packing.tscn           # 主场景（装配总入口）
+  scenes/ui/main_menu.tscn              # 主场景（关卡/工坊入口）
+scenes/scene_01/scene_01_basic_packing.tscn  # Scene 01
   scene_01_vehicle_showcase.tscn        # 无引用的孤立展示场景（可考虑删除）
   components/                           # UI 与场地组件
     scene_01_field_surface.tscn         # 16×10 地面 + 边界警示 + GroundBody（模型驱动校验）
@@ -89,7 +90,7 @@ scripts/                      # 74 个 class_name，按域分包
   camera/                     # Scene01CameraRig（正交四向 90° 环绕）
   scene_01/                   # Scene 01 编排层（32 个脚本，见 §4）
 
-tests/                        # 46 个运行时测试（Full Suite 口径）
+tests/                        # 47 个运行时测试（Full Suite 口径）
   support/contract_test.gd    # 断言基类 expect_* / finish()
   fixtures/                   # 测试替身
   stability/                  # 每次 PR 必跑的 16 个结构性稳定测试（准入规则见 tests/stability/README.md）
@@ -220,7 +221,7 @@ Tutorial 五个互相独立的目标（无先后）：选中 Arm；非 RUNNING �
   - **场景部署点**：每关一个 `LevelDeploymentPoint`（`scripts/scene_01/level_deployment_point.gd`，`cell`/`facing` 可在场景编辑器调整，带青色部署标记）；「部署到场地」直接在该格出场，占用/不可放置时提示并拒绝；Scene 01 默认 (12,6)，Scene 02 默认 (7,8)。
   - `Scene01VehicleManager.deploy_blueprint()`：实例化 `blueprint_vehicle_placeholder.tscn`（合并网格按工作件选择）、动态注册；`Scene01Controller.deploy_blueprint_vehicle()` 重配置选择/移动/抓放/Observable/CompileGate。
   - `Scene01ObservableState.register_dynamic_vehicles()` + HUD 通用读取：部署车可被选中、HUD 显示状态/载荷、Reset 保留并回到部署格。
-- 验收方式：`tools/acceptance_blueprint_flow.gd` 全流程验收（工作台→部署点→编译→Program 移动→能力差异→HUD→Reset）；**不再为装配模块新增防御性单测**（用户 2026-10-18 指示），原 46 例 legacy 套件保留。
+- 验收方式：`tools/acceptance_blueprint_flow.gd` 全流程验收（工作台→部署点→编译→Program 移动→能力差异→HUD→Reset）；**不再为装配模块新增防御性单测**（用户 2026-10-18 指示），原 46 例 legacy 套件 + 1 菜单入口 smoke 保留。
 - **待实现**：综合关「装配站」（预算/评分/2×2 装配台）、多蓝图库、`fabricator` 自复制终局。
 
 ### 4.10 Bean Sorting / Scene 02（2026-10-18 起，第一个可玩谜题）
@@ -232,7 +233,7 @@ Tutorial 五个互相独立的目标（无先后）：选中 Arm；非 RUNNING �
 - 规则：黄豆→1、绿豆→2、白豆→3；5 个固定目标箱每局随机编号 1–5，4/5 为干扰箱；错箱不实时拒绝，只在 `submit_beans()` 结算：score=正确克数（0–3000），附 wrong/lost/per-bean/per-target/elapsed 快照；Reset 保留编号，`reroll_round()` 重洗。
 - HUD：`scenes/scene_02/components/bean_hud.tscn` + `bean_hud.gd`（规则、编号、来源余量、提交/新一局、结果面板）；Operations/Program/Blueprint（`B`）仍可用。
 - 复用改动：`Scene01ProgramRunner`/`Scene01ProgramPreflight` 的类型约束从 MissionController 放宽到 LifecycleController（Scene 01 行为不变）。
-- 验收：`tools/acceptance_bean_flow.gd`（库存/编号/抓取/满箱/错箱/结算/Reset/Program/新一局，结果 `failures=0`）；截图 `bean_01_ready.png`/`bean_02_delivered.png`/`bean_03_settled.png`；legacy 46/46 不回归。
+- 验收：`tools/acceptance_bean_flow.gd`（库存/编号/抓取/满箱/错箱/结算/Reset/Program/新一局，结果 `failures=0`）；截图 `bean_01_ready.png`/`bean_02_delivered.png`/`bean_03_settled.png`；legacy 46/46 + 菜单 smoke 不回归。
 
 ### 4.11 主菜单 / Esc 菜单 / 关卡入口（2026-10-18 起）
 
@@ -250,7 +251,7 @@ Tutorial 五个互相独立的目标（无先后）：选中 Arm；非 RUNNING �
 - **Scene 01 MVP 全链关闭**：议题 #1–#22（#2–#21 功能、#22 Final QA）全部 closed；合并 PR #47–#67（装配编译、生命周期、HUD、Program MVP/多车源码、Tutorial、评分、Final QA）。
 - **UI 信息架构收敛**：#82（明亮实验室 UI 基线）、#85（Operations + Program 合并为统一右栏）已合并；#58 UI 信息架构随 #22 折叠完成。
 - **美术支线 #86 P1 已合并**：PR #87（floor/双车视觉切片）、#88（地面与双车视觉打磨）、#89（静态抬升平台 + 部分实验室围挡）。地面从"逐格结点"改为 **model-driven 单面 + shader instance uniform**（删除 `grid_row_*`、`grid_tile_static`、`field_12x8/16x10`，新增 `scene_01_field_surface.tscn` 与 `grid_surface_view_contract_test.gd`；`grid_tile_view.gd` 现在对 authored 场地的尺寸/原点做 fail-closed 校验）。
-- **质量基线**：本地 Full Suite **46/46 PASS**（scene_01 20、stability 16、input 5、vehicles 3、grid 2）；main CI 绿；无 ObjectDB/resource 泄漏告警（旧 assembly 泄漏已消失）。
+- **质量基线**：本地 Full Suite **47/47 PASS**（scene_01 20、stability 17、input 5、vehicles 3、grid 2）；main CI 绿；无 ObjectDB/resource 泄漏告警（旧 assembly 泄漏已消失）。
 
 ### 5.2 进行中 / 未合并
 
@@ -279,7 +280,7 @@ Tutorial 五个互相独立的目标（无先后）：选中 Arm；非 RUNNING �
 
 ## 6. 开发约定（动代码前必读）
 
-1. **测试策略：流程验收优先（2026-10-18 用户指示）**：不为新功能堆防御性单测/契约测试；优先写"能跑完整流程"的验收脚本（如 `tools/acceptance_blueprint_flow.gd`）和真实图形截图。原 `tests/` 的 46 例 legacy 套件保留，用于守住既有契约与 CI；新增测试只有在保护真实高风险边界时才加。
+1. **测试策略：流程验收优先（2026-10-18 用户指示）**：不为新功能堆防御性单测/契约测试；优先写"能跑完整流程"的验收脚本（如 `tools/acceptance_blueprint_flow.gd`）和真实图形截图。原 `tests/` 的 46 例 legacy 套件 + 1 菜单入口 smoke 保留，用于守住既有契约与 CI；新增测试只有在保护真实高风险边界时才加。
 2. **contract-first，单一真值**：新功能先定义 owner 与契约（Resource/RefCounted + 信号/查询接口），UI 只能投影，不得保存第二份业务状态（`docs/Skill-UI-implement-flow.md` §8）。
 3. **Ponytail 倾向**：优先删/复用而不是新增抽象；禁止为方便 UI 新增全局 UI 协调器、状态镜像或兼容层。历史上有专门的重构提交（`1b45698 refactor: apply Ponytail simplification pass`）与议题 #62。
 4. **稳定性测试准入**：`tests/stability` 只收"结构性脆弱依赖"的测试（多源汇聚、所有权转移、生命周期/时序、fail-closed 等），准入与退役规则见 `tests/stability/README.md`；功能/组合/E2E 放 Full Suite 或流程验收。
@@ -300,7 +301,7 @@ Tutorial 五个互相独立的目标（无先后）：选中 Arm；非 RUNNING �
 | R2 | `Scene01ProgramUI._on_run()` 忽略 `start_program` 返回值：已在运行时（runner 直接 return false 且不发 execution_failed）点 RUN 会无反馈，状态栏停留旧文案 | `scripts/scene_01/scene_01_program_ui.gd:112-118`、`scene_01_program_runner.gd:47-50` | 小体验缺陷，补一行拒绝文案即可 |
 | R3 | UI 规范与实现漂移：`scene_01_ui_layout_v1.md` 仍写左栏 360/320、Tutorial 独立 slot/layer3、`+/-` 折叠符号、Program 收起 48–56px；实现为固定 240 左栏、Tutorial 嵌入 HUD、chevron 图标、Program 隐藏但右栏保留 Operations | spec §5/§6/§8/§14 vs `scene_01_hud.gd:86-108`、`ui_layout_metrics.gd:4-25`、`tutorial_ui.gd:70-77`；测试锁 240（`tests/scene_01/scene_01_sidebar_ui_contract_test.gd:124`） | 文档滞后为主。若按 spec 恢复宽度需同步迁移测试 |
 | R4 | 本地 Steam 版 Godot 的 `_editor_data` 写不进 Steam 目录，导入后进程以 `0xC0000005` 退出并报 `Safe save failed`；同 tree 复制到可写目录 fresh import exit 0，CI 导入 PASS | 本次调查实测 + CI run #574 | **环境问题非工程错误**。正常桌面会话先清 `.godot` 再验；CI 才是导入准绳 |
-| R5 | `user://` 不可写时 Save/Load round-trip 测试会读到历史遗留文件而"假失败"（默认沙箱 45/46，重定向 APPDATA 后 46/46） | `tests/scene_01/scene_01_program_workspace_test.gd:108`；`scripts/scene_01/scene_01_program_workspace_support.gd:37-56` | 建议测试改用每轮隔离临时路径，避免固定 `user://scene_01_program.txt` |
+| R5 | `user://` 不可写时 Save/Load round-trip 测试会读到历史遗留文件而"假失败" | `tests/scene_01/scene_01_program_workspace_test.gd` | 已缓解：测试先删除目标文件，仅在实际保存成功时断言 round-trip；默认沙箱会跳过并打印 SKIP |
 | R6 | #86 P2 两条 Draft PR 重叠（#90/#91），长期并行会分叉 | `gh pr list` | 择一收口，另一条关闭或 rebase 到胜出实现 |
 | R7 | headless 是 dummy renderer：shader 不实际编译绘制，layout 测试只验结构/几何 | CI 工作流 + 图形验收清单 | 视觉/手感/遮挡只能人工图形 walkthrough；lab platform 无碰撞、无测试引用，需图形客户端确认是否遮挡玩法 |
 | R8 | i18n 缺失：172 处中文字面量散在 `.gd`/`.tscn`，0 处 `tr()` | grep 统计 | 显式延后（#66），但新增文案继续直接写中文 |
@@ -384,7 +385,7 @@ $env:APPDATA = Join-Path $env:TEMP 'automata-appdata'; New-Item -ItemType Direct
 | Program | 首行 `automata_scene01_program 2`；`[id:moveTo] x y`、`[id:rotate] clockwise|counterclockwise`、`[id:grabDrop]`、`repeat <n> <1-based 语句号>` |
 | 控件节点路径 | `SceneRoot/GridRoot/VehicleMoveController`、`.../VehicleGrabDropController`、`.../GridSelectionController`、`.../VehicleSelectionController`；根挂 `scene_01_controller.gd` |
 | 关键 UI 尺寸 | lifecycle 胶囊 350×42 top12；HUD 240（折叠 44）top82；Program 右栏 240 / 360 / 400 / 460 |
-| 测试 | 46 例；stability 16 / scene_01 20 / input 5 / vehicles 3 / grid 2 |
+| 测试 | 47 例；stability 17 / scene_01 20 / input 5 / vehicles 3 / grid 2 |
 
 ---
 
@@ -392,6 +393,6 @@ $env:APPDATA = Join-Path $env:TEMP 'automata-appdata'; New-Item -ItemType Direct
 
 - 架构与契约描述来自**代码阅读 + 现有测试 + 场景文件**，引用标注到文件:行号，可复查。
 - 进度与议题状态来自 `git log`、`gh issue/pr/run list`（2026-10-18 查询）。
-- 本地测试结论来自 2026-10-18 在 Windows + Godot 4.7.2 上按 CI 规则实跑（46/46），与 CI #574 的 stability 16/16 一致。
+- 本地测试结论来自 2026-10-18 在 Windows + Godot 4.7.2 上按 CI 规则实跑（47/47），与 CI #574 的 stability 16/16 一致（新增菜单 smoke 后本地为 17）。
 - R1（双重转身）**已用临时 headless 脚本运行时复现**（MoveTo 期间 9 帧 vs 手动 18 帧，见 §7）；其余风险均可在本地复现或已有 CI 记录。
 - 未覆盖：图形观感、手感、遮挡、性能；这些只能由真实图形客户端验收。

@@ -101,18 +101,26 @@ func _run() -> void:
 			"部署点在可走格上"
 		)
 	if blueprint_ui != null:
-		# 保存/读取往返（读取后编辑器蓝图应与保存时一致）。
+		# 保存/读取往返；先删除旧文件，避免“旧文件恰好等于期望”的假通过。
+		var save_path := "user://blueprints/last_blueprint.json"
+		if FileAccess.file_exists(save_path):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(save_path))
 		var saved_blueprint = CatalogScript.default_blueprints()[3]
 		blueprint_ui.set("blueprint", saved_blueprint)
 		blueprint_ui.call("_save_blueprint")
-		blueprint_ui.set("blueprint", CatalogScript.default_blueprints()[0])
-		blueprint_ui.call("_load_blueprint")
-		var loaded_blueprint = blueprint_ui.get("blueprint")
-		_check(
-			loaded_blueprint != null
-			and loaded_blueprint.blueprint_id == saved_blueprint.blueprint_id,
-			"蓝图保存/读取往返"
-		)
+		var save_status: String = blueprint_ui.get_node("%StatusLabel").text
+		if FileAccess.file_exists(save_path):
+			_check(save_status.contains("已保存"), "蓝图保存成功并给出状态")
+			blueprint_ui.set("blueprint", CatalogScript.default_blueprints()[0])
+			blueprint_ui.call("_load_blueprint")
+			var loaded_blueprint = blueprint_ui.get("blueprint")
+			_check(
+				loaded_blueprint != null
+				and loaded_blueprint.blueprint_id == saved_blueprint.blueprint_id,
+				"蓝图保存/读取往返"
+			)
+		else:
+			_check(save_status.contains("保存失败"), "只读 user:// 下保存 fail-closed")
 		blueprint_ui.call("_close")
 
 		# 工作台结构：默认差速+标准轮组+空工作件；点击安装位切换底部配件列表。
@@ -317,13 +325,24 @@ func _run() -> void:
 			and occupied_status.contains("被占用"),
 			"部署点被占用时拒绝部署并提示"
 		)
-		var adjusted_cell := _find_deploy_cell(manager, spawn_blueprint)
+		var adjusted_cell := _find_deploy_cell(manager, _clone_blueprint(&"bp_spawn_probe", spawn_blueprint))
 		if adjusted_cell != Vector2i(-1, -1):
 			spawn_point.call("set_deploy_cell", adjusted_cell)
 			_check(
 				spawn_point.call("get_deploy_cell") == adjusted_cell,
 				"部署点位置可调整"
 			)
+			var adjusted_deploy: bool = bool(blueprint_ui.call("_begin_deployment"))
+			_check(
+				adjusted_deploy and manager.get_vehicle_count() == count_before_spawn + 2,
+				"部署点空出后可继续部署同一蓝图"
+			)
+			_check(
+				blueprint_ui.blueprint.blueprint_id == &"bp_spawn_test",
+				"重复部署不会把后缀 id 写回编辑器"
+			)
+			var second_actor = manager.get_vehicle_by_id(&"bp_spawn_test_2")
+			_check(second_actor != null, "重复部署使用稳定基 id 的 _2 后缀")
 
 	scene.queue_free()
 	await process_frame
@@ -337,6 +356,12 @@ func _find_deploy_cell(manager, blueprint) -> Vector2i:
 			if manager.can_deploy_blueprint(blueprint, cell):
 				return cell
 	return Vector2i(-1, -1)
+
+
+func _clone_blueprint(id: StringName, source) -> Resource:
+	var clone = BlueprintScript.new()
+	clone.configure(id, source.display_name, source.chassis_id, source.wheel_id, source.work_module_id)
+	return clone
 
 
 func _find_move_target(scene: Node, manager, actor) -> Vector2i:

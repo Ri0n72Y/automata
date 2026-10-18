@@ -42,6 +42,7 @@ Scene 01 merely to verify an invariant that can be exercised directly.
 | `move_target_commit_boundary_test.gd` | shared live target selection -> execute-vs-select-only commit routing |
 | `lifecycle_readiness_purity_stability_test.gd` | readiness query -> preparation gate must remain side-effect free |
 | `vehicle_runtime_reset_stability_test.gd` | VehicleRuntimeState reset -> stationary tray interaction metadata restoration |
+| `menu_flow_smoke_test.gd` | project main scene -> menu/Esc/level composition boundary (catches broken entry wiring before PR merge) |
 
 Every routine test above is intentionally independent of Scene 01 presentation and
 graphical composition.

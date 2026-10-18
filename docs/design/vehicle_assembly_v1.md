@@ -2,7 +2,7 @@
 
 Status: **实现中**（数据模型/目录/契约已完成；蓝图编辑 UI、关卡内布置与综合关待实现）
 Scope: 新游玩模块 —— 用底盘 + 轮组 + 工作件组装小车蓝图，把蓝图车布置进关卡，并用 Program 编程完成任务；终局是"自复制机械"。
-相关代码：`scripts/assembly/vehicle_part_definition.gd`、`vehicle_part_catalog.gd`、`vehicle_blueprint.gd`、`tests/stability/blueprint_contract_test.gd`
+相关代码：`scripts/assembly/vehicle_part_definition.gd`、`vehicle_part_catalog.gd`、`vehicle_blueprint.gd`；装配链路由 `tools/acceptance_blueprint_flow.gd` 做流程验收
 调研依据：同类游戏底盘/组装 UX/自复制结构（来源见 `.dsh-visual/research/assembly.md`，本地参考不入库）
 
 ---
